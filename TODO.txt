@@ -44,7 +44,8 @@ read_statement
 read_scope (skapar en lista av alla parallella statements, alla definierade identifiers)
 
 
-
+// kanske:
+skicka hela tiden med last, där last är garanterat efter det förväntade slutet på statement
 
 
 
