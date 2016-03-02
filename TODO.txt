@@ -1,0 +1,116 @@
+TODO:
+
+
+
+Omstrukturering:
+
+
+Lexer skapar en lista av well-formed tokens.
+Parser skapar en lista av contexts, där varje context har pekare in i token-listan. (början och slut)
+    + syntaxträd (huvudklass: Abstract_syntax)
+    + pekare in i syntaxträdet till icke-färdiga saker (not yet fully derived)
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Lexer:
+
+UTF-8 encoding på alla identifiers - tillåt flera tecken (is_valid_char_in_identifier_name)
+is_keyword(); kanske inte behövs?
+UTF8-klass att använda istället för string
+Here-strings
+
+
+// Parser:
+
+read_casts
+read_identifier (med/utan type, namn, cast)
+read_lhs_part (med parent scope - kolla om den redan är definierad)
+read_lhs
+read_rhs
+read_assignment (identifiera lhs och rhs, räkna ej)
+read_function_call
+read_function_definition
+read_statement
+read_scope (skapar en lista av alla parallella statements, alla definierade identifiers)
+
+
+
+
+
+
+
+
+
+
+
+
+
+Hitta ett bra sätt att hantera unknown type av identifiers
+typade funktionsvariabler i LHS? (Komplicerar en hel del saker)
+Alla listor sorterade, alla sökningar binära
+när vi hittar en type som inte finns i global scope:
+    add the type info to the local scope. For this we need to know the size of the type first.
+
+read_comma_separated_identifier_list-version som returnerar LHS
+
+kolla att inheritence funkar som det ska, med alla destruktorer och konstruktorer
+
+
+
+
+
+
+
+
+
+
+// Kanske:
+
+kombinering av funktioner och andra RHS-listor till en enda RHS?
+    (onödigt för vanlig assignment, men användbart för return-statements)
+    (kanske special för return-statements?)
+
+
+
+// fixas när jag lägger till importering av scopes:
+get_identifier(scope,id): problem med parent scope om man importerar ett scope som har samma parent
+    (man får ambiguous_error från samma variabel 2 gånger pga 2 olika sökvägar)
+
+ex:
+    a {
+        int i;
+        b {
+            c {
+
+            }
+            using c;
+        }
+    }
+ambiguous definition of i: c->b->a->i och b->a->i
+
+
+// capture groups
+skilj på capture by reference / value
+istället för att pulla in parent scope: lägg endast till specificerade identifiers
+
+
+
+
+
+
+
+// inte så viktigt:
+
+namespace
+file ending
+
