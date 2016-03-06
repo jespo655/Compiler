@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "lexer.h"
-#include <memory> // unique_ptr
+#include <memory> // std::unique_ptr
 
 
 
@@ -70,10 +70,10 @@ TODO:
 
 
 
-
-// Token const * read_paren(const std::vector<Token>& tokens, Token const * start);
-// Token const * read_bracket(const std::vector<Token>& tokens, Token const * start);
-// Token const * read_brace(const std::vector<Token>& tokens, Token const * start);
+// For paren text. TODO: remove
+Token const * read_paren(const std::vector<Token>& tokens, Token const * start);
+Token const * read_bracket(const std::vector<Token>& tokens, Token const * start);
+Token const * read_brace(const std::vector<Token>& tokens, Token const * start);
 
 
 
@@ -85,34 +85,43 @@ struct Abs_syntax
     virtual ~Abs_syntax() {}
 };
 
-struct Abs_identifier : Abs_syntax
+
+struct Abs_cast : Abs_syntax
 {
 
 };
 
-
-struct Statement : Abs_syntax
+struct Abs_identifier : virtual Abs_syntax
 {
-    // TODO: alla som har listor av statements måste allockera och fria dem själv
+    std::unique_ptr<Abs_cast> cast{nullptr};
+};
+
+
+
+struct Statement : virtual Abs_syntax
+{
+
 };
 
 
 struct Capture_group : Abs_syntax
 {
-    std::vector<Abs_identifier> identifiers; // points to identifiers in other scopes
+    std::vector<Abs_identifier> identifiers; // For now: capture by value only. TODO: capture by reference ("points" to identifiers in other scopes)
 };
 
-struct Scope : Abs_syntax
+
+
+
+struct Scope : Abs_identifier
 {
+    std::vector<Scope*> imported_scopes;
     std::unique_ptr<Capture_group> capture_group = nullptr;
     std::vector<Abs_identifier> identifiers;
-    std::vector<Scope*> imported_scopes;
-};
 
-
-struct Local_scope : Scope
-{
-    std::vector<std::unique_ptr<Statement>> defer_statements;
+    // Scope() = default;
+    // Scope(const Scope&) = default;
+    // Scope(Scope&&) = default;
+    // Scope(Function_scope&& fs) : Abs_identifier{fs}, capture_group{std::move(fs.capture_group)} { imported_scopes.push_back(fs.parent_scope); }
 };
 
 
@@ -124,6 +133,14 @@ struct Function_scope : Abs_syntax
 };
 
 
+struct Local_scope : Scope
+{
+    std::vector<std::unique_ptr<Statement>> defer_statements;
+};
+
+
+
+/* // TODO
 // a named function is an Identifier with the name and type of the function, with the value_ptr begin a pointer to a Function struct
 struct Function : Abs_syntax
 {
@@ -134,42 +151,62 @@ struct Function : Abs_syntax
     // in the next step a local scope is created from in and out parameters
     //  the local scope changes for each statement
 };
+*/
 
 
 struct Lhs_part : Abs_syntax
 {
-    std::vector<Abs_identifier> identifier; // must have the same type (after cast)
+    std::vector<std::unique_ptr<Abs_identifier>> identifiers; // must have the same type (after cast)
     // Type_info* get_type(); // nullptr if unknown
 };
 
 struct Lhs : Abs_syntax
 {
-    std::vector<Lhs_part> identifiers;
+    std::vector<std::unique_ptr<Lhs_part>> parts;
 };
 
 
-struct Rhs : Abs_syntax
+
+struct Rhs : Abs_identifier
 {
-    // something that can be evaluated to one or more values
-    // std::vector<Abs_identifier> identifiers; // ???
+    // a comma separated list of rhs parts
+    // each part is something that can be evaluated to one or more values
+    std::vector<std::unique_ptr<Abs_identifier>> identifiers;
 };
 
+struct Declaration : Statement
+{
+    std::unique_ptr<Lhs> lhs;
+};
 
 struct Assignment : Statement
 {
-    Lhs lhs;
-    Rhs rhs;
+    std::unique_ptr<Lhs> lhs;
+    std::unique_ptr<Rhs> rhs;
 };
 
-struct Function_call : Statement
+struct Function_call : Abs_identifier, Statement
 {
-    std::string fn_name;
-    Rhs arguments;
+    std::unique_ptr<Abs_identifier> function_identifier;
+    std::unique_ptr<Rhs> arguments;
+};
+
+struct Getter : Abs_identifier
+{
+    std::unique_ptr<Abs_identifier> struct_identifier;
+    Token const* data_identifier_token;
+};
+
+struct Infix_op : Abs_identifier
+{
+    std::unique_ptr<Abs_identifier> lhs;
+    std::unique_ptr<Abs_identifier> rhs;
+    Token const * op_token;
 };
 
 struct If_clause : Statement
 {
-    Rhs condition; // must evaluate to exactly one bool
+    std::unique_ptr<Abs_identifier> condition; // must evaluate to exactly one bool
     std::unique_ptr<Function_scope> if_true;
     std::unique_ptr<Function_scope> if_false;
 };
@@ -192,7 +229,7 @@ struct For_clause : Statement
 
 struct While_clause : Statement
 {
-    Rhs condition; // must evaluate to exactly one bool
+    std::unique_ptr<Abs_identifier> condition; // must evaluate to exactly one bool
     std::unique_ptr<Function_scope> loop;
 };
 

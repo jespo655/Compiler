@@ -6,6 +6,15 @@ using namespace std;
 int err_count = 0;
 int err_max = 100;
 
+void exit_if_errors()
+{
+    if (err_count > 0) {
+        cerr << "There were errors. Exiting." << endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 void check_for_termination()
 {
     if (++err_count >= err_max) {
@@ -16,7 +25,7 @@ void check_for_termination()
 
 void log_error(const string& msg, const Token_context& context)
 {
-    cerr << "(In " << context.file
+    cerr << endl << "(In " << context.file
         << ", line " << context.line
         << ", position " << context.position << "): "
         << msg << endl;
@@ -34,5 +43,6 @@ void add_note(const std::string& msg)
 {
     cerr << "    Note: " << msg << endl;
 }
+
 
 

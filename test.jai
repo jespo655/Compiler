@@ -1,14 +1,31 @@
-/*
-int jj¤asdjh
 
-gj gj!"#j#¤;"
+int i;
 
-ajéd
-*/
-((({()}(([)]
 
-// (({[]}))
 
-// (  ( ) )
+// foo : fn(int a, float b) -> int, int
+// {
+//     return a, b;
+// }
 
-d
+
+// a, b = foo(2,3.5);
+
+
+
+
+// s : struct {
+//     int a;
+//     int b;
+// }
+
+
+// scope : {
+
+
+
+
+// }
+
+
+

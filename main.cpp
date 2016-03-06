@@ -4,10 +4,10 @@
 #include <vector>
 using namespace std;
 
-/*
+
 int paren_test()
 {
-    const vector<Token> tokens = get_tokens("test.jai");
+    const vector<Token> tokens = get_tokens_from_file("test.jai");
     for (const Token& t : tokens) {
         if (t.token == "(") {
             const Token* end = read_paren(tokens,&t);
@@ -27,10 +27,35 @@ int paren_test()
     }
     printf("End of file\n");
 }
-*/
+
+
+
+
+int lexer_test()
+{
+    auto tokens = get_tokens_from_file("test.jai");
+    for (const Token& t : tokens) {
+        cout << "(file " << t.context.file
+            << ", line " << t.context.line
+            << ", pos " << t.context.position
+            << ") token: " << t.token << endl;
+    }
+    printf("End of file\n");
+}
+
+
+
+
+
+
+
+
+
 
 int main()
 {
+    return lexer_test();
+    // return paren_test();
     cerr << "main.cpp: empty main" << endl;
 }
 

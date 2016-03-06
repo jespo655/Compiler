@@ -11,7 +11,7 @@ enum struct Token_type
 {
     UNKNOWN,
     SYMBOL,
-    IDENTIFIER, // can also be a keyword
+    IDENTIFIER,
     KEYWORD,
     INTEGER,
     FLOAT,
@@ -29,8 +29,11 @@ struct Token_context
 struct Token
 {
     std::string token{};
-    Token_context context{};
     Token_type type = Token_type::UNKNOWN;
+    Token_context context{};
+
+    bool operator==(const Token& t) { return type == t.type && token == t.token; }
+    bool operator!=(const Token& t) { return !(*this==t); }
 };
 
 
@@ -107,6 +110,7 @@ private:
 Token_iterator begin(Stream& s);
 Token_iterator end(Stream& s);
 
-std::vector<Token> get_tokens(const std::string& source_file);
+std::vector<Token> get_tokens_from_file(const std::string& source_file);
+std::vector<Token> get_tokens_from_string(const std::string& source_file);
 
 #endif

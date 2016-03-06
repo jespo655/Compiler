@@ -13,4 +13,6 @@ void log_error(const std::string& msg, const Token_context& context);
 void add_note(const std::string& msg, const Token_context& context); // prints out the line and postition after the message
 void add_note(const std::string& msg);
 
+void exit_if_errors();
+
 #endif

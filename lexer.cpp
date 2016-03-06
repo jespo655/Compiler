@@ -12,11 +12,15 @@ using namespace std;
     tokenize it and make a token iterator
 */
 
+std::vector<Token> get_tokens_from_string(const std::string& source_file)
+{
+    ASSERT(false,"get_tokens_from_string not yet implemented!");
+    return {};
+}
 
 
 
-
-vector<Token> get_tokens(const std::string& source_file)
+std::vector<Token> get_tokens_from_file(const std::string& source_file)
 {
     ifstream file;
     file.open(source_file);
@@ -247,6 +251,7 @@ vector<string> symbols
     "+=",
     "-=",
     "%=", // should be "%=", ignore the pink shit
+    ":", // define - the identifier cannot be assigned something else later. (struct members can still be changed)
 
     // comments
     "//",
@@ -262,7 +267,7 @@ vector<string> symbols
     "{", "}",
 
     // other
-    ";", // end of command
+    ";", // end of statement
     ",", // separator in lists
     ".", // accessing data from a struct
     "..", // range operator
@@ -273,7 +278,6 @@ vector<string> symbols
     "!", // maybe for pointers?
     "&",
     "#",
-    ":",
 };
 
 vector<string> keywords
@@ -291,8 +295,12 @@ vector<string> keywords
     "return",
 
     "cast", // syntactic sugar for constructor overloading
-    "const",
+    // "implicit_cast",
+    // "const",
     "struct",
+
+    "defer",
+    "infix_operator", // operator overloading
 };
 
 
