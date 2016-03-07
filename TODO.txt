@@ -57,6 +57,8 @@ Gå igenom allt och kolla log_error-calls
     Om man anropar en funktion och får tillbaka nullptr -> returnera nullptr. Använd add_note om relevant.
     Om man gör något själv och hittar ett fel: anropa log_error och returnera nullptr.
 Allt som returneras som inte är nullptr ska vara well-formed! Kolla ALLA tokens.
+    När man får tillbaka nullptr - förvänta dig att log_error har anropats. Använd inte en funktion för att "testa"
+
 
 Använd read_paren endast som en koll att allt stämmer. Oftast onödigt.
 
@@ -72,6 +74,22 @@ read_rhs_part: array lookup "id[rhs]"
 read_range: läs varje del av range definition, nuvarande lösning är väldigt temporär
 
 read_lhs_identifier: som read_rhs_part, fast tillåt identifier declarations och inga parenteser
+
+Var ska man lägga till identifiers till scope?
+    Ska inte lägga till om man är i function call context; endast om man är i static scope context
+
+Read identifiers i capture group
+Read statements i function_scope
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -176,7 +176,7 @@ struct Rhs : Abs_identifier
 
 struct Declaration : Statement
 {
-    std::unique_ptr<Lhs> lhs;
+    std::vector<std::unique_ptr<Abs_identifier>> identifiers; // several identifiers can be declared on the same line
 };
 
 struct Assignment : Statement

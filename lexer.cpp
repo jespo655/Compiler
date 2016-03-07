@@ -134,7 +134,7 @@ int get_number_of_bytes(signed char first_utf8_byte)
     if (first_utf8_byte <= (char)0x7f) return 1;
 }
 
-bool starts_with_0x10(signed char c)
+bool starts_with_0x10(signed char c) // todo: shouldn't be named "0x10"
 {
     return c >= (char)0x80 && c <= (char)0xbf;
 }

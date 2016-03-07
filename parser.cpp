@@ -5,9 +5,11 @@
 #include <string>
 using namespace std;
 
-unique_ptr<Abs_identifier> read_rhs_identifier(const vector<Token>& tokens, Token const * start, Scope* scope);
-unique_ptr<Rhs> read_rhs(const vector<Token>& tokens, Token const * start, Scope* scope);
+unique_ptr<Abs_identifier> read_identifier(const vector<Token>& tokens, Token const * start, Scope* scope, bool allow_function_calls);
+unique_ptr<Rhs> read_rhs(const vector<Token>& tokens, Token const * start, Scope* scope, bool allow_function_calls);
 
+unique_ptr<Function_scope> read_function_scope(const vector<Token>& tokens, Token const * start, Scope* scope);
+unique_ptr<Scope> read_scope(const vector<Token>& tokens, Token const * start, Scope* parent_scope);
 
 
 
@@ -178,54 +180,6 @@ unique_ptr<Capture_group> read_capture_group(const vector<Token>& tokens, Token 
 
 
 
-unique_ptr<Function_scope> read_function_scope(const vector<Token>& tokens, Token const * start, Scope* scope)
-{
-    ASSERT(start != nullptr);
-
-    const Token* last = &tokens.back();
-
-    ASSERT(start >= &*tokens.begin());
-    ASSERT(start <= last);
-    ASSERT(start->token == "[" || start->token == "{");
-
-    unique_ptr<Function_scope> fs{new Function_scope()};
-
-    fs->capture_group = read_capture_group(tokens,start,scope);
-    if (fs->capture_group != nullptr) {
-        start = fs->capture_group->end_token + 1;
-        if (start->token != "{") {
-            log_error("Expected \"{\" after capture group",start->context);
-            return nullptr;
-        }
-    } else {
-        fs->parent_scope = scope; // only import parent scope if there is no capture group
-    }
-
-    fs->start_token = start;
-    auto end = read_brace(tokens,start);
-    if (end == nullptr) {
-        add_note("Reading scope");
-        return nullptr;
-    }
-    // todo: read statements
-    fs->end_token = end;
-    return fs;
-}
-
-
-
-unique_ptr<Scope> read_scope(const vector<Token>& tokens, Token const * start, Scope* parent_scope)
-{
-    ASSERT(false, "read_scope not yet implemented");
-    return nullptr;
-    // unique_ptr<Function_scope> fs = read_function_scope(tokens, start, parent_scope);
-    // if (fs == nullptr) return nullptr;
-    // return new Scope(move(fs));
-}
-
-
-
-
 
 
 
@@ -246,7 +200,7 @@ unique_ptr<If_clause> read_if_clause(const vector<Token>& tokens, Token const * 
     unique_ptr<If_clause> clause{new If_clause()};
     clause->start_token = start;
 
-    clause->condition = read_rhs_identifier(tokens,start,scope);
+    clause->condition = read_identifier(tokens,start,scope,true);
     if (clause->condition == nullptr) return nullptr;
     start = clause->condition->end_token + 1;
     if (start > last || start->token != "{") { // capture group not allowed here -> would confuse it with array lookup from condition
@@ -378,7 +332,7 @@ unique_ptr<While_clause> read_while_clause(const vector<Token>& tokens, Token co
     unique_ptr<While_clause> clause{new While_clause()};
     clause->start_token = start;
 
-    clause->condition = read_rhs_identifier(tokens,start,scope);
+    clause->condition = read_identifier(tokens,start,scope,true);
     if (clause->condition == nullptr) return nullptr;
     start = clause->condition->end_token + 1;
     if (start > last || start->token != "{") { // capture group not allowed here -> would confuse it with array lookup from condition
@@ -408,8 +362,7 @@ unique_ptr<Abs_cast> read_cast(const vector<Token>& tokens, Token const * start)
 
     ASSERT(start >= &*tokens.begin());
     ASSERT(start <= last);
-
-    if (start->token != "_") return nullptr;
+    ASSERT(start->token == "_");
 
     unique_ptr<Abs_cast> cast{new Abs_cast()};
     cast->start_token = start;
@@ -443,7 +396,7 @@ unique_ptr<Abs_cast> read_cast(const vector<Token>& tokens, Token const * start)
 
 */
 
-unique_ptr<Abs_identifier> read_lhs_identifier(const vector<Token>& tokens, Token const * start)
+unique_ptr<Abs_identifier> read_lhs_identifier(const vector<Token>& tokens, Token const * start, Scope* scope)
 {
     ASSERT(start != nullptr);
 
@@ -452,18 +405,26 @@ unique_ptr<Abs_identifier> read_lhs_identifier(const vector<Token>& tokens, Toke
     ASSERT(start >= &*tokens.begin());
     ASSERT(start <= last);
 
-    if(start->type != Token_type::IDENTIFIER) return nullptr;
+    if(start->type != Token_type::IDENTIFIER) {
+        log_error("Unexpected token in lhs: expected identifier",start->context);
+        return nullptr;
+    }
 
-    unique_ptr<Abs_identifier> id{new Abs_identifier};
-    id->start_token = start;
-    if ((++start) < last && start->type == Token_type::IDENTIFIER) ++start; // 1 or 2 identifiers are ok (type & name or just the name)
-    id->end_token = start - 1;
-    id->cast = read_cast(tokens, start);
-    if (id->cast != nullptr) id->end_token = id->cast->end_token;
-
-    // TODO: more elaborate, like rhs part?
-
-    return id;
+    // if we have 2 identifiers in a row: assume the first one is a type.
+    // Allow casts after typed identifiers, but no other operator.
+    if (start < last && (start+1)->type == Token_type::IDENTIFIER) {
+        unique_ptr<Abs_identifier> id{new Abs_identifier()};
+        id->start_token = start;
+        id->end_token = start + 1;
+        if (start+2 < last && (start+2)->token == "_") {
+            id->cast = read_cast(tokens, start+2);
+            if (id->cast != nullptr) id->end_token = id->cast->end_token;
+        }
+        return id;
+    }
+    // otherwise, use the more elaborate version of read_identifier.
+    // However, no function calls are allowed in lhs.
+    return read_identifier(tokens, start, scope, false);
 }
 
 
@@ -484,14 +445,21 @@ unique_ptr<Lhs_part> read_lhs_part(const vector<Token>& tokens, Token const * st
     part->start_token = start;
 
     if(start->type == Token_type::IDENTIFIER) {
-        unique_ptr<Abs_identifier> id = read_lhs_identifier(tokens,start);
+        unique_ptr<Abs_identifier> id = read_lhs_identifier(tokens,start,scope);
+        if (id == nullptr) {
+            add_note("In lhs part started at ",part->start_token->context);
+            return nullptr;
+        }
         part->end_token = id->end_token + 1;
-        if (id->cast != nullptr) part->end_token = id->cast->end_token + 1;
         part->identifiers.push_back(move(id));
         return part;
 
     } else if (start->token == "(") {
         part->end_token = read_paren(tokens, start); // so we can return without worrys
+        if (part->end_token == nullptr) {
+            add_note("In lhs part started at ",part->start_token->context);
+            return nullptr;
+        }
 
         if ((++start) > last) {
             log_error("Unexpected end of file in lhs part",last->context);
@@ -507,8 +475,11 @@ unique_ptr<Lhs_part> read_lhs_part(const vector<Token>& tokens, Token const * st
                 log_error("Expected identifier in LHS but found unknown token "+start->token,start->context);
                 return part;
             }
-            unique_ptr<Abs_identifier> id = read_lhs_identifier(tokens,start);
-            if (id == nullptr) return nullptr; // error
+            unique_ptr<Abs_identifier> id = read_lhs_identifier(tokens,start,scope);
+            if (id == nullptr) {
+                add_note("In lhs part started at ",part->start_token->context);
+                return nullptr;
+            }
             start = id->end_token + 1;
             part->identifiers.push_back(move(id));
             if (start > last) return part;
@@ -569,9 +540,43 @@ unique_ptr<Lhs> read_lhs(const vector<Token>& tokens, Token const * start, Scope
 // For_clause
 // While_clause
 
+unique_ptr<Declaration> read_declaration(const vector<Token>& tokens, Token const * start, Scope* scope)
+{
+    ASSERT(start != nullptr);
+
+    const Token* last = &tokens.back();
+
+    ASSERT(start >= &*tokens.begin());
+    ASSERT(start <= last);
+
+    unique_ptr<Declaration> decl{new Declaration()};
+    decl->start_token = start;
+
+    while (start < last) {
+
+        if (start->type != Token_type::IDENTIFIER || (start+1)->type != Token_type::IDENTIFIER) {
+            log_error("Unexpected token in declaration: expected type name and variable name",start->context);
+            return nullptr;
+        }
+
+        unique_ptr<Abs_identifier> id{new Abs_identifier()};
+        id->start_token = start;
+        id->end_token = start+1;
+        decl->identifiers.push_back(move(id));
+
+        if ((start+2) > last || (start+2)->token != ",") {
+            // ok
+            decl->end_token = start+1;
+            return decl;
+        }
+        start+=3;
+    }
+    log_error("Unexpected end of file in declaration",last->context);
+    return nullptr;
+}
 
 
-unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * start, Scope* scope)
+unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * start, Scope* scope, bool allow_function_calls)
 {
     ASSERT(start != nullptr);
 
@@ -581,10 +586,14 @@ unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * 
     ASSERT(start <= last);
 
     // check if, for, while
-    if (start->token == "if") return read_if_clause(tokens,start,scope);
-    if (start->token == "for") return read_for_clause(tokens,start,scope);
-    if (start->token == "while") return read_while_clause(tokens,start,scope);
-
+    if (allow_function_calls) {
+        if (start->token == "if") return read_if_clause(tokens,start,scope);
+        if (start->token == "for") return read_for_clause(tokens,start,scope);
+        if (start->token == "while") return read_while_clause(tokens,start,scope);
+    } else if (start->token == "if" || start->token == "for" || start->token == "while") {
+        log_error("If, for and while clauses are not allowed in context where function calls are not allowed",start->context);
+        return nullptr;
+    }
     // check for end of statement
     // read tokens until ";"
     // if we find a out of parens assignment operator then it's an assignment -> read lhs then rhs
@@ -617,15 +626,39 @@ unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * 
     if (assignment_op_token != nullptr) {
         unique_ptr<Assignment> asgn{new Assignment};
         asgn->start_token = start;
-        asgn->end_token = it;
+        asgn->end_token = it; // ";" token
         asgn->lhs = read_lhs(tokens,start,scope);
         if (asgn->lhs == nullptr) return nullptr;
-        asgn->rhs = read_rhs(tokens,assignment_op_token+1,scope);
+        asgn->rhs = read_rhs(tokens,assignment_op_token+1,scope,allow_function_calls);
         if (asgn->rhs == nullptr) return nullptr;
         ASSERT(asgn->lhs->end_token == assignment_op_token-1);
         ASSERT(asgn->rhs->end_token == it-1);
         return asgn;
     }
+
+    // check for declaration
+    if (start < last && start->type == Token_type::IDENTIFIER && (start+1)->type == Token_type::IDENTIFIER) {
+        auto decl = read_declaration(tokens,start,scope);
+        if (decl == nullptr) return nullptr;
+        ASSERT(decl->end_token == it-1);
+        return decl;
+    }
+
+    // check for function call
+    if (allow_function_calls) {
+        auto id = read_identifier(tokens,start,scope,true);
+        if (id == nullptr) return nullptr;
+
+        ASSERT(id->end_token == it-1); // it should end right before the ";" token
+
+        if (Function_call* fc = dynamic_cast<Function_call*>(id.get())) {
+            unique_ptr<Function_call> fcp{dynamic_cast<Function_call*>(id.release())};
+            return fcp;
+        }
+    }
+
+    log_error("Found something that is not a statement in a context where a statement is expected",start->context);
+    return nullptr;
 
     // things that are not assignments:
     // * declarations
@@ -635,57 +668,15 @@ unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * 
 
     // []{}; anonymous scope
     // []{}.foo()_bar().baz     // function call / cast / getter chain (can start with either an identifier or an anonymous scope)
-
-
-
-
-
-
-    ASSERT(false,"non-assignment statement not implemented yet.");
-    return nullptr;
-
-
-
-
-
-
-    // if (start->token == "(") {
-    //     // lhs should be a single identifier
-    //     if (lhs.parts.empty()) {
-    //         log_error("Unexpected \"(\" token ",start->context);
-    //         return nullptr;
-    //     }
-    //     if (lhs.parts.size() != 1 || lhs.parts[0].size() != 1) {
-    //         log_error("Too many identifiers in front of function call",start->context);
-    //         return nullptr;
-    //     }
-    //     unique_ptr<Function_call> fc{new Function_call()};
-    //     fc->fn_name = lhs.parts[0].identifiers[0].start_token->token;
-    //     fc->start_token = start;
-
-    // }
-
-
-    // RHS:
-    // del 1:
-    // identifier token -> read identifier
-    // fn -> read function definition
-    // struct -> read struct definition
-    // "(" -> read paren
-    // "{" -> read scope
-    //
-    // del 2: (kan hända många gånger)
-    // "." -> läs data från struct
-    // "(" -> function call
-    // "_" -> read cast
-    // ";" -> klar
-    // nåt annat -> ok om rhs slutar på }. Annars compile error "Missing ; at the end of assignment"
 }
 
 
 
 
-unique_ptr<Abs_identifier> read_rhs_identifier(const vector<Token>& tokens, Token const * start, Scope* scope)
+// read start identifier
+// can be an identifier token, an anonymous scope, or a parenthesis that evaluates to one of those things
+// Can not include type. Be wary of special cases in lhs.
+unique_ptr<Abs_identifier> read_identifier(const vector<Token>& tokens, Token const * start, Scope* scope, bool allow_function_calls)
 {
     ASSERT(start != nullptr);
 
@@ -694,16 +685,20 @@ unique_ptr<Abs_identifier> read_rhs_identifier(const vector<Token>& tokens, Toke
     ASSERT(start >= &*tokens.begin());
     ASSERT(start <= last);
 
-    // read start identifier
-    // can be an identifier token, an anonymous scope, or a parenthesis that evaluates to one of those things
     unique_ptr<Abs_identifier> id{new Abs_identifier};
     id->start_token = start;
 
     if (start->type == Token_type::SYMBOL && start->token == "(") {
-        id = read_rhs(tokens, start+1, scope);
+        if (!allow_function_calls) {
+            log_error("Unexpected parens in a context where function calls are not allowed",start->context);
+            return nullptr;
+        }
+
+        id = read_rhs(tokens, start+1, scope, allow_function_calls);
         if (id == nullptr) return nullptr;
         if (id->end_token >= last || (id->end_token+1)->token != ")") {
             log_error("Missing \")\" at the end of parens-enclosed rhs part",(id->end_token+1)->context);
+            add_note("Parens started here ",start->context);
             return nullptr;
         }
         start = id->end_token + 2; // after the ")" token
@@ -720,12 +715,20 @@ unique_ptr<Abs_identifier> read_rhs_identifier(const vector<Token>& tokens, Toke
     while(start <= last) {
 
         if (start->token == "(") {
+            if (!allow_function_calls) {
+                log_error("Unexpected parens in a context where function calls are not allowed",start->context);
+                return nullptr;
+            }
             // read function call
             unique_ptr<Function_call> fc{new Function_call()};
             fc->start_token = id->start_token;
-            fc->function_identifier = read_rhs(tokens,start,scope);
+            fc->function_identifier = read_rhs(tokens,start,scope,allow_function_calls);
             if (fc->function_identifier == nullptr) return nullptr;
             fc->end_token = fc->function_identifier->end_token + 1; // ")" token
+            if (fc->end_token->token != ")") {
+                log_error("Unexpected token after function call parameters. Expected \")\".", fc->end_token->context);
+                return nullptr;
+            }
             start = fc->function_identifier->end_token + 2; // after the ")" token
             fc->function_identifier = move(id);
             id = move(fc);
@@ -759,7 +762,7 @@ unique_ptr<Abs_identifier> read_rhs_identifier(const vector<Token>& tokens, Toke
             inf->lhs = move(id);
             inf->op_token = start;
             if ((++start) > last) break; // eof
-            inf->rhs = read_rhs_identifier(tokens,start,scope);
+            inf->rhs = read_identifier(tokens,start,scope,allow_function_calls);
             if (inf->rhs == nullptr) return nullptr;
             inf->end_token = inf->rhs->end_token;
             id = move(id);
@@ -769,13 +772,13 @@ unique_ptr<Abs_identifier> read_rhs_identifier(const vector<Token>& tokens, Toke
             return id;
         }
     }
-    log_error("Unexpected end of file in rhs.",last->context);
+    log_error("Unexpected end of file.",last->context);
     return nullptr;
 }
 
 
 
-unique_ptr<Rhs> read_rhs(const vector<Token>& tokens, Token const * start, Scope* scope)
+unique_ptr<Rhs> read_rhs(const vector<Token>& tokens, Token const * start, Scope* scope, bool allow_function_calls)
 {
     ASSERT(start != nullptr);
 
@@ -787,7 +790,7 @@ unique_ptr<Rhs> read_rhs(const vector<Token>& tokens, Token const * start, Scope
     unique_ptr<Rhs> rhs{new Rhs()};
 
     do {
-        unique_ptr<Abs_identifier> id = read_rhs_identifier(tokens,start,scope);
+        unique_ptr<Abs_identifier> id = read_identifier(tokens,start,scope,allow_function_calls);
         if (id == nullptr) return rhs;
         start = id->end_token + 1;
         rhs->identifiers.push_back(move(id));
@@ -892,4 +895,114 @@ d = (e = S()).i; // samma som ovan, men e är dependant on function S (som defin
 
 
 */
+
+
+
+
+unique_ptr<Function_scope> read_function_scope(const vector<Token>& tokens, Token const * start, Scope* scope)
+{
+    ASSERT(start != nullptr);
+
+    const Token* last = &tokens.back();
+
+    ASSERT(start >= &*tokens.begin());
+    ASSERT(start <= last);
+    ASSERT(start->token == "[" || start->token == "{");
+
+    unique_ptr<Function_scope> fs{new Function_scope()};
+
+    fs->capture_group = read_capture_group(tokens,start,scope);
+    if (fs->capture_group != nullptr) {
+        start = fs->capture_group->end_token + 1;
+        if (start->token != "{") {
+            log_error("Expected \"{\" after capture group",start->context);
+            return nullptr;
+        }
+    } else {
+        fs->parent_scope = scope; // only import parent scope if there is no capture group
+    }
+
+    fs->start_token = start;
+    auto end = read_brace(tokens,start);
+    if (end == nullptr) {
+        add_note("Reading scope");
+        return nullptr;
+    }
+    // todo: read statements
+    fs->end_token = end;
+    return fs;
+}
+
+
+
+
+unique_ptr<Scope> read_scope(const vector<Token>& tokens, Token const * start, Scope* parent_scope)
+{
+    ASSERT(false, "read_scope not yet implemented");
+    return nullptr;
+    // unique_ptr<Function_scope> fs = read_function_scope(tokens, start, parent_scope);
+    // if (fs == nullptr) return nullptr;
+    // return new Scope(move(fs));
+
+
+
+
+/*
+
+a scope is filled with identifiers that gets declared
+each identifier should have a declaration context that is a statement
+
+
+read statements:
+    assert that they are declarations or assignments (not function calls)
+    add the statement to the scope. (unique_ptr)
+    add all declared identifiers to the scope. Each identifier has a (weak) pointer to the statement.
+
+
+
+
+
+
+
+
+
+todo: read_rhs med bool allow_function_call
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
 
