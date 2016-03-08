@@ -1,12 +1,12 @@
 
-int i;
+// int i;
 
 
 
-// foo : fn(int a, float b) -> int, int
-// {
-//     return a, b;
-// }
+foo : fn(int a, float b) -> int, int
+{
+    return a, b;
+};
 
 
 // a, b = foo(2,3.5);
@@ -17,16 +17,16 @@ int i;
 // s : struct {
 //     int a;
 //     int b;
-// }
+// };
+
+/*
+scope = {
 
 
-// scope : {
 
 
-
-
-// }
-
+};
+*/
 
 
 

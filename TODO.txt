@@ -73,13 +73,13 @@ read_rhs_part: array lookup "id[rhs]"
 
 read_range: läs varje del av range definition, nuvarande lösning är väldigt temporär
 
-read_lhs_identifier: som read_rhs_part, fast tillåt identifier declarations och inga parenteser
-
 Var ska man lägga till identifiers till scope?
     Ska inte lägga till om man är i function call context; endast om man är i static scope context
 
 Read identifiers i capture group
 Read statements i function_scope
+
+Read keywords in the beginning of rhs: at least "fn" and "struct"
 
 
 

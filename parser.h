@@ -70,7 +70,7 @@ TODO:
 
 
 
-// For paren text. TODO: remove
+// For paren test. TODO: remove
 Token const * read_paren(const std::vector<Token>& tokens, Token const * start);
 Token const * read_bracket(const std::vector<Token>& tokens, Token const * start);
 Token const * read_brace(const std::vector<Token>& tokens, Token const * start);
@@ -116,12 +116,8 @@ struct Scope : Abs_identifier
 {
     std::vector<Scope*> imported_scopes;
     std::unique_ptr<Capture_group> capture_group = nullptr;
-    std::vector<Abs_identifier> identifiers;
-
-    // Scope() = default;
-    // Scope(const Scope&) = default;
-    // Scope(Scope&&) = default;
-    // Scope(Function_scope&& fs) : Abs_identifier{fs}, capture_group{std::move(fs.capture_group)} { imported_scopes.push_back(fs.parent_scope); }
+    std::vector<std::unique_ptr<Statement>> statements;
+    std::vector<std::unique_ptr<Abs_identifier>> identifiers;
 };
 
 
@@ -133,10 +129,10 @@ struct Function_scope : Abs_syntax
 };
 
 
-struct Local_scope : Scope
-{
-    std::vector<std::unique_ptr<Statement>> defer_statements;
-};
+// struct Local_scope : Scope
+// {
+//     std::vector<std::unique_ptr<Statement>> defer_statements;
+// };
 
 
 
@@ -183,6 +179,7 @@ struct Assignment : Statement
 {
     std::unique_ptr<Lhs> lhs;
     std::unique_ptr<Rhs> rhs;
+    Token const * op_token;
 };
 
 struct Function_call : Abs_identifier, Statement
@@ -233,6 +230,9 @@ struct While_clause : Statement
     std::unique_ptr<Function_scope> loop;
 };
 
+std::unique_ptr<Scope> parse_tokens(const std::vector<Token>& t);
+std::unique_ptr<Scope> parse_file(const std::string& file);
+std::unique_ptr<Scope> parse_string(const std::string& string);
 
 
 #endif

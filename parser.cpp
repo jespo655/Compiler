@@ -631,6 +631,9 @@ unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * 
         if (asgn->lhs == nullptr) return nullptr;
         asgn->rhs = read_rhs(tokens,assignment_op_token+1,scope,allow_function_calls);
         if (asgn->rhs == nullptr) return nullptr;
+
+        // TODO: log_error if asserts are false - så man kan se vad som hände
+
         ASSERT(asgn->lhs->end_token == assignment_op_token-1);
         ASSERT(asgn->rhs->end_token == it-1);
         return asgn;
@@ -896,7 +899,22 @@ d = (e = S()).i; // samma som ovan, men e är dependant on function S (som defin
 
 */
 
+Token const * find_next(const vector<Token>& tokens, Token const * start, const string& str)
+{
+    ASSERT(start != nullptr);
 
+    const Token* last = &tokens.back();
+
+    ASSERT(start >= &*tokens.begin());
+    ASSERT(start <= last);
+
+    do {
+        if (start->token == str) break;
+        else if (start->token == "(") start = read_paren(tokens,start);
+        else if (start->token == "[") start = read_bracket(tokens,start);
+        else if (start->token == "{") start = read_brace(tokens,start);
+    } while ((++start) <= last);
+}
 
 
 unique_ptr<Function_scope> read_function_scope(const vector<Token>& tokens, Token const * start, Scope* scope)
@@ -911,8 +929,9 @@ unique_ptr<Function_scope> read_function_scope(const vector<Token>& tokens, Toke
 
     unique_ptr<Function_scope> fs{new Function_scope()};
 
-    fs->capture_group = read_capture_group(tokens,start,scope);
-    if (fs->capture_group != nullptr) {
+    if (start->token == "[") {
+        fs->capture_group = read_capture_group(tokens,start,scope);
+        if (fs->capture_group == nullptr) return nullptr;
         start = fs->capture_group->end_token + 1;
         if (start->token != "{") {
             log_error("Expected \"{\" after capture group",start->context);
@@ -938,8 +957,55 @@ unique_ptr<Function_scope> read_function_scope(const vector<Token>& tokens, Toke
 
 unique_ptr<Scope> read_scope(const vector<Token>& tokens, Token const * start, Scope* parent_scope)
 {
-    ASSERT(false, "read_scope not yet implemented");
-    return nullptr;
+    ASSERT(start != nullptr);
+
+    const Token* last = &tokens.back();
+
+    ASSERT(start >= &*tokens.begin());
+    ASSERT(start <= last);
+    ASSERT(parent_scope == nullptr || start->token == "[" || start->token == "{"); // top level scopes don't need {} tokens
+
+    unique_ptr<Scope> s{new Scope()};
+
+    if (start->token == "[") {
+        s->capture_group = read_capture_group(tokens,start,parent_scope);
+        if (s->capture_group == nullptr) return nullptr;
+        start = s->capture_group->end_token + 1;
+        if (start->token != "{") {
+            log_error("Expected \"{\" after capture group",start->context);
+            return nullptr;
+        }
+    } else {
+        s->imported_scopes.push_back(parent_scope); // only import parent scope if there is no capture group
+    }
+
+    s->start_token = start;
+    bool errors = false;
+    while (start <= last) {
+        unique_ptr<Statement> statement = read_statement(tokens,start,s.get(),false);
+        if (statement == nullptr) {
+            errors = true;
+            start = find_next(tokens,start,";");
+            if (start == nullptr) break;
+        } else {
+            start = statement->end_token + 1;
+            if (start > last || start->token != ";") {
+                log_error("Expected \";\" after statement!",last->context);
+                errors = true;
+            } else {
+                s->statements.push_back(move(statement));
+            }
+        }
+        start++;
+    }
+    if (errors) return nullptr;
+    return s;
+
+
+
+
+    // ASSERT(false, "read_scope not yet implemented");
+    // return nullptr;
     // unique_ptr<Function_scope> fs = read_function_scope(tokens, start, parent_scope);
     // if (fs == nullptr) return nullptr;
     // return new Scope(move(fs));
@@ -1006,3 +1072,26 @@ todo: read_rhs med bool allow_function_call
 
 }
 
+
+
+
+
+
+
+
+
+std::unique_ptr<Scope> parse_tokens(const std::vector<Token>& t)
+{
+    if (t.empty()) return nullptr;
+    return read_scope(t,&t[0],nullptr);
+}
+
+std::unique_ptr<Scope> parse_file(const std::string& file)
+{
+    return parse_tokens(get_tokens_from_file(file));
+}
+
+std::unique_ptr<Scope> parse_string(const std::string& string)
+{
+    return parse_tokens(get_tokens_from_string(string));
+}
