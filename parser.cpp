@@ -450,16 +450,11 @@ unique_ptr<Lhs_part> read_lhs_part(const vector<Token>& tokens, Token const * st
             add_note("In lhs part started at ",part->start_token->context);
             return nullptr;
         }
-        part->end_token = id->end_token + 1;
+        part->end_token = id->end_token;
         part->identifiers.push_back(move(id));
         return part;
 
     } else if (start->token == "(") {
-        part->end_token = read_paren(tokens, start); // so we can return without worrys
-        if (part->end_token == nullptr) {
-            add_note("In lhs part started at ",part->start_token->context);
-            return nullptr;
-        }
 
         if ((++start) > last) {
             log_error("Unexpected end of file in lhs part",last->context);
@@ -473,7 +468,7 @@ unique_ptr<Lhs_part> read_lhs_part(const vector<Token>& tokens, Token const * st
         do {
             if (start->type != Token_type::IDENTIFIER) {
                 log_error("Expected identifier in LHS but found unknown token "+start->token,start->context);
-                return part;
+                return nullptr;
             }
             unique_ptr<Abs_identifier> id = read_lhs_identifier(tokens,start,scope);
             if (id == nullptr) {
@@ -484,12 +479,15 @@ unique_ptr<Lhs_part> read_lhs_part(const vector<Token>& tokens, Token const * st
             part->identifiers.push_back(move(id));
             if (start > last) return part;
 
-            if (start->token == ")") return part; // ok
+            if (start->token == ")") {
+                part->end_token = start;
+                return part; // ok
+            }
             if (start->token != "=") {
                 log_error("Unexpected token after identifier in lhs part Expected \")\" or \"=\" but found "+start->token,start->context);
                 return part;
             }
-        } while ((++start) > last);
+        } while ((++start) <= last);
         log_error("Unexpected end of file in lhs part.",last->context);
         return nullptr;
     }
@@ -602,7 +600,7 @@ unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * 
     Token const* assignment_op_token = nullptr;
     Token const* it = start;
 
-    while((++it) <= last) {
+    do {
         if (it->token == ";") break;
         else if (it->token == "(") it = read_paren(tokens,it);
         else if (it->token == "[") it = read_bracket(tokens,it);
@@ -617,7 +615,8 @@ unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * 
             assignment_op_token = it;
         }
         if (it == nullptr) return nullptr; // from read_paren and Co.
-    }
+    } while((++it) <= last);
+
     if (it > last) {
         log_error("Unexpected end of file: expected \";\" after statement",last->context);
         add_note("Statement started here: ",start->context);
@@ -625,17 +624,25 @@ unique_ptr<Statement> read_statement(const vector<Token>& tokens, Token const * 
 
     if (assignment_op_token != nullptr) {
         unique_ptr<Assignment> asgn{new Assignment};
+        asgn->op_token = assignment_op_token;
         asgn->start_token = start;
-        asgn->end_token = it; // ";" token
+        asgn->end_token = it-1; // before the ";" token
         asgn->lhs = read_lhs(tokens,start,scope);
         if (asgn->lhs == nullptr) return nullptr;
+        if (asgn->lhs->end_token != assignment_op_token-1) {
+            log_error("Unexpected token after lhs: \""+(asgn->lhs->end_token+1)->token+"\"",(asgn->lhs->end_token+1)->context);
+            add_note("Expected a well-formatted lhs until the assignment operator here: ", assignment_op_token->context);
+            return nullptr;
+        }
         asgn->rhs = read_rhs(tokens,assignment_op_token+1,scope,allow_function_calls);
         if (asgn->rhs == nullptr) return nullptr;
-
-        // TODO: log_error if asserts are false - så man kan se vad som hände
-
-        ASSERT(asgn->lhs->end_token == assignment_op_token-1);
-        ASSERT(asgn->rhs->end_token == it-1);
+        if (asgn->rhs->end_token != it-1) {
+            log_error("Unexpected token after rhs: \""+(asgn->rhs->end_token+1)->token+"\"",(asgn->lhs->end_token+1)->context);
+            add_note("Expected a well-formatted rhs until the end of statement here: ", asgn->end_token->context);
+            return nullptr;
+        }
+        cerr << "we should have a well-formatted rhs. trying rhs.get(): " << endl; // @debug
+        cerr << "ptr = " << asgn->rhs.get() << endl;
         return asgn;
     }
 
@@ -708,6 +715,12 @@ unique_ptr<Abs_identifier> read_identifier(const vector<Token>& tokens, Token co
     } else if (start->type == Token_type::SYMBOL && start->token == "[" || start->token == "{") {
         id = read_scope(tokens, start, scope);
     } else if (start->type == Token_type::IDENTIFIER) {
+        id->end_token = start;
+    } else if (start->type == Token_type::STRING) {
+        id->end_token = start;
+    } else if (start->type == Token_type::INTEGER) {
+        id->end_token = start;
+    } else if (start->type == Token_type::FLOAT) {
         id->end_token = start;
     } else {
         log_error("Unexpected token in rhs: expected identifier but found unknown token "+start->token,start->context);
@@ -791,21 +804,24 @@ unique_ptr<Rhs> read_rhs(const vector<Token>& tokens, Token const * start, Scope
     ASSERT(start <= last);
 
     unique_ptr<Rhs> rhs{new Rhs()};
+    rhs->start_token = start;
 
     do {
         unique_ptr<Abs_identifier> id = read_identifier(tokens,start,scope,allow_function_calls);
-        if (id == nullptr) return rhs;
+        if (id == nullptr) return nullptr;
+
         start = id->end_token + 1;
         rhs->identifiers.push_back(move(id));
 
         if (start > last) break; // eof
+
         if (start->token != ",") {
             // end of rhs - ok
             rhs->end_token = start-1;
             return rhs;
         }
 
-    } while ((++start) > last);
+    } while ((++start) <= last);
 
     log_error("Unexpected end of file in rhs.",last->context);
     return nullptr;
@@ -909,11 +925,13 @@ Token const * find_next(const vector<Token>& tokens, Token const * start, const 
     ASSERT(start <= last);
 
     do {
-        if (start->token == str) break;
+        if (start->token == str) return start;
         else if (start->token == "(") start = read_paren(tokens,start);
         else if (start->token == "[") start = read_bracket(tokens,start);
         else if (start->token == "{") start = read_brace(tokens,start);
     } while ((++start) <= last);
+
+    return nullptr;
 }
 
 

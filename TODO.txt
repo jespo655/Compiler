@@ -83,6 +83,19 @@ Read keywords in the beginning of rhs: at least "fn" and "struct"
 
 
 
+struct Type_identifier : Abs_syntax
+{
+    bool const; // not part of the type
+}
+
+struct Named_identifier
+{
+    Token const * name_token;
+    unique_ptr<Type_identifier> type_id;
+    // cast?
+}
+
+
 
 
 

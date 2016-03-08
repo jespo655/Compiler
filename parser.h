@@ -70,7 +70,7 @@ TODO:
 
 
 
-// For paren test. TODO: remove
+// For paren test. TODO: remove @tests
 Token const * read_paren(const std::vector<Token>& tokens, Token const * start);
 Token const * read_bracket(const std::vector<Token>& tokens, Token const * start);
 Token const * read_brace(const std::vector<Token>& tokens, Token const * start);
@@ -93,7 +93,7 @@ struct Abs_cast : Abs_syntax
 
 struct Abs_identifier : virtual Abs_syntax
 {
-    std::unique_ptr<Abs_cast> cast{nullptr};
+    std::unique_ptr<Abs_cast> cast = nullptr;
 };
 
 
@@ -106,7 +106,7 @@ struct Statement : virtual Abs_syntax
 
 struct Capture_group : Abs_syntax
 {
-    std::vector<Abs_identifier> identifiers; // For now: capture by value only. TODO: capture by reference ("points" to identifiers in other scopes)
+    std::vector<Abs_identifier> identifiers{}; // For now: capture by value only. TODO: capture by reference ("points" to identifiers in other scopes)
 };
 
 
@@ -114,10 +114,10 @@ struct Capture_group : Abs_syntax
 
 struct Scope : Abs_identifier
 {
-    std::vector<Scope*> imported_scopes;
+    std::vector<Scope*> imported_scopes{};
     std::unique_ptr<Capture_group> capture_group = nullptr;
-    std::vector<std::unique_ptr<Statement>> statements;
-    std::vector<std::unique_ptr<Abs_identifier>> identifiers;
+    std::vector<std::unique_ptr<Statement>> statements{};
+    std::vector<std::unique_ptr<Abs_identifier>> identifiers{};
 };
 
 
@@ -125,7 +125,7 @@ struct Function_scope : Abs_syntax
 {
     Scope* parent_scope = nullptr;
     std::unique_ptr<Capture_group> capture_group = nullptr;
-    std::vector<std::unique_ptr<Statement>> statements;
+    std::vector<std::unique_ptr<Statement>> statements{};
 };
 
 
@@ -152,13 +152,13 @@ struct Function : Abs_syntax
 
 struct Lhs_part : Abs_syntax
 {
-    std::vector<std::unique_ptr<Abs_identifier>> identifiers; // must have the same type (after cast)
+    std::vector<std::unique_ptr<Abs_identifier>> identifiers{}; // must have the same type (after cast)
     // Type_info* get_type(); // nullptr if unknown
 };
 
 struct Lhs : Abs_syntax
 {
-    std::vector<std::unique_ptr<Lhs_part>> parts;
+    std::vector<std::unique_ptr<Lhs_part>> parts{};
 };
 
 
@@ -167,45 +167,45 @@ struct Rhs : Abs_identifier
 {
     // a comma separated list of rhs parts
     // each part is something that can be evaluated to one or more values
-    std::vector<std::unique_ptr<Abs_identifier>> identifiers;
+    std::vector<std::unique_ptr<Abs_identifier>> identifiers{};
 };
 
 struct Declaration : Statement
 {
-    std::vector<std::unique_ptr<Abs_identifier>> identifiers; // several identifiers can be declared on the same line
+    std::vector<std::unique_ptr<Abs_identifier>> identifiers{}; // several identifiers can be declared on the same line
 };
 
 struct Assignment : Statement
 {
-    std::unique_ptr<Lhs> lhs;
-    std::unique_ptr<Rhs> rhs;
-    Token const * op_token;
+    std::unique_ptr<Lhs> lhs = nullptr;
+    std::unique_ptr<Rhs> rhs = nullptr;
+    Token const * op_token = nullptr;
 };
 
 struct Function_call : Abs_identifier, Statement
 {
-    std::unique_ptr<Abs_identifier> function_identifier;
-    std::unique_ptr<Rhs> arguments;
+    std::unique_ptr<Abs_identifier> function_identifier = nullptr;
+    std::unique_ptr<Rhs> arguments = nullptr;
 };
 
 struct Getter : Abs_identifier
 {
-    std::unique_ptr<Abs_identifier> struct_identifier;
-    Token const* data_identifier_token;
+    std::unique_ptr<Abs_identifier> struct_identifier = nullptr;
+    Token const* data_identifier_token = nullptr;
 };
 
 struct Infix_op : Abs_identifier
 {
-    std::unique_ptr<Abs_identifier> lhs;
-    std::unique_ptr<Abs_identifier> rhs;
-    Token const * op_token;
+    std::unique_ptr<Abs_identifier> lhs = nullptr;
+    std::unique_ptr<Abs_identifier> rhs = nullptr;
+    Token const * op_token = nullptr;
 };
 
 struct If_clause : Statement
 {
-    std::unique_ptr<Abs_identifier> condition; // must evaluate to exactly one bool
-    std::unique_ptr<Function_scope> if_true;
-    std::unique_ptr<Function_scope> if_false;
+    std::unique_ptr<Abs_identifier> condition = nullptr; // must evaluate to exactly one bool
+    std::unique_ptr<Function_scope> if_true = nullptr;
+    std::unique_ptr<Function_scope> if_false = nullptr;
 };
 
 
@@ -220,14 +220,14 @@ struct Range : Abs_syntax
 
 struct For_clause : Statement
 {
-    std::unique_ptr<Range> range;
-    std::unique_ptr<Function_scope> loop;
+    std::unique_ptr<Range> range = nullptr;
+    std::unique_ptr<Function_scope> loop = nullptr;
 };
 
 struct While_clause : Statement
 {
-    std::unique_ptr<Abs_identifier> condition; // must evaluate to exactly one bool
-    std::unique_ptr<Function_scope> loop;
+    std::unique_ptr<Abs_identifier> condition = nullptr; // must evaluate to exactly one bool
+    std::unique_ptr<Function_scope> loop = nullptr;
 };
 
 std::unique_ptr<Scope> parse_tokens(const std::vector<Token>& t);

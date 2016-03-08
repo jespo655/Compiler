@@ -29,6 +29,7 @@ void log_error(const string& msg, const Token_context& context)
         << ", line " << context.line
         << ", position " << context.position << "): "
         << msg << endl;
+    err_count++;
 }
 
 void add_note(const std::string& msg, const Token_context& context)

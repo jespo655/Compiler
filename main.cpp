@@ -63,6 +63,7 @@ int parser_test()
 {
     unique_ptr<Scope> scope = parse_file("test.jai");
     exit_if_errors();
+    cout << "printing syntax tree: " << endl;
     print_abs_stx(scope.get());
 }
 
@@ -206,11 +207,11 @@ void print_abs_stx(Abs_syntax* abstx, int indent_level)
 
     else if (Assignment* p = dynamic_cast<Assignment*>(abstx)) {
         indent(indent_level); cout << "Assignment: " << endl;
-        indent(indent_level); cout << "Lhs: " << (Abs_syntax*)p->lhs.get() << endl;
+        indent(indent_level); cout << "Operator: " << p->op_token->token << endl; // (p->op_token?p->op_token->token:"nullptr")
+        indent(indent_level); cout << "Lhs: " << (Abs_syntax*)p->lhs.get() << endl; // this is working fine
         print_abs_stx(p->lhs.get(),indent_level+1);
-        indent(indent_level); cout << "Rhs: " << (Abs_syntax*)p->rhs.get() << endl;
+        indent(indent_level); cout << "Rhs: " << (Abs_syntax*)p->rhs.get() << endl; // this is crashing. ?????
         print_abs_stx(p->rhs.get(),indent_level+1);
-        indent(indent_level); cout << "Operator: " << p->op_token << endl; // (p->op_token?p->op_token->token:"nullptr")
     }
 
     else if (Declaration* p = dynamic_cast<Declaration*>(abstx)) {
@@ -270,7 +271,7 @@ void print_abs_stx(Abs_syntax* abstx, int indent_level)
     }
 
     else {
-        indent(indent_level); cout << "Unknown pointer type." << endl;
+        indent(indent_level); cout << "Unknown abs.stx: " << abstx << endl;
     }
 }
 
