@@ -49,7 +49,7 @@ public:
     std::string read_line();
 
     Stream() : stream{std::cin} {}
-    Stream(std::istream& s, std::string source = "UNKNOWN") : stream{s} { context.file = source; read_next_utf8_token(); }
+    Stream(std::istream& s, std::string source = "") : stream{s} { context.file = source; read_next_utf8_token(); }
 
     bool operator==(const Stream& o) const { return &stream == &o.stream; };
 
@@ -111,6 +111,6 @@ Token_iterator begin(Stream& s);
 Token_iterator end(Stream& s);
 
 std::vector<Token> get_tokens_from_file(const std::string& source_file);
-std::vector<Token> get_tokens_from_string(const std::string& source_file);
+std::vector<Token> get_tokens_from_string(const std::string& source, const std::string& string_name = "");
 
 #endif

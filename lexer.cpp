@@ -12,10 +12,29 @@ using namespace std;
     tokenize it and make a token iterator
 */
 
-std::vector<Token> get_tokens_from_string(const std::string& source_file)
+void add_eof_token(vector<Token>& tokens)
 {
-    ASSERT(false,"get_tokens_from_string not yet implemented!");
-    return {};
+    Token t;
+    t.token = "eof";
+    t.type = Token_type::UNKNOWN; // this is what everything should break on in the parser
+    t.context.position = 1;
+    if (!tokens.empty())
+        t.context.line = tokens.back().context.line + 1;
+    tokens.push_back(t);
+}
+
+
+std::vector<Token> get_tokens_from_string(const std::string& source, const std::string& string_name)
+{
+    istringstream iss{source};
+    Stream s{iss,string_name};
+    vector<Token> tokens;
+    for (Token& t : s) {
+        tokens.push_back(t);
+    }
+
+    add_eof_token(tokens);
+    return tokens;
 }
 
 
@@ -33,6 +52,7 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
 
     file.close();
 
+    add_eof_token(tokens);
     return tokens;
 }
 

@@ -2,18 +2,30 @@ TODO:
 
 
 
-Omstrukturering:
+// arrays (@arrays)
+
+rhs continuation: [id/constant] (array lookup)
+
+typer: kan ha array specifier:
+    int [2] a; // a är en 2 lång array av ints (allockeras på stacken)
+    int [..] a; // a är en dynamisk array av ints (allockeras på heapen, på stacken sparas endast en pekare)
+    int [2,3] a; // a är en 2-dimensionell array av ints (sparas som en vanlig 1-dim)
+    int [2,..] a; // (sparas på stacken som en array av pekare till int[..])
+    int [..,2] a; // (sparas på heapen som en dynamisk array av int[2])
+
+    [3] a; // error - no type (var försiktig med att inte blanda ihop detta med capture group)
 
 
-Lexer skapar en lista av well-formed tokens.
-Parser skapar en lista av contexts, där varje context har pekare in i token-listan. (början och slut)
-    + syntaxträd (huvudklass: Abstract_syntax)
-    + pekare in i syntaxträdet till icke-färdiga saker (not yet fully derived)
+// type checker:
 
+compilation_unit
+har en lista av saker som är beroende av den
+har en counter på antalet saker den är beroende av
 
+varje gång man lyckas få ner dependancy count till 0 -> resolva!
+    sen -> gå igenom listan av dependants och minska deras dep.count med 1.
 
-
-
+alla saker man behöver veta ska sparas i scope: typedefs, identifier namn med type, etc.
 
 
 
@@ -96,10 +108,11 @@ struct Named_identifier
 }
 
 
+Istället för att skicka med en lista av tokens överallt: skicka med const Token*first och const Token*last.
+    Beginning of list-check är inte nödvändig.
+    Börja med const Token* it = first
 
-
-
-
+Gå över till jai-stype := assignment syntax.
 
 
 
@@ -188,6 +201,6 @@ istället för att pulla in parent scope: lägg endast till specificerade identi
 
 // inte så viktigt:
 
-namespace
+wrappa compiler i ett namespace
 file ending
 

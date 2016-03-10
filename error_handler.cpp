@@ -5,6 +5,12 @@ using namespace std;
 
 int err_count = 0;
 int err_max = 100;
+bool should_log = true;
+
+void set_logging(bool b)
+{
+    should_log = b;
+}
 
 void exit_if_errors()
 {
@@ -25,8 +31,13 @@ void check_for_termination()
 
 void log_error(const string& msg, const Token_context& context)
 {
-    cerr << endl << "(In " << context.file
-        << ", line " << context.line
+    if (!should_log) return;
+    if (!context.file.empty()) {
+        cerr << endl << "(In " << context.file << ", ";
+    } else {
+        cerr << endl << "(At ";
+    }
+    cerr << "line " << context.line
         << ", position " << context.position << "): "
         << msg << endl;
     err_count++;
@@ -34,6 +45,7 @@ void log_error(const string& msg, const Token_context& context)
 
 void add_note(const std::string& msg, const Token_context& context)
 {
+    if (!should_log) return;
     cerr << "    Note: " << msg
         << "(line " << context.line
         << ", position " << context.position
@@ -42,6 +54,7 @@ void add_note(const std::string& msg, const Token_context& context)
 
 void add_note(const std::string& msg)
 {
+    if (!should_log) return;
     cerr << "    Note: " << msg << endl;
 }
 

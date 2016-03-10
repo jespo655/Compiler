@@ -34,14 +34,19 @@ int paren_test()
 
 int lexer_test()
 {
-    auto tokens = get_tokens_from_file("test.jai");
+    // auto tokens = get_tokens_from_file("test.jai");
+    auto tokens = get_tokens_from_string("\n\
+string with newlines\n\
+\" and stuff\"");
+    // auto tokens = get_tokens_from_string("");
+
     for (const Token& t : tokens) {
-        cout << "(file " << t.context.file
-            << ", line " << t.context.line
-            << ", pos " << t.context.position
-            << ") token: " << t.token << endl;
+        log_error(t.token,t.context);
+        // cout << "(file " << t.context.file
+        //     << ", line " << t.context.line
+        //     << ", pos " << t.context.position
+        //     << ") token: " << t.token << endl;
     }
-    printf("End of file\n");
 }
 
 
@@ -75,8 +80,8 @@ int parser_test()
 
 int main()
 {
-    return parser_test();
-    // return lexer_test();
+    // return parser_test();
+    return lexer_test();
     // return paren_test();
     cerr << "main.cpp: empty main" << endl;
 }
@@ -248,8 +253,8 @@ void print_abs_stx(Abs_syntax* abstx, int indent_level)
 
     else if (Scope* p = dynamic_cast<Scope*>(abstx)) {
         indent(indent_level); cout << "Scope: " << endl;
-        if (p->capture_group != nullptr) indent(indent_level); cout << "Has capture group." << endl;
-        if (!p->imported_scopes.empty()) indent(indent_level); cout << "Has " << p->imported_scopes.size() << " imported scopes." << endl;
+        if (p->capture_group != nullptr) { indent(indent_level); cout << "Has capture group." << endl; }
+        if (!p->imported_scopes.empty()) { indent(indent_level); cout << "Has " << p->imported_scopes.size() << " imported scopes." << endl; }
         for (unique_ptr<Abs_identifier>& id : p->identifiers) {
             indent(indent_level); cout << "Id: " << (Abs_syntax*)id.get() << endl;
             print_abs_stx(id.get(),indent_level+1);
@@ -262,8 +267,8 @@ void print_abs_stx(Abs_syntax* abstx, int indent_level)
 
     else if (Function_scope* p = dynamic_cast<Function_scope*>(abstx)) {
         indent(indent_level); cout << "Function_scope: " << endl;
-        if (p->parent_scope != nullptr) indent(indent_level); cout << "Has parent scope." << endl;
-        if (p->capture_group != nullptr) indent(indent_level); cout << "Has capture group." << endl;
+        if (p->parent_scope != nullptr) { indent(indent_level); cout << "Has parent scope." << endl; }
+        if (p->capture_group != nullptr) { indent(indent_level); cout << "Has capture group." << endl; }
         for (unique_ptr<Statement>& id : p->statements) {
             indent(indent_level); cout << "Statement: " << (Abs_syntax*)id.get() << endl;
             print_abs_stx(id.get(),indent_level+1);
