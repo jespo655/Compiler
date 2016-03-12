@@ -5,7 +5,7 @@
 #include <iostream> // istream
 #include <vector>
 
-
+#undef EOF // we want to use this for the Token_type struct
 
 enum struct Token_type
 {
@@ -15,7 +15,9 @@ enum struct Token_type
     KEYWORD,
     INTEGER,
     FLOAT,
-    STRING // without the "" around
+    STRING, // without the "" around
+    BOOL,
+    EOF // end of file
 };
 
 struct Token_context
@@ -36,6 +38,8 @@ struct Token
     bool operator!=(const Token& t) { return !(*this==t); }
 };
 
+
+std::ostream& operator << (std::ostream& os, const Token_context& context);
 
 
 class Stream

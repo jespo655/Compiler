@@ -16,7 +16,7 @@ void add_eof_token(vector<Token>& tokens)
 {
     Token t;
     t.token = "eof";
-    t.type = Token_type::UNKNOWN; // this is what everything should break on in the parser
+    t.type = Token_type::EOF; // this is what everything should break on in the parser
     t.context.position = 1;
     if (!tokens.empty())
         t.context.line = tokens.back().context.line + 1;
@@ -62,6 +62,16 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
 
 
 
+std::ostream& operator << (std::ostream& os, const Token_context& context)
+{
+    if (!context.file.empty()) {
+        os << "(In " << context.file << ", ";
+    } else {
+        os << "(At ";
+    }
+    os << "line " << context.line << ", position " << context.position << ")";
+    return os;
+}
 
 
 
@@ -360,7 +370,12 @@ bool is_keyword(const string& s)
     return false;
 }
 
-// sort(symbols.begin(),symbols.end())
+bool is_bool_literal(const string& s)
+{
+    return s == "true" || s == "false";
+}
+
+// sort(symbols.begin(),symbols.end()) // @optimization
 
 
 void read_symbol(Stream& s, Token& t)
@@ -522,6 +537,8 @@ Token Token_iterator::read_next_token()
         t.type = Token_type::IDENTIFIER;
         if (is_keyword(t.token))
             t.type = Token_type::KEYWORD;
+        else if (is_bool_literal(t.token))
+            t.type = Token_type::BOOL;
         return t;
     }
 

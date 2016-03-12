@@ -29,27 +29,19 @@ void check_for_termination()
     }
 }
 
+
+
 void log_error(const string& msg, const Token_context& context)
 {
     if (!should_log) return;
-    if (!context.file.empty()) {
-        cerr << endl << "(In " << context.file << ", ";
-    } else {
-        cerr << endl << "(At ";
-    }
-    cerr << "line " << context.line
-        << ", position " << context.position << "): "
-        << msg << endl;
+    cerr << endl << context << ": " << msg << endl;
     err_count++;
 }
 
 void add_note(const std::string& msg, const Token_context& context)
 {
     if (!should_log) return;
-    cerr << "    Note: " << msg
-        << "(line " << context.line
-        << ", position " << context.position
-        << ")" << endl;
+    cerr << "    Note: " << msg << context << endl;
 }
 
 void add_note(const std::string& msg)

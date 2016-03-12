@@ -19,7 +19,7 @@
 #ifdef DEBUG
 #	define ASSERT1(b) if (!(b))                                                         \
     {                                                                                   \
-        ostringstream oss;                                                              \
+        std::ostringstream oss;                                                         \
         oss << "Assert failed in file " << __FILE__ << ", line " << __LINE__;           \
         throw std::runtime_error(oss.str());                                            \
     }

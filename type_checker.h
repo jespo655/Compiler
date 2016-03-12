@@ -4,7 +4,7 @@
 #include <string>
 #include "lexer.h"
 
-
+/*
 struct Type_info
 {
     std::string type;
@@ -59,7 +59,7 @@ struct Identifier
     Identifier& operator=(Identifier&&);
 };
 
-
+*/
 
 
 

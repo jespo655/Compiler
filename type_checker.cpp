@@ -9,7 +9,7 @@ using namespace std;
 
 
 
-
+/*
 const Type_info undefined_type = Type_info("",0);
 
 Identifier::Identifier() : name{""}, type{undefined_type}, value_ptr{nullptr} {}
@@ -116,3 +116,4 @@ Type_info get_type_info(const Token& token)
     return get_type_info(token.token);
 }
 
+*/

@@ -5,7 +5,7 @@
 #include <vector>
 using namespace std;
 
-
+/*
 int paren_test()
 {
     const vector<Token> tokens = get_tokens_from_file("test.jai");
@@ -28,7 +28,7 @@ int paren_test()
     }
     printf("End of file\n");
 }
-
+*/
 
 
 
@@ -54,7 +54,7 @@ string with newlines\n\
 
 
 
-
+/*
 void indent(int indent_level)
 {
     for (int i = 0; i < indent_level; ++i) {
@@ -73,7 +73,7 @@ int parser_test()
 }
 
 
-
+*/
 
 
 
@@ -127,7 +127,7 @@ int main()
 
 
 
-
+/*
 
 ostream& operator << (ostream& os, const Abs_syntax* abstx)
 {
@@ -281,3 +281,4 @@ void print_abs_stx(Abs_syntax* abstx, int indent_level)
 }
 
 
+*/
