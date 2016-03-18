@@ -3,13 +3,9 @@ TODO:
 // håller på med just nu:
 
 gå igenom parser.cpp och fixa till allt så det är snyggt
-klart ner till rad ~730
-skriver infrastruktur till read_declaration
-nästa sak att lägga till:
-    read_struct_type()
-    read_type_identifier_list()
-    read_rhs(bool force_static)
+klart ner till rad ~1050
 
+read_evaluated_value -> lägg till force_static
 
 
 

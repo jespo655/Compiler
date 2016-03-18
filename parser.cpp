@@ -585,6 +585,9 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
         if (read_value_list(it,value,scope)) return true;
         ASSERT(value != nullptr);
         ASSERT(*(it-1) == CLOSING_PAREN);
+    } else {
+        log_error("Unexpected token while reading value: a value cannot start with the token \""+it->token+"\"",it->context);
+        return true;
     }
 
     // if followed by "_" -> cast
@@ -616,110 +619,6 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
 
 
 /*
-
-function definitions:
-
-// tills vidare: endast simpel syntax tillåten:
-fn(a:int, b:float); // ok
-fn(a:int, b:float=2); // ok, men senare @default_values
-
-type specificaion:
-fn(int,float); // endast typer tillåtna, inga variabelnamn.
-fn(fn()); // ok
-
-
-
-
-// KANSKE:
-fn(a,b : int,float);
-fn(a:int = 2, b:=2.0);
-fn(a:int, b,c:float,float);
-fn((a=b):int, c,d:float) // error, men vilket error? För complext. inte ok!
-
-*/
-
-
-
-
-
-// comma separated list with either pure identifiers, or a parenthesis of "="-separated identifiers
-bool read_declaration_lhs_part(Token const* it, vector<Token const*>& variable_tokens)
-{
-    ASSERT(it != nullptr);
-    if (it->type == Token_type::IDENTIFIER) {
-        variable_tokens.push_back(it);
-        return false;
-    }
-
-    if (*it == OPEN_PAREN) {
-        while (true) {
-            ++it; // go past the "(" or "," token
-            if (it->type != Token_type::IDENTIFIER) {
-                log_error("Unexpected token in lhs of declaration. Expected identifier.",it->context);
-                return true;
-            }
-            variable_tokens.push_back(it);
-            if (*(++it) == CLOSING_PAREN) {
-                ++it; // go past the ")" token
-                return false; // ok
-            }
-
-            if (*it == ASSIGNMENT_TOKEN) {
-                log_error("Unexpected token in lhs of declaration. Expected \"=\" between identifiers",it->context);
-                return true;
-            }
-        }
-    }
-}
-
-bool read_declaration_lhs(Token const* it, vector<vector<Token const*>>& variable_tokens)
-{
-    ASSERT(it != nullptr);
-    while(true) {
-        vector<Token const*> v;
-        if (read_declaration_lhs_part(it,v)) return true;
-        ASSERT(!v.empty());
-        variable_tokens.push_back(v);
-        if (*it != COMMA) return false;
-    }
-}
-
-
-
-
-// TODO: if the identifier already exist in the local scope -> error (Except for @overloading)
-// TODO: identifiers can be used before they are declared.
-//      In that case, they should be added without a declaration context. (?)
-bool add_identifiers_to_scope(const Declaration& declaration, Scope* scope)
-{
-    bool errors = false;
-    for (const auto& lhs_part : declaration.variable_name_tokens) {
-        for (Token const* token : lhs_part) {
-
-            bool found = false;
-            for (auto& id : scope->identifiers) {
-                if (id->identifier_token->token == token->token) {
-                    log_error("Multiple declarations of identifier \""+token->token+"\"",token->context);
-                    add_note("Previously declared here",id->identifier_token->context);
-                    errors = true;
-                    found = true;
-                }
-            }
-            if (!found) {
-                unique_ptr<Typed_identifier> id{new Typed_identifier()};
-                id->identifier_token = token;
-                // type is nullptr (unknown) for now.
-                scope->identifiers.push_back(move(id));
-            }
-        }
-    }
-    return errors;
-}
-
-
-
-
-/*
 A type can be:
 
     A single identifier
@@ -739,11 +638,11 @@ foo : fn(int)->int = fn(a : int) -> int { return 2; }; // rhs MÅSTE ha identifi
 foo : defined_fn_type = fn(a : int) -> int { return 2; };
 
 */
-bool read_type(Token const * it, unique_ptr<Type_info>& info);
+bool read_type(Token const * it, shared_ptr<Type_info>& info);
 
 
 
-bool read_function_type(Token const * it, unique_ptr<Function_type>& ft)
+bool read_function_type(Token const * it, shared_ptr<Function_type>& ft)
 {
     ASSERT(it != nullptr && *it == FUNCTION_KEYWORD);
 
@@ -757,7 +656,7 @@ bool read_function_type(Token const * it, unique_ptr<Function_type>& ft)
     ++it; // go past the "(" token
     if (*it != CLOSING_PAREN) {
         while(true) {
-            unique_ptr<Type_info> parameter_type;
+            shared_ptr<Type_info> parameter_type;
             if (read_type(it,parameter_type)) return true;
             ASSERT(parameter_type != nullptr);
             ft->in_parameters.push_back(move(parameter_type));
@@ -776,7 +675,7 @@ bool read_function_type(Token const * it, unique_ptr<Function_type>& ft)
     if (*it == RIGHT_ARROW) {
         // read out parameter list
         while(true) {
-            unique_ptr<Type_info> parameter_type;
+            shared_ptr<Type_info> parameter_type;
             if (read_type(it,parameter_type)) return true;
             ASSERT(parameter_type != nullptr);
             ft->out_parameters.push_back(move(parameter_type));
@@ -794,12 +693,12 @@ bool read_function_type(Token const * it, unique_ptr<Function_type>& ft)
 
 
 
-bool read_type_list(Token const * it, vector<unique_ptr<Type_info>>& v)
+bool read_type_list(Token const * it, vector<shared_ptr<Type_info>>& v)
 {
     ASSERT(it != nullptr);
 
     while(true) {
-        unique_ptr<Type_info> type;
+        shared_ptr<Type_info> type;
         if (read_type(it,type)) return true;
         ASSERT(type != nullptr);
         v.push_back(move(type));
@@ -820,9 +719,9 @@ struct {
 // TODO: using statements
 
 */
-bool read_struct_type(Token const * it, unique_ptr<Struct_type>& st)
+bool read_struct_type(Token const * it, shared_ptr<Struct_type>& st)
 {
-    ASSERT(it != nullptr && it->type == Token_type::KEYWORD && it->token == "struct");
+    ASSERT(it != nullptr && *it == STRUCT_KEYWORD);
 
     st.reset(new Struct_type());
 
@@ -876,13 +775,13 @@ bool read_struct_type(Token const * it, unique_ptr<Struct_type>& st)
 
 
 
-bool read_type(Token const * it, unique_ptr<Type_info>& info)
+bool read_type(Token const * it, shared_ptr<Type_info>& info)
 {
     ASSERT(it!=nullptr);
 
     if (it->type == Token_type::IDENTIFIER) {
         // type identifier - just one token
-        unique_ptr<Unresolved_type> ut{new Unresolved_type()};
+        shared_ptr<Unresolved_type> ut{new Unresolved_type()};
         ut->identifier_token = it;
         info = move(ut);
         ++it; // go past the identifier token
@@ -890,7 +789,7 @@ bool read_type(Token const * it, unique_ptr<Type_info>& info)
     }
 
     if (*it == FUNCTION_KEYWORD) {
-        unique_ptr<Function_type> ft;
+        shared_ptr<Function_type> ft;
         if (read_function_type(it,ft)) return true;
         ASSERT(ft != nullptr);
         info = move(ft);
@@ -898,7 +797,7 @@ bool read_type(Token const * it, unique_ptr<Type_info>& info)
     }
 
     if (*it == STRUCT_KEYWORD) {
-        unique_ptr<Struct_type> st;
+        shared_ptr<Struct_type> st;
         if (read_struct_type(it,st)) return true;
         ASSERT(st != nullptr);
         info = move(st);
@@ -914,100 +813,236 @@ bool read_type(Token const * it, unique_ptr<Type_info>& info)
 
 
 
+
+
+/*
+
+function definitions:
+
+// tills vidare: endast simpel syntax tillåten:
+fn(a:int, b:float); // ok
+fn(a:int, b:float=2); // ok, men senare @default_values
+
+type specificaion:
+fn(int,float); // endast typer tillåtna, inga variabelnamn.
+fn(fn()); // ok
+
+
+
+
+// KANSKE:
+fn(a,b : int,float);
+fn(a:int = 2, b:=2.0);
+fn(a:int, b,c:float,float);
+fn((a=b):int, c,d:float) // error, men vilket error? För complext. inte ok!
+
+*/
+
+
+/*
+// TODO: if the identifier already exist in the local scope -> error (Except for @overloading)
+// TODO: identifiers can be used before they are declared.
+//      In that case, they should be added without a declaration context. (?)
+bool add_identifiers_to_scope(const Declaration& declaration, Scope* scope)
+{
+    bool errors = false;
+    for (const auto& lhs_part : declaration.variable_name_tokens) {
+        for (Token const* token : lhs_part) {
+
+            bool found = false;
+            for (auto& id : scope->identifiers) {
+                if (id->identifier_token->token == token->token) {
+                    log_error("Multiple declarations of identifier \""+token->token+"\"",token->context);
+                    add_note("Previously declared here",id->identifier_token->context);
+                    errors = true;
+                    found = true;
+                }
+            }
+            if (!found) {
+                unique_ptr<Typed_identifier> id{new Typed_identifier()};
+                id->identifier_token = token;
+                // type is nullptr (unknown) for now.
+                scope->identifiers.push_back(move(id));
+            }
+        }
+    }
+    return errors;
+}
+*/
+
+
+
+
+
+
+// comma separated list with either pure identifiers, or a parenthesis of "="-separated identifiers
+bool read_declaration_lhs_part(Token const* it, vector<Token const*>& variable_tokens)
+{
+    ASSERT(it != nullptr);
+    if (it->type == Token_type::IDENTIFIER) {
+        variable_tokens.push_back(it);
+        return false;
+    }
+
+    if (*it == OPEN_PAREN) {
+        while (true) {
+            ++it; // go past the "(" or "," token
+            if (it->type != Token_type::IDENTIFIER) {
+                log_error("Unexpected token in lhs of declaration. Expected identifier.",it->context);
+                return true;
+            }
+            variable_tokens.push_back(it);
+            if (*(++it) == CLOSING_PAREN) {
+                ++it; // go past the ")" token
+                return false; // ok
+            }
+
+            if (*it == ASSIGNMENT_TOKEN) {
+                log_error("Unexpected token in lhs of declaration. Expected \"=\" between identifiers",it->context);
+                return true;
+            }
+        }
+    }
+}
+
+bool read_declaration_lhs(Token const* it, vector<vector<Token const*>>& variable_tokens)
+{
+    ASSERT(it != nullptr);
+    while(true) {
+        vector<Token const*> v;
+        if (read_declaration_lhs_part(it,v)) return true;
+        ASSERT(!v.empty());
+        variable_tokens.push_back(v);
+        if (*it != COMMA) return false;
+    }
+}
+
+
+
+bool read_rhs(Token const* it, vector<unique_ptr<Evaluated_value>>& rhs, Scope* scope, bool enforce_static)
+{
+    rhs.clear();
+
+    // read rhs
+    while (true) {
+        unique_ptr<Evaluated_value> val;
+        if (read_evaluated_value(it,val,scope)) return true;
+        ASSERT(val != nullptr);
+        rhs.push_back(move(val));
+        if (*it != COMMA) return false;
+        it++; // go past the "," token
+    }
+}
+
+
+
 // returns true if errors
 // returns false if syntax seems good, even if not able to deduce types yet. In that case, dependencies are added.
-bool read_declaration(Token const* it, Token const * type_token, Token const * assignment_token, Token const * end_token, Scope* scope, bool force_static)
+bool read_declaration(Token const* it, unique_ptr<Declaration>& declaration, Token const * type_token, Token const * assignment_token, Scope* scope, bool force_static)
 {
-    ASSERT(*type_token == COLON);
+    ASSERT(it != nullptr);
+    ASSERT(type_token != nullptr && *type_token == COLON);
     // Read declaration
 
-    unique_ptr<Declaration> declaration{new Declaration()};
-    bool errors = false; // we want to continue to rhs in case we find a scope -> don't break on lhs
+    declaration.reset(new Declaration());
+    bool errors = false; // we want to continue to rhs in case we find a scope (because we want error messages for that as well) -> don't break on lhs
 
     // read lhs
-    if (read_declaration_lhs(it,declaration->variable_name_tokens)) errors = true;
+    vector<vector<const Token*>> lhs_variable_tokens;
+    if (read_declaration_lhs(it,lhs_variable_tokens)) errors = true;
 
-    // Add the declared identifiers to the scope (even if we get errors later)
-    if (add_identifiers_to_scope(*declaration,scope)) errors = true;
-
-    // if (it->type != Token_type::SYMBOL || it->token != ":") {
-    if (it != type_token) { // comparing pointers
+    if (!errors && it != type_token) { // comparing pointers
         log_error("Unexpected token in declaration: expected \":\" directly after lhs. ", it->context);
         add_note("\":\" found here",type_token->context);
         errors = true;
-        it = type_token;
+    }
+    it = type_token + 1; // after the ":" token
+
+    // read types, if there are any
+    vector<shared_ptr<Type_info>> types;
+    if (it < assignment_token) {
+        while (true) {
+            shared_ptr<Type_info> type;
+            if (read_type(it,type)) {
+                errors = true;
+                break;
+            }
+            types.push_back(type);
+            if (it == assignment_token) break;
+            if (*it != COMMA) {
+                log_error("Unexpected token in declaration: expected \",\" between types",it->context);
+                errors = true;
+                break;
+            }
+            ++it; // go past the "," token
+        }
     }
 
-    // a : int;
-    // a : int = 2; // type identifier list
-    // a := b;
-    // a : ; // error
-    // a := ; // error
-
-    bool found_types = false;
-    bool found_rhs = false;
-
-    // it = ":"
-    if ((++it)->type != Token_type::SYMBOL || it->token != "=") {
-        // TODO: read type identifier list
-        found_types = true;
-    }
-
-    // it == "=" or ";"
-    if (it->type == Token_type::SYMBOL && it->token == "=") {
-        // TODO: read rhs. bool force_static is useful here.
-        found_rhs = true;
-    }
-
-    if (!found_types && !found_rhs) {
-        log_error("Missing tokens after declaration: must specify either type or assignment",it->context);
-        errors = true;
-    }
-
-    if (*it != SEMICOLON) {
-        log_error("Missing \";\" after declaration", it->context);
-        add_note("\";\" found here",end_token->context);
+    // check if we already know the type
+    bool has_type_ids = false;
+    if (types.empty()) {
+        if (assignment_token == nullptr) {
+            log_error("Missing type(s) in declaration",type_token->context);
+            errors = true;
+        }
+    } else if (types.size() != lhs_variable_tokens.size()) {
+        ostringstream oss;
+        oss << "Type count mismatch in declaration: expected " << lhs_variable_tokens.size() << " types but found only " << types.size();
+        log_error(oss.str(),type_token->context);
         errors = true;
     } else {
-        ++it; // go past the ";" token
+        has_type_ids = true;
     }
 
-    return false;
+    // add identifiers to scope
+    for (int i = 0; i < lhs_variable_tokens.size(); ++i) {
+        shared_ptr<Type_info> type{nullptr};
+        if (has_type_ids) type = types[i];
 
+        for (Token const* token : lhs_variable_tokens[i]) {
 
-    /*
-    // OLD CODE BELOW
-
-    Token const* type_end = end_token;
-    if (assignment_token != nullptr) type_end = assignment_token;
-
-    if (type_end > type_token+1) {
-
-        // TODO
-        // Read the type identifiers. Add them to the scope if not already added.
-        // Update the corresponding identifiers with type info.
-        cerr << "should read type identifier list, but not yet implemented" << endl;
-
-    } else if (assignment_token == nullptr) {
-        log_error("Unable to infer the types of identifiers; missing type identifiers after \":\"",end_token->context);
-        errors = true;
+            bool found = false;
+            for (auto& id : scope->identifiers) {
+                if (id->identifier_token->token == token->token) {
+                    log_error("Multiple declarations of identifier \""+token->token+"\"",token->context);
+                    add_note("Previously declared here",id->identifier_token->context);
+                    errors = true;
+                    found = true;
+                }
+            }
+            if (!found) {
+                unique_ptr<Typed_identifier> id{new Typed_identifier()};
+                id->identifier_token = token;
+                id->type = type;
+                scope->identifiers.push_back(move(id));
+            }
+        }
     }
 
+    // read rhs if there is one
     if (assignment_token != nullptr) {
-        ASSERT(assignment_token->type == Token_type::SYMBOL);
-        ASSERT(assignment_token->token == "=");
+        it = assignment_token + 1; // after the "=" token
 
-        // TODO
-        // Also read rhs. Enforce static_scope.
-        cerr << "should read rhs of declaration, but not yet implemented" << endl;
+        if (*it == SEMICOLON) {
+            log_error("Missing values after \"=\"",it->context);
+            errors = true;
+        } else {
+            // read rhs
+            if (read_rhs(it,declaration->rhs,scope,force_static)) {
+                errors = true;
+                add_note("In rhs of declaration assignment",assignment_token->context);
+            }
+        }
     }
 
-    // TODO: add all defined identifiers to the scope
-    // if they are already defined -> error
-    // that should be done even if we are unable to infer the type of the variable
-    // scope->statements.push_back(declaration); // TODO
-    return errors;
-    */
+    if (errors) return true;
+
+    if (*it != SEMICOLON) {
+        log_error("Missing \";\" after declaration",it->context);
+        return true;
+    }
+    it++; // go past the ";" token
+    return false; // OK!
 }
 
 
@@ -1140,8 +1175,13 @@ bool read_static_scope_statements(Token const* it, Static_scope* scope)
         */
         if (type_token != nullptr) {
             ASSERT(*type_token == COLON);
-            read_declaration(it,type_token,assignment_token,end_token, scope, true);
-
+            unique_ptr<Declaration> decl;
+            if (read_declaration(it,decl,type_token,assignment_token,scope,true)) errors = true;
+            else {
+                ASSERT(decl != nullptr);
+                ASSERT(it == end_token);
+                // todo: do something with the declaration
+            }
         } else if (assignment_token != nullptr) {
             ASSERT(is_assignment_operator(*assignment_token));
 

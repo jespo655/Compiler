@@ -123,7 +123,7 @@ struct Type_info
 
 struct Typed_identifier : Identifier
 {
-    std::unique_ptr<Type_info> type{nullptr};
+    std::shared_ptr<Type_info> type{nullptr};
 
     // std::vector<Typed_identifier*> ids_with_same_type;
         // Used for inferring types.
@@ -134,8 +134,8 @@ struct Typed_identifier : Identifier
 // Function_type: the type of foo := fn(){}
 struct Function_type : Type_info
 {
-    std::vector<std::unique_ptr<Type_info>> in_parameters{};
-    std::vector<std::unique_ptr<Type_info>> out_parameters{};
+    std::vector<std::shared_ptr<Type_info>> in_parameters{};
+    std::vector<std::shared_ptr<Type_info>> out_parameters{};
     std::string get_type_id() const; // returns a mangled version of in and out parameters
 };
 
@@ -249,9 +249,8 @@ struct Dynamic_scope : Scope
 // Declaration: any statement including ":" and maybe "="
 struct Declaration : Static_statement
 {
-    std::vector<std::vector<Token const*>> variable_name_tokens{};
-    std::vector<Type_info const*> types{}; // has to be either empty or exactly the same length as variable_name_tokens
-    std::vector<std::unique_ptr<Evaluated_value>> rhs{}; // can be empty if types is not. One part can be a function that returns several values. Check that the count matches when all top-level functions are resolved.
+    std::vector<std::vector<Typed_identifier*>> lhs; // these are stored in the local scope
+    std::vector<std::unique_ptr<Evaluated_value>> rhs{}; // can be empty . One part can be a function that returns several values. Check that the count matches when all top-level functions are resolved.
 };
 
 
