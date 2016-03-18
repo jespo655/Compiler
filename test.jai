@@ -25,7 +25,7 @@
 // funktion: inte klart - rhs start tillåter inte "fn" keyword
 foo = fn(int a, float b) -> int, int
 {
-    return a, b;
+    return a, b; )
 };
 
 

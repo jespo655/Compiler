@@ -30,10 +30,13 @@ struct Token_context
 
 struct Token
 {
-    std::string token{};
     Token_type type = Token_type::UNKNOWN;
+    std::string token{};
     Token_context context{};
 
+    Token() {}
+    Token(const Token_type& type, const std::string token) : type{type}, token{token} {}
+    Token(const std::string token, const Token_type& type) : type{type}, token{token} {}
     bool operator==(const Token& t) { return type == t.type && token == t.token; }
     bool operator!=(const Token& t) { return !(*this==t); }
 };

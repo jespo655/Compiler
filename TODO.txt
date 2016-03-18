@@ -1,5 +1,33 @@
 TODO:
 
+// håller på med just nu:
+
+gå igenom parser.cpp och fixa till allt så det är snyggt
+klart ner till rad ~730
+skriver infrastruktur till read_declaration
+nästa sak att lägga till:
+    read_struct_type()
+    read_type_identifier_list()
+    read_rhs(bool force_static)
+
+
+
+
+
+
+
+// deletes
+
+when identifiers run out of scope, free all owned pointers.
+@async wait for all asyncs
+each anonymous scope in the local scope also ceases to exist here. Keep track of those!
+
+
+
+
+
+
+
 
 
 // arrays (@arrays)
@@ -38,14 +66,17 @@ s.i = 2; // ok?
 
 kanske lägga till "const" keyword -> inga struct members får ändras (utifrån?)
 
-
+lägg till const tokens som man kan jämföra med - att behöva kolla typ och string är fult.
+    if (*it == EQUALS)
+    if (*it == OPEN_PAREN)
+    etc.
+kolla att Token::op=() inte jämför context.
 
 
 
 // Lexer:
 
 UTF-8 encoding på alla identifiers - tillåt flera tecken (is_valid_char_in_identifier_name)
-is_keyword(); kanske inte behövs?
 UTF8-klass att använda istället för string
 Here-strings
 Se till att man kan läsa in symboler som "ser ut som" identifiers, utan att tappa data
@@ -56,23 +87,10 @@ Se till att man kan läsa in symboler som "ser ut som" identifiers, utan att tap
 
 Skriv tester!
 
-Gå igenom allt och kolla end of file exceptions
-    Se till att de hanteras på liknande sätt överallt
-
 Enum med type, så att man senare med en enkel switch kan hitta rätt subklass
 
 Överallt där man tittar på token -> se till att Token_type inte är STRING!
     annars kan man inte skilja på symbol ")" och string ")"
-
-Gå igenom allt och kolla log_error-calls
-    Allt ska returnera ptr.
-    Om man anropar en funktion och får tillbaka nullptr -> returnera nullptr. Använd add_note om relevant.
-    Om man gör något själv och hittar ett fel: anropa log_error och returnera nullptr.
-Allt som returneras som inte är nullptr ska vara well-formed! Kolla ALLA tokens.
-    När man får tillbaka nullptr - förvänta dig att log_error har anropats. Använd inte en funktion för att "testa"
-
-
-Använd read_paren endast som en koll att allt stämmer. Oftast onödigt.
 
 is_infix_operator()
 infix operator - priorities

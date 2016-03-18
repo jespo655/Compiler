@@ -7,6 +7,11 @@
 
 
 
+// for tests in main
+Token const * read_paren(Token const * it);
+Token const * read_bracket(Token const * it);
+Token const * read_brace(Token const * it);
+
 
 
 struct Token_range
@@ -53,20 +58,20 @@ struct Literal : Evaluated_value
 // Value_list: A parenthesis with several comma-separated values
 struct Value_list : Evaluated_value
 {
-    std::vector<Evaluated_value> values;
+    std::vector<std::unique_ptr<Evaluated_value>> values;
 };
 
 struct Identifier : Evaluated_variable
 {
-    Token const * identifier_token;
+    Token const * identifier_token; // name & declaration context
     virtual ~Identifier() {}
 };
 
 struct Infix_op : Evaluated_value
 {
-    std::unique_ptr<Evaluated_variable> lhs;
+    std::unique_ptr<Evaluated_value> lhs;
     Token const * op_token;
-    std::unique_ptr<Evaluated_variable> rhs;
+    std::unique_ptr<Evaluated_value> rhs;
 };
 
 // function call: starts with "("
@@ -118,42 +123,59 @@ struct Type_info
 
 struct Typed_identifier : Identifier
 {
-    Type_info* type{nullptr};
+    std::unique_ptr<Type_info> type{nullptr};
 
     // std::vector<Typed_identifier*> ids_with_same_type;
         // Used for inferring types.
         // When a type is inferred - go through this vector and verify that all ids has the same type.
 };
 
+
+// Function_type: the type of foo := fn(){}
 struct Function_type : Type_info
 {
-    std::vector<Type_info*> in_parameters{};
-    std::vector<Type_info*> out_parameters{};
+    std::vector<std::unique_ptr<Type_info>> in_parameters{};
+    std::vector<std::unique_ptr<Type_info>> out_parameters{};
     std::string get_type_id() const; // returns a mangled version of in and out parameters
 };
 
+// Struct_type: the type of s : S; , when S := struct {};
 struct Struct_type : Type_info
 {
-    Token const * struct_identifier_token{nullptr}; // cannot be null
     std::vector<std::unique_ptr<Typed_identifier>> members{}; // can be empty
-    std::string get_type_id() const { return struct_identifier_token->token; }
+    std::string get_type_id() const; // returns a mangled version of members
 };
 
+// Primitive_type: the type of a : int;
+// Includes the type "type", which is the type of int2 : type = int;, S := struct{}; och f := fn();
 struct Primitive_type : Type_info
 {
-    std::string type_name;
+    std::string type_name{};
     std::string get_type_id() const { return type_name; }
 };
 
-struct Defined_type : Type_info
+// Defined_type: the type int2 := int; Has the same properties as int, but cannot be implicitly casted back and forth
+// struct Defined_type : Type_info
+// {
+//     Token const * identifier_token{nullptr}; // cannot be null;
+//     Type_info* type{nullptr};
+//     std::string get_type_id() const { return identifier_token->token; }
+// };
+
+// Unresolved_type: the type of s : S; , where S is not yet a known identifier
+struct Unresolved_type : Type_info
 {
     Token const * identifier_token{nullptr}; // cannot be null;
-    Type_info* type;
     std::string get_type_id() const { return identifier_token->token; }
 };
 
-
-
+struct Array_type : Type_info
+{
+    Type_info* type{nullptr}; // cannot be null;
+    int size = 0;
+    bool dynamic = false;
+    std::string get_type_id() const { return type->get_type_id() + "[" + (dynamic?"..":std::to_string(size)) + "]"; }
+};
 
 
 
@@ -182,6 +204,13 @@ struct Static_statement : Dynamic_statement
 
 
 
+struct Dependency
+{
+    Dynamic_statement* statement;
+    Token const * unknown_identifier_token; // the type of this identifier has to be know in order to resolve the statement
+};
+
+
 
 
 
@@ -201,8 +230,7 @@ struct Scope : Evaluated_value
 struct Static_scope : Scope
 {
     std::vector<std::unique_ptr<Static_statement>> statements;
-    std::vector<std::pair<Dynamic_statement*,Identifier*>> dependencies;
-    // The statement needs the type of the identifier to be fully resolved
+    std::vector<Dependency> dependencies;
 };
 
 struct Dynamic_scope : Scope
@@ -292,47 +320,6 @@ struct For_clause : Dynamic_statement
 
 
 
-
-
-// TODO: struktuera upp dependencies
-
-
-struct Dependency
-{
-    virtual ~Dependency() {}
-};
-
-
-
-struct Type_of_identifier : Dependency
-{
-    Token const* identifier_name_token{nullptr};
-};
-// ex:
-// a := b; // a är beroende av typen av b
-
-
-struct Type_dependancy : Dependency
-{
-    Token const* type_identifier_token{nullptr};
-};
-// ex:
-// a : S; // a är beroende av type identifier S.
-
-
-struct Function_dependancy : Dependency
-{
-    Token const* function_identifier_token{nullptr}; // räcker ej! func id kan vara en Evaluated_variable! s.foo()
-    std::unique_ptr<std::unique_ptr<Evaluated_value>> arguments{};
-};
-// ex:
-// a = f(); // a är beroende av return value av function f()
-
-
-struct Struct_dependency : Dependency
-{
-    // Token const*
-};
 
 
 
