@@ -53,6 +53,11 @@ const Token CLOSING_BRACE = Token{Token_type::SYMBOL, "}"};
 const Token GETTER_TOKEN = Token{Token_type::SYMBOL, "."};
 const Token CAST_TOKEN = Token{Token_type::SYMBOL, "_"};
 
+const Token ASSIGNMENT_TOKEN = Token{Token_type::SYMBOL, "="};
+const Token RIGHT_ARROW = Token{Token_type::SYMBOL, "->"};
+const Token LEFT_ARROW = Token{Token_type::SYMBOL, "<-"};
+
+const Token EQUALS = Token{Token_type::SYMBOL, "=="};
 
 
 string Function_type::get_type_id() const
@@ -419,20 +424,18 @@ bool read_call_chain(Token const*& it, unique_ptr<Evaluated_variable>& variable,
 {
     while(++it) {
         if (it->type != Token_type::SYMBOL) return false; // end of evaluated_variable
+
         if (it->token == "(") {
-            // read function call
             if (read_function_call(it,variable,scope)) return true; // error
-            ASSERT(*(it-1) == CLOSING_PAREN); // should be the end of the function call
+
         } else if (it->token == ".") {
-            // read getter
             if (read_getter(it,variable,scope)) return true;
+
         } else if (it->token == "_") {
-            // read cast
             if (read_cast(it,variable,scope)) return true;
+
         } else if (it->token == "[") {
-            // read array lookup
             if (read_array_lookup(it,variable,scope)) return true;
-            ASSERT((it-1)->type == Token_type::SYMBOL && (it-1)->token == "]"); // should be the end of the array lookup
         }
     }
 }
@@ -465,12 +468,12 @@ bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& v
 // maybe: use this in read_function_call()
 bool read_value_list(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope)
 {
-    ASSERT(it != nullptr && it->type == Token_type::SYMBOL && it->token == "(");
+    ASSERT(it != nullptr && *it == OPEN_PAREN);
     it++; // to past the "(" token
 
     unique_ptr<Value_list> vl{new Value_list()};
 
-    if (it->type == Token_type::SYMBOL && it->token == ")") {
+    if (*it == CLOSING_PAREN) {
         // empty list
         return false;
     }
@@ -480,12 +483,12 @@ bool read_value_list(Token const*& it, unique_ptr<Evaluated_value>& value, Scope
         if (read_evaluated_value(it,v,scope)) return true;
         ASSERT(v != nullptr);
         vl->values.push_back(move(v));
-        if (it->type == Token_type::SYMBOL && it->token == ")") {
+        if (*it == CLOSING_PAREN) {
             it++; // go past the ")" token
             value = move(vl);
             return false; // ok
         }
-        if (it->type != Token_type::SYMBOL || it->token != ",") {
+        if (*it != COMMA) {
             log_error("Unexpected token in value list: expected \",\" between values",it->context);
             return true; // error
         }
@@ -577,16 +580,16 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
         literal->literal_token = it;
         value = move(literal);
         ++it;
-    } else if (it->type == Token_type::SYMBOL && it->token == "(") {
+    } else if (*it == OPEN_PAREN) {
         // read Value_list
         if (read_value_list(it,value,scope)) return true;
         ASSERT(value != nullptr);
-        ASSERT((it-1)->type == Token_type::SYMBOL && (it-1)->token == ")");
+        ASSERT(*(it-1) == CLOSING_PAREN);
     }
 
     // if followed by "_" -> cast
     // That transforms the value into a variable -> can read call chain:
-    if (it->type == Token_type::SYMBOL && it->token == "_") {
+    if (*it == CAST_TOKEN) {
         if (read_cast(it,value,scope)) return true;
         ASSERT(dynamic_cast<Evaluated_variable*>(value.get()) != nullptr);
         unique_ptr<Evaluated_variable> variable{static_cast<Evaluated_variable*>(value.release())};
@@ -648,7 +651,7 @@ bool read_declaration_lhs_part(Token const* it, vector<Token const*>& variable_t
         return false;
     }
 
-    if (it->type == Token_type::SYMBOL && it->token == "(") {
+    if (*it == OPEN_PAREN) {
         while (true) {
             ++it; // go past the "(" or "," token
             if (it->type != Token_type::IDENTIFIER) {
@@ -656,12 +659,12 @@ bool read_declaration_lhs_part(Token const* it, vector<Token const*>& variable_t
                 return true;
             }
             variable_tokens.push_back(it);
-            if ((++it)->type == Token_type::SYMBOL && it->token == ")") {
+            if (*(++it) == CLOSING_PAREN) {
                 ++it; // go past the ")" token
                 return false; // ok
             }
 
-            if (it->type != Token_type::SYMBOL || it->token != "=") {
+            if (*it == ASSIGNMENT_TOKEN) {
                 log_error("Unexpected token in lhs of declaration. Expected \"=\" between identifiers",it->context);
                 return true;
             }
@@ -677,7 +680,7 @@ bool read_declaration_lhs(Token const* it, vector<vector<Token const*>>& variabl
         if (read_declaration_lhs_part(it,v)) return true;
         ASSERT(!v.empty());
         variable_tokens.push_back(v);
-        if (it->type != Token_type::SYMBOL || it->token != ",") return false;
+        if (*it != COMMA) return false;
     }
 }
 
@@ -742,35 +745,35 @@ bool read_type(Token const * it, unique_ptr<Type_info>& info);
 
 bool read_function_type(Token const * it, unique_ptr<Function_type>& ft)
 {
-    ASSERT(it != nullptr && it->type == Token_type::KEYWORD && it->token == "fn");
+    ASSERT(it != nullptr && *it == FUNCTION_KEYWORD);
 
     ft.reset(new Function_type());
 
     // function identifier: fn(int,int)->int
-    if ((++it)->type != Token_type::SYMBOL || it->token != "(") {
+    if (*(++it) == OPEN_PAREN) {
         log_error("Expected \"(\" after \"fn\" keyword",it->context);
         return true;
     }
     ++it; // go past the "(" token
-    if (it->type != Token_type::SYMBOL || it->token != ")") {
+    if (*it != CLOSING_PAREN) {
         while(true) {
             unique_ptr<Type_info> parameter_type;
             if (read_type(it,parameter_type)) return true;
             ASSERT(parameter_type != nullptr);
             ft->in_parameters.push_back(move(parameter_type));
 
-            if (it->type == Token_type::SYMBOL && it->token == ")") break; // ok
-            if (it->type != Token_type::SYMBOL || it->token != ",") {
+            if (*it == CLOSING_PAREN) break; // ok
+            if (*it != COMMA) {
                 log_error("Expected \",\" between types in function type declaration",it->context);
                 return true;
             }
             it++; // go past the "," token
         }
     }
-    ASSERT(it->type == Token_type::SYMBOL && it->token == ")");
+    ASSERT(*it == CLOSING_PAREN);
     ++it; // go past the ")" token
 
-    if (it->type == Token_type::SYMBOL && it->token == "->") {
+    if (*it == RIGHT_ARROW) {
         // read out parameter list
         while(true) {
             unique_ptr<Type_info> parameter_type;
@@ -778,7 +781,7 @@ bool read_function_type(Token const * it, unique_ptr<Function_type>& ft)
             ASSERT(parameter_type != nullptr);
             ft->out_parameters.push_back(move(parameter_type));
 
-            if (it->type != Token_type::SYMBOL || it->token != ",") break; // ok
+            if (*it != COMMA) break; // ok
             it++; // go past the "," token
         }
     }
@@ -800,37 +803,10 @@ bool read_type_list(Token const * it, vector<unique_ptr<Type_info>>& v)
         if (read_type(it,type)) return true;
         ASSERT(type != nullptr);
         v.push_back(move(type));
-        if (it->type != Token_type::SYMBOL || it->token != ",") return false;
+        if (*it != COMMA) return false;
         it++; // go past the "," token
     }
 }
-
-
-/*
-vector<unique_ptr<Typed_identifier>> match_types(const vector<unique_ptr<Identifier>>& ids, const vector<unique_ptr<Type_info>>& types)
-{
-    if (types.size() == 0) {
-        // only unresolved types
-        for (auto& id : ids) {
-            unique_ptr<Typed_identifier> tid {new Typed_identifier()};
-            tid->identifier_token = id->identifier_token;
-            result.push_back(move(tid));
-        }
-        return result;
-    }
-
-    ASSERT(types.size() == id.size()); // this should give an error earlier
-    // log_error(string("Type mismatch: expected ")+id.size()+" types but found only "+types.size(), it->context);
-
-    for (int i = 0; i < types.size(); ++i) {
-        unique_ptr<Typed_identifier> tid {new Typed_identifier()};
-        tid->identifier_token = ids[i]->identifier_token;
-        tid->type = types[i].get();
-        result.push_back(move(tid));
-    }
-    return result;
-}
-*/
 
 
 
@@ -850,12 +826,12 @@ bool read_struct_type(Token const * it, unique_ptr<Struct_type>& st)
 
     st.reset(new Struct_type());
 
-    if ((++it)->type != Token_type::SYMBOL || it->token != "{") {
-        log_error("Expected \"}\" after \"struct\"",it->context);
+    if (*(++it) != OPEN_BRACE) {
+        log_error("Expected \"{\" after \"struct\"",it->context);
         return true;
     }
     ++it; // go past the "{" token
-    if (it->type == Token_type::SYMBOL && it->token == "}") return false; // ok
+    if (*it == CLOSING_BRACE) return false; // ok
 
     do {
         vector<unique_ptr<Typed_identifier>> tid_to_add;
@@ -868,30 +844,28 @@ bool read_struct_type(Token const * it, unique_ptr<Struct_type>& st)
             unique_ptr<Typed_identifier> tid{};
             tid->identifier_token = it;
             tid_to_add.push_back(move(tid));
-            if (it->type == Token_type::SYMBOL && it->token == ":") break;
-            if (it->type != Token_type::SYMBOL || it->token != ",") {
+            if (*it == COLON) break;
+            if (*it != COMMA) {
                 log_error("Unexpected token in struct: expected \",\" between identifiers",it->context);
                 return true;
             }
             it++; // go past the "," token
         }
-        ASSERT(it->type == Token_type::SYMBOL && it->token == ":");
+        ASSERT(*it == COLON);
         it++; // go past the ":" token
 
         for (auto& tid : tid_to_add) {
             if (read_type(it,tid->type)) return true; // this handles the "too few types" issue
             st->members.push_back(move(tid));
         }
-
-        if (it->type != Token_type::SYMBOL || it->token != ";") {
-            // this handles the "too many types" issue
+        if (*it != SEMICOLON) {
             log_error("Unexpected token in struct: expected \";\" after member declaration",it->context);
-            return true;
+            return true; // this handles the "too many types" issue
         }
         ++it; // go past the ";" token
-    } while (it->type != Token_type::SYMBOL || it->token != "}");
+    } while (*it != CLOSING_BRACE);
 
-    if (it->type != Token_type::SYMBOL || it->token != "}") {
+    if (*it != CLOSING_BRACE) {
         log_error("Missing \"}\" at the end of struct",it->context);
         return true;
     }
@@ -915,7 +889,7 @@ bool read_type(Token const * it, unique_ptr<Type_info>& info)
         return false;
     }
 
-    if (it->type == Token_type::KEYWORD && it->token == "fn") {
+    if (*it == FUNCTION_KEYWORD) {
         unique_ptr<Function_type> ft;
         if (read_function_type(it,ft)) return true;
         ASSERT(ft != nullptr);
@@ -923,7 +897,7 @@ bool read_type(Token const * it, unique_ptr<Type_info>& info)
         return false;
     }
 
-    if (it->type == Token_type::KEYWORD && it->token == "struct") {
+    if (*it == STRUCT_KEYWORD) {
         unique_ptr<Struct_type> st;
         if (read_struct_type(it,st)) return true;
         ASSERT(st != nullptr);
@@ -944,8 +918,7 @@ bool read_type(Token const * it, unique_ptr<Type_info>& info)
 // returns false if syntax seems good, even if not able to deduce types yet. In that case, dependencies are added.
 bool read_declaration(Token const* it, Token const * type_token, Token const * assignment_token, Token const * end_token, Scope* scope, bool force_static)
 {
-    ASSERT(type_token->type == Token_type::SYMBOL);
-    ASSERT(type_token->token == ":");
+    ASSERT(*type_token == COLON);
     // Read declaration
 
     unique_ptr<Declaration> declaration{new Declaration()};
@@ -958,7 +931,7 @@ bool read_declaration(Token const* it, Token const * type_token, Token const * a
     if (add_identifiers_to_scope(*declaration,scope)) errors = true;
 
     // if (it->type != Token_type::SYMBOL || it->token != ":") {
-    if (it != type_token) {
+    if (it != type_token) { // comparing pointers
         log_error("Unexpected token in declaration: expected \":\" directly after lhs. ", it->context);
         add_note("\":\" found here",type_token->context);
         errors = true;
@@ -991,7 +964,7 @@ bool read_declaration(Token const* it, Token const * type_token, Token const * a
         errors = true;
     }
 
-    if (it->type != Token_type::SYMBOL || it->token == ";") {
+    if (*it != SEMICOLON) {
         log_error("Missing \";\" after declaration", it->context);
         add_note("\";\" found here",end_token->context);
         errors = true;
@@ -1073,7 +1046,7 @@ bool handle_imports(Token const *& it, Scope* scope, Scope* parent_scope)
     ASSERT(scope != nullptr);
     ASSERT(parent_scope != nullptr);
 
-    if (it->type == Token_type::SYMBOL && it->token == "[") {
+    if (*it == OPEN_BRACKET) {
         // read capture group
         it = read_bracket(it);
         if (it == nullptr) return true; // error and can't continue
@@ -1098,11 +1071,11 @@ bool read_static_scope(Token const * it, unique_ptr<Static_scope>& scope, Static
         return true; // error
     }
 
-    ASSERT(it->type == Token_type::SYMBOL);
-    ASSERT(it->token == "{");
+    ASSERT(*it == OPEN_BRACE);
 
     // read static statements to scope
     cerr << "reading static scope not yet implemented" << endl;
+    return true;
 }
 
 // can be a function body, if statement, etc.
@@ -1117,11 +1090,11 @@ bool read_dynamic_scope(Token const * it, unique_ptr<Dynamic_scope>& scope, Scop
         return true; // error
     }
 
-    ASSERT(it->type == Token_type::SYMBOL);
-    ASSERT(it->token == "{");
+    ASSERT(*it == OPEN_BRACE);
 
     // read dynamic statements to scope
     cerr << "reading dynamic scope not yet implemented" << endl;
+    return true;
 }
 
 
@@ -1166,12 +1139,10 @@ bool read_static_scope_statements(Token const* it, Static_scope* scope)
             4) no ":" nor assignment tokens
         */
         if (type_token != nullptr) {
-            ASSERT(type_token->type == Token_type::SYMBOL);
-            ASSERT(type_token->token == ":");
+            ASSERT(*type_token == COLON);
             read_declaration(it,type_token,assignment_token,end_token, scope, true);
 
         } else if (assignment_token != nullptr) {
-            ASSERT(assignment_token->type == Token_type::SYMBOL);
             ASSERT(is_assignment_operator(*assignment_token));
 
             // Assignment

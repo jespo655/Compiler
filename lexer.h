@@ -37,8 +37,8 @@ struct Token
     Token() {}
     Token(const Token_type& type, const std::string token) : type{type}, token{token} {}
     Token(const std::string token, const Token_type& type) : type{type}, token{token} {}
-    bool operator==(const Token& t) { return type == t.type && token == t.token; }
-    bool operator!=(const Token& t) { return !(*this==t); }
+    bool operator==(const Token& t) const { return type == t.type && token == t.token; }
+    bool operator!=(const Token& t) const { return !(*this==t); }
 };
 
 
