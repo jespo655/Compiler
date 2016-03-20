@@ -3,7 +3,7 @@ TODO:
 // håller på med just nu:
 
 gå igenom parser.cpp och fixa till allt så det är snyggt
-klart ner till rad ~1050
+klart ner till rad ~1150
 
 read_evaluated_value -> lägg till force_static
 
@@ -22,7 +22,10 @@ each anonymous scope in the local scope also ceases to exist here. Keep track of
 
 
 
+// Errors:
 
+testa kod, tänk på vilka error msgs man vill få. Lägg till precis såna.
+(Tills dess: var inte så noggrann med snygga errors)
 
 
 

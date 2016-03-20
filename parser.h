@@ -28,6 +28,30 @@ struct Token_range
 
 
 
+// Dynamic_statement: any statement that can be evaluated in a dynamic scope (function)
+struct Dynamic_statement
+{
+    virtual ~Dynamic_statement() {}
+    int dependencies = 0; // when 0 the statement can be resolved. Increment for each dependency added.
+};
+
+// A Static_statement is a statement that can be evaluated in a static scope.
+// Any static statement can also be performed in a dynamic context.
+struct Static_statement : Dynamic_statement
+{
+    virtual ~Static_statement() {}
+};
+
+
+
+struct Dependency
+{
+    Dynamic_statement* statement;
+    Token const * unknown_identifier_token; // the type of this identifier has to be know in order to resolve the statement
+};
+
+
+
 
 
 
@@ -75,7 +99,7 @@ struct Infix_op : Evaluated_value
 };
 
 // function call: starts with "("
-struct Function_call : Evaluated_variable
+struct Function_call : Evaluated_variable, Dynamic_statement
 {
     std::unique_ptr<Evaluated_variable> function_identifier;
     std::vector<std::unique_ptr<Evaluated_value>> arguments;
@@ -125,9 +149,9 @@ struct Typed_identifier : Identifier
 {
     std::shared_ptr<Type_info> type{nullptr};
 
-    // std::vector<Typed_identifier*> ids_with_same_type;
+    // std::vector<Dynamic_statement*> dependant_statements;
         // Used for inferring types.
-        // When a type is inferred - go through this vector and verify that all ids has the same type.
+        // When a type is inferred - go through this vector try to resolve the statements.
 };
 
 
@@ -188,30 +212,6 @@ struct Array_type : Type_info
 
 
 
-// Dynamic_statement: any statement that can be evaluated in a dynamic scope (function)
-struct Dynamic_statement
-{
-    virtual ~Dynamic_statement() {}
-    int dependencies = 0; // when 0 the statement can be resolved. Increment for each dependency added.
-};
-
-// A Static_statement is a statement that can be evaluated in a static scope.
-// Any static statement can also be performed in a dynamic context.
-struct Static_statement : Dynamic_statement
-{
-    virtual ~Static_statement() {}
-};
-
-
-
-struct Dependency
-{
-    Dynamic_statement* statement;
-    Token const * unknown_identifier_token; // the type of this identifier has to be know in order to resolve the statement
-};
-
-
-
 
 
 // Capture group:
@@ -220,22 +220,22 @@ struct Dependency
 
 struct Scope : Evaluated_value
 {
-    std::vector<std::unique_ptr<Typed_identifier>> identifiers;
-    std::vector<std::unique_ptr<Type_info>> types;
+    std::vector<std::shared_ptr<Typed_identifier>> identifiers{};
+    // std::vector<std::unique_ptr<Type_info>> types; // maybe remove
     std::vector<Scope*> imported_scopes;
     virtual ~Scope() {}
 };
 
 
-struct Static_scope : Scope
+struct Static_scope : Scope, Static_statement
 {
-    std::vector<std::unique_ptr<Static_statement>> statements;
-    std::vector<Dependency> dependencies;
+    std::vector<std::unique_ptr<Static_statement>> statements{};
+    // std::vector<Dependency> dependencies; // should be moved to Typed_variable
 };
 
-struct Dynamic_scope : Scope
+struct Dynamic_scope : Scope, Dynamic_statement
 {
-    std::vector<std::unique_ptr<Dynamic_statement>> statements;
+    std::vector<std::unique_ptr<Dynamic_statement>> statements{};
     // std::vector<std::unique_ptr<Dynamic_statement>> defer_statements; // TODO
     // dynamic scopes cannot have dependencies -
     //   everything must be known the moment they are used.
@@ -245,6 +245,10 @@ struct Dynamic_scope : Scope
 
 
 
+struct Using_statement : Static_statement
+{
+    std::unique_ptr<Evaluated_variable> scope{nullptr};
+};
 
 // Declaration: any statement including ":" and maybe "="
 struct Declaration : Static_statement
@@ -252,7 +256,6 @@ struct Declaration : Static_statement
     std::vector<std::vector<Typed_identifier*>> lhs; // these are stored in the local scope
     std::vector<std::unique_ptr<Evaluated_value>> rhs{}; // can be empty . One part can be a function that returns several values. Check that the count matches when all top-level functions are resolved.
 };
-
 
 // Assignment: any assignment not including ":"
 struct Assignment : Dynamic_statement
@@ -322,8 +325,8 @@ struct For_clause : Dynamic_statement
 
 
 
-std::unique_ptr<Scope> parse_file(const std::string& file);
-std::unique_ptr<Scope> parse_string(const std::string& string);
+Static_scope parse_file(const std::string& file);
+Static_scope parse_string(const std::string& string);
 
 
 #endif

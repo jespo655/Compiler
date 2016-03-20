@@ -8,7 +8,7 @@ using namespace std;
 /*
 
 Return bool: true if errors, false if ok
-Take Token const* it as first argument
+Take Token const*& it as first argument
 Always check token types for EACH token
     If type==EOF -> eof
     If type==UNKNOWN -> probably error
@@ -262,6 +262,7 @@ bool examine_statement(Token const* it, Token const*& type_token, Token const*& 
         if (it->type == Token_type::EOF || is_closing_symbol(*it)) {
             log_error("Missing \";\" after statement",it->context);
             add_note("Expected \";\" before \""+it->token+"\"");
+            end_token = it;
             return errors;
         }
         if (it->type == Token_type::SYMBOL) {
@@ -311,8 +312,8 @@ bool examine_statement(Token const* it, Token const*& type_token, Token const*& 
 }
 
 
-bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope);
-bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope);
+bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope, bool force_static);
+bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope, bool force_static);
 
 
 // variable:
@@ -331,7 +332,7 @@ bool read_function_call(Token const*& it, unique_ptr<Evaluated_variable>& variab
                 return true;
             }
             unique_ptr<Evaluated_value> argument;
-            if (read_evaluated_value(it,argument,scope)) return true; // error
+            if (read_evaluated_value(it,argument,scope,false)) return true; // error
 
             fc->arguments.push_back(move(argument));
 
@@ -382,7 +383,7 @@ bool read_cast(Token const*& it, unique_ptr<Evaluated_value>& variable, Scope* s
     cast->casted_value = move(variable);
 
     if ((++it)->type == Token_type::IDENTIFIER) {
-        if (read_evaluated_variable(it,cast->casted_type,scope)) return true; // error
+        if (read_evaluated_variable(it,cast->casted_type,scope,false)) return true; // error
         variable = move(cast);
         return false; // ok!
     } else {
@@ -402,13 +403,13 @@ bool read_cast(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope
 // variable:
 //      in: the array identifier
 //      out: the lookup itself
-bool read_array_lookup(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope)
+bool read_array_lookup(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope, bool force_static)
 {
     ASSERT(it != nullptr && *it == OPEN_BRACKET);
     unique_ptr<Array_lookup> al{new Array_lookup()};
     al->array_identifier = move(variable);
 
-    if (read_evaluated_value((++it),al->position,scope)) return true; // error
+    if (read_evaluated_value((++it),al->position,scope,force_static)) return true; // error
     if (*it != CLOSING_BRACKET) {
         log_error("Missing \"]\" at the end of array lookup",it->context);
         return true;
@@ -420,7 +421,7 @@ bool read_array_lookup(Token const*& it, unique_ptr<Evaluated_variable>& variabl
 
 
 
-bool read_call_chain(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope)
+bool read_call_chain(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope, bool force_static)
 {
     while(++it) {
         if (it->type != Token_type::SYMBOL) return false; // end of evaluated_variable
@@ -435,14 +436,14 @@ bool read_call_chain(Token const*& it, unique_ptr<Evaluated_variable>& variable,
             if (read_cast(it,variable,scope)) return true;
 
         } else if (it->token == "[") {
-            if (read_array_lookup(it,variable,scope)) return true;
+            if (read_array_lookup(it,variable,scope,force_static)) return true;
         }
     }
 }
 
 
 
-bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope)
+bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope, bool force_static)
 {
     // read variable. For anything other than regular identifiers, add dependencies to the list (not to the scope)
     // later: in declaration context: ensure that this is a variable and it is not already in the scope
@@ -459,7 +460,7 @@ bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& v
     unique_ptr<Identifier> id{new Identifier()};
     id->identifier_token = it;
     variable = move(id);
-    read_call_chain(it,variable,scope);
+    read_call_chain(it,variable,scope,force_static);
     return false;
 }
 
@@ -480,7 +481,7 @@ bool read_value_list(Token const*& it, unique_ptr<Evaluated_value>& value, Scope
 
     while(true) {
         unique_ptr<Evaluated_value> v;
-        if (read_evaluated_value(it,v,scope)) return true;
+        if (read_evaluated_value(it,v,scope,false)) return true;
         ASSERT(v != nullptr);
         vl->values.push_back(move(v));
         if (*it == CLOSING_PAREN) {
@@ -501,13 +502,13 @@ bool read_value_list(Token const*& it, unique_ptr<Evaluated_value>& value, Scope
 
 
 
-bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope)
+bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope, bool force_static)
 {
     ASSERT(it != nullptr && is_infix_operator(*it));
     Token const * op_token = it;
 
     unique_ptr<Evaluated_value> rhs;
-    if (read_evaluated_value(it,rhs,scope)) return true;
+    if (read_evaluated_value(it,rhs,scope,force_static)) return true;
 
     if (!is_infix_operator(*it)) {
         unique_ptr<Infix_op> infix{new Infix_op()};
@@ -520,7 +521,7 @@ bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* 
         // chained infix op
         Token const * op_token2 = it;
         unique_ptr<Evaluated_value> rhs2;
-        if (read_evaluated_value(it,rhs2,scope)) return true;
+        if (read_evaluated_value(it,rhs2,scope,force_static)) return true;
 
         unique_ptr<Infix_op> lhs_infix{new Infix_op()};
         unique_ptr<Infix_op> rhs_infix{new Infix_op()};
@@ -551,7 +552,7 @@ bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* 
 
 
 
-bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope)
+bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope, bool force_static)
 {
     // read value. Except for Evaluated_variables, this can also be literals: string, integer, float, bool, array
 
@@ -560,7 +561,7 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
 
     if (it->type == Token_type::IDENTIFIER) {
         unique_ptr<Evaluated_variable> variable;
-        if (read_evaluated_variable(it,variable,scope)) return true; // error
+        if (read_evaluated_variable(it,variable,scope,force_static)) return true; // error
         value = move(variable);
         return false;
     }
@@ -568,6 +569,8 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
     // Except for an Evaluated_variable, a value can start with:
     //      1) any literal
     //      2) a parenthesis of comma separated Evaluated_values
+    //      3) TODO: "[" or "{" as the start of a scope
+    //      4) TODO: "{" as the start of an array literal
 
     // Continuations must start with a cast "_", but can after that be used as a variable
 
@@ -585,6 +588,13 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
         if (read_value_list(it,value,scope)) return true;
         ASSERT(value != nullptr);
         ASSERT(*(it-1) == CLOSING_PAREN);
+    } else if (*it == OPEN_BRACKET) {
+        cerr << "Reading scopes with capture group not yet implemented (read_evaluated_value)" << endl;
+        return true;
+    } else if (*it == OPEN_BRACE) {
+        cerr << "Reading scopes not yet implemented (read_evaluated_value)" << endl;
+        cerr << "Reading array literals not yet implemented (read_evaluated_value)" << endl;
+        return true;
     } else {
         log_error("Unexpected token while reading value: a value cannot start with the token \""+it->token+"\"",it->context);
         return true;
@@ -596,13 +606,13 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
         if (read_cast(it,value,scope)) return true;
         ASSERT(dynamic_cast<Evaluated_variable*>(value.get()) != nullptr);
         unique_ptr<Evaluated_variable> variable{static_cast<Evaluated_variable*>(value.release())};
-        read_call_chain(it,variable,scope);
+        read_call_chain(it,variable,scope,force_static);
         value = move(variable);
     }
 
     // if followd by infix operator -> read infix op
     if (is_infix_operator(*it)) {
-        read_infix_op(it,value,scope);
+        read_infix_op(it,value,scope,force_static);
     }
     // that should take care of all chained infix operators as well.
     ASSERT(!is_infix_operator(*it));
@@ -638,11 +648,11 @@ foo : fn(int)->int = fn(a : int) -> int { return 2; }; // rhs MÅSTE ha identifi
 foo : defined_fn_type = fn(a : int) -> int { return 2; };
 
 */
-bool read_type(Token const * it, shared_ptr<Type_info>& info);
+bool read_type(Token const *& it, shared_ptr<Type_info>& info);
 
 
 
-bool read_function_type(Token const * it, shared_ptr<Function_type>& ft)
+bool read_function_type(Token const *& it, shared_ptr<Function_type>& ft)
 {
     ASSERT(it != nullptr && *it == FUNCTION_KEYWORD);
 
@@ -693,7 +703,7 @@ bool read_function_type(Token const * it, shared_ptr<Function_type>& ft)
 
 
 
-bool read_type_list(Token const * it, vector<shared_ptr<Type_info>>& v)
+bool read_type_list(Token const *& it, vector<shared_ptr<Type_info>>& v)
 {
     ASSERT(it != nullptr);
 
@@ -719,7 +729,7 @@ struct {
 // TODO: using statements
 
 */
-bool read_struct_type(Token const * it, shared_ptr<Struct_type>& st)
+bool read_struct_type(Token const *& it, shared_ptr<Struct_type>& st)
 {
     ASSERT(it != nullptr && *it == STRUCT_KEYWORD);
 
@@ -775,7 +785,7 @@ bool read_struct_type(Token const * it, shared_ptr<Struct_type>& st)
 
 
 
-bool read_type(Token const * it, shared_ptr<Type_info>& info)
+bool read_type(Token const *& it, shared_ptr<Type_info>& info)
 {
     ASSERT(it!=nullptr);
 
@@ -815,74 +825,10 @@ bool read_type(Token const * it, shared_ptr<Type_info>& info)
 
 
 
-/*
-
-function definitions:
-
-// tills vidare: endast simpel syntax tillåten:
-fn(a:int, b:float); // ok
-fn(a:int, b:float=2); // ok, men senare @default_values
-
-type specificaion:
-fn(int,float); // endast typer tillåtna, inga variabelnamn.
-fn(fn()); // ok
-
-
-
-
-// KANSKE:
-fn(a,b : int,float);
-fn(a:int = 2, b:=2.0);
-fn(a:int, b,c:float,float);
-fn((a=b):int, c,d:float) // error, men vilket error? För complext. inte ok!
-
-*/
-
-
-/*
-// TODO: if the identifier already exist in the local scope -> error (Except for @overloading)
-// TODO: identifiers can be used before they are declared.
-//      In that case, they should be added without a declaration context. (?)
-bool add_identifiers_to_scope(const Declaration& declaration, Scope* scope)
-{
-    bool errors = false;
-    for (const auto& lhs_part : declaration.variable_name_tokens) {
-        for (Token const* token : lhs_part) {
-
-            bool found = false;
-            for (auto& id : scope->identifiers) {
-                if (id->identifier_token->token == token->token) {
-                    log_error("Multiple declarations of identifier \""+token->token+"\"",token->context);
-                    add_note("Previously declared here",id->identifier_token->context);
-                    errors = true;
-                    found = true;
-                }
-            }
-            if (!found) {
-                unique_ptr<Typed_identifier> id{new Typed_identifier()};
-                id->identifier_token = token;
-                // type is nullptr (unknown) for now.
-                scope->identifiers.push_back(move(id));
-            }
-        }
-    }
-    return errors;
-}
-*/
-
-
-
-
-
-
 // comma separated list with either pure identifiers, or a parenthesis of "="-separated identifiers
-bool read_declaration_lhs_part(Token const* it, vector<Token const*>& variable_tokens)
+bool read_declaration_lhs_part(Token const*& it, vector<Token const*>& variable_tokens)
 {
     ASSERT(it != nullptr);
-    if (it->type == Token_type::IDENTIFIER) {
-        variable_tokens.push_back(it);
-        return false;
-    }
 
     if (*it == OPEN_PAREN) {
         while (true) {
@@ -896,16 +842,23 @@ bool read_declaration_lhs_part(Token const* it, vector<Token const*>& variable_t
                 ++it; // go past the ")" token
                 return false; // ok
             }
-
-            if (*it == ASSIGNMENT_TOKEN) {
+            if (*it != ASSIGNMENT_TOKEN) {
                 log_error("Unexpected token in lhs of declaration. Expected \"=\" between identifiers",it->context);
                 return true;
             }
         }
     }
+
+    if (it->type == Token_type::IDENTIFIER) {
+        variable_tokens.push_back(it);
+        return false;
+    }
+
+    log_error("Unexpected token in lhs of declaration. Expected identifier.",it->context);
+    return true;
 }
 
-bool read_declaration_lhs(Token const* it, vector<vector<Token const*>>& variable_tokens)
+bool read_declaration_lhs(Token const*& it, vector<vector<Token const*>>& variable_tokens)
 {
     ASSERT(it != nullptr);
     while(true) {
@@ -919,14 +872,14 @@ bool read_declaration_lhs(Token const* it, vector<vector<Token const*>>& variabl
 
 
 
-bool read_rhs(Token const* it, vector<unique_ptr<Evaluated_value>>& rhs, Scope* scope, bool enforce_static)
+bool read_rhs(Token const*& it, vector<unique_ptr<Evaluated_value>>& rhs, Scope* scope, bool force_static = false)
 {
     rhs.clear();
 
     // read rhs
     while (true) {
         unique_ptr<Evaluated_value> val;
-        if (read_evaluated_value(it,val,scope)) return true;
+        if (read_evaluated_value(it,val,scope,force_static)) return true;
         ASSERT(val != nullptr);
         rhs.push_back(move(val));
         if (*it != COMMA) return false;
@@ -938,7 +891,7 @@ bool read_rhs(Token const* it, vector<unique_ptr<Evaluated_value>>& rhs, Scope* 
 
 // returns true if errors
 // returns false if syntax seems good, even if not able to deduce types yet. In that case, dependencies are added.
-bool read_declaration(Token const* it, unique_ptr<Declaration>& declaration, Token const * type_token, Token const * assignment_token, Scope* scope, bool force_static)
+bool read_declaration(Token const*& it, unique_ptr<Declaration>& declaration, Token const * type_token, Token const * assignment_token, Scope* scope, bool force_static)
 {
     ASSERT(it != nullptr);
     ASSERT(type_token != nullptr && *type_token == COLON);
@@ -1021,6 +974,7 @@ bool read_declaration(Token const* it, unique_ptr<Declaration>& declaration, Tok
 
     // read rhs if there is one
     if (assignment_token != nullptr) {
+        ASSERT(*assignment_token == EQUALS);
         it = assignment_token + 1; // after the "=" token
 
         if (*it == SEMICOLON) {
@@ -1047,173 +1001,203 @@ bool read_declaration(Token const* it, unique_ptr<Declaration>& declaration, Tok
 
 
 
-// dynamic scopes will be processed AFTER all static scopes
-// -> we know that all identifiers are declared
-bool read_assignment(Token const * it, Token const * assignment_token, Token const * end_token, Dynamic_scope* scope)
+
+
+
+
+
+// comma separated list with either pure identifiers, or a parenthesis of "="-separated identifiers
+bool read_assignment_lhs_part(Token const*& it, vector<unique_ptr<Evaluated_variable>>& variables, Scope* scope)
+{
+    ASSERT(it != nullptr);
+    variables.clear();
+
+    if (*it == OPEN_PAREN) {
+        while (true) {
+            ++it; // go past the "(" or "=" token
+
+            unique_ptr<Evaluated_variable> var;
+            if (read_evaluated_variable(it,var,scope,false)) return true;
+            ASSERT(var != nullptr)
+            variables.push_back(move(var));
+
+            if (*it == CLOSING_PAREN) {
+                ++it; // go past the ")" token
+                return false; // ok
+            }
+
+            if (*it == ASSIGNMENT_TOKEN) {
+                log_error("Unexpected token in lhs of declaration. Expected \"=\" between identifiers",it->context);
+                return true;
+            }
+        }
+    }
+
+    unique_ptr<Evaluated_variable> var;
+    if (read_evaluated_variable(it,var,scope,false)) return true;
+    ASSERT(var != nullptr)
+    variables.push_back(move(var));
+    return false;
+}
+
+
+bool read_assignment_lhs(Token const*& it, vector<vector<unique_ptr<Evaluated_variable>>>& variables, Scope* scope)
+{
+    ASSERT(it != nullptr);
+    while(true) {
+        vector<unique_ptr<Evaluated_variable>> v;
+        if (read_assignment_lhs_part(it,v,scope)) return true;
+        ASSERT(!v.empty());
+        variables.push_back(move(v));
+        if (*it != COMMA) return false;
+    }
+}
+
+
+
+
+bool read_assignment(Token const *& it, unique_ptr<Assignment>& assignment, Token const * assignment_token, Scope* scope)
 {
     ASSERT(assignment_token != nullptr);
     ASSERT(is_assignment_operator(*assignment_token));
+    // Read assignment
 
-    cerr << "read_assignment not yet implemented" << endl;
-    return false;
+    assignment.reset(new Assignment());
+    bool errors = false; // we want to continue to rhs in case we find a scope (because we want error messages for that as well) -> don't break on lhs
 
     // read lhs
-    // ensure that we can find all identifiers. If not -> error!
+    vector<vector<unique_ptr<Evaluated_variable>>> lhs_variables;
+    if (read_assignment_lhs(it,lhs_variables,scope)) errors = true;
+
+    if (!errors && it != assignment_token) { // comparing pointers
+        log_error("Unexpected token in declaration: expected assignment operator directly after lhs. ", it->context);
+        add_note("Assignment operator \""+assignment_token->token+"\" found here",assignment_token->context);
+        errors = true;
+    }
 
     // read rhs
-    // ensure that we can find all identifiers. If not -> error!
+    it = assignment_token + 1; // after the assignment token
 
-    // set up dependencies for each unresolved identifier in lhs or rhs.
-    // if no dependencies -> resolve_assignment() immediately!
-}
-
-bool resolve_assignment()
-{
-    // Check that the types between lhs and rhs match. This might not be resolved.
-    // If all types are resolved -> give an error for each type mismatch
-}
-
-
-
-bool handle_imports(Token const *& it, Scope* scope, Scope* parent_scope)
-{
-    ASSERT(it != nullptr);
-    ASSERT(scope != nullptr);
-    ASSERT(parent_scope != nullptr);
-
-    if (*it == OPEN_BRACKET) {
-        // read capture group
-        it = read_bracket(it);
-        if (it == nullptr) return true; // error and can't continue
-        it++; // go to the "{" token
-        cerr << "reading capture group not yet implemented" << endl;
+    if (*it == SEMICOLON) {
+        log_error("Missing values after \"=\"",it->context);
+        errors = true;
     } else {
-        // import parent scope
-        scope->imported_scopes.push_back(parent_scope);
-    }
-    return false; // no error
-}
-
-
-bool read_static_scope(Token const * it, unique_ptr<Static_scope>& scope, Static_scope* parent_scope)
-{
-    ASSERT(it != nullptr);
-    ASSERT(parent_scope != nullptr);
-
-    scope.reset(new Static_scope());
-
-    if (handle_imports(it, scope.get(), parent_scope)) {
-        return true; // error
+        // read rhs
+        if (read_rhs(it,assignment->rhs,scope)) {
+            errors = true;
+            add_note("In rhs of assignment",assignment_token->context);
+        }
     }
 
-    ASSERT(*it == OPEN_BRACE);
+    if (errors) return true;
 
-    // read static statements to scope
-    cerr << "reading static scope not yet implemented" << endl;
-    return true;
-}
-
-// can be a function body, if statement, etc.
-bool read_dynamic_scope(Token const * it, unique_ptr<Dynamic_scope>& scope, Scope* parent_scope)
-{
-    ASSERT(it != nullptr);
-    ASSERT(parent_scope != nullptr);
-
-    scope.reset(new Dynamic_scope());
-
-    if (handle_imports(it, scope.get(), parent_scope)) {
-        return true; // error
+    if (*it != SEMICOLON) {
+        log_error("Missing \";\" after declaration",it->context);
+        return true;
     }
-
-    ASSERT(*it == OPEN_BRACE);
-
-    // read dynamic statements to scope
-    cerr << "reading dynamic scope not yet implemented" << endl;
-    return true;
+    it++; // go past the ";" token
+    return false; // OK!
 }
-
-
-
-
-
-
-
-
-
 
 
 
 // stops when there are no more ";"-tokens in the current scope
 // returns true if error
-bool read_static_scope_statements(Token const* it, Static_scope* scope)
+// should set "it" to after the ";" if possible, even if errors
+bool read_statement(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope, bool force_static)
 {
     ASSERT(it != nullptr);
 
+    Token const* type_token = nullptr;
+    Token const* assignment_token = nullptr;
+    Token const* end_token = nullptr;
+    if (examine_statement(it, type_token, assignment_token, end_token)) {
+        ASSERT(end_token != nullptr);
+        if (*end_token == EOF) it = end_token;
+        else it = end_token+1;
+        return true; // unable to continue
+    }
+    ASSERT(end_token != nullptr);
+
+    // Possibilities:
+    // 1) only ":" token, no assignment
+    // 2) both ":" and "=" tokens
+    // 3) only assignment token
+    // 4) no ":" nor assignment tokens
+
     bool errors = false;
 
-    while(it->type != Token_type::EOF && !is_closing_symbol(*it)) {
-
-        Token const* type_token = nullptr;
-        Token const* assignment_token = nullptr;
-        Token const* end_token = nullptr;
-        if (examine_statement(it, type_token, assignment_token, end_token)) {
-            // We encountered an error, but if possible, continue going for the rest of the statements.
-            // Getting several errors at the same time makes debugging easier.
-            if (end_token == nullptr) return true; // not possible to go further
-            it = end_token+1;
-            errors = true;
-            continue;
+    if (type_token != nullptr) {
+        // declaration
+        ASSERT(*type_token == COLON);
+        unique_ptr<Declaration> decl;
+        if (read_declaration(it,decl,type_token,assignment_token,scope,force_static)) errors = true;
+        else {
+            ASSERT(decl != nullptr);
+            statement = move(decl);
         }
 
-        /**
-            Possibilities:
+    } else if (assignment_token != nullptr) {
+        // assignment
+        ASSERT(is_assignment_operator(*assignment_token));
+        unique_ptr<Assignment> asgn;
+        if (read_assignment(it,asgn,assignment_token,scope)) errors = true;
+        else {
+            ASSERT(asgn != nullptr);
+            statement = move(asgn);
+        }
 
-            1) only ":" token, no assignment
-            2) both ":" and "=" tokens
-            3) only assignment token
-            4) no ":" nor assignment tokens
-        */
-        if (type_token != nullptr) {
-            ASSERT(*type_token == COLON);
-            unique_ptr<Declaration> decl;
-            if (read_declaration(it,decl,type_token,assignment_token,scope,true)) errors = true;
-            else {
-                ASSERT(decl != nullptr);
-                ASSERT(it == end_token);
-                // todo: do something with the declaration
-            }
-        } else if (assignment_token != nullptr) {
-            ASSERT(is_assignment_operator(*assignment_token));
-
-            // Assignment
-
-            log_error("Variable assignment not allowed in a static scope!",assignment_token->context);
-            errors = true;
-        } else {
-
-            // Can be a function call or an anonymous scope
-            unique_ptr<Evaluated_value> value{nullptr};
-            vector<Dependency> dependencies{}; // TODO: add these to the scope
-            if (read_evaluated_value(it,value,scope)) {
-                errors = true;
+    } else {
+        // Can for example be a function call or an anonymous scope
+        unique_ptr<Evaluated_value> value{nullptr};
+        if (read_evaluated_value(it,value,scope,force_static)) errors = true;
+        else {
+            ASSERT(value != nullptr);
+            if (Dynamic_statement* ds = dynamic_cast<Dynamic_statement*>(value.release())) {
+                statement.reset(ds);
             } else {
-                ASSERT(value != nullptr);
-                if (Scope* s = dynamic_cast<Scope*>(value.get())) {
-                    cerr << "read anonymous scope, but don't know how to handle it yet" << endl;
-                } else if (Function_call* fc = dynamic_cast<Function_call*>(value.get())) {
-                    log_error("Function call not allowed in static scope!",it->context);
-                    add_note("Use \"#run\" to create a dynamic scope (NYI)");
-                    errors = true;
-                }
+                log_error("Found something that is not a statement where a statement was expected",it->context);
+                errors = true;
             }
         }
-        it = end_token+1;
     }
+    if (!errors) {
+        ASSERT(statement != nullptr);
+        if (force_static && dynamic_cast<Static_statement*>(statement.get()) == nullptr) {
+            log_error("Dynamic statement not allowed in static scope!",it->context);
+            errors = true;
+        }
+        if (it != end_token) {
+            log_error("Missing \";\" after statement",it->context);
+            errors = true;
+        }
+    }
+    it = end_token+1;
     return errors;
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
+
+// NOTES for handle_imports(...)
 
 dynamic context:
 
@@ -1255,43 +1239,149 @@ printf("%",b); // still 2
 
 */
 
-
-
-
-
-
-
-
-
-unique_ptr<Scope> parse_tokens(const vector<Token>& tokens)
+bool handle_imports(Token const *& it, Scope* scope, Scope* parent_scope)
 {
-    cerr << "parse_tokens not yet implemented" << endl;
-    return nullptr;
-    /*
-    if (tokens.empty()) return nullptr;
-    unique_ptr<Scope> global_scope{new Scope()};
-    global_scope->statements = read_statement_list(tokens,&tokens[0],global_scope.get(),false);
-    if (global_scope->statements.empty()) {
-        // since t is not empty we expect at least one statement. -> errors -> return nulllptr.
-        return nullptr;
+    ASSERT(it != nullptr);
+    ASSERT(scope != nullptr);
+    ASSERT(parent_scope != nullptr);
+
+    if (*it == OPEN_BRACKET) {
+        // read capture group
+        it = read_bracket(it);
+        if (it == nullptr) return true; // error and can't continue
+        it++; // go to the "{" token
+        cerr << "reading capture group not yet implemented" << endl;
+    } else {
+        // import parent scope
+        scope->imported_scopes.push_back(parent_scope);
     }
-    Token const * t = global_scope->statements.back()->end_token+2; // +1 is ";" token. +2 should be eof
-    if (t < &tokens.back()) {
-        log_error("Extra token after statements in global scope: Found extra token \""+t->token+"\"",t->context);
-        return nullptr;
-    }
-    global_scope->start_token = &tokens[0];
-    global_scope->end_token = &tokens.back();
-    return global_scope;
-    */
+    return false; // no error
 }
 
-unique_ptr<Scope> parse_file(const string& file)
+
+bool read_static_scope_statements(Token const*& it, vector<unique_ptr<Static_statement>>& statements, Scope* scope)
+{
+    ASSERT(it != nullptr);
+
+    bool errors = false;
+
+    while(*it != EOF && !is_closing_symbol(*it)) {
+        unique_ptr<Dynamic_statement> statement;
+        if (read_statement(it,statement,scope,true)) { // force_static = true
+            errors = true;
+            if (it == nullptr || *(it-1) != SEMICOLON) return true; // unable to continue
+            continue;
+        } else {
+            ASSERT(statement != nullptr);
+            ASSERT(dynamic_cast<Static_statement*>(statement.get()) != nullptr); // this should be forced by the force_static flag
+            unique_ptr<Static_statement> ss{dynamic_cast<Static_statement*>(statement.release())};
+            statements.push_back(move(ss));
+        }
+    }
+    return errors;
+}
+
+
+bool read_dynamic_scope_statements(Token const*& it, vector<unique_ptr<Dynamic_statement>>& statements, Scope* scope)
+{
+    ASSERT(it != nullptr);
+
+    bool errors = false;
+
+    while(*it != EOF && !is_closing_symbol(*it)) {
+        unique_ptr<Dynamic_statement> statement;
+        if (read_statement(it,statement,scope,false)) {
+            errors = true;
+            if (it == nullptr || *(it-1) != SEMICOLON) return true; // unable to continue
+            continue;
+        } else {
+            statements.push_back(move(statement));
+        }
+    }
+    return errors;
+}
+
+
+
+
+bool read_static_scope(Token const *& it, unique_ptr<Static_scope>& scope, Static_scope* parent_scope)
+{
+    ASSERT(it != nullptr);
+    ASSERT(parent_scope != nullptr);
+
+    scope.reset(new Static_scope());
+
+    if (handle_imports(it, scope.get(), parent_scope)) return true;
+
+    ASSERT(*it == OPEN_BRACE);
+
+    if (read_static_scope_statements(it,scope->statements,scope.get())) return true;
+    if (*it != CLOSING_BRACE) {
+        log_error("Missing \"}\" at the end of scope",it->context);
+        return true;
+    }
+    return false;
+}
+
+// can be a function body, if statement, etc.
+bool read_dynamic_scope(Token const *& it, unique_ptr<Dynamic_scope>& scope, Scope* parent_scope)
+{
+    ASSERT(it != nullptr);
+    ASSERT(parent_scope != nullptr);
+
+    scope.reset(new Dynamic_scope());
+
+    if (handle_imports(it, scope.get(), parent_scope)) {
+        return true; // error
+    }
+
+    ASSERT(*it == OPEN_BRACE);
+
+    if (read_dynamic_scope_statements(it,scope->statements,scope.get())) return true;
+    if (*it != CLOSING_BRACE) {
+        log_error("Missing \"}\" at the end of scope",it->context);
+        return true;
+    }
+    return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Static_scope parse_tokens(const vector<Token>& tokens)
+{
+    ASSERT(!tokens.empty());
+    ASSERT(tokens.back() == EOF);
+
+    Static_scope global_scope{};
+
+    Token const * it = &tokens[0];
+    read_static_scope_statements(it,global_scope.statements,&global_scope); // ignore errors. Everything read will be well-formed anyways
+    if (*it != EOF) {
+        log_error("Extra token after statements in global scope: Found extra tokens after \""+it->token+"\"",it->context);
+    }
+    return global_scope;
+}
+
+Static_scope parse_file(const string& file)
 {
     return parse_tokens(get_tokens_from_file(file));
 }
 
-unique_ptr<Scope> parse_string(const string& string)
+Static_scope parse_string(const string& string)
 {
     return parse_tokens(get_tokens_from_string(string));
 }

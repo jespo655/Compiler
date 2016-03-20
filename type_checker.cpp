@@ -67,16 +67,16 @@ If found in more than one branch -> error "Ambiguous reference to identfier x" "
 // identifier becomes nullptr if the identifier could not be not found.
 // That is not an error, just an indication that you should set up a dependency for that variable.
 // Returns true if the same identifier was found in several import branches -> ambiguous reference
-bool find_identifier(const std::string& identifier_name, Scope* scope, Typed_identifier*& identifier, const Token_context& context)
+bool find_identifier(const std::string& identifier_name, Scope* scope, std::shared_ptr<Typed_identifier>& identifier, const Token_context& context)
 {
     identifier = nullptr;
     // first check local identifiers
     // then check imports
-    for (unique_ptr<Typed_identifier>& id : scope->identifiers) {
+    for (shared_ptr<Typed_identifier>& id : scope->identifiers) {
         if (id->identifier_token->token == identifier_name) {
             // match!
             ASSERT(identifier == nullptr); // a scope cannot have several identifiers of the same name // or maybe it can? @overloading
-            identifier = id.get();
+            identifier = id;
         }
     }
     if (identifier != nullptr) return false;
@@ -84,7 +84,7 @@ bool find_identifier(const std::string& identifier_name, Scope* scope, Typed_ide
     bool errors = false;
     bool ambiguous = false;
     for (Scope* imported_scope : scope->imported_scopes) {
-        Typed_identifier* id = nullptr;
+        shared_ptr<Typed_identifier> id = nullptr;
         if (find_identifier(identifier_name,imported_scope,id,context)) errors = true;
         if (id != nullptr) {
             if (identifier != nullptr) {

@@ -54,35 +54,26 @@ string with newlines\n\
 
 
 
-/*
-void indent(int indent_level)
-{
-    for (int i = 0; i < indent_level; ++i) {
-        cout << "    ";
-    }
-}
-
-void print_abs_stx(Abs_syntax* abstx, int indent_level = 0);
+void print_scope(const Scope* s, int indent_level = 0);
 
 int parser_test()
 {
-    unique_ptr<Scope> scope = parse_file("test.jai");
+    Static_scope scope = parse_file("test.jai");
     exit_if_errors();
     cout << "printing syntax tree: " << endl;
-    print_abs_stx(scope.get());
+    print_scope(&scope);
 }
 
 
-*/
 
 
 
 
 int main()
 {
-    // return parser_test();
+    return parser_test();
     // return lexer_test();
-    return paren_test();
+    // return paren_test();
     cerr << "main.cpp: empty main" << endl;
 }
 
@@ -127,158 +118,146 @@ int main()
 
 
 
-/*
 
-ostream& operator << (ostream& os, const Abs_syntax* abstx)
+
+
+
+
+
+
+void indent(int indent_level)
 {
-    if (abstx == nullptr) os << "nullptr";
-    else os << "(" << abstx->start_token->context.line << "," << abstx->start_token->context.position
-        << ") - (" << abstx->end_token->context.line << "," << abstx->end_token->context.position
-        << ")";
-    return os;
+    for (int i = 0; i < indent_level; ++i) {
+        cout << "    ";
+    }
 }
 
-ostream& operator << (ostream& os, const unique_ptr<Abs_syntax> abstx)
+void print_statement(const Dynamic_statement* ds, int indent_level);
+void print_evaluated_variable(const Evaluated_variable* p, int indent_level);
+void print_evaluated_value(const Evaluated_value* p, int indent_level);
+void print_identifier(const Identifier* p, int indent_level);
+
+
+void print_dynamic_scope(const Dynamic_scope* ds, int indent_level)
 {
-    return os << abstx.get();
+    if (!ds->statements.empty()) {
+        indent(indent_level); cout << "Dynamic statements:" << endl;
+        for (auto& s : ds->statements) {
+            print_statement(s.get(), indent_level+1);
+        }
+    }
 }
 
-ostream& operator << (ostream& os, const Token* t)
+void print_static_scope(const Static_scope* ss, int indent_level)
 {
-    if (t == nullptr) os << "nullptr";
-    else os << t->token;
-    return os;
+    if (!ss->statements.empty()) {
+        indent(indent_level); cout << "Static statements:" << endl;
+        for (auto& s : ss->statements) {
+            print_statement(s.get(), indent_level+1);
+        }
+    }
 }
 
-void print_abs_stx(Abs_syntax* abstx, int indent_level)
+void print_scope(const Scope* s, int indent_level)
 {
-    if (abstx == nullptr) {
-        indent(indent_level); cout << "nullptr" << endl;
-    }
-
-    else if (While_clause* p = dynamic_cast<While_clause*>(abstx)) {
-        indent(indent_level); cout << "While_clause: " << endl;
-        indent(indent_level); cout << "Condition: " << (Abs_syntax*)p->condition.get() << endl;
-        indent(indent_level); cout << "Loop: " << (Abs_syntax*)p->loop.get() << endl;
-        print_abs_stx(p->loop.get(), indent_level+1);
-    }
-
-    else if (For_clause* p = dynamic_cast<For_clause*>(abstx)) {
-        indent(indent_level); cout << "For_clause: " << endl;
-        indent(indent_level); cout << "Range: " << (Abs_syntax*)p->range.get() << endl;
-        print_abs_stx(p->range.get(), indent_level+1);
-        indent(indent_level); cout << "Loop: " << (Abs_syntax*)p->loop.get() << endl;
-        print_abs_stx(p->loop.get(), indent_level+1);
-    }
-
-    else if (Range* p = dynamic_cast<Range*>(abstx)) {
-        indent(indent_level); cout << "Range: " << endl;
-        if (p->in_token != nullptr) indent(indent_level); cout << "has in_token" << endl;
-        if (p->by_token != nullptr) indent(indent_level); cout << "has by_token" << endl;
-    }
-
-    else if (If_clause* p = dynamic_cast<If_clause*>(abstx)) {
-        indent(indent_level); cout << "If_clause: " << endl;
-        indent(indent_level); cout << "Condition: " << (Abs_syntax*)p->condition.get() << endl;
-        indent(indent_level); cout << "If_true: " << (Abs_syntax*)p->if_true.get() << endl;
-        print_abs_stx(p->if_true.get(), indent_level+1);
-        indent(indent_level); cout << "If_false: " << (Abs_syntax*)p->if_false.get() << endl;
-        print_abs_stx(p->if_false.get(), indent_level+1);
-    }
-
-    else if (Infix_op* p = dynamic_cast<Infix_op*>(abstx)) {
-        indent(indent_level); cout << "Infix_op: " << endl;
-        indent(indent_level); cout << "Lhs: " << (Abs_syntax*)p->lhs.get() << endl;
-        print_abs_stx(p->lhs.get(),indent_level+1);
-        indent(indent_level); cout << "Rhs: " << (Abs_syntax*)p->rhs.get() << endl;
-        print_abs_stx(p->rhs.get(),indent_level+1);
-        indent(indent_level); cout << "Operator: " << p->op_token << endl; // (p->op_token?p->op_token->token:"nullptr")
-    }
-
-    else if (Getter* p = dynamic_cast<Getter*>(abstx)) {
-        indent(indent_level); cout << "Getter: " << endl;
-        indent(indent_level); cout << "Struct id: " << (Abs_syntax*)p->struct_identifier.get() << endl;
-        print_abs_stx(p->struct_identifier.get(),indent_level+1);
-        indent(indent_level); cout << "Data id: " << p->data_identifier_token << endl;
-    }
-
-    else if (Function_call* p = dynamic_cast<Function_call*>(abstx)) {
-        indent(indent_level); cout << "Function_call: " << endl;
-        indent(indent_level); cout << "Function id: " << (Abs_syntax*)p->function_identifier.get() << endl;
-        print_abs_stx(p->function_identifier.get(),indent_level+1);
-        indent(indent_level); cout << "Arguments: " << (Abs_syntax*)p->arguments.get() << endl;
-        print_abs_stx(p->arguments.get(),indent_level+1);
-    }
-
-    else if (Assignment* p = dynamic_cast<Assignment*>(abstx)) {
-        indent(indent_level); cout << "Assignment: " << endl;
-        indent(indent_level); cout << "Operator: " << p->op_token->token << endl; // (p->op_token?p->op_token->token:"nullptr")
-        indent(indent_level); cout << "Lhs: " << (Abs_syntax*)p->lhs.get() << endl; // this is working fine
-        print_abs_stx(p->lhs.get(),indent_level+1);
-        indent(indent_level); cout << "Rhs: " << (Abs_syntax*)p->rhs.get() << endl; // this is crashing. ?????
-        print_abs_stx(p->rhs.get(),indent_level+1);
-    }
-
-    else if (Declaration* p = dynamic_cast<Declaration*>(abstx)) {
-        indent(indent_level); cout << "Declaration: " << endl;
-        for (unique_ptr<Abs_identifier>& id : p->identifiers) {
-            indent(indent_level); cout << "Id: " << (Abs_syntax*)id.get() << endl;
-            print_abs_stx(id.get(),indent_level+1);
+    indent(indent_level); cout << "Scope:" << endl;
+    if (!s->identifiers.empty()) {
+        indent(indent_level); cout << "Identifiers:" << endl;
+        for (auto& id : s->identifiers) {
+            print_identifier(id.get(), indent_level+1);
         }
     }
-
-    else if (Rhs* p = dynamic_cast<Rhs*>(abstx)) {
-        indent(indent_level); cout << "Rhs: " << endl;
-        for (unique_ptr<Abs_identifier>& id : p->identifiers) {
-            indent(indent_level); cout << "Id: " << (Abs_syntax*)id.get() << endl;
-            print_abs_stx(id.get(),indent_level+1);
-        }
+    if (!s->imported_scopes.empty()) {
+        indent(indent_level); cout << "Has " << s->imported_scopes.size() << " imported scopes." << endl;
     }
+    if (const Dynamic_scope* p = dynamic_cast<const Dynamic_scope*>(s)) print_dynamic_scope(p,indent_level);
+    else if (const Static_scope* p = dynamic_cast<const Static_scope*>(s)) print_static_scope(p,indent_level);
+}
 
-    else if (Lhs* p = dynamic_cast<Lhs*>(abstx)) {
-        indent(indent_level); cout << "Lhs: " << endl;
-        for (unique_ptr<Lhs_part>& id : p->parts) {
-            indent(indent_level); cout << "Part: " << (Abs_syntax*)id.get() << endl;
-            print_abs_stx(id.get(),indent_level+1);
-        }
-    }
 
-    else if (Lhs_part* p = dynamic_cast<Lhs_part*>(abstx)) {
-        indent(indent_level); cout << "Lhs_part: " << endl;
-        for (unique_ptr<Abs_identifier>& id : p->identifiers) {
-            indent(indent_level); cout << "Id: " << (Abs_syntax*)id.get() << endl;
-            print_abs_stx(id.get(),indent_level+1);
-        }
-    }
+void print_list(const List* p, int indent_level)
+{
+    indent(indent_level); cout << "list" << endl;
+}
+void print_literal_range(const Literal_range* p, int indent_level)
+{
+    indent(indent_level); cout << "literal range" << endl;
+}
+void print_evaluated_range(const Evaluated_range* p, int indent_level)
+{
+    indent(indent_level); cout << "evaluated range" << endl;
+}
 
-    else if (Scope* p = dynamic_cast<Scope*>(abstx)) {
-        indent(indent_level); cout << "Scope: " << endl;
-        if (p->capture_group != nullptr) { indent(indent_level); cout << "Has capture group." << endl; }
-        if (!p->imported_scopes.empty()) { indent(indent_level); cout << "Has " << p->imported_scopes.size() << " imported scopes." << endl; }
-        for (unique_ptr<Abs_identifier>& id : p->identifiers) {
-            indent(indent_level); cout << "Id: " << (Abs_syntax*)id.get() << endl;
-            print_abs_stx(id.get(),indent_level+1);
-        }
-        for (unique_ptr<Statement>& id : p->statements) {
-            indent(indent_level); cout << "Statement: " << (Abs_syntax*)id.get() << endl;
-            print_abs_stx(id.get(),indent_level+1);
-        }
-    }
-
-    else if (Function_scope* p = dynamic_cast<Function_scope*>(abstx)) {
-        indent(indent_level); cout << "Function_scope: " << endl;
-        if (p->parent_scope != nullptr) { indent(indent_level); cout << "Has parent scope." << endl; }
-        if (p->capture_group != nullptr) { indent(indent_level); cout << "Has capture group." << endl; }
-        for (unique_ptr<Statement>& id : p->statements) {
-            indent(indent_level); cout << "Statement: " << (Abs_syntax*)id.get() << endl;
-            print_abs_stx(id.get(),indent_level+1);
-        }
-    }
-
+void print_range(const Range* r, int indent_level)
+{
+    if (const List* p = dynamic_cast<const List*>(r)) print_list(p,indent_level);
+    else if (const Literal_range* p = dynamic_cast<const Literal_range*>(r)) print_literal_range(p,indent_level);
+    else if (const Evaluated_range* p = dynamic_cast<const Evaluated_range*>(r)) print_evaluated_range(p,indent_level);
     else {
-        indent(indent_level); cout << "Unknown abs.stx: " << abstx << endl;
+        indent(indent_level); cout << "Unknown range" << endl;
     }
 }
 
 
-*/
+void print_if(const If_clause* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_while(const While_clause* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_for(const For_clause* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_using(const Using_statement* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_declaration(const Declaration* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_assignment(const Assignment* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_typed_id(const Typed_identifier* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_infix_op(const Infix_op* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_value_list(const Value_list* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_identifier(const Identifier* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_function_call(const Function_call* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_getter(const Getter* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_cast(const Cast* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_array_lookup(const Array_lookup* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+
+
+void print_evaluated_variable(const Evaluated_variable* var, int indent_level)
+{
+    if (const Identifier* p = dynamic_cast<const Identifier*>(var)) print_identifier(p,indent_level);
+    else if (const Function_call* p = dynamic_cast<const Function_call*>(var)) print_function_call(p,indent_level);
+    else if (const Getter* p = dynamic_cast<const Getter*>(var)) print_getter(p,indent_level);
+    else if (const Cast* p = dynamic_cast<const Cast*>(var)) print_cast(p,indent_level);
+    else if (const Array_lookup* p = dynamic_cast<const Array_lookup*>(var)) print_array_lookup(p,indent_level);
+    else {
+        indent(indent_level); cout << "Unknown evaluated variable" << endl;
+    }
+}
+
+void print_evaluated_value(const Evaluated_value* val, int indent_level)
+{
+    if (const Evaluated_variable* p = dynamic_cast<const Evaluated_variable*>(val)) print_evaluated_variable(p,indent_level);
+    else if (const Value_list* p = dynamic_cast<const Value_list*>(val)) print_value_list(p,indent_level);
+    else if (const Infix_op* p = dynamic_cast<const Infix_op*>(val)) print_infix_op(p,indent_level);
+    else if (const Scope* p = dynamic_cast<const Scope*>(val)) print_scope(p,indent_level);
+    else {
+        indent(indent_level); cout << "Unknown evaluated value" << endl;
+    }
+}
+
+
+
+
+void print_statement(const Dynamic_statement* ds, int indent_level)
+{
+    if (const If_clause* p = dynamic_cast<const If_clause*>(ds)) print_if(p,indent_level);
+    else if (const While_clause* p = dynamic_cast<const While_clause*>(ds)) print_while(p,indent_level);
+    else if (const For_clause* p = dynamic_cast<const For_clause*>(ds)) print_for(p,indent_level);
+    else if (const Using_statement* p = dynamic_cast<const Using_statement*>(ds)) print_using(p,indent_level);
+    else if (const Declaration* p = dynamic_cast<const Declaration*>(ds)) print_declaration(p,indent_level);
+    else if (const Assignment* p = dynamic_cast<const Assignment*>(ds)) print_assignment(p,indent_level);
+    else if (const Function_call* p = dynamic_cast<const Function_call*>(ds)) print_function_call(p,indent_level);
+    else if (const Scope* p = dynamic_cast<const Scope*>(ds)) print_scope(p,indent_level);
+    else if (const Range* p = dynamic_cast<const Range*>(ds)) print_range(p,indent_level);
+    else {
+        indent(indent_level); cout << "Unknown statement" << endl;
+    }
+}
+
+
+
+
+
