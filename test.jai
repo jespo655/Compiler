@@ -1,7 +1,7 @@
 
 
 
-a := 2;
+a, b := 2, 3;
 
 
 // (int i = i2 = i3), float f, f = 2, 4.5, f; // OK genom parser!

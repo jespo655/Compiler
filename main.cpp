@@ -141,9 +141,9 @@ void print_identifier(const Identifier* p, int indent_level);
 void print_dynamic_scope(const Dynamic_scope* ds, int indent_level)
 {
     if (!ds->statements.empty()) {
-        indent(indent_level); cout << "Dynamic statements:" << endl;
+        indent(indent_level+1); cout << "Dynamic statements:" << endl;
         for (auto& s : ds->statements) {
-            print_statement(s.get(), indent_level+1);
+            print_statement(s.get(), indent_level+2);
         }
     }
 }
@@ -151,9 +151,9 @@ void print_dynamic_scope(const Dynamic_scope* ds, int indent_level)
 void print_static_scope(const Static_scope* ss, int indent_level)
 {
     if (!ss->statements.empty()) {
-        indent(indent_level); cout << "Static statements:" << endl;
+        indent(indent_level+1); cout << "Static statements:" << endl;
         for (auto& s : ss->statements) {
-            print_statement(s.get(), indent_level+1);
+            print_statement(s.get(), indent_level+2);
         }
     }
 }
@@ -162,13 +162,13 @@ void print_scope(const Scope* s, int indent_level)
 {
     indent(indent_level); cout << "Scope:" << endl;
     if (!s->identifiers.empty()) {
-        indent(indent_level); cout << "Identifiers:" << endl;
+        indent(indent_level+1); cout << "Identifiers:" << endl;
         for (auto& id : s->identifiers) {
-            print_identifier(id.get(), indent_level+1);
+            print_identifier(id.get(), indent_level+2);
         }
     }
     if (!s->imported_scopes.empty()) {
-        indent(indent_level); cout << "Has " << s->imported_scopes.size() << " imported scopes." << endl;
+        indent(indent_level+1); cout << "Has " << s->imported_scopes.size() << " imported scopes." << endl;
     }
     if (const Dynamic_scope* p = dynamic_cast<const Dynamic_scope*>(s)) print_dynamic_scope(p,indent_level);
     else if (const Static_scope* p = dynamic_cast<const Static_scope*>(s)) print_static_scope(p,indent_level);
@@ -203,16 +203,53 @@ void print_if(const If_clause* p, int indent_level) { indent(indent_level); cout
 void print_while(const While_clause* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_for(const For_clause* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_using(const Using_statement* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_declaration(const Declaration* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_assignment(const Assignment* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_typed_id(const Typed_identifier* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_infix_op(const Infix_op* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_value_list(const Value_list* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_identifier(const Identifier* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_function_call(const Function_call* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_getter(const Getter* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_cast(const Cast* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
 void print_array_lookup(const Array_lookup* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+
+
+void print_literal(const Literal* p, int indent_level)
+{
+    indent(indent_level); cout << "Literal: " << p->literal_token->token << endl;
+}
+
+
+void print_declaration(const Declaration* p, int indent_level)
+{
+    indent(indent_level); cout << "Declaration:" << endl;
+    if (!p->lhs.empty()) {
+        indent(indent_level+1); cout << "Declared identifiers:" << endl;
+        for (auto& v : p->lhs) {
+            indent(indent_level+2);
+            if (v.size() > 1) {
+                cout << "Lhs group: " << v[0]->identifier_token->token;
+                for (int i = 1; i < v.size(); ++i) cout << ", " << v[i]->identifier_token->token;
+            } else {
+                cout << v[0]->identifier_token->token;
+            }
+            cout << endl;
+        }
+    }
+    if (!p->rhs.empty()) {
+        indent(indent_level+1); cout << "Values:" << endl;
+        for (auto& value : p->rhs) {
+            print_evaluated_value(value.get(),indent_level+2);
+        }
+    }
+}
+
+
+void print_assignment(const Assignment* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+
+
+void print_identifier(const Identifier* p, int indent_level)
+{
+    indent(indent_level); cout << p->identifier_token->token << "\", declared here: " << p->identifier_token->context << endl;
+}
 
 
 void print_evaluated_variable(const Evaluated_variable* var, int indent_level)
@@ -230,6 +267,8 @@ void print_evaluated_variable(const Evaluated_variable* var, int indent_level)
 void print_evaluated_value(const Evaluated_value* val, int indent_level)
 {
     if (const Evaluated_variable* p = dynamic_cast<const Evaluated_variable*>(val)) print_evaluated_variable(p,indent_level);
+    else if (const Literal_range* p = dynamic_cast<const Literal_range*>(val)) print_literal_range(p,indent_level);
+    else if (const Literal* p = dynamic_cast<const Literal*>(val)) print_literal(p,indent_level);
     else if (const Value_list* p = dynamic_cast<const Value_list*>(val)) print_value_list(p,indent_level);
     else if (const Infix_op* p = dynamic_cast<const Infix_op*>(val)) print_infix_op(p,indent_level);
     else if (const Scope* p = dynamic_cast<const Scope*>(val)) print_scope(p,indent_level);

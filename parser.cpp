@@ -465,6 +465,7 @@ bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& v
     unique_ptr<Identifier> id{new Identifier()};
     id->identifier_token = it;
     variable = move(id);
+    it++; // go past the identifier token
     if (read_call_chain(it,variable,scope,force_static)) return true;
     return false;
 }
@@ -881,6 +882,7 @@ bool read_declaration_lhs(Token const*& it, vector<vector<Token const*>>& variab
         ASSERT(!v.empty());
         variable_tokens.push_back(v);
         if (*it != COMMA) return false;
+        it++; // go past the "," token
     }
 }
 
@@ -966,6 +968,7 @@ bool read_declaration(Token const*& it, unique_ptr<Declaration>& declaration, To
         shared_ptr<Type_info> type{nullptr};
         if (has_type_ids) type = types[i];
 
+        vector<Typed_identifier*> lhs_part;
         for (Token const* token : lhs_variable_tokens[i]) {
 
             bool found = false;
@@ -981,9 +984,12 @@ bool read_declaration(Token const*& it, unique_ptr<Declaration>& declaration, To
                 unique_ptr<Typed_identifier> id{new Typed_identifier()};
                 id->identifier_token = token;
                 id->type = type;
+                lhs_part.push_back(id.get());
                 scope->identifiers.push_back(move(id));
             }
         }
+        ASSERT(errors || !lhs_part.empty());
+        declaration->lhs.push_back(lhs_part);
     }
 
     // read rhs if there is one
@@ -1179,12 +1185,13 @@ bool read_statement(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
                 errors = true;
             }
         }
-        it = end_token+1;
     }
+
+    ASSERT(errors || it == end_token+1);
+    it = end_token+1;
 
     if (!errors) {
         ASSERT(statement != nullptr);
-        ASSERT(it == end_token+1);
         if (force_static && dynamic_cast<Static_statement*>(statement.get()) == nullptr) {
             log_error("Dynamic statement not allowed in static scope!",it->context);
             errors = true;
