@@ -195,7 +195,7 @@ struct Unresolved_type : Type_info
 
 struct Array_type : Type_info
 {
-    Type_info* type{nullptr}; // cannot be null;
+    std::shared_ptr<Type_info> type{nullptr}; // cannot be null;
     int size = 0;
     bool dynamic = false;
     std::string get_type_id() const { return type->get_type_id() + "[" + (dynamic?"..":std::to_string(size)) + "]"; }
@@ -260,7 +260,7 @@ struct Using_statement : Static_statement
 // Declaration: any statement including ":" and maybe "="
 struct Declaration : Static_statement
 {
-    std::vector<std::vector<Typed_identifier*>> lhs{}; // these are stored in the local scope
+    std::vector<std::vector<std::shared_ptr<Typed_identifier>>> lhs{}; // these are stored in the local scope
     std::vector<std::unique_ptr<Evaluated_value>> rhs{}; // can be empty . One part can be a function that returns several values. Check that the count matches when all top-level functions are resolved.
 };
 

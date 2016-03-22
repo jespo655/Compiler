@@ -23,7 +23,7 @@ void exit_if_errors()
 
 void check_for_termination()
 {
-    if (++err_count >= err_max) {
+    if (err_count >= err_max) {
         cerr << "Error count reached the maximum of " << err_max << ". Terminating compilation." << endl;
         exit(EXIT_FAILURE);
     }

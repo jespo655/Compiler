@@ -34,18 +34,26 @@ int paren_test()
 
 int lexer_test()
 {
-    // auto tokens = get_tokens_from_file("test.jai");
-    auto tokens = get_tokens_from_string("\n\
-string with newlines\n\
-\" and stuff\"");
+    auto tokens = get_tokens_from_file("test.jai");
+//     auto tokens = get_tokens_from_string("\n\
+// string with newlines\n\
+// \" and stuff\"");
     // auto tokens = get_tokens_from_string("");
 
     for (const Token& t : tokens) {
         log_error(t.token,t.context);
-        // cout << "(file " << t.context.file
-        //     << ", line " << t.context.line
-        //     << ", pos " << t.context.position
-        //     << ") token: " << t.token << endl;
+        cout << "    Token type:";
+        switch(t.type) {
+            case Token_type::UNKNOWN: cout << "UNKNOWN" << endl; break;
+            case Token_type::SYMBOL: cout << "SYMBOL" << endl; break;
+            case Token_type::IDENTIFIER: cout << "IDENTIFIER" << endl; break;
+            case Token_type::KEYWORD: cout << "KEYWORD" << endl; break;
+            case Token_type::INTEGER: cout << "INTEGER" << endl; break;
+            case Token_type::FLOAT: cout << "FLOAT" << endl; break;
+            case Token_type::STRING: cout << "STRING" << endl; break;
+            case Token_type::BOOL: cout << "BOOL" << endl; break;
+            case Token_type::EOF: cout << "EOF" << endl; break;
+        }
     }
 }
 
@@ -164,7 +172,7 @@ void print_scope(const Scope* s, int indent_level)
     if (!s->identifiers.empty()) {
         indent(indent_level+1); cout << "Identifiers:" << endl;
         for (auto& id : s->identifiers) {
-            print_identifier(id.get(), indent_level+2);
+            indent(indent_level+2); cout << id->identifier_token->token << ", declared here: " << id->identifier_token->context << endl;
         }
     }
     if (!s->imported_scopes.empty()) {
@@ -199,17 +207,22 @@ void print_range(const Range* r, int indent_level)
 }
 
 
-void print_if(const If_clause* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_while(const While_clause* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_for(const For_clause* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_using(const Using_statement* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_typed_id(const Typed_identifier* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_infix_op(const Infix_op* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_value_list(const Value_list* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_function_call(const Function_call* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_getter(const Getter* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_cast(const Cast* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
-void print_array_lookup(const Array_lookup* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_if(const If_clause* p, int indent_level) { indent(indent_level); cout << "if (TODO)" << endl; }
+void print_while(const While_clause* p, int indent_level) { indent(indent_level); cout << "while (TODO)" << endl; }
+void print_for(const For_clause* p, int indent_level) { indent(indent_level); cout << "for (TODO)" << endl; }
+void print_using(const Using_statement* p, int indent_level) { indent(indent_level); cout << "using (TODO)" << endl; }
+void print_typed_id(const Typed_identifier* p, int indent_level) { indent(indent_level); cout << "typed id (TODO)" << endl; }
+void print_infix_op(const Infix_op* p, int indent_level) { indent(indent_level); cout << "infix op (TODO)" << endl; }
+void print_value_list(const Value_list* p, int indent_level) { indent(indent_level); cout << "value list (TODO)" << endl; }
+void print_function_call(const Function_call* p, int indent_level) { indent(indent_level); cout << "function call (TODO)" << endl; }
+void print_getter(const Getter* p, int indent_level) { indent(indent_level); cout << "getter (TODO)" << endl; }
+void print_cast(const Cast* p, int indent_level) { indent(indent_level); cout << "cast (TODO)" << endl; }
+void print_array_lookup(const Array_lookup* p, int indent_level) { indent(indent_level); cout << "array lookup (TODO)" << endl; }
+
+void print_type_info(const Type_info* p, int indent_level)
+{
+    indent(indent_level); cout << p->get_type_id() << endl;
+}
 
 
 void print_literal(const Literal* p, int indent_level)
@@ -231,6 +244,7 @@ void print_declaration(const Declaration* p, int indent_level)
             } else {
                 cout << v[0]->identifier_token->token;
             }
+            if (v[0]->type != nullptr) cout << " : " << v[0]->type->get_type_id();
             cout << endl;
         }
     }
@@ -248,7 +262,7 @@ void print_assignment(const Assignment* p, int indent_level) { indent(indent_lev
 
 void print_identifier(const Identifier* p, int indent_level)
 {
-    indent(indent_level); cout << p->identifier_token->token << "\", declared here: " << p->identifier_token->context << endl;
+    indent(indent_level); cout << p->identifier_token->token << endl;
 }
 
 
@@ -272,6 +286,7 @@ void print_evaluated_value(const Evaluated_value* val, int indent_level)
     else if (const Value_list* p = dynamic_cast<const Value_list*>(val)) print_value_list(p,indent_level);
     else if (const Infix_op* p = dynamic_cast<const Infix_op*>(val)) print_infix_op(p,indent_level);
     else if (const Scope* p = dynamic_cast<const Scope*>(val)) print_scope(p,indent_level);
+    else if (const Type_info* p = dynamic_cast<const Type_info*>(val)) print_type_info(p,indent_level);
     else {
         indent(indent_level); cout << "Unknown evaluated value" << endl;
     }

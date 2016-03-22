@@ -474,12 +474,13 @@ void read_number_token(Stream& s, Token& t)
     {
         t.type = Token_type::FLOAT;
         // check for decimals
-        t.token += s.pop_utf8();
+        s.pop_utf8();
         if (!is_digit(s.peek())) {
             log_error("Lexer error: no decimals after decimal point!", s.context);
-            t.type = Token_type::UNKNOWN;
+            t.type = Token_type::INTEGER;
             return;
         }
+        t.token += ".";
         t.token += read_number(s);
     }
 }

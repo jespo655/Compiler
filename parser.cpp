@@ -62,10 +62,12 @@ const Token DOUBLE_EQUALS = Token{Token_type::SYMBOL, "=="};
 
 string Function_type::get_type_id() const
 {
-    ostringstream oss{"fn("};
+    ostringstream oss{};
+    oss << "fn(";
     bool first = true;
     for (auto& type : in_parameters) {
-        if (!first) { oss << ","; first = true; }
+        if (!first) oss << ",";
+        first = false;
         oss << type->get_type_id();
     }
     oss << ")";
@@ -73,7 +75,8 @@ string Function_type::get_type_id() const
         oss << "->";
         bool first = true;
         for (auto& type : out_parameters) {
-            if (!first) { oss << ","; first = true; }
+            if (!first) oss << ",";
+            first = false;
             oss << type->get_type_id();
         }
     }
@@ -83,12 +86,14 @@ string Function_type::get_type_id() const
 
 string Struct_type::get_type_id() const
 {
-    ostringstream oss{"struct{"};
+    ostringstream oss{};
+    oss << "struct{";
     bool first = true;
     for (auto& member : members) {
         ASSERT(member->identifier_token != nullptr);
         ASSERT(member->type != nullptr);
-        if (!first) { oss << ","; first = true; }
+        if (!first) oss << ",";
+        first = false;
         oss << member->identifier_token->token << ":" << member->type->get_type_id();
     }
     oss << "}";
@@ -444,6 +449,7 @@ bool read_call_chain(Token const*& it, unique_ptr<Evaluated_variable>& variable,
     if (read_call_chain(it,value,scope,force_static)) return true; // error
     ASSERT(dynamic_cast<Evaluated_variable*>(value.get()) != nullptr);
     variable.reset(static_cast<Evaluated_variable*>(value.release()));
+    return false;
 }
 
 
@@ -466,6 +472,7 @@ bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& v
     id->identifier_token = it;
     variable = move(id);
     it++; // go past the identifier token
+
     if (read_call_chain(it,variable,scope,force_static)) return true;
     return false;
 }
@@ -568,6 +575,7 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
 
     if (it->type == Token_type::IDENTIFIER) {
         unique_ptr<Evaluated_variable> variable;
+
         if (read_evaluated_variable(it,variable,scope,force_static)) return true; // error
         value = move(variable);
         return false;
@@ -622,11 +630,11 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
 
     // read chain of casts, function calls, getters, array lookups if applicable.
     // If lhs doesn't have the operator -> error in type checker
-    read_call_chain(it,value,scope,force_static);
+    if (read_call_chain(it,value,scope,force_static)) return true;
 
     // if followd by infix operator -> read infix op
     if (is_infix_operator(*it)) {
-        read_infix_op(it,value,scope,force_static);
+        if (read_infix_op(it,value,scope,force_static)) return true;
     }
     // that should take care of all chained infix operators as well.
     ASSERT(!is_infix_operator(*it));
@@ -754,7 +762,10 @@ bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st)
         return true;
     }
     ++it; // go past the "{" token
-    if (*it == CLOSING_BRACE) return false; // ok
+    if (*it == CLOSING_BRACE) {
+        it++; // go past the "}" token
+        return false; // ok
+    }
 
     do {
         vector<unique_ptr<Typed_identifier>> tid_to_add;
@@ -764,9 +775,10 @@ bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st)
                 log_error("Unexpected token in struct: expected identifier",it->context);
                 return true;
             }
-            unique_ptr<Typed_identifier> tid{};
+            unique_ptr<Typed_identifier> tid{new Typed_identifier()};
             tid->identifier_token = it;
             tid_to_add.push_back(move(tid));
+            it++; // go past the identifier token
             if (*it == COLON) break;
             if (*it != COMMA) {
                 log_error("Unexpected token in struct: expected \",\" between identifiers",it->context);
@@ -777,8 +789,22 @@ bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st)
         ASSERT(*it == COLON);
         it++; // go past the ":" token
 
+        bool first = true;
         for (auto& tid : tid_to_add) {
-            if (read_type(it,tid->type)) return true; // this handles the "too few types" issue
+            if (*it == SEMICOLON) {
+                log_error("Missing type in struct",it->context);
+                return true; // this handles the "too few types" issue
+            }
+            if (!first) {
+                if (*it != COMMA) {
+                    log_error("Missing \",\" between types",it->context);
+                    return true;
+                }
+                it++; // go past the "," token
+            }
+            first = false;
+
+            if (read_type(it,tid->type)) return true;
             st->members.push_back(move(tid));
         }
         if (*it != SEMICOLON) {
@@ -929,7 +955,7 @@ bool read_declaration(Token const*& it, unique_ptr<Declaration>& declaration, To
 
     // read types, if there are any
     vector<shared_ptr<Type_info>> types;
-    if (it < assignment_token) {
+    if (assignment_token == nullptr || it < assignment_token) {
         while (true) {
             shared_ptr<Type_info> type;
             if (read_type(it,type)) {
@@ -937,7 +963,7 @@ bool read_declaration(Token const*& it, unique_ptr<Declaration>& declaration, To
                 break;
             }
             types.push_back(type);
-            if (it == assignment_token) break;
+            if (*it == ASSIGNMENT_TOKEN || *it == SEMICOLON) break;
             if (*it != COMMA) {
                 log_error("Unexpected token in declaration: expected \",\" between types",it->context);
                 errors = true;
@@ -968,7 +994,7 @@ bool read_declaration(Token const*& it, unique_ptr<Declaration>& declaration, To
         shared_ptr<Type_info> type{nullptr};
         if (has_type_ids) type = types[i];
 
-        vector<Typed_identifier*> lhs_part;
+        vector<shared_ptr<Typed_identifier>> lhs_part;
         for (Token const* token : lhs_variable_tokens[i]) {
 
             bool found = false;
@@ -981,11 +1007,11 @@ bool read_declaration(Token const*& it, unique_ptr<Declaration>& declaration, To
                 }
             }
             if (!found) {
-                unique_ptr<Typed_identifier> id{new Typed_identifier()};
+                shared_ptr<Typed_identifier> id{new Typed_identifier()};
                 id->identifier_token = token;
                 id->type = type;
-                lhs_part.push_back(id.get());
-                scope->identifiers.push_back(move(id));
+                lhs_part.push_back(id);
+                scope->identifiers.push_back(id);
             }
         }
         ASSERT(errors || !lhs_part.empty());
