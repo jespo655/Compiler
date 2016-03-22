@@ -57,7 +57,7 @@ const Token ASSIGNMENT_TOKEN = Token{Token_type::SYMBOL, "="};
 const Token RIGHT_ARROW = Token{Token_type::SYMBOL, "->"};
 const Token LEFT_ARROW = Token{Token_type::SYMBOL, "<-"};
 
-const Token EQUALS = Token{Token_type::SYMBOL, "=="};
+const Token DOUBLE_EQUALS = Token{Token_type::SYMBOL, "=="};
 
 
 string Function_type::get_type_id() const
@@ -319,11 +319,11 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
 // variable:
 //      in: the function identifier
 //      out: the function itself
-bool read_function_call(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope)
+bool read_function_call(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope)
 {
     ASSERT(it != nullptr && *it == OPEN_PAREN);
     unique_ptr<Function_call> fc{new Function_call()};
-    fc->function_identifier = move(variable);
+    fc->function_identifier = move(value);
 
     if (*(++it) != CLOSING_PAREN) { // if it's not an empty variable list
         while (true) {
@@ -348,22 +348,24 @@ bool read_function_call(Token const*& it, unique_ptr<Evaluated_variable>& variab
     ASSERT(it->type == Token_type::SYMBOL && it->token == ")");
 
     ++it; // go past the ")" token
-    variable = move(fc);
+    value = move(fc);
     return false; // ok!
 }
+
+
 
 // variable:
 //      in: the struct identifier
 //      out: the getter itself
-bool read_getter(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope)
+bool read_getter(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope)
 {
     ASSERT(it != nullptr && *it == GETTER_TOKEN);
     unique_ptr<Getter> g{new Getter()};
-    g->struct_identifier = move(variable);
+    g->struct_identifier = move(value);
 
     if ((++it)->type == Token_type::IDENTIFIER) {
         g->data_identifier_token = it;
-        variable = move(g);
+        value = move(g);
         it++; // go past the identifier token
         return false; // ok!
     } else {
@@ -373,41 +375,35 @@ bool read_getter(Token const*& it, unique_ptr<Evaluated_variable>& variable, Sco
 }
 
 
+
 // variable:
 //      in: the casted value
 //      out: the cast itself
-bool read_cast(Token const*& it, unique_ptr<Evaluated_value>& variable, Scope* scope)
+bool read_cast(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope)
 {
     ASSERT(it != nullptr && *it == CAST_TOKEN);
     unique_ptr<Cast> cast{new Cast()};
-    cast->casted_value = move(variable);
+    cast->casted_value = move(value);
 
     if ((++it)->type == Token_type::IDENTIFIER) {
         if (read_evaluated_variable(it,cast->casted_type,scope,false)) return true; // error
-        variable = move(cast);
+        value = move(cast);
         return false; // ok!
     } else {
         log_error("Expected type identifier after cast token \"_\"",it->context);
         return true;
     }
 }
-bool read_cast(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope)
-{
-    unique_ptr<Evaluated_value> value = move(variable);
-    if (read_cast(it,value,scope)) return true; // error
-    ASSERT(dynamic_cast<Evaluated_variable*>(value.get()) != nullptr);
-    variable.reset(static_cast<Evaluated_variable*>(value.release()));
-}
 
 
 // variable:
 //      in: the array identifier
 //      out: the lookup itself
-bool read_array_lookup(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope, bool force_static)
+bool read_array_lookup(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope, bool force_static)
 {
     ASSERT(it != nullptr && *it == OPEN_BRACKET);
     unique_ptr<Array_lookup> al{new Array_lookup()};
-    al->array_identifier = move(variable);
+    al->array_identifier = move(value);
 
     if (read_evaluated_value((++it),al->position,scope,force_static)) return true; // error
     if (*it != CLOSING_BRACKET) {
@@ -415,30 +411,39 @@ bool read_array_lookup(Token const*& it, unique_ptr<Evaluated_variable>& variabl
         return true;
     }
     ++it; // go past the "]" token
-    variable = move(al);
+    value = move(al);
     return false;
 }
 
 
 
-bool read_call_chain(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope, bool force_static)
+
+bool read_call_chain(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope, bool force_static)
 {
-    while(++it) {
-        if (it->type != Token_type::SYMBOL) return false; // end of evaluated_variable
+    while(true) {
+        if (it->type != Token_type::SYMBOL) return false; // end
 
         if (it->token == "(") {
-            if (read_function_call(it,variable,scope)) return true; // error
+            if (read_function_call(it,value,scope)) return true; // error
 
         } else if (it->token == ".") {
-            if (read_getter(it,variable,scope)) return true;
+            if (read_getter(it,value,scope)) return true;
 
         } else if (it->token == "_") {
-            if (read_cast(it,variable,scope)) return true;
+            if (read_cast(it,value,scope)) return true;
 
         } else if (it->token == "[") {
-            if (read_array_lookup(it,variable,scope,force_static)) return true;
-        }
+            if (read_array_lookup(it,value,scope,force_static)) return true;
+
+        } else return false; // unknown symbol -> end
     }
+}
+bool read_call_chain(Token const*& it, unique_ptr<Evaluated_variable>& variable, Scope* scope, bool force_static)
+{
+    unique_ptr<Evaluated_value> value = move(variable);
+    if (read_call_chain(it,value,scope,force_static)) return true; // error
+    ASSERT(dynamic_cast<Evaluated_variable*>(value.get()) != nullptr);
+    variable.reset(static_cast<Evaluated_variable*>(value.release()));
 }
 
 
@@ -460,7 +465,7 @@ bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& v
     unique_ptr<Identifier> id{new Identifier()};
     id->identifier_token = it;
     variable = move(id);
-    read_call_chain(it,variable,scope,force_static);
+    if (read_call_chain(it,variable,scope,force_static)) return true;
     return false;
 }
 
@@ -551,6 +556,7 @@ bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* 
 
 
 
+bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st);
 
 bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope, bool force_static)
 {
@@ -566,49 +572,56 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
         return false;
     }
 
-    // Except for an Evaluated_variable, a value can start with:
-    //      1) any literal
-    //      2) a parenthesis of comma separated Evaluated_values
-    //      3) TODO: "[" or "{" as the start of a scope
-    //      4) TODO: "{" as the start of an array literal
-
-    // Continuations must start with a cast "_", but can after that be used as a variable
-
     if (it->type == Token_type::STRING ||
         it->type == Token_type::INTEGER ||
         it->type == Token_type::FLOAT ||
         it->type == Token_type::BOOL)
     {
+        // literal
         unique_ptr<Literal> literal{new Literal()};
         literal->literal_token = it;
         value = move(literal);
         ++it;
+
     } else if (*it == OPEN_PAREN) {
-        // read Value_list
+        // Value_list
         if (read_value_list(it,value,scope)) return true;
         ASSERT(value != nullptr);
         ASSERT(*(it-1) == CLOSING_PAREN);
+
     } else if (*it == OPEN_BRACKET) {
-        cerr << "Reading scopes with capture group not yet implemented (read_evaluated_value)" << endl;
+        // capture group before scope
+        log_error("Reading scopes with capture group not yet implemented (read_evaluated_value)",it->context);
         return true;
+
     } else if (*it == OPEN_BRACE) {
-        cerr << "Reading scopes not yet implemented (read_evaluated_value)" << endl;
-        cerr << "Reading array literals not yet implemented (read_evaluated_value)" << endl;
+        // scope or array literal
+        log_error("Reading scopes not yet implemented (read_evaluated_value)",it->context);
+        log_error("Reading array literals not yet implemented (read_evaluated_value)",it->context);
         return true;
+
+    } else if (*it == FUNCTION_KEYWORD) {
+        // function definition or declaration
+        log_error("Function declarations or definitions not implemented yet (read_evaluated_value)",it->context);
+        return true;
+
+    } else if (*it == STRUCT_KEYWORD) {
+        // struct
+        unique_ptr<Struct_type> st;
+        if (read_struct_type(it,st)) return true;
+        ASSERT(st != nullptr);
+        value = move(st);
+        // value.reset(st.get());
+        return false;
+
     } else {
         log_error("Unexpected token while reading value: a value cannot start with the token \""+it->token+"\"",it->context);
         return true;
     }
 
-    // if followed by "_" -> cast
-    // That transforms the value into a variable -> can read call chain:
-    if (*it == CAST_TOKEN) {
-        if (read_cast(it,value,scope)) return true;
-        ASSERT(dynamic_cast<Evaluated_variable*>(value.get()) != nullptr);
-        unique_ptr<Evaluated_variable> variable{static_cast<Evaluated_variable*>(value.release())};
-        read_call_chain(it,variable,scope,force_static);
-        value = move(variable);
-    }
+    // read chain of casts, function calls, getters, array lookups if applicable.
+    // If lhs doesn't have the operator -> error in type checker
+    read_call_chain(it,value,scope,force_static);
 
     // if followd by infix operator -> read infix op
     if (is_infix_operator(*it)) {
@@ -652,7 +665,7 @@ bool read_type(Token const *& it, shared_ptr<Type_info>& info);
 
 
 
-bool read_function_type(Token const *& it, shared_ptr<Function_type>& ft)
+bool read_function_type(Token const *& it, unique_ptr<Function_type>& ft)
 {
     ASSERT(it != nullptr && *it == FUNCTION_KEYWORD);
 
@@ -729,7 +742,7 @@ struct {
 // TODO: using statements
 
 */
-bool read_struct_type(Token const *& it, shared_ptr<Struct_type>& st)
+bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st)
 {
     ASSERT(it != nullptr && *it == STRUCT_KEYWORD);
 
@@ -784,14 +797,14 @@ bool read_struct_type(Token const *& it, shared_ptr<Struct_type>& st)
 
 
 
-
+// TODO: if the type already exists somewhere, return a shared ptr to that instead
 bool read_type(Token const *& it, shared_ptr<Type_info>& info)
 {
     ASSERT(it!=nullptr);
 
     if (it->type == Token_type::IDENTIFIER) {
         // type identifier - just one token
-        shared_ptr<Unresolved_type> ut{new Unresolved_type()};
+        unique_ptr<Unresolved_type> ut{new Unresolved_type()};
         ut->identifier_token = it;
         info = move(ut);
         ++it; // go past the identifier token
@@ -799,7 +812,7 @@ bool read_type(Token const *& it, shared_ptr<Type_info>& info)
     }
 
     if (*it == FUNCTION_KEYWORD) {
-        shared_ptr<Function_type> ft;
+        unique_ptr<Function_type> ft;
         if (read_function_type(it,ft)) return true;
         ASSERT(ft != nullptr);
         info = move(ft);
@@ -807,7 +820,7 @@ bool read_type(Token const *& it, shared_ptr<Type_info>& info)
     }
 
     if (*it == STRUCT_KEYWORD) {
-        shared_ptr<Struct_type> st;
+        unique_ptr<Struct_type> st;
         if (read_struct_type(it,st)) return true;
         ASSERT(st != nullptr);
         info = move(st);
@@ -851,6 +864,7 @@ bool read_declaration_lhs_part(Token const*& it, vector<Token const*>& variable_
 
     if (it->type == Token_type::IDENTIFIER) {
         variable_tokens.push_back(it);
+        it++; // go past the identifier token
         return false;
     }
 
@@ -974,7 +988,7 @@ bool read_declaration(Token const*& it, unique_ptr<Declaration>& declaration, To
 
     // read rhs if there is one
     if (assignment_token != nullptr) {
-        ASSERT(*assignment_token == EQUALS);
+        ASSERT(*assignment_token == ASSIGNMENT_TOKEN);
         it = assignment_token + 1; // after the "=" token
 
         if (*it == SEMICOLON) {
@@ -1155,24 +1169,27 @@ bool read_statement(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
             ASSERT(value != nullptr);
             if (Dynamic_statement* ds = dynamic_cast<Dynamic_statement*>(value.release())) {
                 statement.reset(ds);
+
+                if (it != end_token) {
+                    log_error("Missing \";\" after statement",it->context);
+                    errors = true;
+                }
             } else {
                 log_error("Found something that is not a statement where a statement was expected",it->context);
                 errors = true;
             }
         }
+        it = end_token+1;
     }
+
     if (!errors) {
         ASSERT(statement != nullptr);
+        ASSERT(it == end_token+1);
         if (force_static && dynamic_cast<Static_statement*>(statement.get()) == nullptr) {
             log_error("Dynamic statement not allowed in static scope!",it->context);
             errors = true;
         }
-        if (it != end_token) {
-            log_error("Missing \";\" after statement",it->context);
-            errors = true;
-        }
     }
-    it = end_token+1;
     return errors;
 }
 

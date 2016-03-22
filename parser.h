@@ -101,14 +101,14 @@ struct Infix_op : Evaluated_value
 // function call: starts with "("
 struct Function_call : Evaluated_variable, Dynamic_statement
 {
-    std::unique_ptr<Evaluated_variable> function_identifier;
+    std::unique_ptr<Evaluated_value> function_identifier;
     std::vector<std::unique_ptr<Evaluated_value>> arguments;
 };
 
 // getter: starts with "."
 struct Getter : Evaluated_variable
 {
-    std::unique_ptr<Evaluated_variable> struct_identifier;
+    std::unique_ptr<Evaluated_value> struct_identifier;
     Token const * data_identifier_token;
 };
 
@@ -122,7 +122,7 @@ struct Cast : Evaluated_variable
 // array lookup: starts with "["
 struct Array_lookup : Evaluated_variable
 {
-    std::unique_ptr<Evaluated_variable> array_identifier;
+    std::unique_ptr<Evaluated_value> array_identifier;
     std::unique_ptr<Evaluated_value> position;
 };
 
@@ -139,7 +139,7 @@ struct Array_lookup : Evaluated_variable
 
 
 
-struct Type_info
+struct Type_info : Evaluated_value
 {
     virtual ~Type_info() {}
     virtual std::string get_type_id() const = 0;
@@ -244,6 +244,13 @@ struct Dynamic_scope : Scope, Dynamic_statement
 
 
 
+struct Function : Evaluated_value
+{
+    std::unique_ptr<Function_type> type{nullptr};
+    std::vector<Token const *> in_parameter_name_tokens{}; // must be of the same length as type.in_parameters
+    std::vector<Token const *> out_parameter_name_tokens{}; // must be of the same length as type.out_parameters. Name can be empty
+    std::unique_ptr<Dynamic_scope> body{nullptr};
+};
 
 struct Using_statement : Static_statement
 {
@@ -253,7 +260,7 @@ struct Using_statement : Static_statement
 // Declaration: any statement including ":" and maybe "="
 struct Declaration : Static_statement
 {
-    std::vector<std::vector<Typed_identifier*>> lhs; // these are stored in the local scope
+    std::vector<std::vector<Typed_identifier*>> lhs{}; // these are stored in the local scope
     std::vector<std::unique_ptr<Evaluated_value>> rhs{}; // can be empty . One part can be a function that returns several values. Check that the count matches when all top-level functions are resolved.
 };
 
