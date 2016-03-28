@@ -43,6 +43,7 @@ struct Token
 
 
 std::ostream& operator << (std::ostream& os, const Token_context& context);
+std::ostream& operator << (std::ostream& os, const Token_type& context);
 
 
 class Stream

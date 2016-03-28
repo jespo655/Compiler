@@ -252,6 +252,11 @@ struct Function : Evaluated_value
     std::unique_ptr<Dynamic_scope> body{nullptr};
 };
 
+struct Return_statement : Dynamic_statement
+{
+    std::vector<std::unique_ptr<Evaluated_value>> return_values;
+};
+
 struct Using_statement : Static_statement
 {
     std::unique_ptr<Evaluated_variable> scope{nullptr};

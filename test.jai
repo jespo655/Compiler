@@ -2,12 +2,20 @@
 
 // 2(); // ASSERT failed, borde ge error
 
-a:type= struct{a:int;b,c:float,float;};
-c:a;
-(i1=i2=i3) := 2;
+dump : int;
+
+fib := fn(n:int,a:int,b:int)->int
+{
+    if (n<=0) { return a; }
+    return fib(n-1,b,a+b);
+};
+
+// a:type= struct{a:int;b,c:float,float;};
+// c:a;
+// (i1=i2=i3) := 2;
 
 // aaaaaaaaa := 2; // variabel definierad med det första tokenet får ibland ett konstigt namn (É eller é).
-                // datan i id->token->token skrivs över av någon anledning
+//                 // datan i id->token->token skrivs över av någon anledning
 // q2 := a.b.c.d.e.f.g;
 
 // a, b, c := 2, "asd", 1.0; // ok

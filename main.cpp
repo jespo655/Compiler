@@ -135,7 +135,7 @@ int main()
 
 void indent(int indent_level)
 {
-    for (int i = 0; i < indent_level; ++i) {
+    for (int i = 0; i < indent_level%10; ++i) {
         cout << "    ";
     }
 }
@@ -148,6 +148,16 @@ void print_identifier(const Identifier* p, int indent_level);
 
 void print_dynamic_scope(const Dynamic_scope* ds, int indent_level)
 {
+    indent(indent_level); cout << "Dynamic scope:" << endl;
+    if (!ds->identifiers.empty()) {
+        indent(indent_level+1); cout << "Identifiers:" << endl;
+        for (auto& id : ds->identifiers) {
+            indent(indent_level+2); cout << id->identifier_token->token << ", declared here: " << id->identifier_token->context << endl;
+        }
+    }
+    if (!ds->imported_scopes.empty()) {
+        indent(indent_level+1); cout << "Has " << ds->imported_scopes.size() << " imported scopes." << endl;
+    }
     if (!ds->statements.empty()) {
         indent(indent_level+1); cout << "Dynamic statements:" << endl;
         for (auto& s : ds->statements) {
@@ -158,8 +168,18 @@ void print_dynamic_scope(const Dynamic_scope* ds, int indent_level)
 
 void print_static_scope(const Static_scope* ss, int indent_level)
 {
+    indent(indent_level); cout << "Static scope:" << endl;
+    if (!ss->identifiers.empty()) {
+        indent(indent_level+1); cout << "Identifiers:" << endl;
+        for (auto& id : ss->identifiers) {
+            indent(indent_level+2); cout << id->identifier_token->token << ", declared here: " << id->identifier_token->context << endl;
+        }
+    }
+    if (!ss->imported_scopes.empty()) {
+        indent(indent_level+1); cout << "Has " << ss->imported_scopes.size() << " imported scopes." << endl;
+    }
     if (!ss->statements.empty()) {
-        indent(indent_level+1); cout << "Static statements:" << endl;
+        indent(indent_level+1); cout << "statements:" << endl;
         for (auto& s : ss->statements) {
             print_statement(s.get(), indent_level+2);
         }
@@ -168,18 +188,11 @@ void print_static_scope(const Static_scope* ss, int indent_level)
 
 void print_scope(const Scope* s, int indent_level)
 {
-    indent(indent_level); cout << "Scope:" << endl;
-    if (!s->identifiers.empty()) {
-        indent(indent_level+1); cout << "Identifiers:" << endl;
-        for (auto& id : s->identifiers) {
-            indent(indent_level+2); cout << id->identifier_token->token << ", declared here: " << id->identifier_token->context << endl;
-        }
-    }
-    if (!s->imported_scopes.empty()) {
-        indent(indent_level+1); cout << "Has " << s->imported_scopes.size() << " imported scopes." << endl;
-    }
     if (const Dynamic_scope* p = dynamic_cast<const Dynamic_scope*>(s)) print_dynamic_scope(p,indent_level);
     else if (const Static_scope* p = dynamic_cast<const Static_scope*>(s)) print_static_scope(p,indent_level);
+    else {
+        indent(indent_level); cout << "Unknown scope" << endl;
+    }
 }
 
 
@@ -218,6 +231,32 @@ void print_function_call(const Function_call* p, int indent_level) { indent(inde
 void print_getter(const Getter* p, int indent_level) { indent(indent_level); cout << "getter (TODO)" << endl; }
 void print_cast(const Cast* p, int indent_level) { indent(indent_level); cout << "cast (TODO)" << endl; }
 void print_array_lookup(const Array_lookup* p, int indent_level) { indent(indent_level); cout << "array lookup (TODO)" << endl; }
+
+
+
+void print_function(const Function* p, int indent_level)
+{
+    indent(indent_level); cout << "Function of type " << p->type->get_type_id() << endl;
+    if (!p->in_parameter_name_tokens.empty()) {
+        indent(indent_level+1); cout << "in_parameter names:" << endl;
+        for (Token const* t : p->in_parameter_name_tokens) {
+            indent(indent_level+2); cout << t->token << endl;
+        }
+    }
+    if (!p->out_parameter_name_tokens.empty()) {
+        indent(indent_level+1); cout << "out_parameter names:" << endl;
+        for (Token const* t : p->out_parameter_name_tokens) {
+            indent(indent_level+2); cout << t->token << endl;
+        }
+    }
+    indent(indent_level+1); cout << "body:" << endl;
+    print_dynamic_scope(p->body.get(),indent_level+2);
+}
+
+
+
+
+
 
 void print_type_info(const Type_info* p, int indent_level)
 {
@@ -287,6 +326,7 @@ void print_evaluated_value(const Evaluated_value* val, int indent_level)
     else if (const Infix_op* p = dynamic_cast<const Infix_op*>(val)) print_infix_op(p,indent_level);
     else if (const Scope* p = dynamic_cast<const Scope*>(val)) print_scope(p,indent_level);
     else if (const Type_info* p = dynamic_cast<const Type_info*>(val)) print_type_info(p,indent_level);
+    else if (const Function* p = dynamic_cast<const Function*>(val)) print_function(p,indent_level);
     else {
         indent(indent_level); cout << "Unknown evaluated value" << endl;
     }
