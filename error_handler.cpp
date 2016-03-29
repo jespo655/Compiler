@@ -30,13 +30,20 @@ void check_for_termination()
 }
 
 
-
 void log_error(const string& msg, const Token_context& context)
 {
     if (!should_log) return;
-    cerr << endl << context << " " << msg << endl;
+    cerr << endl << context << " Error: " << msg << endl;
     err_count++;
 }
+
+
+void log_warning(const string& msg, const Token_context& context)
+{
+    if (!should_log) return;
+    cerr << endl << context << " Warning: " << msg << endl;
+}
+
 
 void add_note(const std::string& msg, const Token_context& context)
 {
