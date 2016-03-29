@@ -39,6 +39,7 @@ const Token RETURN_KEYWORD = Token{Token_type::KEYWORD, "return"};
 const Token STRUCT_KEYWORD = Token{Token_type::KEYWORD, "struct"};
 const Token FOR_KEYWORD = Token{Token_type::KEYWORD, "for"};
 const Token IF_KEYWORD = Token{Token_type::KEYWORD, "if"};
+const Token ELSE_KEYWORD = Token{Token_type::KEYWORD, "else"};
 const Token WHILE_KEYWORD = Token{Token_type::KEYWORD, "while"};
 const Token IN_KEYWORD = Token{Token_type::KEYWORD, "in"};
 const Token BY_KEYWORD = Token{Token_type::KEYWORD, "by"};
@@ -264,6 +265,8 @@ bool examine_statement(Token const* it, Token const*& type_token, Token const*& 
     bool found_assignment = false;
     bool found_type = false;
     bool errors = false;
+
+    if (*it == IF_KEYWORD || *it == FOR_KEYWORD || *it == WHILE_KEYWORD) return false;
 
     while(true) {
         if (it->type == Token_type::EOF || is_closing_symbol(*it)) {
@@ -632,6 +635,7 @@ bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* 
 {
     ASSERT(it != nullptr && is_infix_operator(*it));
     Token const * op_token = it;
+    it++; // go past the infix token
 
     unique_ptr<Evaluated_value> rhs;
     if (read_evaluated_value(it,rhs,scope,force_static)) return true;
@@ -641,6 +645,7 @@ bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* 
         infix->lhs = move(value);
         infix->op_token = op_token;
         infix->rhs = move(rhs);
+        value = move(infix);
         return false;
     }
     else {
@@ -690,6 +695,7 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
         unique_ptr<Evaluated_variable> variable;
         if (read_evaluated_variable(it,variable,scope,force_static)) return true; // error
         value = move(variable);
+        ASSERT(value != nullptr);
 
     } else if (it->type == Token_type::STRING ||
         it->type == Token_type::INTEGER ||
@@ -722,6 +728,7 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
     } else if (*it == FUNCTION_KEYWORD) {
         // function definition or declaration
         if (read_function(it,value,scope)) return true;
+        ASSERT(value != nullptr);
 
     } else if (*it == STRUCT_KEYWORD) {
         // struct
@@ -738,10 +745,12 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
     // read chain of casts, function calls, getters, array lookups if applicable.
     // If lhs doesn't have the operator -> error in type checker
     if (read_call_chain(it,value,scope,force_static)) return true;
+    ASSERT(value != nullptr);
 
     // if followd by infix operator -> read infix op
     if (is_infix_operator(*it)) {
         if (read_infix_op(it,value,scope,force_static)) return true;
+        ASSERT(value != nullptr);
     }
     // that should take care of all chained infix operators as well.
     ASSERT(!is_infix_operator(*it));
@@ -1217,6 +1226,7 @@ bool read_assignment(Token const *& it, unique_ptr<Dynamic_statement>& statement
     // Read assignment
 
     unique_ptr<Assignment> assignment{new Assignment()};
+    assignment->assignment_op_token = assignment_token;
     bool errors = false; // we want to continue to rhs in case we find a scope (because we want error messages for that as well) -> don't break on lhs
 
     // read lhs
@@ -1246,7 +1256,7 @@ bool read_assignment(Token const *& it, unique_ptr<Dynamic_statement>& statement
     if (errors) return true;
 
     if (*it != SEMICOLON) {
-        log_error("Missing \";\" after declaration",it->context);
+        log_error("Missing \";\" after assignment",it->context);
         return true;
     }
     it++; // go past the ";" token
@@ -1258,28 +1268,57 @@ bool read_return_statement(Token const*& it, unique_ptr<Dynamic_statement>& stat
 {
     ASSERT(it != nullptr && *it == RETURN_KEYWORD);
     unique_ptr<Return_statement> rs{new Return_statement()};
-    if (read_rhs(it,rs->return_values,scope)) return true;
+    it++; // go past the "return" token
     if (*it != SEMICOLON) {
-        log_error("Missing \";\" after return statement",it->context);
-        return true;
+        if (read_rhs(it,rs->return_values,scope)) return true;
+        if (*it != SEMICOLON) {
+            log_error("Missing \";\" after return statement",it->context);
+            return true;
+        }
     }
+    it++; // go past the ";" token
     statement = move(rs);
     return false;
 }
 
+// if condition { if_true } then { if_false }
 bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope)
 {
     ASSERT(it != nullptr && *it == IF_KEYWORD);
     unique_ptr<If_clause> is{new If_clause()};
-    log_error("read_if_clause nyi",it->context); return true;
+    it++; // go past the if token
+
+    // read condition
+    if (read_evaluated_value(it,is->condition,scope,false)) return true;
+
+    // read if true
+    if (*it != OPEN_BRACE) {
+        // read a single statement?
+        log_error("Missing \"{\" after if condition",it->context);
+        return true;
+    }
+    if (read_dynamic_scope(it,is->if_true,scope)) return true;
+
+    // read if false
+    if (*it == ELSE_KEYWORD) {
+        it++; // go past "else"
+        if (*it != OPEN_BRACE) {
+            // read a single statement?
+            log_error("Missing \"{\" after if condition",it->context);
+            return true;
+        }
+        if (read_dynamic_scope(it,is->if_false,scope)) return true;
+    }
+
     statement = move(is);
     return false;
 }
 
 bool read_for_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope)
 {
-    ASSERT(it != nullptr && *it == IF_KEYWORD);
+    ASSERT(it != nullptr && *it == FOR_KEYWORD);
     unique_ptr<For_clause> is{new For_clause()};
+    it++; // go past the "for" token
     log_error("read_for_clause nyi",it->context); return true;
     statement = move(is);
     return false;
@@ -1287,10 +1326,22 @@ bool read_for_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement,
 
 bool read_while_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope)
 {
-    ASSERT(it != nullptr && *it == IF_KEYWORD);
-    unique_ptr<While_clause> is{new While_clause()};
-    log_error("read_while_clause nyi",it->context); return true;
-    statement = move(is);
+    ASSERT(it != nullptr && *it == WHILE_KEYWORD);
+    unique_ptr<While_clause> wh{new While_clause()};
+    it++; // go past the while token
+
+    // read condition
+    if (read_evaluated_value(it,wh->condition,scope,false)) return true;
+
+    // read loop body
+    if (*it != OPEN_BRACE) {
+        // read a single statement?
+        log_error("Missing \"{\" after while condition",it->context);
+        return true;
+    }
+    if (read_dynamic_scope(it,wh->loop,scope)) return true;
+
+    statement = move(wh);
     return false;
 }
 
@@ -1311,7 +1362,13 @@ bool read_statement(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
         else it = end_token+1;
         return true; // unable to continue
     }
-    ASSERT(end_token != nullptr);
+
+    if (*it == SEMICOLON) {
+        // empty ";" on a line
+        log_warning("Additional \";\" ignored",it->context);
+        it++; // go past the ";" token
+        return read_statement(it,statement,scope,force_static);
+    }
 
     // Possibilities:
     // 1) only ":" token, no assignment
@@ -1373,7 +1430,7 @@ bool read_statement(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
             if (Dynamic_statement* ds = dynamic_cast<Dynamic_statement*>(value.release())) {
                 statement.reset(ds);
 
-                if (it != end_token) {
+                if (*it != SEMICOLON) {
                     log_error("Missing \";\" after statement",it->context);
                     errors = true;
                 } else {
@@ -1386,8 +1443,10 @@ bool read_statement(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
         }
     }
 
-    ASSERT(errors || it == end_token+1);
-    it = end_token+1;
+    if (end_token != nullptr) {
+        ASSERT(errors || it == end_token+1);
+        it = end_token+1;
+    }
 
     if (!errors) {
         ASSERT(statement != nullptr);

@@ -4,11 +4,28 @@
 
 dump : int;
 
-fib := fn(n:int,a:int,b:int)->int
+// fib_recursive := fn(n:int,a:int,b:int)->int
+// {
+//     if (n<=0) { return a; }
+//     return fib_recursive(n-1,b,a+b);
+// };
+
+// fib := fn(n:int)->int
+// {
+//     return fib_recursive(n,0,1);
+// };
+
+loop := fn()
 {
-    if (n<=0) { return a; }
-    return fib(n-1,b,a+b);
+    a := 10;
+    while a > 0 {
+        a = a - 1;
+        print(a);
+        return;
+    }
 };
+
+
 
 // a:type= struct{a:int;b,c:float,float;};
 // c:a;

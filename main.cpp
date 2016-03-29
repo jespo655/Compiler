@@ -135,8 +135,8 @@ int main()
 
 void indent(int indent_level)
 {
-    for (int i = 0; i < indent_level%10; ++i) {
-        cout << "    ";
+    for (int i = 0; i < indent_level; ++i) {
+        cout << "  ";
     }
 }
 
@@ -220,12 +220,38 @@ void print_range(const Range* r, int indent_level)
 }
 
 
-void print_if(const If_clause* p, int indent_level) { indent(indent_level); cout << "if (TODO)" << endl; }
-void print_while(const While_clause* p, int indent_level) { indent(indent_level); cout << "while (TODO)" << endl; }
+void print_if(const If_clause* p, int indent_level)
+{
+    indent(indent_level); cout << "if statement:" << endl;
+    indent(indent_level+1); cout << "condition:" << endl;
+    print_evaluated_value(p->condition.get(),indent_level+2);
+    if (p->if_true != nullptr) {
+        indent(indent_level+1); cout << "if_true body:" << endl;
+        print_dynamic_scope(p->if_true.get(),indent_level+2);
+    }
+    if (p->if_false != nullptr) {
+        indent(indent_level+1); cout << "if_false body:" << endl;
+        print_dynamic_scope(p->if_false.get(),indent_level+2);
+    }
+}
+
+void print_while(const While_clause* p, int indent_level)
+{
+    indent(indent_level); cout << "while loop:" << endl;
+    indent(indent_level+1); cout << "condition:" << endl;
+    print_evaluated_value(p->condition.get(),indent_level+2);
+    if (p->loop != nullptr) {
+        indent(indent_level+1); cout << "loop body:" << endl;
+        print_dynamic_scope(p->loop.get(),indent_level+2);
+    }
+}
+
+
+
+
 void print_for(const For_clause* p, int indent_level) { indent(indent_level); cout << "for (TODO)" << endl; }
 void print_using(const Using_statement* p, int indent_level) { indent(indent_level); cout << "using (TODO)" << endl; }
 void print_typed_id(const Typed_identifier* p, int indent_level) { indent(indent_level); cout << "typed id (TODO)" << endl; }
-void print_infix_op(const Infix_op* p, int indent_level) { indent(indent_level); cout << "infix op (TODO)" << endl; }
 void print_value_list(const Value_list* p, int indent_level) { indent(indent_level); cout << "value list (TODO)" << endl; }
 void print_function_call(const Function_call* p, int indent_level) { indent(indent_level); cout << "function call (TODO)" << endl; }
 void print_getter(const Getter* p, int indent_level) { indent(indent_level); cout << "getter (TODO)" << endl; }
@@ -233,6 +259,27 @@ void print_cast(const Cast* p, int indent_level) { indent(indent_level); cout <<
 void print_array_lookup(const Array_lookup* p, int indent_level) { indent(indent_level); cout << "array lookup (TODO)" << endl; }
 
 
+void print_infix_op(const Infix_op* p, int indent_level)
+{
+    indent(indent_level); cout << "infix op with operator " << p->op_token->token << endl;
+    indent(indent_level+1); cout << "lhs:" << endl;
+    print_evaluated_value(p->lhs.get(),indent_level+2);
+    indent(indent_level+1); cout << "rhs:" << endl;
+    print_evaluated_value(p->rhs.get(),indent_level+2);
+}
+
+void print_return_statement(const Return_statement* p, int indent_level)
+{
+    indent(indent_level); cout << "return statement";
+    if (p->return_values.empty()) {
+        cout << " returning void" << endl;
+    } else {
+        cout << " returning these values: " << endl;
+        for (auto& evp : p->return_values) {
+            print_evaluated_value(evp.get(),indent_level+1);
+        }
+    }
+}
 
 void print_function(const Function* p, int indent_level)
 {
@@ -296,7 +343,22 @@ void print_declaration(const Declaration* p, int indent_level)
 }
 
 
-void print_assignment(const Assignment* p, int indent_level) { indent(indent_level); cout << "TODO" << endl; }
+void print_assignment(const Assignment* p, int indent_level)
+{
+    indent(indent_level); cout << "Assignment with operator " << p->assignment_op_token->token << endl;
+    if (!p->lhs.empty()) {
+        indent(indent_level+1); cout << "Assigned identifiers:" << endl;
+        for (auto& v : p->lhs) {
+            print_evaluated_variable(v.get(),indent_level+2);
+        }
+    }
+    if (!p->rhs.empty()) {
+        indent(indent_level+1); cout << "Values:" << endl;
+        for (auto& value : p->rhs) {
+            print_evaluated_value(value.get(),indent_level+2);
+        }
+    }
+}
 
 
 void print_identifier(const Identifier* p, int indent_level)
@@ -346,6 +408,7 @@ void print_statement(const Dynamic_statement* ds, int indent_level)
     else if (const Function_call* p = dynamic_cast<const Function_call*>(ds)) print_function_call(p,indent_level);
     else if (const Scope* p = dynamic_cast<const Scope*>(ds)) print_scope(p,indent_level);
     else if (const Range* p = dynamic_cast<const Range*>(ds)) print_range(p,indent_level);
+    else if (const Return_statement* p = dynamic_cast<const Return_statement*>(ds)) print_return_statement(p,indent_level);
     else {
         indent(indent_level); cout << "Unknown statement" << endl;
     }
