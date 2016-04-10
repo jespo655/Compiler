@@ -48,3 +48,19 @@ string Struct_type::get_type_id() const
 
 
 
+string Type_list::get_type_id() const
+{
+    ostringstream oss{};
+    oss << "type_list{";
+    bool first = true;
+    for (auto& t : types) {
+        if (!first) oss << ",";
+        first = false;
+        oss << t->get_type_id();
+    }
+    oss << "}";
+    return oss.str();
+}
+
+
+

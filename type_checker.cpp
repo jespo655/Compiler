@@ -4,31 +4,189 @@
 #include "assert.h"
 #include <vector>
 #include <string>
+#include "abstx.h"
 
 using namespace std;
 
 
-// lookup functions
-// TODO: make these functions a search in a sorted vector of tokens @optimization
 
-bool is_primitive_type(const Token& t)
+// built in types
+Primitive_type i8_type{"i8", 1}; // byte
+Primitive_type i16_type{"i16", 2}; // short
+Primitive_type i32_type{"i32", 4}; // int
+Primitive_type i64_type{"i64", 8}; // long long
+
+Primitive_type int_type = i64_type;
+
+Primitive_type u8_type{"u8", 1}; // unsigned byte
+Primitive_type u16_type{"u16", 2}; // unsigned short
+Primitive_type u32_type{"u32", 4}; // unsigned int
+Primitive_type u64_type{"u64", 8}; // unsigned long long
+
+Primitive_type uint_type = u64_type;
+
+Primitive_type float32_type{"f32", 8}; // float
+Primitive_type float64_type{"f64", 8}; // double
+
+Primitive_type float_type = float64_type;
+
+Primitive_type string_type{"string", 8};
+Primitive_type ptr_type{"pointer", 8}; // 64 bit ptr
+Primitive_type bool_type{"bool", 1}; // the smallest possible.
+Primitive_type type_type{"type", 8}; // ptr to the type struct
+Primitive_type scope_type{"scope", 8}; // ptr to the scope struct
+Primitive_type function_type{"function", 8}; // ptr to the function struct
+Primitive_type void_type{"void",0};
+
+// const Primitive_type array_type{"array", 16};
+
+
+
+
+shared_ptr<Type_info> Literal::get_type()
 {
-    if (t.type != Token_type::IDENTIFIER) return false;
-
-    if (t.token == "u8") return true;
-    if (t.token == "u16") return true;
-    if (t.token == "u32") return true;
-    if (t.token == "u64") return true;
-    if (t.token == "i8") return true;
-    if (t.token == "i16") return true;
-    if (t.token == "i32") return true;
-    if (t.token == "i64") return true;
-    if (t.token == "int") return true;
-    if (t.token == "float") return true;
-    if (t.token == "string") return true;
-
-    return false;
+    switch(literal_token->type) {
+        case Token_type::INTEGER: return shared_ptr<Type_info>(&int_type);
+        case Token_type::FLOAT: return shared_ptr<Type_info>(&float_type);
+        case Token_type::STRING: return shared_ptr<Type_info>(&string_type);
+        case Token_type::BOOL: return shared_ptr<Type_info>(&bool_type);
+        default: return nullptr;
+    }
 }
+
+
+shared_ptr<Type_info> Value_list::get_type()
+{
+    shared_ptr<Type_list> tl{new Type_list()};
+    for (auto& value : values) {
+        tl->types.push_back(value->get_type());
+    }
+    return tl;
+}
+
+shared_ptr<Type_info> Identifier::get_type()
+{
+    if (identity == nullptr) return nullptr; // should look for the identity in the local scope. If not found -> error
+    return identity->get_type();
+}
+
+
+shared_ptr<Type_info> Infix_op::get_type()
+{
+    // todo: function lookup
+    // in the meantime: hard coded stuff with no security at all
+    if (op_token->token == "<" ||
+        op_token->token == ">" ||
+        op_token->token == "<=" ||
+        op_token->token == ">=" ||
+        op_token->token == "==" ||
+        op_token->token == "!=")
+        return shared_ptr<Type_info>(&bool_type);
+    return lhs->get_type();
+}
+
+
+
+
+std::shared_ptr<Type_info> Getter::get_type()
+{
+    ASSERT(struct_identifier != nullptr);
+    auto struct_type = struct_identifier->get_type();
+    if (struct_type == nullptr) return nullptr;
+
+    if (const Struct_type* st = dynamic_cast<const Struct_type*>(struct_type.get())) {
+        for (auto& id : st->members) {
+            if (id->identifier_token->token == data_identifier_token->token) {
+                return id->type;
+            }
+        }
+    } else {
+        log_error("Trying to get something from something that is not a struct",data_identifier_token->context);
+        return nullptr;
+    }
+    log_error("Could not find member in struct",data_identifier_token->context);
+    return nullptr;
+}
+
+std::shared_ptr<Type_info> Function_call::get_type()
+{
+    ASSERT(function_identifier != nullptr);
+    auto function_type = function_identifier->get_type();
+    if (function_type == nullptr) return nullptr;
+
+    if (const Function_type* ft = dynamic_cast<const Function_type*>(function_type.get())) {
+        shared_ptr<Type_list> tl{new Type_list()};
+        tl->types = ft->out_parameters;
+        return tl;
+    } else {
+        // we don't have access to a context here!
+        // log_error("Trying to call something that is not a function",data_identifier_token->context);
+        return nullptr;
+    }
+}
+
+
+std::shared_ptr<Type_info> Cast::get_type()
+{
+    cerr << "Cast::get_type() nyi" << endl;
+    return nullptr; // todo
+}
+
+std::shared_ptr<Type_info> Array_lookup::get_type()
+{
+    cerr << "Array_lookup::get_type() nyi" << endl;
+    return nullptr; // todo
+}
+
+std::shared_ptr<Type_info> Type_info::get_type()
+{
+    return shared_ptr<Type_info>(&type_type);
+}
+
+
+std::shared_ptr<Type_info> Scope::get_type()
+{
+    return shared_ptr<Type_info>(&scope_type);
+}
+
+std::shared_ptr<Type_info> Function::get_type()
+{
+    return shared_ptr<Type_info>(&function_type);
+}
+
+std::shared_ptr<Type_info> Range::get_type()
+{
+    return start->get_type(); // assuming that the end has the same type
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

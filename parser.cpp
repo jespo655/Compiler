@@ -2,29 +2,10 @@
 #include "error_handler.h"
 #include "lexer.h"
 #include <sstream>
+#include <vector>
+#include <memory> // std::unique_ptr
 
 using namespace std;
-
-/*
-
-Return bool: true if errors, false if ok
-Take Token const*& it as first argument
-Always check token types for EACH token
-    If type==EOF -> eof
-    If type==UNKNOWN -> probably error
-
-
-*/
-
-/*
-    TODO:
-    read_static_scope has lots of code that could be reused for read_dynamic_scope.
-        refactor into read_statement(Token const it*, unique_ptr<Dynamic_statement>& statement, bool force_static)
-        ASSERT(Static_statement* ss = dynamic_cast<Static_statement*>(statement))
-
-
-
-*/
 
 
 
@@ -358,7 +339,7 @@ bool read_cast(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scop
     cast->casted_value = move(value);
 
     if ((++it)->type == Token_type::IDENTIFIER) {
-        if (read_evaluated_variable(it,cast->casted_type,scope,false)) return true; // error
+        if (read_evaluated_value(it,cast->casted_type,scope,false)) return true; // error
         value = move(cast);
         return false; // ok!
     } else {

@@ -24,12 +24,14 @@ struct Static_statement : Dynamic_statement
 
 
 
-
+struct Type_info;
+struct Typed_identifier;
 
 // Evaluated value: Anything that can hold a value.
 struct Evaluated_value
 {
     virtual ~Evaluated_value() {}
+    virtual std::shared_ptr<Type_info> get_type() { return nullptr; };
 };
 
 // Evaluated variable: Anything that can be assigned a value. I.E. not literals.
@@ -43,18 +45,23 @@ struct Literal : Evaluated_value
 {
     Token const * literal_token;
     virtual ~Literal() {}
+    std::shared_ptr<Type_info> get_type();
 };
 
 // Value_list: A parenthesis with several comma-separated values
 struct Value_list : Evaluated_value
 {
     std::vector<std::unique_ptr<Evaluated_value>> values;
+    std::shared_ptr<Type_info> get_type();
 };
 
 struct Identifier : Evaluated_variable
 {
     Token const * identifier_token; // name & declaration context
     virtual ~Identifier() {}
+
+    Typed_identifier* identity{nullptr};
+    std::shared_ptr<Type_info> get_type();
 };
 
 struct Infix_op : Evaluated_value
@@ -62,6 +69,7 @@ struct Infix_op : Evaluated_value
     std::unique_ptr<Evaluated_value> lhs;
     Token const * op_token;
     std::unique_ptr<Evaluated_value> rhs;
+    std::shared_ptr<Type_info> get_type();
 };
 
 // function call: starts with "("
@@ -69,6 +77,8 @@ struct Function_call : Evaluated_variable, Dynamic_statement
 {
     std::unique_ptr<Evaluated_value> function_identifier;
     std::vector<std::unique_ptr<Evaluated_value>> arguments;
+
+    std::shared_ptr<Type_info> get_type();
 };
 
 // getter: starts with "."
@@ -76,13 +86,16 @@ struct Getter : Evaluated_variable
 {
     std::unique_ptr<Evaluated_value> struct_identifier;
     Token const * data_identifier_token;
+
+    std::shared_ptr<Type_info> get_type();
 };
 
 // cast: starts with "_"
 struct Cast : Evaluated_variable
 {
     std::unique_ptr<Evaluated_value> casted_value;
-    std::unique_ptr<Evaluated_variable> casted_type; // has to evaluate to exactly one type identifier
+    std::unique_ptr<Evaluated_value> casted_type; // has to evaluate to exactly one type identifier
+    std::shared_ptr<Type_info> get_type();
 };
 //
 // array lookup: starts with "["
@@ -90,6 +103,7 @@ struct Array_lookup : Evaluated_variable
 {
     std::unique_ptr<Evaluated_value> array_identifier;
     std::unique_ptr<Evaluated_value> position;
+    std::shared_ptr<Type_info> get_type();
 };
 
 
@@ -99,13 +113,22 @@ struct Type_info : Evaluated_value
 {
     virtual ~Type_info() {}
     virtual std::string get_type_id() const = 0;
+    std::shared_ptr<Type_info> get_type();
+};
+
+struct Type_list : Type_info
+{
+    virtual ~Type_list() {}
+    std::vector<std::shared_ptr<Type_info>> types;
+    std::string get_type_id() const;
 };
 
 struct Typed_identifier : Identifier
 {
     std::shared_ptr<Type_info> type{nullptr};
+    std::shared_ptr<Type_info> get_type() { return type; }
 
-    // std::vector<Dynamic_statement*> dependant_statements;
+    std::vector<Dynamic_statement*> dependant_statements;
         // Used for inferring types.
         // When a type is inferred - go through this vector try to resolve the statements.
 };
@@ -131,7 +154,10 @@ struct Struct_type : Type_info
 struct Primitive_type : Type_info
 {
     std::string type_name{};
+    int size_bytes = -1; // -1 if unknown
     std::string get_type_id() const { return type_name; }
+    Primitive_type() {}
+    Primitive_type(std::string s, int size = -1) : type_name{s}, size_bytes{size} {}
 };
 
 // Defined_type: the type int2 := int; Has the same properties as int, but cannot be implicitly casted back and forth
@@ -173,6 +199,7 @@ struct Scope : Evaluated_value
     // std::vector<std::unique_ptr<Type_info>> types; // maybe remove
     std::vector<Scope*> imported_scopes;
     virtual ~Scope() {}
+    std::shared_ptr<Type_info> get_type();
 };
 
 
@@ -199,6 +226,7 @@ struct Function : Evaluated_value
     std::vector<Token const *> in_parameter_name_tokens{}; // must be of the same length as type.in_parameters
     std::vector<Token const *> out_parameter_name_tokens{}; // must be of the same length as type.out_parameters. Name can be empty
     std::unique_ptr<Dynamic_scope> body{nullptr};
+    std::shared_ptr<Type_info> get_type();
 };
 
 struct Return_statement : Dynamic_statement
@@ -255,6 +283,7 @@ struct Range : Evaluated_value
 {
     std::unique_ptr<Evaluated_value> start{nullptr};
     std::unique_ptr<Evaluated_value> end{nullptr};
+    std::shared_ptr<Type_info> get_type();
 };
 
 struct For_clause : Dynamic_statement
