@@ -38,8 +38,12 @@ const Token FUNCTION_KEYWORD = Token{Token_type::KEYWORD, "fn"};
 const Token RETURN_KEYWORD = Token{Token_type::KEYWORD, "return"};
 const Token STRUCT_KEYWORD = Token{Token_type::KEYWORD, "struct"};
 const Token FOR_KEYWORD = Token{Token_type::KEYWORD, "for"};
+
 const Token IF_KEYWORD = Token{Token_type::KEYWORD, "if"};
+const Token ELSIF_KEYWORD = Token{Token_type::KEYWORD, "elsif"};
 const Token ELSE_KEYWORD = Token{Token_type::KEYWORD, "else"};
+const Token THEN_KEYWORD = Token{Token_type::KEYWORD, "then"};
+
 const Token WHILE_KEYWORD = Token{Token_type::KEYWORD, "while"};
 const Token IN_KEYWORD = Token{Token_type::KEYWORD, "in"};
 const Token BY_KEYWORD = Token{Token_type::KEYWORD, "by"};
@@ -1256,6 +1260,25 @@ bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
     }
     if (read_dynamic_scope(it,is->if_true,scope)) return true;
 
+    // read elsif
+    if (*it == ELSIF_KEYWORD) {
+        it++; // go past "elsif"
+
+        unique_ptr<Elsif> elsif {new Elsif()};
+
+        // read condition
+        if (read_evaluated_value(it,elsif->condition,scope,false)) return true;
+
+        if (*it != OPEN_BRACE) {
+            // read a single statement?
+            log_error("Missing \"{\" after if condition",it->context);
+            return true;
+        }
+        if (read_dynamic_scope(it,elsif->body,scope)) return true;
+
+        is->elsifs.push_back(move(elsif));
+    }
+
     // read if false
     if (*it == ELSE_KEYWORD) {
         it++; // go past "else"
@@ -1265,6 +1288,17 @@ bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
             return true;
         }
         if (read_dynamic_scope(it,is->if_false,scope)) return true;
+    }
+
+    // read then
+    if (*it == THEN_KEYWORD) {
+        it++; // go past "else"
+        if (*it != OPEN_BRACE) {
+            // read a single statement?
+            log_error("Missing \"{\" after if condition",it->context);
+            return true;
+        }
+        if (read_dynamic_scope(it,is->then_body,scope)) return true;
     }
 
     statement = move(is);

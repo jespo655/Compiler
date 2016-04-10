@@ -304,7 +304,9 @@ vector<string> keywords
     "by",
 
     "if",
+    "elsif",
     "else",
+    "then",
 
     "while",
 
