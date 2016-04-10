@@ -229,9 +229,21 @@ void print_if(const If_clause* p, int indent_level)
         indent(indent_level+1); cout << "if_true body:" << endl;
         print_dynamic_scope(p->if_true.get(),indent_level+2);
     }
+    if (!(p->elsifs.empty())) {
+        for (auto& elsif : p->elsifs) {
+            indent(indent_level+1); cout << "elsif with condition:" << endl;
+            print_evaluated_value(elsif->condition.get(),indent_level+2);
+            indent(indent_level+1); cout << "elsif body:" << endl;
+            print_dynamic_scope(elsif->body.get(),indent_level+2);
+        }
+    }
     if (p->if_false != nullptr) {
         indent(indent_level+1); cout << "if_false body:" << endl;
         print_dynamic_scope(p->if_false.get(),indent_level+2);
+    }
+    if (p->then_body != nullptr) {
+        indent(indent_level+1); cout << "then body:" << endl;
+        print_dynamic_scope(p->then_body.get(),indent_level+2);
     }
 }
 
