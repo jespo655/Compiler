@@ -249,33 +249,18 @@ struct While_clause : Dynamic_statement
 };
 
 
-struct Range
-{
-    virtual ~Range() {}
-};
 
-// Array?
-struct List : Range, Identifier
-{
-    // TODO: add stuff @arrays
-};
 
-struct Literal_range : Range, Evaluated_value
+struct Range : Evaluated_value
 {
-    std::unique_ptr<Literal> start{};
-    std::unique_ptr<Literal> end{};
-};
-
-struct Evaluated_range : Range
-{
-    std::unique_ptr<Evaluated_variable> start{nullptr};
-    std::unique_ptr<Evaluated_variable> end{nullptr};
+    std::unique_ptr<Evaluated_value> start{nullptr};
+    std::unique_ptr<Evaluated_value> end{nullptr};
 };
 
 struct For_clause : Dynamic_statement
 {
     Token const * iterator_name_token{nullptr}; // might not exist
-    std::unique_ptr<Range> range{nullptr}; // has to exist
+    std::unique_ptr<Evaluated_value> range{nullptr}; // has to exist
     std::unique_ptr<Evaluated_value> step{nullptr}; // might not exist
     std::unique_ptr<Dynamic_scope> loop{};
 };

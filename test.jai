@@ -25,20 +25,25 @@ dump : int;
 //     }
 // };
 
-if_test := fn()
+// if_test := fn()
+// {
+//     a := 2;
+//     if true {
+//         // do stuff
+//     } elsif true {
+//         // do other stuff
+//     } elsif true {
+//         // kajsdh
+//     } else {
+//         // askdjh
+//     } then {
+//         // do if not doing else
+//     }
+// };
+
+for_test := fn()
 {
-    a := 2;
-    if true {
-        // do stuff
-    } elsif true {
-        // do other stuff
-    } elsif true {
-        // kajsdh
-    } else {
-        // askdjh
-    } then {
-        // do if not doing else
-    }
+    for a in 1 .. 6 by 2 {}
 };
 
 

@@ -465,6 +465,7 @@ void read_number_token(Stream& s, Token& t)
         // check for decimals
         s.pop_utf8();
         if (!is_digit(s.peek())) {
+            // todo: put back the previous . and return the number as integer
             log_error("Lexer error: no decimals after decimal point!", s.context);
             t.type = Token_type::INTEGER;
             return;

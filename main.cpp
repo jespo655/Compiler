@@ -196,27 +196,11 @@ void print_scope(const Scope* s, int indent_level)
 }
 
 
-void print_list(const List* p, int indent_level)
+void print_range(const Range* p, int indent_level)
 {
-    indent(indent_level); cout << "list" << endl;
-}
-void print_literal_range(const Literal_range* p, int indent_level)
-{
-    indent(indent_level); cout << "literal range" << endl;
-}
-void print_evaluated_range(const Evaluated_range* p, int indent_level)
-{
-    indent(indent_level); cout << "evaluated range" << endl;
-}
-
-void print_range(const Range* r, int indent_level)
-{
-    if (const List* p = dynamic_cast<const List*>(r)) print_list(p,indent_level);
-    else if (const Literal_range* p = dynamic_cast<const Literal_range*>(r)) print_literal_range(p,indent_level);
-    else if (const Evaluated_range* p = dynamic_cast<const Evaluated_range*>(r)) print_evaluated_range(p,indent_level);
-    else {
-        indent(indent_level); cout << "Unknown range" << endl;
-    }
+    indent(indent_level); cout << "Range: from start to end" << endl;
+    print_evaluated_value(p->start.get(),indent_level+1);
+    print_evaluated_value(p->end.get(),indent_level+1);
 }
 
 
@@ -394,7 +378,6 @@ void print_evaluated_variable(const Evaluated_variable* var, int indent_level)
 void print_evaluated_value(const Evaluated_value* val, int indent_level)
 {
     if (const Evaluated_variable* p = dynamic_cast<const Evaluated_variable*>(val)) print_evaluated_variable(p,indent_level);
-    else if (const Literal_range* p = dynamic_cast<const Literal_range*>(val)) print_literal_range(p,indent_level);
     else if (const Literal* p = dynamic_cast<const Literal*>(val)) print_literal(p,indent_level);
     else if (const Value_list* p = dynamic_cast<const Value_list*>(val)) print_value_list(p,indent_level);
     else if (const Infix_op* p = dynamic_cast<const Infix_op*>(val)) print_infix_op(p,indent_level);

@@ -67,6 +67,7 @@ const Token DOUBLE_EQUALS = Token{Token_type::SYMBOL, "=="};
 
 const Token DUMP_TOKEN = Token{Token_type::SYMBOL, "_"};
 
+const Token RANGE_SYMBOL = Token{Token_type::SYMBOL, ".."};
 
 
 
@@ -1305,15 +1306,76 @@ bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
     return false;
 }
 
+
+// for it in range by step
+// it: identifier token
+// range:
+//      1..2
+//      a..b
+//      list identifier
+//      evaluated value
+//      evaluated value .. evaluated value
+// step: evaluated value
+
 bool read_for_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope)
 {
     ASSERT(it != nullptr && *it == FOR_KEYWORD);
-    unique_ptr<For_clause> is{new For_clause()};
+    unique_ptr<For_clause> fc{new For_clause()};
     it++; // go past the "for" token
-    log_error("read_for_clause nyi",it->context); return true;
-    statement = move(is);
+
+    Token const* start = it;
+
+    if (*(it+1) == IN_KEYWORD) {
+        fc->iterator_name_token = it;
+        it += 2;
+    }
+
+    unique_ptr<Evaluated_value> range_1;
+    if (read_evaluated_value(it,range_1,scope,false)) {
+        add_note("In for clause started here",start->context);
+        return true;
+    }
+    ASSERT(range_1 != nullptr);
+
+    // todo: maybe move this to read_evaluated_value?
+    if (*it == RANGE_SYMBOL) {
+        it++;
+        unique_ptr<Evaluated_value> range_2;
+        if (read_evaluated_value(it,range_2,scope,false)) {
+            add_note("In for clause started here",start->context);
+            return true;
+        }
+        ASSERT(range_2 != nullptr);
+        unique_ptr<Range> range{new Range()};
+        range->start = move(range_1);
+        range->end = move(range_2);
+        fc->range = move(range);
+
+    } else {
+        // has to be a identifier or array literal
+        // todo: check for errors (in type checker?)
+        fc->range = move(range_1);
+    }
+
+    if (*it == BY_KEYWORD) {
+        ++it;
+        if(read_evaluated_value(it,fc->step,scope,false)) {
+            add_note("In for clause started here",start->context);
+            return true;
+        }
+    }
+
+    if (*it != OPEN_BRACE) {
+        log_error("Missing \"{\" after for clause",it->context);
+        return true;
+    }
+
+    if (read_dynamic_scope(it,fc->loop,scope)) return true;
+
+    statement = move(fc);
     return false;
 }
+
 
 bool read_while_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope)
 {
