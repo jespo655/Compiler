@@ -1242,7 +1242,7 @@ bool read_return_statement(Token const*& it, unique_ptr<Dynamic_statement>& stat
     return false;
 }
 
-// if condition { if_true } then { if_false }
+// if condition { if_true } elsif condition { elsif_body } else { if_false } then { then_body }
 bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope)
 {
     ASSERT(it != nullptr && *it == IF_KEYWORD);
@@ -1261,7 +1261,7 @@ bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
     if (read_dynamic_scope(it,is->if_true,scope)) return true;
 
     // read elsif
-    if (*it == ELSIF_KEYWORD) {
+    while (*it == ELSIF_KEYWORD) {
         it++; // go past "elsif"
 
         unique_ptr<Elsif> elsif {new Elsif()};
@@ -1279,12 +1279,12 @@ bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
         is->elsifs.push_back(move(elsif));
     }
 
-    // read if false
+    // read else
     if (*it == ELSE_KEYWORD) {
         it++; // go past "else"
         if (*it != OPEN_BRACE) {
             // read a single statement?
-            log_error("Missing \"{\" after if condition",it->context);
+            log_error("Missing \"{\" after else keyword",it->context);
             return true;
         }
         if (read_dynamic_scope(it,is->if_false,scope)) return true;
@@ -1292,10 +1292,10 @@ bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
 
     // read then
     if (*it == THEN_KEYWORD) {
-        it++; // go past "else"
+        it++; // go past "then"
         if (*it != OPEN_BRACE) {
             // read a single statement?
-            log_error("Missing \"{\" after if condition",it->context);
+            log_error("Missing \"{\" after then keyword",it->context);
             return true;
         }
         if (read_dynamic_scope(it,is->then_body,scope)) return true;

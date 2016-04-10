@@ -15,16 +15,31 @@ dump : int;
 //     return fib_recursive(n,0,1);
 // };
 
-loop := fn()
+// loop := fn()
+// {
+//     a := 10;
+//     while a > 0 {
+//         a = a - 1;
+//         print(a);
+//         return;
+//     }
+// };
+
+if_test := fn()
 {
-    a := 10;
-    while a > 0 {
-        a = a - 1;
-        print(a);
-        return;
+    a := 2;
+    if true {
+        // do stuff
+    } elsif true {
+        // do other stuff
+    } elsif true {
+        // kajsdh
+    } else {
+        // askdjh
+    } then {
+        // do if not doing else
     }
 };
-
 
 
 // a:type= struct{a:int;b,c:float,float;};
