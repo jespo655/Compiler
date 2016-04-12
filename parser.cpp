@@ -339,7 +339,7 @@ bool read_cast(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scop
     cast->casted_value = move(value);
 
     if ((++it)->type == Token_type::IDENTIFIER) {
-        if (read_evaluated_value(it,cast->casted_type,scope,false)) return true; // error
+        cast->casted_type_token = it++; // eat the identifier token
         value = move(cast);
         return false; // ok!
     } else {

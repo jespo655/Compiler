@@ -40,6 +40,67 @@ Primitive_type void_type{"void",0};
 
 // const Primitive_type array_type{"array", 16};
 
+vector<shared_ptr<Primitive_type>> primitive_types
+{
+    shared_ptr<Primitive_type>(&i8_type),
+    shared_ptr<Primitive_type>(&i16_type),
+    shared_ptr<Primitive_type>(&i32_type),
+    shared_ptr<Primitive_type>(&i64_type),
+    shared_ptr<Primitive_type>(&int_type),
+    shared_ptr<Primitive_type>(&u8_type),
+    shared_ptr<Primitive_type>(&u16_type),
+    shared_ptr<Primitive_type>(&u32_type),
+    shared_ptr<Primitive_type>(&u64_type),
+    shared_ptr<Primitive_type>(&uint_type),
+    shared_ptr<Primitive_type>(&float32_type),
+    shared_ptr<Primitive_type>(&float64_type),
+    shared_ptr<Primitive_type>(&float_type),
+    shared_ptr<Primitive_type>(&string_type),
+    shared_ptr<Primitive_type>(&ptr_type),
+    shared_ptr<Primitive_type>(&bool_type),
+    shared_ptr<Primitive_type>(&type_type),
+    shared_ptr<Primitive_type>(&scope_type),
+    shared_ptr<Primitive_type>(&function_type),
+    shared_ptr<Primitive_type>(&void_type)
+};
+
+shared_ptr<Type_info> get_primitive_type(const string& type_name)
+{
+    for (auto& p : primitive_types) {
+        if (p->type_name == type_name)
+            return shared_ptr<Type_info>(p.get());
+    }
+    return nullptr;
+}
+/*
+shared_ptr<Type_info> get_type(const string& type_name, Scope* scope, const Token_context& context)
+{
+    // check if it is a primitive type
+    // if it is a primitive type -> assume that is it not also an identifier in the scope (that should be caught earlier)
+    // else ->
+    //  check for the identifier in the scope
+    //  check if the identifier identity is a type identifier
+    shared_ptr<Type_info> primitive = get_primitive_type(type_name);
+    if (primitive != nullptr) {
+        ASSERT(identity == nullptr);
+        return primitive;
+    }
+
+    shared_ptr<Typed_identifier> identity = scope->get_type(type_name);
+    if (identity != nullptr) {
+        if (*identity->type == type_type) {
+            // we need some way to get the type
+            // return identity;
+        }
+        return nullptr;
+    }
+
+    log_error("Type \""+type_name+"\" not found in scope",context);
+}
+*/
+
+
+
 
 
 
@@ -88,13 +149,13 @@ shared_ptr<Type_info> Infix_op::get_type()
 
 
 
-std::shared_ptr<Type_info> Getter::get_type()
+shared_ptr<Type_info> Getter::get_type()
 {
     ASSERT(struct_identifier != nullptr);
     auto struct_type = struct_identifier->get_type();
     if (struct_type == nullptr) return nullptr;
 
-    if (const Struct_type* st = dynamic_cast<const Struct_type*>(struct_type.get())) {
+    if (Struct_type* st = dynamic_cast<Struct_type*>(struct_type.get())) {
         for (auto& id : st->members) {
             if (id->identifier_token->token == data_identifier_token->token) {
                 return id->type;
@@ -108,13 +169,13 @@ std::shared_ptr<Type_info> Getter::get_type()
     return nullptr;
 }
 
-std::shared_ptr<Type_info> Function_call::get_type()
+shared_ptr<Type_info> Function_call::get_type()
 {
     ASSERT(function_identifier != nullptr);
     auto function_type = function_identifier->get_type();
     if (function_type == nullptr) return nullptr;
 
-    if (const Function_type* ft = dynamic_cast<const Function_type*>(function_type.get())) {
+    if (Function_type* ft = dynamic_cast<Function_type*>(function_type.get())) {
         shared_ptr<Type_list> tl{new Type_list()};
         tl->types = ft->out_parameters;
         return tl;
@@ -126,35 +187,53 @@ std::shared_ptr<Type_info> Function_call::get_type()
 }
 
 
-std::shared_ptr<Type_info> Cast::get_type()
+shared_ptr<Type_info> Cast::get_type()
 {
+    // ASSERT(casted_type != nullptr);
+    // auto type = casted_type->get_type(); // should always return "type_type"
+
+    // problem: to get the type, we need to evaluate the Evaluated_value, that means possibly making compile time function calls
+    // we don't want that.
+    // solution: only accept cast to identifiers instead of to generic Evaluated_values
     cerr << "Cast::get_type() nyi" << endl;
     return nullptr; // todo
 }
 
-std::shared_ptr<Type_info> Array_lookup::get_type()
+shared_ptr<Type_info> Array_lookup::get_type()
 {
+    ASSERT(array_identifier != nullptr);
+    auto array_type = array_identifier->get_type();
+    if (array_type == nullptr) return nullptr;
+
+    if (Array_type* at = dynamic_cast<Array_type*>(array_type.get())) {
+        return shared_ptr<Array_type>(at);
+    } else {
+        // we don't have access to a context here!
+        // log_error("Trying to call something that is not a function",data_identifier_token->context);
+        return nullptr;
+    }
+
     cerr << "Array_lookup::get_type() nyi" << endl;
     return nullptr; // todo
 }
 
-std::shared_ptr<Type_info> Type_info::get_type()
+shared_ptr<Type_info> Type_info::get_type()
 {
     return shared_ptr<Type_info>(&type_type);
 }
 
 
-std::shared_ptr<Type_info> Scope::get_type()
+shared_ptr<Type_info> Scope::get_type()
 {
     return shared_ptr<Type_info>(&scope_type);
 }
 
-std::shared_ptr<Type_info> Function::get_type()
+shared_ptr<Type_info> Function::get_type()
 {
     return shared_ptr<Type_info>(&function_type);
 }
 
-std::shared_ptr<Type_info> Range::get_type()
+shared_ptr<Type_info> Range::get_type()
 {
     return start->get_type(); // assuming that the end has the same type
 }
@@ -164,12 +243,25 @@ std::shared_ptr<Type_info> Range::get_type()
 
 
 
+// to be checked:
+
+// dynamic statements
+// static statements
 
 
+// identifiers:
+//      check for identity in scope. If not found - scope may just have not been pulled in yet
 
+// function call
+//      check that the function is defined
 
+// infix op
+//      check that the operator is defined
+//      at get_type() : check for the defined operator, return its return value
 
-
+// cast
+//      check that the cast operator is defined
+//      at get_type() :
 
 
 
@@ -215,36 +307,35 @@ Detta kanske dock inte har hänt när dependency sätts upp!
 
 /*
 check local scope - if found, great! return.
-ASSERT multiple copies are not found.
+more than one copy cannot exist in the scope. (except for functions? todo*)
 
 check all imported scopes.
 If found in more than one branch -> error "Ambiguous reference to identfier x" "defined here:" "required from here"
 */
 
-
-// identifier becomes nullptr if the identifier could not be not found.
-// That is not an error, just an indication that you should set up a dependency for that variable.
-// Returns true if the same identifier was found in several import branches -> ambiguous reference
-bool find_identifier(const std::string& identifier_name, Scope* scope, std::shared_ptr<Typed_identifier>& identifier, const Token_context& context)
+// returns nullptr if the identifier could not be not found.
+//      that is an error if all using-statements have been resolved.
+// if the same identifier was found in several import branches -> ambiguous reference. The first reference found is returned.
+//      that is always an error.
+shared_ptr<Typed_identifier> Scope::get_identifier(const string& identifier_name, const Token_context& context)
 {
-    identifier = nullptr;
+    shared_ptr<Typed_identifier> tid;
+    bool ambiguous = false;
+    if (get_identifier(identifier_name, tid, context, ambiguous)) {
+        if (tid == nullptr) log_error("Identifier \""+identifier_name+"\"could not be found",context);
+        return nullptr;
+    }
+    return tid;
+}
+
+
+bool Scope::get_identifier(const string& identifier_name, shared_ptr<Typed_identifier>& identifier, const Token_context& context, bool& ambiguous)
+{
     // first check local identifiers
     // then check imports
-    for (shared_ptr<Typed_identifier>& id : scope->identifiers) {
+    for (shared_ptr<Typed_identifier>& id : identifiers) {
         if (id->identifier_token->token == identifier_name) {
             // match!
-            ASSERT(identifier == nullptr); // a scope cannot have several identifiers of the same name // or maybe it can? @overloading
-            identifier = id;
-        }
-    }
-    if (identifier != nullptr) return false;
-
-    bool errors = false;
-    bool ambiguous = false;
-    for (Scope* imported_scope : scope->imported_scopes) {
-        shared_ptr<Typed_identifier> id = nullptr;
-        if (find_identifier(identifier_name,imported_scope,id,context)) errors = true;
-        if (id != nullptr) {
             if (identifier != nullptr) {
                 if (!ambiguous) {
                     log_error("Ambiguous reference to identifier \""+identifier_name+"\".",context);
@@ -252,14 +343,59 @@ bool find_identifier(const std::string& identifier_name, Scope* scope, std::shar
                     ambiguous = true;
                 }
                 add_note("And here: ",id->identifier_token->context);
-                errors = true;
-            } else {
-                identifier = id; // ok
+                return true;
             }
+            identifier = id;
+            return false;
         }
     }
-    return errors;
+
+    for (Scope* imported_scope : imported_scopes) {
+        imported_scope->get_identifier(identifier_name, identifier, context, ambiguous);
+    }
+
+    if (ambiguous) return true;
+    if (identifier == nullptr) return true;
+    return false;
 }
+
+shared_ptr<Type_info> Scope::get_type(const string& type_name, const Token_context& context)
+{
+    // 1) check primitive types.
+    auto primitive = get_primitive_type(type_name);
+    if (primitive != nullptr) return primitive;
+
+    // 2) check if the identifier actually can be found in the scope.
+    // This will log all possible errors.
+    // if this doesn't return nullptr, then we are certain that we can find the type witout any errors.
+    if (get_identifier(type_name, context) == nullptr) return nullptr;
+
+    // 3) find the type
+    auto type = get_type_no_checks(type_name);
+    ASSERT(type != nullptr); // since we found the identifier, we must be able to find the type
+    return type;
+}
+
+// get_type_no_checks assumes that we won't get any errors while searching for the type.
+shared_ptr<Type_info> Scope::get_type_no_checks(const string& type_name)
+{
+    // first check local types
+    // then check imports
+    for (shared_ptr<Type_info>& t : types) {
+        if (t->get_type_id() == type_name) {
+            // match!
+            return t;
+        }
+    }
+
+    for (Scope* imported_scope : imported_scopes) {
+        auto t = imported_scope->get_type_no_checks(type_name);
+        if (t != nullptr) return t;
+    }
+
+    return nullptr;
+}
+
 
 
 

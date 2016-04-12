@@ -94,10 +94,10 @@ struct Getter : Evaluated_variable
 struct Cast : Evaluated_variable
 {
     std::unique_ptr<Evaluated_value> casted_value;
-    std::unique_ptr<Evaluated_value> casted_type; // has to evaluate to exactly one type identifier
+    Token const * casted_type_token;
     std::shared_ptr<Type_info> get_type();
 };
-//
+
 // array lookup: starts with "["
 struct Array_lookup : Evaluated_variable
 {
@@ -114,6 +114,8 @@ struct Type_info : Evaluated_value
     virtual ~Type_info() {}
     virtual std::string get_type_id() const = 0;
     std::shared_ptr<Type_info> get_type();
+    bool operator==(const Type_info& o) const { return get_type_id() == o.get_type_id(); }
+    bool operator!=(const Type_info& o) const { return !(*this == o); }
 };
 
 struct Type_list : Type_info
@@ -196,10 +198,21 @@ struct Array_type : Type_info
 struct Scope : Evaluated_value
 {
     std::vector<std::shared_ptr<Typed_identifier>> identifiers{};
-    // std::vector<std::unique_ptr<Type_info>> types; // maybe remove
+    std::vector<std::shared_ptr<Type_info>> types;
     std::vector<Scope*> imported_scopes;
     virtual ~Scope() {}
     std::shared_ptr<Type_info> get_type();
+
+    // returns nullptr if error (either not found or ambiguous call, is already logged)
+    std::shared_ptr<Typed_identifier> get_identifier(const std::string& identifier_name, const Token_context& context);
+    std::shared_ptr<Type_info> get_type(const std::string& type_name, const Token_context& context);
+
+private:
+
+    // returns true if error (either not found or ambiugous reference)
+    // the first occurence found is returned as id/type
+    bool get_identifier(const std::string& identifier_name, std::shared_ptr<Typed_identifier>& id, const Token_context& context, bool& ambiugous);
+    std::shared_ptr<Type_info> get_type_no_checks(const std::string& type_name);
 };
 
 
