@@ -9,6 +9,29 @@
 using namespace std;
 
 
+// 1) go through all statements
+//      pick out all using-statements
+//      store 2 list of pointers to statements: using_statements and statements_to_resolve
+//
+// 2) (loop) try to resolve all using-statements.
+//      for this we need to resolve the evaluated scope and import it to the current scope
+//      if the statement is dependant on identifiers that can't be found -> just skip it and try again later
+//      if stuck -> error
+//          -> give "identifier cannot be found"-error for each identifier that cannot be found
+//
+// 3) (loop) try to resolve all other statements
+//      after using statements are resolved, we know that all identifiers should be reachable
+//      if we cannot find one -> error
+//      in each loop step, update statements_to_resolve to only hold the statements that is not yet resoolved
+
+
+// Scope* local_scope;
+
+// Scope* get_local_scope() {
+//     return local_scope;
+// }
+
+
 
 // built in types
 Primitive_type i8_type{"i8", 1}; // byte
@@ -72,34 +95,6 @@ shared_ptr<Type_info> get_primitive_type(const string& type_name)
     }
     return nullptr;
 }
-/*
-shared_ptr<Type_info> get_type(const string& type_name, Scope* scope, const Token_context& context)
-{
-    // check if it is a primitive type
-    // if it is a primitive type -> assume that is it not also an identifier in the scope (that should be caught earlier)
-    // else ->
-    //  check for the identifier in the scope
-    //  check if the identifier identity is a type identifier
-    shared_ptr<Type_info> primitive = get_primitive_type(type_name);
-    if (primitive != nullptr) {
-        ASSERT(identity == nullptr);
-        return primitive;
-    }
-
-    shared_ptr<Typed_identifier> identity = scope->get_type(type_name);
-    if (identity != nullptr) {
-        if (*identity->type == type_type) {
-            // we need some way to get the type
-            // return identity;
-        }
-        return nullptr;
-    }
-
-    log_error("Type \""+type_name+"\" not found in scope",context);
-}
-*/
-
-
 
 
 
@@ -189,14 +184,9 @@ shared_ptr<Type_info> Function_call::get_type()
 
 shared_ptr<Type_info> Cast::get_type()
 {
-    // ASSERT(casted_type != nullptr);
-    // auto type = casted_type->get_type(); // should always return "type_type"
-
-    // problem: to get the type, we need to evaluate the Evaluated_value, that means possibly making compile time function calls
-    // we don't want that.
-    // solution: only accept cast to identifiers instead of to generic Evaluated_values
-    cerr << "Cast::get_type() nyi" << endl;
-    return nullptr; // todo
+    ASSERT(casted_type_token != nullptr);
+    if (local_scope == nullptr) return nullptr;
+    return local_scope->get_type(casted_type_token->token,casted_type_token->context);
 }
 
 shared_ptr<Type_info> Array_lookup::get_type()
@@ -266,7 +256,68 @@ shared_ptr<Type_info> Range::get_type()
 
 
 
+// todo: if we want return value overloading, we need a reference to the place
+//      were we use the return values, so we can check against that
+bool resolve_function_call(Function_call* fc, Scope* scope, Type_list* return_types = nullptr)
+{
+    ASSERT(fc != nullptr);
+    auto fn_type = fc->function_identifier->get_type();
+    if (fn_type == nullptr) {
+        log_error("Unable to resolve function",fc->context->context);
+        return true;
+    }
+    log_error("resolve_function_call NYI",fc->context->context);
+    return true;
+}
 
+
+
+
+
+
+
+
+// vector<Compile_unit> units_to_compile{};
+// vector<Compile_unit> next_units_to_compile{};
+
+bool is_resolved(Dynamic_statement* statement) { return statement->dependencies == -1; }
+bool can_be_resolved(Dynamic_statement* statement) { return statement->dependencies == 0; }
+
+
+
+bool resolve_declaration(Declaration* declaration, Scope* scope)
+{
+    // if lhs has types -> check that rhs either is empty or has the same types.
+    //      if empty -> assign default values for the respective type
+    // if lhs doesn't have types -> infer types from rhs.
+    // in either case -> check that lhs and rhs has the same number of elements (unless lhs typed and rhs empty)
+    return true;
+}
+
+
+bool resolve_assignment(Declaration* declaration, Scope* scope)
+{
+    // check that lhs is declared and has types
+    // check that rhs has the same count and types as lhs
+}
+
+
+
+
+
+// returns true if error
+bool resolve_statement(Dynamic_statement* statement, Scope* scope)
+{
+    if (is_resolved(statement)) return false;
+    if (!can_be_resolved(statement)) return false; // maybe store these in a list of statements to resolve later
+
+    if (Declaration* decl = dynamic_cast<Declaration*>(statement)) {
+        resolve_declaration(decl,scope);
+    }
+
+    log_error("resolve_statement NYI",statement->context->context);
+    return true;
+}
 
 
 

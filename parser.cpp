@@ -15,6 +15,9 @@ const Token SEMICOLON = Token{Token_type::SYMBOL, ";"};
 const Token COLON = Token{Token_type::SYMBOL, ":"};
 const Token EOF = Token{Token_type::EOF, "eof"};
 
+const Token USING_KEYWORD = Token{Token_type::KEYWORD, "using"};
+const Token DEFER_KEYWORD = Token{Token_type::KEYWORD, "defer"};
+
 const Token FUNCTION_KEYWORD = Token{Token_type::KEYWORD, "fn"};
 const Token RETURN_KEYWORD = Token{Token_type::KEYWORD, "return"};
 const Token STRUCT_KEYWORD = Token{Token_type::KEYWORD, "struct"};
@@ -276,6 +279,8 @@ bool read_function_call(Token const*& it, unique_ptr<Evaluated_value>& value, Sc
 {
     ASSERT(it != nullptr && *it == OPEN_PAREN);
     unique_ptr<Function_call> fc{new Function_call()};
+    fc->context = it;
+    fc->local_scope = scope;
     fc->function_identifier = move(value);
 
     if (*(++it) != CLOSING_PAREN) { // if it's not an empty variable list
@@ -314,6 +319,7 @@ bool read_getter(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* sc
 {
     ASSERT(it != nullptr && *it == GETTER_TOKEN);
     unique_ptr<Getter> g{new Getter()};
+    g->local_scope = scope;
     g->struct_identifier = move(value);
 
     if ((++it)->type == Token_type::IDENTIFIER) {
@@ -336,6 +342,7 @@ bool read_cast(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scop
 {
     ASSERT(it != nullptr && *it == CAST_TOKEN);
     unique_ptr<Cast> cast{new Cast()};
+    cast->local_scope = scope;
     cast->casted_value = move(value);
 
     if ((++it)->type == Token_type::IDENTIFIER) {
@@ -356,6 +363,7 @@ bool read_array_lookup(Token const*& it, unique_ptr<Evaluated_value>& value, Sco
 {
     ASSERT(it != nullptr && *it == OPEN_BRACKET);
     unique_ptr<Array_lookup> al{new Array_lookup()};
+    al->local_scope = scope;
     al->array_identifier = move(value);
 
     if (read_evaluated_value((++it),al->position,scope,force_static)) return true; // error
@@ -417,11 +425,13 @@ bool read_evaluated_variable(Token const*& it, unique_ptr<Evaluated_variable>& v
     }
 
     unique_ptr<Identifier> id{new Identifier()};
+    id->local_scope = scope;
     id->identifier_token = it;
     variable = move(id);
     it++; // go past the identifier token
 
     if (read_call_chain(it,variable,scope,force_static)) return true;
+
     return false;
 }
 
@@ -434,6 +444,7 @@ bool read_value_list(Token const*& it, unique_ptr<Evaluated_value>& value, Scope
     it++; // to past the "(" token
 
     unique_ptr<Value_list> vl{new Value_list()};
+    vl->local_scope = scope;
 
     if (*it == CLOSING_PAREN) {
         // empty list
@@ -460,7 +471,7 @@ bool read_value_list(Token const*& it, unique_ptr<Evaluated_value>& value, Scope
 
 
 
-bool read_type(Token const *& it, shared_ptr<Type_info>& info);
+bool read_type(Token const *& it, shared_ptr<Type_info>& info, Scope* scope);
 bool read_dynamic_scope(Token const *& it, unique_ptr<Dynamic_scope>& scope, Scope* parent_scope);
 
 // a function can either be a function type declaration, or a defined function
@@ -480,6 +491,8 @@ bool read_function(Token const*& it, unique_ptr<Evaluated_value>& function, Scop
 
     unique_ptr<Function> fn{new Function()};
     unique_ptr<Function_type> fn_type{new Function_type()};
+    fn->local_scope = scope;
+    fn_type->local_scope = scope;
 
     bool is_definition; // false if unknown
     bool is_declaration; // false if unknown
@@ -508,7 +521,7 @@ bool read_function(Token const*& it, unique_ptr<Evaluated_value>& function, Scop
                 ++it; // go past the ":" token
             }
             shared_ptr<Type_info> type;
-            if (read_type(it,type)) return true;
+            if (read_type(it,type,scope)) return true;
             ASSERT(type != nullptr);
             fn_type->in_parameters.push_back(type);
 
@@ -539,7 +552,7 @@ bool read_function(Token const*& it, unique_ptr<Evaluated_value>& function, Scop
                 ++it; // go past the ":" token
             } else fn->out_parameter_name_tokens.push_back(&DUMP_TOKEN);
             shared_ptr<Type_info> type;
-            if (read_type(it,type)) return true;
+            if (read_type(it,type,scope)) return true;
             ASSERT(type != nullptr);
             fn_type->out_parameters.push_back(type);
 
@@ -585,6 +598,7 @@ bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* 
 
     if (!is_infix_operator(*it)) {
         unique_ptr<Infix_op> infix{new Infix_op()};
+        infix->local_scope = scope;
         infix->lhs = move(value);
         infix->op_token = op_token;
         infix->rhs = move(rhs);
@@ -599,6 +613,8 @@ bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* 
 
         unique_ptr<Infix_op> lhs_infix{new Infix_op()};
         unique_ptr<Infix_op> rhs_infix{new Infix_op()};
+        lhs_infix->local_scope = scope;
+        rhs_infix->local_scope = scope;
 
         lhs_infix->lhs = move(value);
         lhs_infix->op_token = op_token;
@@ -625,7 +641,7 @@ bool read_infix_op(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* 
 
 
 
-bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st);
+bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st, Scope* scope);
 
 bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, Scope* scope, bool force_static)
 {
@@ -647,6 +663,7 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
     {
         // literal
         unique_ptr<Literal> literal{new Literal()};
+        literal->local_scope = scope;
         literal->literal_token = it;
         value = move(literal);
         ++it;
@@ -676,7 +693,7 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
     } else if (*it == STRUCT_KEYWORD) {
         // struct
         unique_ptr<Struct_type> st;
-        if (read_struct_type(it,st)) return true;
+        if (read_struct_type(it,st,scope)) return true;
         ASSERT(st != nullptr);
         value = move(st);
 
@@ -698,6 +715,7 @@ bool read_evaluated_value(Token const*& it, unique_ptr<Evaluated_value>& value, 
     // that should take care of all chained infix operators as well.
     ASSERT(!is_infix_operator(*it));
 
+    value->local_scope = scope;
     return false;
 }
 
@@ -732,11 +750,12 @@ foo : defined_fn_type = fn(a : int) -> int { return 2; };
 
 
 
-bool read_function_type(Token const *& it, unique_ptr<Function_type>& ft)
+bool read_function_type(Token const *& it, unique_ptr<Function_type>& ft, Scope* scope)
 {
     ASSERT(it != nullptr && *it == FUNCTION_KEYWORD);
 
     ft.reset(new Function_type());
+    ft->local_scope = scope;
 
     // function identifier: fn(int,int)->int
     if (*(++it) == OPEN_PAREN) {
@@ -747,7 +766,7 @@ bool read_function_type(Token const *& it, unique_ptr<Function_type>& ft)
     if (*it != CLOSING_PAREN) {
         while(true) {
             shared_ptr<Type_info> parameter_type;
-            if (read_type(it,parameter_type)) return true;
+            if (read_type(it,parameter_type,scope)) return true;
             ASSERT(parameter_type != nullptr);
             ft->in_parameters.push_back(move(parameter_type));
 
@@ -766,7 +785,7 @@ bool read_function_type(Token const *& it, unique_ptr<Function_type>& ft)
         // read out parameter list
         while(true) {
             shared_ptr<Type_info> parameter_type;
-            if (read_type(it,parameter_type)) return true;
+            if (read_type(it,parameter_type,scope)) return true;
             ASSERT(parameter_type != nullptr);
             ft->out_parameters.push_back(move(parameter_type));
 
@@ -783,13 +802,13 @@ bool read_function_type(Token const *& it, unique_ptr<Function_type>& ft)
 
 
 
-bool read_type_list(Token const *& it, vector<shared_ptr<Type_info>>& v)
+bool read_type_list(Token const *& it, vector<shared_ptr<Type_info>>& v, Scope* scope)
 {
     ASSERT(it != nullptr);
 
     while(true) {
         shared_ptr<Type_info> type;
-        if (read_type(it,type)) return true;
+        if (read_type(it,type,scope)) return true;
         ASSERT(type != nullptr);
         v.push_back(move(type));
         if (*it != COMMA) return false;
@@ -809,11 +828,12 @@ struct {
 // TODO: using statements
 
 */
-bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st)
+bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st, Scope* scope)
 {
     ASSERT(it != nullptr && *it == STRUCT_KEYWORD);
 
     st.reset(new Struct_type());
+    st->local_scope = scope;
 
     if (*(++it) != OPEN_BRACE) {
         log_error("Expected \"{\" after \"struct\"",it->context);
@@ -834,6 +854,7 @@ bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st)
                 return true;
             }
             unique_ptr<Typed_identifier> tid{new Typed_identifier()};
+            tid->local_scope = scope;
             tid->identifier_token = it;
             tid_to_add.push_back(move(tid));
             it++; // go past the identifier token
@@ -862,7 +883,7 @@ bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st)
             }
             first = false;
 
-            if (read_type(it,tid->type)) return true;
+            if (read_type(it,tid->type,scope)) return true;
             st->members.push_back(move(tid));
         }
         if (*it != SEMICOLON) {
@@ -883,13 +904,14 @@ bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st)
 
 
 // TODO: if the type already exists somewhere, return a shared ptr to that instead
-bool read_type(Token const *& it, shared_ptr<Type_info>& info)
+bool read_type(Token const *& it, shared_ptr<Type_info>& info, Scope* scope)
 {
     ASSERT(it!=nullptr);
 
     if (it->type == Token_type::IDENTIFIER) {
         // type identifier - just one token
         unique_ptr<Unresolved_type> ut{new Unresolved_type()};
+        ut->local_scope = scope;
         ut->identifier_token = it;
         info = move(ut);
         ++it; // go past the identifier token
@@ -898,7 +920,7 @@ bool read_type(Token const *& it, shared_ptr<Type_info>& info)
 
     if (*it == FUNCTION_KEYWORD) {
         unique_ptr<Function_type> ft;
-        if (read_function_type(it,ft)) return true;
+        if (read_function_type(it,ft,scope)) return true;
         ASSERT(ft != nullptr);
         info = move(ft);
         return false;
@@ -906,7 +928,7 @@ bool read_type(Token const *& it, shared_ptr<Type_info>& info)
 
     if (*it == STRUCT_KEYWORD) {
         unique_ptr<Struct_type> st;
-        if (read_struct_type(it,st)) return true;
+        if (read_struct_type(it,st,scope)) return true;
         ASSERT(st != nullptr);
         info = move(st);
         return false;
@@ -998,6 +1020,7 @@ bool read_declaration(Token const*& it, unique_ptr<Dynamic_statement>& statement
     // Read declaration
 
     unique_ptr<Declaration> declaration{new Declaration()};
+    declaration->context = type_token;
     bool errors = false; // we want to continue to rhs in case we find a scope (because we want error messages for that as well) -> don't break on lhs
 
     // read lhs
@@ -1016,7 +1039,7 @@ bool read_declaration(Token const*& it, unique_ptr<Dynamic_statement>& statement
     if (assignment_token == nullptr || it < assignment_token) {
         while (true) {
             shared_ptr<Type_info> type;
-            if (read_type(it,type)) {
+            if (read_type(it,type,scope)) {
                 errors = true;
                 break;
             }
@@ -1169,6 +1192,7 @@ bool read_assignment(Token const *& it, unique_ptr<Dynamic_statement>& statement
     // Read assignment
 
     unique_ptr<Assignment> assignment{new Assignment()};
+    assignment->context = assignment_token;
     assignment->assignment_op_token = assignment_token;
     bool errors = false; // we want to continue to rhs in case we find a scope (because we want error messages for that as well) -> don't break on lhs
 
@@ -1211,6 +1235,7 @@ bool read_return_statement(Token const*& it, unique_ptr<Dynamic_statement>& stat
 {
     ASSERT(it != nullptr && *it == RETURN_KEYWORD);
     unique_ptr<Return_statement> rs{new Return_statement()};
+    rs->context = it;
     it++; // go past the "return" token
     if (*it != SEMICOLON) {
         if (read_rhs(it,rs->return_values,scope)) return true;
@@ -1229,6 +1254,7 @@ bool read_if_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
 {
     ASSERT(it != nullptr && *it == IF_KEYWORD);
     unique_ptr<If_clause> is{new If_clause()};
+    is->context = it;
     it++; // go past the if token
 
     // read condition
@@ -1302,6 +1328,7 @@ bool read_for_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement,
 {
     ASSERT(it != nullptr && *it == FOR_KEYWORD);
     unique_ptr<For_clause> fc{new For_clause()};
+    fc->context = it;
     it++; // go past the "for" token
 
     Token const* start = it;
@@ -1361,11 +1388,12 @@ bool read_for_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement,
 bool read_while_clause(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope)
 {
     ASSERT(it != nullptr && *it == WHILE_KEYWORD);
-    unique_ptr<While_clause> wh{new While_clause()};
+    unique_ptr<While_clause> wc{new While_clause()};
+    wc->context = it;
     it++; // go past the while token
 
     // read condition
-    if (read_evaluated_value(it,wh->condition,scope,false)) return true;
+    if (read_evaluated_value(it,wc->condition,scope,false)) return true;
 
     // read loop body
     if (*it != OPEN_BRACE) {
@@ -1373,11 +1401,28 @@ bool read_while_clause(Token const*& it, unique_ptr<Dynamic_statement>& statemen
         log_error("Missing \"{\" after while condition",it->context);
         return true;
     }
-    if (read_dynamic_scope(it,wh->loop,scope)) return true;
+    if (read_dynamic_scope(it,wc->loop,scope)) return true;
 
-    statement = move(wh);
+    statement = move(wc);
     return false;
 }
+
+
+
+bool read_using_statement(Token const*& it, unique_ptr<Dynamic_statement>& statement, Scope* scope)
+{
+    ASSERT(it != nullptr && *it == USING_KEYWORD);
+    unique_ptr<Using_statement> us{new Using_statement()};
+    us->context = it;
+    it++; // go past the using token
+
+    if (read_evaluated_value(it,us->scope,scope,false)) return true;
+    statement = move(us);
+    return false;
+}
+
+
+
 
 
 // stops when there are no more ";"-tokens in the current scope
@@ -1454,6 +1499,9 @@ bool read_statement(Token const*& it, unique_ptr<Dynamic_statement>& statement, 
         } else {
             if (read_while_clause(it,statement,scope)) errors = true;
         }
+
+    } else if (*it == USING_KEYWORD) {
+        if (read_using_statement(it,statement,scope)) errors = true;
 
     } else {
         // Can for example be a function call or an anonymous scope
@@ -1598,20 +1646,27 @@ bool read_static_scope_statements(Token const*& it, vector<unique_ptr<Static_sta
 }
 
 
-bool read_dynamic_scope_statements(Token const*& it, vector<unique_ptr<Dynamic_statement>>& statements, Scope* scope)
+bool read_dynamic_scope_statements(Token const*& it, vector<unique_ptr<Dynamic_statement>>& statements,
+                                                     vector<unique_ptr<Dynamic_statement>>& defer_statements, Scope* scope)
 {
     ASSERT(it != nullptr);
 
     bool errors = false;
 
     while(*it != EOF && !is_closing_symbol(*it)) {
+        bool defer = false;
+        if (*it == DEFER_KEYWORD) {
+            defer = true;
+            it++;
+        }
         unique_ptr<Dynamic_statement> statement;
         if (read_statement(it,statement,scope,false)) {
             errors = true;
             if (it == nullptr || *(it-1) != SEMICOLON) return true; // unable to continue
             continue;
         } else {
-            statements.push_back(move(statement));
+            if (defer) defer_statements.push_back(move(statement));
+            else statements.push_back(move(statement));
         }
     }
     return errors;
@@ -1648,6 +1703,7 @@ bool read_dynamic_scope(Token const *& it, unique_ptr<Dynamic_scope>& scope, Sco
     ASSERT(parent_scope != nullptr);
 
     scope.reset(new Dynamic_scope());
+    scope->context = it;
 
     if (handle_imports(it, scope.get(), parent_scope)) {
         return true; // error
@@ -1657,7 +1713,7 @@ bool read_dynamic_scope(Token const *& it, unique_ptr<Dynamic_scope>& scope, Sco
     it++; // go past the "{" token
 
 
-    if (read_dynamic_scope_statements(it,scope->statements,scope.get())) return true;
+    if (read_dynamic_scope_statements(it,scope->statements,scope->defer_statements,scope.get())) return true;
     if (*it != CLOSING_BRACE) {
         log_error("Missing \"}\" at the end of scope",it->context);
         return true;

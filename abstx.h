@@ -12,6 +12,7 @@ struct Dynamic_statement
 {
     virtual ~Dynamic_statement() {}
     int dependencies = 0; // when 0 the statement can be resolved. Increment for each dependency added.
+    Token const * context = nullptr;
 };
 
 // A Static_statement is a statement that can be evaluated in a static scope.
@@ -26,12 +27,14 @@ struct Static_statement : Dynamic_statement
 
 struct Type_info;
 struct Typed_identifier;
+struct Scope;
 
 // Evaluated value: Anything that can hold a value.
 struct Evaluated_value
 {
     virtual ~Evaluated_value() {}
     virtual std::shared_ptr<Type_info> get_type() { return nullptr; };
+    Scope* local_scope;
 };
 
 // Evaluated variable: Anything that can be assigned a value. I.E. not literals.
@@ -128,6 +131,7 @@ struct Type_list : Type_info
 struct Typed_identifier : Identifier
 {
     std::shared_ptr<Type_info> type{nullptr};
+    std::shared_ptr<Evaluated_value> value{nullptr};
     std::shared_ptr<Type_info> get_type() { return type; }
 
     std::vector<Dynamic_statement*> dependant_statements;
@@ -219,16 +223,12 @@ private:
 struct Static_scope : Scope, Static_statement
 {
     std::vector<std::unique_ptr<Static_statement>> statements{};
-    // std::vector<Dependency> dependencies; // should be moved to Typed_variable
 };
 
 struct Dynamic_scope : Scope, Dynamic_statement
 {
     std::vector<std::unique_ptr<Dynamic_statement>> statements{};
-    // std::vector<std::unique_ptr<Dynamic_statement>> defer_statements; // TODO
-    // dynamic scopes cannot have dependencies -
-    //   everything must be known the moment they are used.
-    // If a statement cannot be resolved, then set up a dependency in all imported static scopes.
+    std::vector<std::unique_ptr<Dynamic_statement>> defer_statements{};
 };
 
 
@@ -249,7 +249,7 @@ struct Return_statement : Dynamic_statement
 
 struct Using_statement : Static_statement
 {
-    std::unique_ptr<Evaluated_variable> scope{nullptr};
+    std::unique_ptr<Evaluated_value> scope{nullptr};
 };
 
 // Declaration: any statement including ":" and maybe "="

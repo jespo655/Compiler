@@ -29,4 +29,10 @@ Later: if we fully resolve a #run statement -> run that function!
 
 
 
+// statement dependencies:
+// > 0 -> cannot be resolved yet
+// = 0 -> can and should be resolved
+// = -1 -> has already been resolved
+
+
 #endif
