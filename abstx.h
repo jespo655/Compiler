@@ -5,6 +5,7 @@
 #include "lexer.h"
 #include <memory> // std::unique_ptr
 #include <string>
+#include <map>
 
 
 // Dynamic_statement: any statement that can be evaluated in a dynamic scope (function)
@@ -28,6 +29,8 @@ struct Static_statement : Dynamic_statement
 struct Type_info;
 struct Typed_identifier;
 struct Scope;
+struct Function;
+
 
 // Evaluated value: Anything that can hold a value.
 struct Evaluated_value
@@ -63,7 +66,6 @@ struct Identifier : Evaluated_variable
     Token const * identifier_token; // name & declaration context
     virtual ~Identifier() {}
 
-    Typed_identifier* identity{nullptr};
     std::shared_ptr<Type_info> get_type();
 };
 
@@ -73,13 +75,15 @@ struct Infix_op : Evaluated_value
     Token const * op_token;
     std::unique_ptr<Evaluated_value> rhs;
     std::shared_ptr<Type_info> get_type();
+    std::string get_mangled_op();
 };
 
 // function call: starts with "("
 struct Function_call : Evaluated_variable, Dynamic_statement
 {
     std::unique_ptr<Evaluated_value> function_identifier;
-    std::vector<std::unique_ptr<Evaluated_value>> arguments;
+    std::vector<std::unique_ptr<Evaluated_value>> arguments; // these come in order
+    std::map<std::string,std::unique_ptr<Evaluated_value>> named_arguments; // these comes last, but in any order
 
     std::shared_ptr<Type_info> get_type();
 };
@@ -115,7 +119,7 @@ struct Array_lookup : Evaluated_variable
 struct Type_info : Evaluated_value
 {
     virtual ~Type_info() {}
-    virtual std::string get_type_id() const = 0;
+    virtual std::string get_type_id() const = 0; // pure virtual
     std::shared_ptr<Type_info> get_type();
     bool operator==(const Type_info& o) const { return get_type_id() == o.get_type_id(); }
     bool operator!=(const Type_info& o) const { return !(*this == o); }
@@ -131,7 +135,7 @@ struct Type_list : Type_info
 struct Typed_identifier : Identifier
 {
     std::shared_ptr<Type_info> type{nullptr};
-    std::shared_ptr<Evaluated_value> value{nullptr};
+    // std::shared_ptr<Evaluated_value> value{nullptr};
     std::shared_ptr<Type_info> get_type() { return type; }
 
     std::vector<Dynamic_statement*> dependant_statements;
@@ -201,8 +205,10 @@ struct Array_type : Type_info
 
 struct Scope : Evaluated_value
 {
-    std::vector<std::shared_ptr<Typed_identifier>> identifiers{};
-    std::vector<std::shared_ptr<Type_info>> types;
+    std::map<std::string,std::shared_ptr<Typed_identifier>> identifiers{}; // identifier name -> its type
+    std::map<std::string,std::shared_ptr<Type_info>> types{}; // type name -> its value (the type it represents)
+    std::map<std::string,std::shared_ptr<Function>> operators{};
+
     std::vector<Scope*> imported_scopes;
     virtual ~Scope() {}
     std::shared_ptr<Type_info> get_type();
@@ -210,6 +216,7 @@ struct Scope : Evaluated_value
     // returns nullptr if error (either not found or ambiguous call, is already logged)
     std::shared_ptr<Typed_identifier> get_identifier(const std::string& identifier_name, const Token_context& context);
     std::shared_ptr<Type_info> get_type(const std::string& type_name, const Token_context& context);
+    std::shared_ptr<Function> get_operator(const std::string& mangled_op, const Token_context& context);
 
 private:
 
@@ -235,16 +242,19 @@ struct Dynamic_scope : Scope, Dynamic_statement
 
 struct Function : Evaluated_value
 {
-    std::unique_ptr<Function_type> type{nullptr};
-    std::vector<Token const *> in_parameter_name_tokens{}; // must be of the same length as type.in_parameters
-    std::vector<Token const *> out_parameter_name_tokens{}; // must be of the same length as type.out_parameters. Name can be empty
+    std::map<std::string,std::shared_ptr<Type_info>> in_parameters{};
+    std::map<std::string,std::shared_ptr<Type_info>> out_parameters{}; // unnamed return values is called "__ret_value_1"
+
+    std::map<std::string,std::unique_ptr<Evaluated_value>> default_in_values{};
+    std::map<std::string,std::unique_ptr<Evaluated_value>> default_out_values{};
+
     std::unique_ptr<Dynamic_scope> body{nullptr};
     std::shared_ptr<Type_info> get_type();
 };
 
 struct Return_statement : Dynamic_statement
 {
-    std::vector<std::unique_ptr<Evaluated_value>> return_values;
+    std::map<std::string,std::unique_ptr<Evaluated_value>> return_values; // unnamed return values is called "__ret_value_1"
 };
 
 struct Using_statement : Static_statement

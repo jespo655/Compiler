@@ -9,22 +9,27 @@ using namespace std;
 string Function_type::get_type_id() const
 {
     ostringstream oss{};
-    oss << "fn(";
-    bool first = true;
-    for (auto& type : in_parameters) {
-        if (!first) oss << ",";
-        first = false;
-        oss << type->get_type_id();
+    oss << "fn";
+    if (!in_parameters.empty()) {
+        oss << "(";
+        bool first = true;
+        for (auto& type : in_parameters) {
+            if (!first) oss << ",";
+            first = false;
+            oss << type->get_type_id();
+        }
+        oss << ")";
     }
-    oss << ")";
     if (!out_parameters.empty()) {
         oss << "->";
+        oss << "(";
         bool first = true;
         for (auto& type : out_parameters) {
             if (!first) oss << ",";
             first = false;
             oss << type->get_type_id();
         }
+        oss << ")";
     }
     return oss.str();
 }
@@ -62,5 +67,17 @@ string Type_list::get_type_id() const
     return oss.str();
 }
 
+
+string Infix_op::get_mangled_op()
+{
+    ostringstream oss;
+    oss << op_token->token << "(" << lhs->get_type()->get_type_id() << "," << rhs->get_type()->get_type_id() << ")";
+    return oss.str();
+}
+
+
+
+
+// All get_type() implementations, and other functions that handle types, are located in type_checker.cpp
 
 

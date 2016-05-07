@@ -150,10 +150,10 @@ void print_dynamic_scope(const Dynamic_scope* ds, int indent_level)
 {
     indent(indent_level); cout << "Dynamic scope:" << endl;
     if (!ds->identifiers.empty()) {
-        indent(indent_level+1); cout << "Identifiers:" << endl;
-        for (auto& id : ds->identifiers) {
-            indent(indent_level+2); cout << id->identifier_token->token << ", declared here: " << id->identifier_token->context << endl;
-        }
+        indent(indent_level+1); cout << "Identifiers: " << ds->identifiers.size() << endl;
+        // for (auto& id : ds->identifiers) {
+        //     indent(indent_level+2); cout << id->identifier_token->token << ", declared here: " << id->identifier_token->context << endl;
+        // }
     }
     if (!ds->imported_scopes.empty()) {
         indent(indent_level+1); cout << "Has " << ds->imported_scopes.size() << " imported scopes." << endl;
@@ -170,10 +170,10 @@ void print_static_scope(const Static_scope* ss, int indent_level)
 {
     indent(indent_level); cout << "Static scope:" << endl;
     if (!ss->identifiers.empty()) {
-        indent(indent_level+1); cout << "Identifiers:" << endl;
-        for (auto& id : ss->identifiers) {
-            indent(indent_level+2); cout << id->identifier_token->token << ", declared here: " << id->identifier_token->context << endl;
-        }
+        indent(indent_level+1); cout << "Identifiers: " << ss->identifiers.size() << endl;
+        // for (auto& id : ss->identifiers) {
+        //     indent(indent_level+2); cout << id->identifier_token->token << ", declared here: " << id->identifier_token->context << endl;
+        // }
     }
     if (!ss->imported_scopes.empty()) {
         indent(indent_level+1); cout << "Has " << ss->imported_scopes.size() << " imported scopes." << endl;
@@ -272,26 +272,26 @@ void print_return_statement(const Return_statement* p, int indent_level)
     } else {
         cout << " returning these values: " << endl;
         for (auto& evp : p->return_values) {
-            print_evaluated_value(evp.get(),indent_level+1);
+            print_evaluated_value(evp.second.get(),indent_level+1);
         }
     }
 }
 
 void print_function(const Function* p, int indent_level)
 {
-    indent(indent_level); cout << "Function of type " << p->type->get_type_id() << endl;
-    if (!p->in_parameter_name_tokens.empty()) {
-        indent(indent_level+1); cout << "in_parameter names:" << endl;
-        for (Token const* t : p->in_parameter_name_tokens) {
-            indent(indent_level+2); cout << t->token << endl;
-        }
-    }
-    if (!p->out_parameter_name_tokens.empty()) {
-        indent(indent_level+1); cout << "out_parameter names:" << endl;
-        for (Token const* t : p->out_parameter_name_tokens) {
-            indent(indent_level+2); cout << t->token << endl;
-        }
-    }
+    indent(indent_level); cout << "Function of type " << "???" << endl; // p->type->get_type_id() << endl;
+    // if (!p->in_parameter_name_tokens.empty()) {
+    //     indent(indent_level+1); cout << "in_parameter names:" << endl;
+    //     for (Token const* t : p->in_parameter_name_tokens) {
+    //         indent(indent_level+2); cout << t->token << endl;
+    //     }
+    // }
+    // if (!p->out_parameter_name_tokens.empty()) {
+    //     indent(indent_level+1); cout << "out_parameter names:" << endl;
+    //     for (Token const* t : p->out_parameter_name_tokens) {
+    //         indent(indent_level+2); cout << t->token << endl;
+    //     }
+    // }
     indent(indent_level+1); cout << "body:" << endl;
     print_dynamic_scope(p->body.get(),indent_level+2);
 }

@@ -61,6 +61,8 @@ Primitive_type scope_type{"scope", 8}; // ptr to the scope struct
 Primitive_type function_type{"function", 8}; // ptr to the function struct
 Primitive_type void_type{"void",0};
 
+Primitive_type undefined{"_unknown",0};
+
 // const Primitive_type array_type{"array", 16};
 
 vector<shared_ptr<Primitive_type>> primitive_types
@@ -99,6 +101,11 @@ shared_ptr<Type_info> get_primitive_type(const string& type_name)
 
 
 
+
+
+
+
+
 shared_ptr<Type_info> Literal::get_type()
 {
     switch(literal_token->type) {
@@ -109,7 +116,6 @@ shared_ptr<Type_info> Literal::get_type()
         default: return nullptr;
     }
 }
-
 
 shared_ptr<Type_info> Value_list::get_type()
 {
@@ -122,26 +128,21 @@ shared_ptr<Type_info> Value_list::get_type()
 
 shared_ptr<Type_info> Identifier::get_type()
 {
-    if (identity == nullptr) return nullptr; // should look for the identity in the local scope. If not found -> error
-    return identity->get_type();
+    ASSERT(local_scope != nullptr);
+    return local_scope->get_identifier(identifier_token->token,identifier_token->context)->get_type();
 }
 
 
 shared_ptr<Type_info> Infix_op::get_type()
 {
-    // todo: function lookup
-    // in the meantime: hard coded stuff with no security at all
-    if (op_token->token == "<" ||
-        op_token->token == ">" ||
-        op_token->token == "<=" ||
-        op_token->token == ">=" ||
-        op_token->token == "==" ||
-        op_token->token == "!=")
-        return shared_ptr<Type_info>(&bool_type);
-    return lhs->get_type();
+    ASSERT(local_scope != nullptr);
+    shared_ptr<Function> op = local_scope->get_operator(get_mangled_op(),op_token->context);
+    shared_ptr<Type_info> type = op->get_type();
+    ASSERT(dynamic_cast<Function_type*>(type.get()));
+    shared_ptr<Function_type> ft{dynamic_cast<Function_type*>(op->get_type().get())};
+    ASSERT(ft->out_parameters.size() == 1);
+    return ft->out_parameters[0];
 }
-
-
 
 
 shared_ptr<Type_info> Getter::get_type()
@@ -233,6 +234,9 @@ shared_ptr<Type_info> Range::get_type()
 
 
 
+
+
+
 // to be checked:
 
 // dynamic statements
@@ -291,6 +295,9 @@ bool resolve_declaration(Declaration* declaration, Scope* scope)
     //      if empty -> assign default values for the respective type
     // if lhs doesn't have types -> infer types from rhs.
     // in either case -> check that lhs and rhs has the same number of elements (unless lhs typed and rhs empty)
+
+    // for each declared variable that has dependent statements ->
+    //      if the type was inferred, try to resolve those statements
     return true;
 }
 
@@ -380,25 +387,32 @@ shared_ptr<Typed_identifier> Scope::get_identifier(const string& identifier_name
 }
 
 
+std::shared_ptr<Function> Scope::get_operator(const std::string& mangled_op, const Token_context& context)
+{
+    // TODO
+    log_error("Scope::get_operator() nyi",context);
+    return nullptr;
+}
+
+
 bool Scope::get_identifier(const string& identifier_name, shared_ptr<Typed_identifier>& identifier, const Token_context& context, bool& ambiguous)
 {
     // first check local identifiers
     // then check imports
-    for (shared_ptr<Typed_identifier>& id : identifiers) {
-        if (id->identifier_token->token == identifier_name) {
-            // match!
-            if (identifier != nullptr) {
-                if (!ambiguous) {
-                    log_error("Ambiguous reference to identifier \""+identifier_name+"\".",context);
-                    add_note("Declared here: ",identifier->identifier_token->context);
-                    ambiguous = true;
-                }
-                add_note("And here: ",id->identifier_token->context);
-                return true;
+    shared_ptr<Typed_identifier> id = identifiers[identifier_name];
+    if (id != nullptr) {
+        // match!
+        if (identifier != nullptr) {
+            if (!ambiguous) {
+                log_error("Ambiguous reference to identifier \""+identifier_name+"\".",context);
+                add_note("Declared here: ",identifier->identifier_token->context);
+                ambiguous = true;
             }
-            identifier = id;
-            return false;
+            add_note("And here: ",id->identifier_token->context);
+            return true;
         }
+        identifier = id;
+        return false;
     }
 
     for (Scope* imported_scope : imported_scopes) {
@@ -432,11 +446,11 @@ shared_ptr<Type_info> Scope::get_type_no_checks(const string& type_name)
 {
     // first check local types
     // then check imports
-    for (shared_ptr<Type_info>& t : types) {
-        if (t->get_type_id() == type_name) {
-            // match!
-            return t;
-        }
+    shared_ptr<Type_info> t = types[type_name];
+    if (t != nullptr) {
+        // match!
+        ASSERT(t->get_type_id() == type_name);
+        return t;
     }
 
     for (Scope* imported_scope : imported_scopes) {
