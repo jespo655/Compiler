@@ -4,7 +4,7 @@
 
 // Function calls are illegal in the static scope, so to make this part compile we have to wrap it in a function declaration.
 // That creates a dynamic scope, in which we can call functions, make variable assignments outside of declarations, and more.
-fn_wrapper := fn() -> () {
+fn_wrapper := fn {
 
     f1 := fn(a : int, b : int) -> (int) { return a+b; };
 
@@ -38,7 +38,7 @@ fn_wrapper := fn() -> () {
     r9a, r9b := f9(b=1,a=2); // returns (2,1)
 
     // functions returning functions
-    f10 := fn -> fn { return f4; };
+    f10 := fn -> fn -> fn -> fn { return f4; };
 
     // The following are equivalent to the definition of f10 above, should also work
     // f10 := fn() -> (fn) { return f4; };

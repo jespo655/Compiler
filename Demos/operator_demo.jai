@@ -27,6 +27,8 @@ infix_wrapper := fn {
     // infix_operator > : fn(int, int)->bool;
     // infix_operator <= : fn(int, int)->bool;
     // infix_operator >= : fn(int, int)->bool;
+    // infix_operator == : fn(int, int)->bool;
+    // infix_operator != : fn(int, int)->bool;
 
     // infix_operator + : fn(float, float)->float;
     // infix_operator - : fn(float, float)->float;
@@ -37,9 +39,13 @@ infix_wrapper := fn {
     // infix_operator > : fn(float, float)->bool;
     // infix_operator <= : fn(float, float)->bool;
     // infix_operator >= : fn(float, float)->bool;
+    // infix_operator == : fn(float, float)->bool;
+    // infix_operator != : fn(float, float)->bool;
 
     // infix_operator && : fn(bool, bool)->bool; // and
     // infix_operator || : fn(bool, bool)->bool; // or
+    // infix_operator == : fn(bool, bool)->bool; // not xor
+    // infix_operator != : fn(bool, bool)->bool; // xor
 
     /*
     infix prio:
