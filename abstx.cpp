@@ -68,7 +68,7 @@ string Type_list::get_type_id() const
 }
 
 
-string Infix_op::get_mangled_op()
+string Infix_op::get_mangled_op() const
 {
     ostringstream oss;
     oss << op_token->token << "(" << lhs->get_type()->get_type_id() << "," << rhs->get_type()->get_type_id() << ")";

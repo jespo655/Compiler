@@ -279,7 +279,7 @@ void print_return_statement(const Return_statement* p, int indent_level)
 
 void print_function(const Function* p, int indent_level)
 {
-    indent(indent_level); cout << "Function of type " << "???" << endl; // p->type->get_type_id() << endl;
+    indent(indent_level); cout << "Function of type " << p->get_type()->get_type_id() << endl;
     // if (!p->in_parameter_name_tokens.empty()) {
     //     indent(indent_level+1); cout << "in_parameter names:" << endl;
     //     for (Token const* t : p->in_parameter_name_tokens) {

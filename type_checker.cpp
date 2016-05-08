@@ -58,7 +58,6 @@ Primitive_type ptr_type{"pointer", 8}; // 64 bit ptr
 Primitive_type bool_type{"bool", 1}; // the smallest possible.
 Primitive_type type_type{"type", 8}; // ptr to the type struct
 Primitive_type scope_type{"scope", 8}; // ptr to the scope struct
-Primitive_type function_type{"function", 8}; // ptr to the function struct
 Primitive_type void_type{"void",0};
 
 Primitive_type undefined{"_unknown",0};
@@ -85,7 +84,6 @@ vector<shared_ptr<Primitive_type>> primitive_types
     shared_ptr<Primitive_type>(&bool_type),
     shared_ptr<Primitive_type>(&type_type),
     shared_ptr<Primitive_type>(&scope_type),
-    shared_ptr<Primitive_type>(&function_type),
     shared_ptr<Primitive_type>(&void_type)
 };
 
@@ -106,7 +104,7 @@ shared_ptr<Type_info> get_primitive_type(const string& type_name)
 
 
 
-shared_ptr<Type_info> Literal::get_type()
+shared_ptr<Type_info> Literal::get_type() const
 {
     switch(literal_token->type) {
         case Token_type::INTEGER: return shared_ptr<Type_info>(&int_type);
@@ -117,7 +115,7 @@ shared_ptr<Type_info> Literal::get_type()
     }
 }
 
-shared_ptr<Type_info> Value_list::get_type()
+shared_ptr<Type_info> Value_list::get_type() const
 {
     shared_ptr<Type_list> tl{new Type_list()};
     for (auto& value : values) {
@@ -126,14 +124,14 @@ shared_ptr<Type_info> Value_list::get_type()
     return tl;
 }
 
-shared_ptr<Type_info> Identifier::get_type()
+shared_ptr<Type_info> Identifier::get_type() const
 {
     ASSERT(local_scope != nullptr);
     return local_scope->get_identifier(identifier_token->token,identifier_token->context)->get_type();
 }
 
 
-shared_ptr<Type_info> Infix_op::get_type()
+shared_ptr<Type_info> Infix_op::get_type() const
 {
     ASSERT(local_scope != nullptr);
     shared_ptr<Function> op = local_scope->get_operator(get_mangled_op(),op_token->context);
@@ -145,7 +143,7 @@ shared_ptr<Type_info> Infix_op::get_type()
 }
 
 
-shared_ptr<Type_info> Getter::get_type()
+shared_ptr<Type_info> Getter::get_type() const
 {
     ASSERT(struct_identifier != nullptr);
     auto struct_type = struct_identifier->get_type();
@@ -165,7 +163,7 @@ shared_ptr<Type_info> Getter::get_type()
     return nullptr;
 }
 
-shared_ptr<Type_info> Function_call::get_type()
+shared_ptr<Type_info> Function_call::get_type() const
 {
     ASSERT(function_identifier != nullptr);
     auto function_type = function_identifier->get_type();
@@ -176,21 +174,20 @@ shared_ptr<Type_info> Function_call::get_type()
         tl->types = ft->out_parameters;
         return tl;
     } else {
-        // we don't have access to a context here!
-        // log_error("Trying to call something that is not a function",data_identifier_token->context);
+        log_error("Trying to call something that is not a function",context->context);
         return nullptr;
     }
 }
 
 
-shared_ptr<Type_info> Cast::get_type()
+shared_ptr<Type_info> Cast::get_type() const
 {
     ASSERT(casted_type_token != nullptr);
     if (local_scope == nullptr) return nullptr;
     return local_scope->get_type(casted_type_token->token,casted_type_token->context);
 }
 
-shared_ptr<Type_info> Array_lookup::get_type()
+shared_ptr<Type_info> Array_lookup::get_type() const
 {
     ASSERT(array_identifier != nullptr);
     auto array_type = array_identifier->get_type();
@@ -200,33 +197,40 @@ shared_ptr<Type_info> Array_lookup::get_type()
         return shared_ptr<Array_type>(at);
     } else {
         // we don't have access to a context here!
-        // log_error("Trying to call something that is not a function",data_identifier_token->context);
+        // log_error("Trying to index something that is not an array",context);
         return nullptr;
     }
-
-    cerr << "Array_lookup::get_type() nyi" << endl;
-    return nullptr; // todo
 }
 
-shared_ptr<Type_info> Type_info::get_type()
+shared_ptr<Type_info> Type_info::get_type() const
 {
     return shared_ptr<Type_info>(&type_type);
 }
 
 
-shared_ptr<Type_info> Scope::get_type()
+shared_ptr<Type_info> Scope::get_type() const
 {
     return shared_ptr<Type_info>(&scope_type);
 }
 
-shared_ptr<Type_info> Function::get_type()
+
+
+shared_ptr<Type_info> Function::get_type() const
 {
-    return shared_ptr<Type_info>(&function_type);
+    shared_ptr<Function_type> ft{new Function_type()};
+    for (auto& ip : in_parameters) {
+        ft->in_parameters.push_back(ip.second);
+    }
+    for (auto& op : out_parameters) {
+        ft->out_parameters.push_back(op.second);
+    }
+    return ft;
 }
 
-shared_ptr<Type_info> Range::get_type()
+shared_ptr<Type_info> Range::get_type() const
 {
-    return start->get_type(); // assuming that the end has the same type
+    ASSERT(start->get_type() == end->get_type());
+    return start->get_type();
 }
 
 
@@ -259,23 +263,83 @@ shared_ptr<Type_info> Range::get_type()
 
 
 
+bool is_resolved(Dynamic_statement* statement) { return statement->dependencies == -1; }
+bool can_be_resolved(Dynamic_statement* statement) { return statement->dependencies == 0; }
 
-// todo: if we want return value overloading, we need a reference to the place
-//      were we use the return values, so we can check against that
-bool resolve_function_call(Function_call* fc, Scope* scope, Type_list* return_types = nullptr)
+void add_dependency(Evaluated_value* value, Dynamic_statement* statement)
 {
-    ASSERT(fc != nullptr);
-    auto fn_type = fc->function_identifier->get_type();
-    if (fn_type == nullptr) {
-        log_error("Unable to resolve function",fc->context->context);
-        return true;
-    }
-    log_error("resolve_function_call NYI",fc->context->context);
-    return true;
+    ASSERT(value != nullptr && statement != nullptr);
+    value->dependant_statements.push_back(statement);
+    statement->dependencies++;
 }
 
 
+bool resolve_function_call(Function_call* fc)
+{
+    ASSERT(fc != nullptr);
+    ASSERT(can_be_resolved(fc)); // otherwise we wouldn't even try to resolve
 
+    ASSERT(fc->function_identifier != nullptr);
+    auto type = fc->function_identifier->get_type();
+    if (type == nullptr) {
+        add_dependency(fc->function_identifier.get(), fc);
+        return false; // no error, just unable to finish
+    }
+    if (Function_type* ft = dynamic_cast<Function_type*>(type.get())) {
+        // ok! check that in arguments match the function type
+
+        // in arguments:
+        // fc->arguments // vector<unique_ptr<Evaluated_value>>
+        // fc->named_arguments // map<string,unique_ptr<Evaluated_value>>
+
+        // If we use named arguments, the function_type is not enough!
+        // We need the actual function, because that's what has the names
+        // The same goes for arguments with default values
+
+        // For now, give an error if named arguments is used, or if the count doesn't match
+
+        if (!fc->named_arguments.empty()) {
+            log_error("Named arguments NYI.",fc->context->context);
+            return true;
+        }
+
+        if (fc->arguments.size() != ft->in_parameters.size()) {
+            ostringstream oss;
+            oss << "Argument count mismatch in function call. Expected " << ft->in_parameters.size()
+                << " arguments but found " << fc->arguments.size();
+            log_error(oss.str(),fc->context->context);
+            return true;
+        }
+
+        bool errors = false;
+        for (int i = 0; i < fc->arguments.size(); ++i) {
+            shared_ptr<Type_info> arg_type = fc->arguments[i]->get_type();
+            if (arg_type == nullptr) {
+                add_dependency(fc->arguments[i].get(), fc);
+            } else {
+                shared_ptr<Type_info> expected_type = ft->in_parameters[i];
+                if (*arg_type != *expected_type) {
+                    ostringstream oss;
+                    oss << "Type mismatch in function call argument " << (i+1) << ": expected "
+                        << expected_type->get_type_id() << " but found " << arg_type->get_type_id();
+                    log_error(oss.str(),fc->context->context);
+                    errors = true;
+                }
+            }
+        }
+        if (fc->dependencies == 0) {
+            ASSERT(!errors);
+            fc->dependencies = -1; // fully resolved!
+        }
+        return errors;
+
+    } else {
+        // the function identifier wasn't a function at all -> error!
+        log_error("Trying to call something that is not a function",fc->context->context);
+        return true;
+    }
+
+}
 
 
 
@@ -283,11 +347,6 @@ bool resolve_function_call(Function_call* fc, Scope* scope, Type_list* return_ty
 
 // vector<Compile_unit> units_to_compile{};
 // vector<Compile_unit> next_units_to_compile{};
-
-bool is_resolved(Dynamic_statement* statement) { return statement->dependencies == -1; }
-bool can_be_resolved(Dynamic_statement* statement) { return statement->dependencies == 0; }
-
-
 
 bool resolve_declaration(Declaration* declaration, Scope* scope)
 {

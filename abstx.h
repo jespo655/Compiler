@@ -36,8 +36,10 @@ struct Function;
 struct Evaluated_value
 {
     virtual ~Evaluated_value() {}
-    virtual std::shared_ptr<Type_info> get_type() { return nullptr; };
+    virtual std::shared_ptr<Type_info> get_type() const { return nullptr; };
     Scope* local_scope;
+
+    std::vector<Dynamic_statement*> dependant_statements; // used for type checker
 };
 
 // Evaluated variable: Anything that can be assigned a value. I.E. not literals.
@@ -51,14 +53,14 @@ struct Literal : Evaluated_value
 {
     Token const * literal_token;
     virtual ~Literal() {}
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 // Value_list: A parenthesis with several comma-separated values
 struct Value_list : Evaluated_value
 {
     std::vector<std::unique_ptr<Evaluated_value>> values;
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 struct Identifier : Evaluated_variable
@@ -66,7 +68,7 @@ struct Identifier : Evaluated_variable
     Token const * identifier_token; // name & declaration context
     virtual ~Identifier() {}
 
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 struct Infix_op : Evaluated_value
@@ -74,8 +76,8 @@ struct Infix_op : Evaluated_value
     std::unique_ptr<Evaluated_value> lhs;
     Token const * op_token;
     std::unique_ptr<Evaluated_value> rhs;
-    std::shared_ptr<Type_info> get_type();
-    std::string get_mangled_op();
+    std::shared_ptr<Type_info> get_type() const;
+    std::string get_mangled_op() const;
 };
 
 // function call: starts with "("
@@ -85,7 +87,7 @@ struct Function_call : Evaluated_variable, Dynamic_statement
     std::vector<std::unique_ptr<Evaluated_value>> arguments; // these come in order
     std::map<std::string,std::unique_ptr<Evaluated_value>> named_arguments; // these comes last, but in any order
 
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 // getter: starts with "."
@@ -94,7 +96,7 @@ struct Getter : Evaluated_variable
     std::unique_ptr<Evaluated_value> struct_identifier;
     Token const * data_identifier_token;
 
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 // cast: starts with "_"
@@ -102,7 +104,7 @@ struct Cast : Evaluated_variable
 {
     std::unique_ptr<Evaluated_value> casted_value;
     Token const * casted_type_token;
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 // array lookup: starts with "["
@@ -110,7 +112,7 @@ struct Array_lookup : Evaluated_variable
 {
     std::unique_ptr<Evaluated_value> array_identifier;
     std::unique_ptr<Evaluated_value> position;
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 
@@ -120,7 +122,7 @@ struct Type_info : Evaluated_value
 {
     virtual ~Type_info() {}
     virtual std::string get_type_id() const = 0; // pure virtual
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
     bool operator==(const Type_info& o) const { return get_type_id() == o.get_type_id(); }
     bool operator!=(const Type_info& o) const { return !(*this == o); }
 };
@@ -136,11 +138,7 @@ struct Typed_identifier : Identifier
 {
     std::shared_ptr<Type_info> type{nullptr};
     // std::shared_ptr<Evaluated_value> value{nullptr};
-    std::shared_ptr<Type_info> get_type() { return type; }
-
-    std::vector<Dynamic_statement*> dependant_statements;
-        // Used for inferring types.
-        // When a type is inferred - go through this vector try to resolve the statements.
+    std::shared_ptr<Type_info> get_type() const { return type; }
 };
 
 
@@ -211,7 +209,7 @@ struct Scope : Evaluated_value
 
     std::vector<Scope*> imported_scopes;
     virtual ~Scope() {}
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 
     // returns nullptr if error (either not found or ambiguous call, is already logged)
     std::shared_ptr<Typed_identifier> get_identifier(const std::string& identifier_name, const Token_context& context);
@@ -249,7 +247,7 @@ struct Function : Evaluated_value
     std::map<std::string,std::unique_ptr<Evaluated_value>> default_out_values{};
 
     std::unique_ptr<Dynamic_scope> body{nullptr};
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 struct Return_statement : Dynamic_statement
@@ -306,7 +304,7 @@ struct Range : Evaluated_value
 {
     std::unique_ptr<Evaluated_value> start{nullptr};
     std::unique_ptr<Evaluated_value> end{nullptr};
-    std::shared_ptr<Type_info> get_type();
+    std::shared_ptr<Type_info> get_type() const;
 };
 
 struct For_clause : Dynamic_statement
