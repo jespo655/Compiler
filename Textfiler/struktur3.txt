@@ -1,0 +1,104 @@
+Lägg till EOF token
+
+
+
+
+
+1) läs global scope
+
+read_statements() // slutar vid första unexpected token efter ;
+
+
+
+2) read_statement:
+
+")", "]", "}" -> return;
+Gå igenom tills nästa ";", leta efter ":" och assignment tokens.
+Efter ":" är endast "=" tillåtet som assignment. Andra ass.token ger error.
+
+
+
+Hittat ":" och "=":
+deklaration + ev. assignment:
+    a : int;
+    (a=b) : int = 2;
+    a,b : int,int = 2,2;
+    (a=b),c : int,float = 2,2.0;
+    a : int = 2.0_int;
+    a := 2;
+    a : string = "hej";
+    a : int [2] = {1,2};
+    a : int [..] = {1,2,3,4};
+måste börja med en eller flera identifier groups. Inga typer tillåtna. Inga casts är tillåtna. Inga function calls tillåtna.
+kräver att lhs är odefinerad sen tidigare
+lägger till identifiers till scope.
+
+: token (krävs)
+
+type-info. Behövs endast om det inte kommer assignment efter.
+
+= token (kan hoppas över) med efterföljande rhs: som tidigare
+
+; token
+
+
+Inget ":", men assignment token:
+endast assignment - "=", "+=", "-=", etc.
+
+    a = 2;
+    (a=b) = 2;
+    a,b = 2,2;
+    (a=b),c = 2,2.0;
+    s.a = 2.0_int; // s är en struct
+    f().a = 3; // förutsätter att f() returnerar en pekare till nåt
+    (a)_int = (b)_int; // casts på båda sidor är ok
+
+Förutsätter att typen för både lhs och rhs är kända sedan tidigare
+Detta går att kolla direkt! Om inte typen finns -> sätt upp en dependency i parent_scope. (ej local fn-scope)
+I funktioner: Ha koll på local scope och vilka identifiers som är definierade där.
+    Om något inte hittas - sätt dependancy i parent_scope
+
+
+Varken ":" eller ass.token:
+
+function call:
+foo();
+
+anonymous scope:
+{};
+[]{};
+
+
+
+
+
+
+
+struct Dependency
+{
+    virtual ~Dependency();
+}
+
+
+
+struct Type_of_identifier : Dependency
+{
+    Token const* identifier_name_token;
+}
+// ex:
+// a := b; // a är beroende av typen av b
+
+
+struct Type_dependancy : Dependency
+{
+    Token const* type_identifier_token;
+}
+// ex:
+// a : S; // a är beroende av type identifier S.
+
+
+struct Function_dependancy : Dependency
+{
+    Token const* function_identifier_token;
+    unique_ptr<Rhs> arguments;
+}

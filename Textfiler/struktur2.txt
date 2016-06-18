@@ -1,0 +1,85 @@
+0) Tokenize
+
+Dela upp programmet i tokens
+
+
+
+1) Parse
+
+Dela upp programmet i compile units.
+
+struct Compile_unit
+{
+    Scope* scope;
+    std::vector<Token> tokens;
+}
+
+
+
+2) Infer
+
+Type inference. Verifiera att alla saker har en typ.
+Det här steget sätter också upp dependencies.
+
+Static scope: Name inference. Lägg till alla identifier names till namespace.
+    Verifiera också att varje sak endast deklareras en gång.
+
+
+
+struct Type_info
+{
+    std::string name;
+    int size = -1; // bytes. -1 is undefined. Can be undefined for a while.
+}
+
+struct Identifier
+{
+    std::string name;
+    std::shared_ptr<Type_info> type; // can be undefined for a while
+    Token_context declaration_context; // pekar där namnet först står
+}
+
+struct Scope
+{
+    std::shared_ptr<Scope> parent_scope;
+    std::vector<std::shared_ptr<Scope>> imported_scopes;
+    std::vector<std::unique_ptr<Identifier>> identifiers;
+}
+
+
+user defined type:
+
+Type_info* type;
+type->name = "type";
+type->size = 0;
+
+Identifier ...;
+type_id.name = "fn(int)->void"; // user defined type: usually struct or function
+type_id.type = type;
+
+
+
+
+
+dependencies:
+
+std::vector<std::string> type_dependencies; // contains a list of used indentifier names that has unknown type
+std::vector<std::string> size_dependencies; // contains a list of used type names that has unknown size
+
+
+
+a = b;          // a får type dependency "b"
+
+s : struct {
+    asd ss;     // s får size dependency "ss"
+}
+
+
+senare:
+    log_error("Unable to infer the type of a",a.declaration_context);
+    add_note("Dependant on the type of b, declared here:",b.declaration_context);
+
+    log_error("Unable to infer the size of [type] s",s.declaration_context);
+    add_note("Dependant on the size of [type] asd, declared here:",asd.declaration_context);
+
+senare: om man ska kunna ändra i kod hur man vill så kan sizes ändras. Detta måste prolifieras till alla ställen som använder klassen. Hur löser man detta?

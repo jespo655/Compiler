@@ -1,0 +1,146 @@
+TODO:
+
+
+
+// håller på med just nu:
+
+type_checker
+    resolving av statements
+
+
+
+
+
+
+
+// deletes
+
+when identifiers run out of scope, free all owned pointers.
+@async wait for all asyncs
+each anonymous scope in the local scope also ceases to exist here. Keep track of those!
+
+
+
+
+
+// Errors: (@errors)
+
+testa kod, tänk på vilka error msgs man vill få. Lägg till precis såna.
+(Tills dess: var inte så noggrann med snygga errors)
+force_static - se till att det används (@errors)
+
+
+
+// arrays (@arrays)
+
+rhs continuation: [id/constant] (array lookup)
+
+typer: kan ha array specifier:
+    int [2] a; // a är en 2 lång array av ints (allockeras på stacken)
+    int [..] a; // a är en dynamisk array av ints (allockeras på heapen, på stacken sparas endast en pekare)
+    int [2,3] a; // a är en 2-dimensionell array av ints (sparas som en vanlig 1-dim)
+    int [2,..] a; // (sparas på stacken som en array av pekare till int[..])
+    int [..,2] a; // (sparas på heapen som en dynamisk array av int[2])
+
+    [3] a; // error - no type (var försiktig med att inte blanda ihop detta med capture group)
+
+gör klart get_type (array) i type_checker
+
+
+
+// type checker:
+
+compilation_unit
+har en lista av saker som är beroende av den
+har en counter på antalet saker den är beroende av
+
+varje gång man lyckas få ner dependancy count till 0 -> resolva!
+    sen -> gå igenom listan av dependants och minska deras dep.count med 1.
+
+alla saker man behöver veta ska sparas i scope: typedefs, identifier namn med type, etc.
+
+
+
+// Generic:
+
+Tänk på "const" structs och hur tilldelning till dem sker
+s : S();
+s = s2; // error, s defined at ...
+s.i = 2; // ok?
+
+kanske lägga till "const" keyword -> inga struct members får ändras (utifrån?)
+
+
+
+
+// Lexer:
+
+UTF-8 encoding på alla identifiers - tillåt flera tecken (is_valid_char_in_identifier_name)
+UTF8-klass att använda istället för string
+Here-strings
+Se till att man kan läsa in symboler som "ser ut som" identifiers, utan att tappa data
+    Ex: "and", "or"
+
+
+// Parser:
+
+Skriv tester!
+
+Enum med abstx-type, så att man senare med en enkel switch kan hitta rätt subklass
+
+prefix operator - först i varje rhs-part
+
+Workspace: innehåller global scope
+
+read_range: läs varje del av range definition, nuvarande lösning är väldigt temporär
+
+Read identifiers i capture group
+
+read_evaluated_value: lägg till scopes, array literals
+
+
+
+
+
+
+
+
+
+// Kanske:
+
+
+
+
+// fixas när jag lägger till importering av scopes:
+get_identifier(scope,id): problem med parent scope om man importerar ett scope som har samma parent
+    (man får ambiguous_error från samma variabel 2 gånger pga 2 olika sökvägar)
+
+ex:
+    a {
+        i : int;
+        b {
+            c {
+
+            }
+            using c;
+            a := i; // ambiguous definition of i: b->c->b->a->i och b->a->i
+        }
+    }
+// lösning: undvik cykler på något sätt
+
+
+// capture groups
+skilj på capture by reference / value
+istället för att pulla in parent scope: lägg endast till specificerade identifiers
+references: pointers!
+
+
+
+
+
+
+// inte så viktigt:
+
+wrappa compiler i ett namespace
+file ending
+

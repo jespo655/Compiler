@@ -1,0 +1,79 @@
+jai wishlist
+
+
+printf(%o,obj);
+
+// one specific % directive to print any struct that has a print() function (or to_string() or whatever)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function som tar ett scope som inparameter
+-> om scope == struct, så kan detta alltid göras med polymorfiska pekare:
+    fun := (^$T) -> void;
+
+
+
+fun := (scope s) -> void
+{
+    x = 2;
+}
+
+
+vector2 :: struct
+{
+    x := 0;
+    y := 0;
+}
+
+vector3 :: struct
+{
+    x,y,z := 0;
+}
+
+
+set_two_tests()
+{
+    v2 : vector2;
+    // v2.x == 0
+    fun(using v2);
+    // v2.x == 2
+
+
+    v3 : vector3;
+    // v3.x == 0
+    fun(using v3);
+    // v3.x == 2
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

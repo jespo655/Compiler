@@ -1,0 +1,60 @@
+
+
+Lexical Analyzer
+
+    tokenizer
+    tags language elements with type information
+    begins filling in information in the symbol table
+
+
+Syntactic Analyzer
+
+    analyzes tokenized code for structure
+    amalgamates symbols into syntactic groups
+    tags groups with type information
+
+Semantic Analyzer
+
+    Analyzes the parsed code for meaning
+    Fills in assumed or missing information
+    Tags group with meaning information
+
+Code Generator
+
+    Linearizes the Qualified Code and produces the equivalent object code
+
+Optimizer
+
+    Examines the object code to determine whether there are more efficient means of execution
+
+
+
+
+
+
+
+
+Symbol Table
+Error Handler
+
+
+
+
+Lista av tokens
+Varje token har ett sammanhang
+
+Varje identifier har ett identifier id
+Map med identifiers (namn -> id)
+
+
+
+
+
+
+
+
+
+
+
+
+

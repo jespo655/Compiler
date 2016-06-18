@@ -1,0 +1,21 @@
+
+Steps:
+
+Parse       source code
+Infer       types and names
+
+    tap: all the inferred data is translated to user code  that can be used in the actual program
+
+    this data can be modified by users and passed back to the compiler
+
+Size        needed for structs of structs, for example
+Bytecode
+Run
+Output
+
+
+
+
+Compilation units:
+in c/c++: whole files
+in jai: one single thing, or at most the body of a procedure

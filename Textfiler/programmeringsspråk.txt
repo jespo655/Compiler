@@ -1,0 +1,895 @@
+
+
+
+
+typer:
+
+u8, u16, u32, u64
+i8, i16, i32, i64
+float, int = i32. double?
+char (UTF-8), storlek beror alltså på innehåll
+string (sekvens av char, alltid UTF-8)
+
+starkt typat.
+
+
+implicit cast u8->u16->u32->u64
+implicit cast i8->i16->i32->i64
+
+
+
+klasser:
+
+någon typ av objekt behövs.
+    inheritance
+    implicit polymorfism (funktion som tar typ T kan också acceptera typ T2 som är subklass av T)
+
+endast data members - virtual functions förstör mer än hjälper
+
+För varje klass T skapas en "konstruktor"-funktion T T() som tar inparametrar som matchar data members i T.
+
+ex:
+
+T : struct
+{
+    int i;
+    float f;
+}
+
+skapar funktion:
+
+T : fn(int a, float b) -> T
+{
+    T t;
+    t.i = a;
+    t.f = b;
+    return t;
+}
+
+Denna funktion kan skrivas över om man så önskar.
+Varje konstruktor-funktion heter samma sak som klassen och måste returna exakt ett objekt av den klassen.
+    (Compiler error: "Constructor function T(int, float) must return type T!")
+
+NOTE: detta skapar flera identifiers med samma namn. HANDLE IT.
+T t; // T används som type identifier -> använd typen T
+a = T(); // constructor call -> a blir en struct av typ T
+b = T; // b blir ett annat namn för type T
+c = b.i; // error: b is not a struct type! (b is of type "type")
+
+
+arrays:
+
+struct of arrays & arrays of structs, conversion mellan dem
+
+
+
+
+
+tilldelning:
+
+implicit auto (kan ta typinformation direkt från det man tilldelar från)
+funktioner och variabler ska ha samma syntax (en variabel kan vara en funktionspekare)
+det måste gå att tilldela typinformation men inget värde (automatisk assignment är default, kan överskridas på nåt sätt)
+
+
+viktiga saker att ha med i syntax:
+
+[typ]       // bör kunnas ta bort helt
+var_name    // det man tilldelar
+val_name    // det värde som variabeln får
+
+
+funktion:
+
+[typ] = samma som funktionssignatur = funktion utan body
+var_name
+
+val =
+    [return type]       // return type kan vara 0 eller fler
+    parameters          // kan vara tom lista "()"
+    body
+
+body är sist pga syntax ska vara samma på typ och fn
+
+(funktioner är alltid pointers till kodens plats)
+
+
+f = fn(int i, float f) -> int { return i + f; }                              // implicit type derivation
+(int i, float f) -> int fn = (int i, float f) -> int { return i + f; }      // explicit type declaration (måste stämma överens med den faktiska funktionen)
+
+
+för funktioner med flera return values:
+
+tilldelning av flera värden:
+    a, b, c = d, e, f; // a=d, b=e, c=f
+
+tilldelning av flera variabler samtidigt:
+    (a = b = c) = d;    // a=d, b=d, c=d
+    a, (b = c) = d, e   // a=d, b=e, c=e. Alla '='-grupper i VL måste stå inom parentes!
+
+olika antal värden i VL och HL: compiler error: "Multiple value assignment mismatch: x variables in lhs and y values in rhs."
+man kan "hoppa över" rhs-värden med "dump"-variabel _
+    a, _, b = d, e, f; // a=d, b=f
+
+
+function overloading beroende på return values går att göra!
+om man försöker använda dump _ på overloadad fn så får man compiler error "Ambiguous function call: Cannot derive type of _"
+går att lösa med cast operator '_'!
+    a, _int, b = d, e, f // a=d, b=f, e måste vara int!
+
+
+
+
+
+
+
+kompilering:
+
+ordning av funktioner spelar ingen roll - flera passes behövs för okända saker
+precompiler i samma språk - funktioner som är färdigkompilerade kan köras i compile time
+
+
+
+
+
+pointers:
+
+pointer ownership - owned pointers will be deleted when the owner is deleted
+new operator allokerar på heap
+delete operator deallokerar
+kanske: kan välja allokator på nåt sätt?
+    vad händer om allokatorn inte lyckas allokera?
+
+
+
+
+
+parentes när man förväntar sig en variabel:
+    fungerar som en "funktion":
+    räkna ut det som står i parentesen först, använd värdet man får ut
+
+
+
+
+
+casts:
+
+suffix _T: "tolka det här som typen T". Funkar endast för kompatibla typer.
+
+    i = 2.04_i8;   // OK, i blir en i8 = 2
+    u16 u = 5000_u32; // overflow error - en u32 får inte plats i en u16
+    u16 u = 5000_u8; // overflow error - 5000 får inte plats i en u8
+
+gjort för saker som annars blir error:
+    u16 u = -5; // error - potential loss of information
+    u16 u = -5_u16; // OK
+
+fungerar direkt på icke namngivna saker, tex. siffror eller strängar.
+för användning på variabler: kräver parentes!
+
+kan chainas:
+    float f; f = ((f)_int)_float;
+
+för klasser:
+    x_T anropar funktion T(x) -> T
+    (a,b,c)_T anropar funktion T(a,b,c) -> T  // samma som konstruktor!
+        förutsatt att respektive funktion finns. Finns ej -> compiler error: unable to deduce cast function
+
+kan använda lhs type information:
+
+    u16 u = -6_any  // samma som u16 u = -6_u16 (typnamn "any" kan bytas ut. kanske "?")
+
+om ingen sån type information är TYDLIG fås compiler error: "Ambiguous cast: unable to deduce the type of _any"
+
+
+user defined casts:
+
+T2 : fn(T) -> T2; // castar från T till T2. Kan sen användas med (t)_T2
+cast(T) -> T2; // syntaktiskt socker för ovanstående
+
+
+
+
+
+
+
+
+namespaces:
+
+"using" som i jai
+
+
+
+
+
+
+
+
+
+
+
+funktioner som måste ha en viss form:
+
+
+cast:
+    T2 : fn(T) -> T2;
+    cast(T) -> T2;
+
+constructor:
+    T : fn(...) -> T;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+i satser som ska evalueras -> inga assignments!
+
+if (a = b) // compiler error
+a = (a=b) // compiler error
+(a=b) = a // ok pga multiple assignment syntax. resultatet är att b får värdet av a, och a ändras inte
+
+
+
+assignment cast
+
+i32 a;
+a_i8 = 1000; // error: 1000 får inte plats i i8
+a_i16 = 1000; // ok. a är nu en i32 med värdet 1000
+a_u16 = -1; // error: kan inte assigna negativa tal till u16
+
+
+
+
+
+assigment cast för odeklararade värden:
+
+i32 a = -1;
+b = a; // b blir i32
+
+b_i16 = a; // b skulle bli i32, men assignas som om den var i16 -> error: downcasting/possible loss of information
+b_i16 = a_i16; // ok, b blir i32
+b = a_i16; // ok, b blir i16
+
+b_u8 = a; // error: downcasting/possible loss of information
+i16 b_i32 = a; // ok, ekvivalent med b = a_i16
+
+
+
+
+
+
+
+
+
+
+Struktur:
+
+många saker beror av context.
+
+constext:
+    lhs     kommer att assignas.
+    rhs     ska evalueras och värdet ska assignas till en lhs
+
+lhs_T = rhs: rhs castas till T, sen till lhs.type, sen får lhs det värdet. lhs får typen rhs.type
+lhs = rhs_T: rhs castas till T, sen får lhs det värdet. lhs får typen T.
+
+(lhs1=lhs2) = rhs;      // lhs1 och lhs2 får båda värdet rhs
+lhs = (rhs1=rhs2);      // error: assignment in rhs
+(lhs1=(lrhs1=lrhs2)) = rhs;         // parentesen vet att den är i lhs, så den inre parentesen ignoreras. (varning?)
+
+
+
+
+
+
+
+
+Skillnad på funktion och scope:
+
+
+
+
+scope: allting är parallellt.
+    definition av konstanter görs med : operator
+    int i : 2; // i är konstanten 2. Kan aldrig ändras!
+    i : 3; // error: multiple definitions of i: at (context1) and (context2)
+
+    b : a; // b är ett annat namn för a. (a kan defineras mycket senare)
+    a : 4; // a är 4, dvs b är 4.
+
+saker som defineras måste ha värden!
+    int c; // error: unable to deduce the value of c
+
+funktionsdefinition:
+    foo : fn(void)->void {}; // foo är en funktion fn(void)->void som har body {}
+    baz : fn(void)->void; // baz är ett annat namn för funktionstypen fn(void)->void
+
+minimalt fall:
+    foo : fn() {};
+    baz : fn();
+
+
+ett scope har ingen type identifier; kan endast definieras, aldrig tilldelas.
+s : {
+    // scope s, ok
+}
+
+{
+    // anonymt scope, ok
+}
+
+foo : ()
+{
+    ss = s; // inte ok, scope kan inte tilldelas
+}
+
+
+
+funktion: allting är sekventiellt.
+    tilldelning av variabler görs alltid med = operator
+    int i = 2;
+    a = i; // a blir = 2
+
+tilldelning av funktionspekare: (kan göras i funktioner)
+    sqr = (int i)->int {return i*i};
+
+anrop av funktioner (endast i funktioner)
+    a = sqr(b);
+
+
+anrop av funktioner kan endast göras i andra funktioner.
+definition m.h.a. funktion är inte tillåtet. (förutom med #run? kommer isf mycket senare)
+int i : sqrt(2); // error: invalid use of function in scope
+
+
+
+
+
+
+funktionsanrop:
+varje inparameter motsvarar en plats i en LHS, tilldelas ett värde från en motsvarande RHS som skickas in
+
+
+f : fn(int a, int b) {}
+int c : 2;
+
+foo : fn() {
+    int c,d;
+    f(c,d); // f:s funktionsscope börjar med assignment: LHS={int a, int b}, op "=", RHS={c, d}
+}
+
+
+
+
+
+funktion som returnerar en funktion:
+
+OBS: Ambiguous syntax: (returnerar f 2 värden, eller 1 funktion som returnerar 2 värden)
+    f : (int) -> (int)->int, int {}
+
+alternativ: kräv () runt funktionstyper i return list
+    f : (int) -> ((int)->int), int {}
+
+ambiguous syntax:
+    () är en funktionstyp som tar void och returnerar void
+    (()) är en funktionstyp som tar en (funktionstyp som tar void och returnerar void) och returnerar void
+    f : (int) -> (()) {}
+
+
+alternativ: keyword "fn" för funktioner
+    f : fn(int) -> fn(int)->int, int {} // fortfarande ambiguous
+    f : fn(int) -> (fn(int)->int), int {} // ok
+    f : fn(int) -> (fn(int)->int, int) {} // ok
+
+dessa är inte längre ambiguous:
+    f : fn(int) -> fn() {}
+    f : fn(int) -> (fn()) {}
+    f : fn(int) -> fn(fn()) {}
+
+OBS: man måste skilja på dessa:
+    f : fn();       // f är ett annat namn för funktionstypen fn(void)->void
+    f : fn() {}     // f är en funktion av typen fn(void)->void
+
+
+alternativ: kräv parentes runt return list som är längre än 1. Ingen parentes -> tolka som endast 1 return value
+    f : ();
+    f : () -> (); // fn(void)->(fn(void)->void())
+    f : () -> (int,float) // ???
+
+problem: hur skiljer man på en parentes och en funktionssignaur?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+keywords endast tillåtna i function scope:
+
+if: ingen parentes runt condition behövs. Eventuell parentes ignoreras. {} krävs. else behövs inte.
+    if a==b {} else {}
+    if (a==b) {} else {}
+
+for: ingen parentes runt range declaration behövs. Eventuell parentes ignoreras. {} krävs.
+    for a : 2..5 {}
+    for (a : 2..5) {}
+
+while: ingen parentes runt condition behövs. Eventuell parentes ignoreras. {} krävs.
+    while a==b {}
+    while (a==b) {}
+
+Dessa skapar nya function scopes som importerar tidigare scope
+
+
+
+
+Range declaration:
+    for a in 2..5 {} // för varje integer från 2 till 5 (inklusive). Step = 1: a = 2, 3, 4, 5
+    for a in 2..5 by 2 {} // samma som ovan, fast med step = 2: a = 2, 4. nästa skulle vara 6, men 6>5 så det inkluderas inte.
+    for a in 2.2..5.7 by 2.5 {} // ok. från 2.2 till 5.7 med step 2.5
+
+baklänges:
+    for a in 5..2 {} // ok. a = 5,4,3,2
+    for a in 5..2 by -2 {} // ok. a = 5,3
+    for a in 1..4 by -2 {} // error: sign mismatch
+
+listor:
+    for a in list {} // a får varje värde i listan list
+
+
+
+
+for a in 2..5 {}
+for 2..5 {} // implicit iterator "it"? Vad händer vid name clashes?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn(int)->int a;
+
+
+a := fn(int i)->int {aksdj}
+
+
+
+
+int,float,bool foo(int)
+{
+    return 1,2.0,true;
+}
+
+foo := fn(int)->int,float,bool
+{
+    return 1,2.0,true;
+}
+
+
+
+foo := fn()->fn()
+{
+    i := 0;
+    printf("foo: i = %d",i);
+    f := foo; // deep copy // This will always take the raw function foo.
+    f.statements[0] = compile_string(sprintf("i:=%d;",i+1)); // overwrite the first statement with something else
+    return f;
+}
+// problem med ovanstående: kan endast köras under compile time, för vi kan inte kompilera i run time (funktionen compile_string kan inte finnas)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct accesses: med getter operator "."!
+
+
+
+
+
+s : {
+
+    foo : fn(){};
+
+};
+
+main : fn() {
+
+    // hur kommer man åt saker i s här?
+
+    // s::foo(); // c++-style
+    s.foo(); // scopes som struct-style!
+
+    using s::foo;
+    foo();
+
+
+    using s.foo;
+    foo();
+
+
+    using s;
+    foo(); // ok
+
+};
+
+
+
+
+
+// är det viktigt att skilja på structs och scopes?
+// scopes kan ocskå instansieras!
+// struct är i princip ett annat ord för typen av ett scope med tom capture gorup
+
+
+
+for 1..5 {
+
+    s : []{
+        int x;
+        int y;
+    };
+
+    s.x = it; // ok
+
+    return s; // aldrig ok -> det går inte att specificera return value av "anonymous scope"-type
+
+}
+
+
+
+
+
+for 1..5 {
+
+    S : struct {
+        int x;
+        int y;
+    };
+
+    s : S;
+
+    s.x = it;
+    s.y = 5-it;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+operator overloading
+
+
+infix_operator + (int a, float b)->float { return (a)_float + b; }
+    // definierar också implicit infix_operator+(float a,int b)->float{return b+a;}
+    // denna operator kan skrivas över med något annat
+
+prefix_operator ++(int a)->int {return a+1;}
+suffix_operator ++(int a)->int {return a+1;}
+
+
+
+
+
+
+return values från en funktion kan inferas från return-statement
+funkar endast om alla return statements har samma typer på alla return identifiers
+
+
+
+
+
+
+infix prio:
+
+x / %
++ -
+comparison (specialfall: chainade jämförelser, tex. 0<x<1 -> 0<x && x<1)
+and
+or
+
+
+
+a = 1*2+3*4/5-6+7*8;
+
+
+((((1*2)+((3*4)/5))-6)+(7*8))
+
+
+read 1
+read *
+read 2 -> a = (1*2)
+read +
+read 3 -> kom ihåg, kolla nästa tecken
+read * -> högre prio än +
+read 4 -> b = (3*4)
+read / -> högre prio än +
+read 5 -> c = (b/5)
+read - -> samma prio som + -> d = (a+c)
+read 6 -> kolla nästa tecken
+read + -> samma prio som - -> e = (d-6)
+read 7 -> minns + kolla nästa tecken
+read *
+read 8 -> f = (7*8)
+read ; -> klart, g = (e+f)
+
+
+totalt:
+
+a = (e+f) = ((d-6)+(7*8)) = (((a+c)-6)+(7*8)) = ((((1*2)+(b/5))-6)+(7*8)) = ((((1*2)+((3*4)/5))-6)+(7*8)). OK!
+
+
+
+
+
+
+
+
+
+not = fn(bool a) -> bool { if a==true {return false;} return true; }
+infix_operator and = fn(bool a, bool b) -> bool { if not(a) {return a;} return b; }
+infix_operator or = fn(bool a, bool b) -> bool { if a {return a;} return b; }
+
+
+
+
+
+
+
+
+
+weak_assignment:
+    läggs till för alla default-funktioner. ej för user defined
+    kan skrivas över av user defined code
+
+
+
+
+
+
+/*
+
+function definitions:
+
+// tills vidare: endast simpel syntax tillåten:
+fn(a:int, b:float); // ok
+fn(a:int, b:float=2); // ok, men senare @default_values
+
+type specificaion:
+fn(int,float); // endast typer tillåtna, inga variabelnamn.
+fn(fn()); // ok
+
+
+
+
+// KANSKE:
+fn(a,b : int,float);
+fn(a:int = 2, b:=2.0);
+fn(a:int, b,c:float,float);
+fn((a=b):int, c,d:float) // error, men vilket error? För complext. inte ok!
+
+*/
+
+
+
+
+
+if b {
+    // do stuff
+} then {
+    // do more stuff, only if condition was true
+}
+
+
+
+
+if b {
+    // do stuff
+} else {
+    // do other stuff
+} then {
+    // will always happen since we either entered if_true or if_false
+}
+
+
+// since we require {} after else, if-else chains cannot be done nicely:
+if b1 {
+    // do stuff
+} else {
+    if b2 {
+        // do other stuff
+    } then {
+        // do more stuff if b2 was true
+    }
+}
+
+// instead: include elsif!
+// coincidentally, that makes the "then" keyword work very nicely
+if b1 {
+    // do stuff
+} elsif b2 {
+    // do other stuff
+} then {
+    // do more stuff if either b1 or b2 was true
+}
+
+
+
+if:
+    condition and body
+    list of "elsif"s with condition and body
+    possible "then" body
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+overloading
+
+
+alternativ:
+
+1) overloading med endast arguments
+    kan få oväntade konflikter vid autocasts
+
+2) overloading med arguments och return values
+    kräver en väldefinierad context
+
+3) ingen overloading alls!
+    kan fortfarande ha samma funktioner i olika klasser - olika scopes resulterar i inga konflikter
+    funktionstemplates gör att en enda funktion kan fungera som en overloaded fn
+
+
+fn($T) -> $T
+
+
+
+
+
+
+
+refactoring:
+
+alla definerade variabler sparas i en map(string->info)
+
+kan hittas i konstant tid med hjälp av identifier-namnet
+info-strukten innehåller:
+    shared_ptr<Type_info> type; // identifierns typ - kan vara nullptr om den är okänd (innan type checker)
+    (value behövs inte här - intial value fås när man evaluatar declaration)
+
+om fn overloading inte finns så kommer alla funktionsnamn vara unika
+-> det räcker med typen för att kolla att argumenten stämmer, samt för att inferra return value
+
+i funktioner:
+    arguments och return values sparas på samma sätt som identifiers - map<string,type>
+
+typer:
+    definierade typer sparas som identifiers med typen "type"
+    går också att hitta i Scope.get_type("typename")
+    sparas i map<string,type_info>
+    här behövs value, men typer måste kunna defineras statiskt i compile time - ska alltid kunna kolla upp saker här
+
+-> på nåt sätt måste man kunna skilja på om saken finns eller inte
+
+
+map<string,shared_ptr<Type_info>> ger nullptr om saken inte finns, men även om det är undefined type
+    -> lägg till type "undefined" som visar att variabeln finns, men att typen är okänd
+
+
+
+
+
+
+
+Array literal: exakt samma syntax som value list!
+    a : [3] int = (1, 2, 3);
+    a : [..] any = ("hej", 2, 5.1);
+
+foo := fn() -> (int,int,int);
+a,b,c := foo(); // ok
+a := foo(); // ok, a blir en array av int. Endast ok med exakt 1 variabel i lhs!
+
+bar := fn()->(int);
+a := bar(); // ok, a blir en int (prio)
+a : int = bar(); // ok, a blir en int
+a : [1] int = bar(); // ok, a blir en int array med 1 värde
+
+baz := fn(int,int,int);
+baz(foo()); // ok, foo() returnerar en value list som kan användas som input till baz
+
+
+
+f1(a:int,b:float,c:string);
+f2()->(int,float);
+
+a,b := f2(); f1(a,b,str); // ok.
+f1(f2(),str); // ok? funkar bra om overloading inte finns - return value måste stämma överens med input arguments, + komma i rätt ordning
+f1((a,b)=f2(),str); // ok? ser konstigt ut.
