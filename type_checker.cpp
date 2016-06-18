@@ -308,6 +308,7 @@ bool resolve_function_call(Function_call* fc)
             oss << "Argument count mismatch in function call. Expected " << ft->in_parameters.size()
                 << " arguments but found " << fc->arguments.size();
             log_error(oss.str(),fc->context->context);
+            add_note("Default values NYI.");
             return true;
         }
 
@@ -345,15 +346,40 @@ bool resolve_function_call(Function_call* fc)
 
 
 
-// vector<Compile_unit> units_to_compile{};
-// vector<Compile_unit> next_units_to_compile{};
-
 bool resolve_declaration(Declaration* declaration, Scope* scope)
 {
     // if lhs has types -> check that rhs either is empty or has the same types.
     //      if empty -> assign default values for the respective type
     // if lhs doesn't have types -> infer types from rhs.
     // in either case -> check that lhs and rhs has the same number of elements (unless lhs typed and rhs empty)
+
+
+    bool no_rhs = declaration->rhs.empty();
+    bool errors = false;
+
+    for (vector<shared_ptr<Typed_identifier>> lhs_part : declaration->lhs) {
+        shared_ptr<Type_info> type = nullptr;
+        for (shared_ptr<Typed_identifier> tid : lhs_part) {
+            shared_ptr<Type_info> t = tid->get_type();
+            if (t != nullptr) {
+                if (no_rhs) {
+                    log_error("Unable to infer the type of identifier",declaration->context); // need better error message @errors
+                } else if (type != nullptr && t != type) {
+                    // error
+                }
+            }
+        }
+        // if typed, all must have the same type.
+        // if not typed, get the corresponding rhs part.
+    }
+
+
+
+
+
+
+
+
 
     // for each declared variable that has dependent statements ->
     //      if the type was inferred, try to resolve those statements
