@@ -1,0 +1,34 @@
+
+
+// Basic:
+
+
+// Deklaration:
+
+
+
+
+
+
+# startar en instruktion till kompilatorn
+
+
+str s = #STRING HERE text HERE // here-string, textend mellan de två "HERE" blir innehållet i texten
+
+
+
+
+
+på något sätt måste man kunna plocka in funktioner från C direkt till jm.
+TODO: kolla hur jai gör.
+
+
+KANSKE:
+
+#C_CODE {}; // skapar ett kodblock direkt i C.
+Kan assignas till en funktionspekare:
+
+operator+(i8:a, i8:b)->i8 = #C_CODE
+{
+    return a+b;
+}

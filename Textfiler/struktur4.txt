@@ -1,0 +1,39 @@
+
+
+
+Abstract Syntax node
+
+AbsStxNode
+
+
+
+
+Subklasser, var och en i en egen fil
+    * Har en shared_ptr till sin egen owner
+    * Har sin egen debug-print-funktion, med bool print_children
+
+
+Funktioner har en string som är funktionsnamnet i c output
+c_fn_name = "__fn_" + get_unique_fn_id(); // returnerar en string av unika siffror, från en int som ökas för varje fn som kompileras
+
+
+
+Endast 1 scope-klass
+Boolean för om dynamiska saker tillåts
+
+
+
+Entry point: main() till att börja med
+Senare #run har tillgång till fner som specificerar entry point och annat, definierade med en flagga som gör att de inte tillåts i runtime
+
+
+
+
+
+TODO:
+
+specificera hur varje typ hanterar assignment från olika typer av literals
+ex
+    Literal_int -> Type_i8
+    Literal_int -> Type_f32
+    Literal_float -> Type_i64
