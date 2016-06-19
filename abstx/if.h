@@ -1,11 +1,6 @@
 #pragma once
 
-#include "abstx.h"
 #include "statement.h"
-
-#include <vector>
-#include <sstream>
-
 
 /*
 if (b1) {}
@@ -14,7 +9,6 @@ elsif (b3) {}
 else {}
 then {}
 */
-
 
 struct Conditional_scope : Abstx_node {
 
@@ -41,6 +35,9 @@ struct Conditional_scope : Abstx_node {
 };
 
 
+
+#include <vector>
+#include <sstream>
 
 struct If_statement : Statement {
 
@@ -79,7 +76,17 @@ struct If_statement : Statement {
         }
     }
 
-
 };
 
 
+/*
+
+// Generates c-code:
+
+bool __then_N = false;
+if (b1) {}
+else if (b2) {}
+else { __then_N = true; } // else_scope with an extra assignment inserted (unless then_scope is null)
+if (__then_N) {} // then_scope
+
+*/
