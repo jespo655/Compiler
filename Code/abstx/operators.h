@@ -3,11 +3,33 @@
 #include "function.h"
 #include <sstream>
 
+/*
+An operator is a special case of a function call, with it's own syntax.
+The function_identifier has to be either a single word (identifier), or a symbol
+*/
+
+
+
+// This class is not meant to be used as a value, just as a way to allow symbols as Operator::function_identifier
+struct Operator_symbol : Evaluated_value {
+
+    std::string symbol;
+
+    std::shared_ptr<const Type> get_type()
+    {
+        ASSERT(false, "Operator_symbol::get_type() should never be called.");
+        return nullptr;
+    }
+
+    std::string toS() const override { return symbol; }
+
+};
+
+
 
 struct Operator : Function_call {
 
-    std::string function_name;
-
+    // A more slimmed down version of Function_call's get_identity(). Only check scope->get_function() directly, skip identifiers.
     std::shared_ptr<Function> get_identity()
     {
         if (identity == nullptr) {
@@ -19,7 +41,14 @@ struct Operator : Function_call {
         return identity;
     }
 
-    std::string toS() = 0;
+    std::string get_operator_name() {
+        ASSERT(function_identifier != nullptr);
+        if (auto op = dynamic_pointer_cast<Operator_symbol>(function_identifier)) return op->symbol;
+        if (auto id = dynamic_pointer_cast<Identifier>(function_identifier)) return id->name;
+        ASSERT(false, "Operator::function_identifier can only be Operator_symbol or Identifier.");
+    }
+
+    std::string toS() const override = 0;
 
 };
 
@@ -40,14 +69,13 @@ struct Infix_operator : Operator {
         auto rhs = arguments[1];
         ASSERT(lhs != nullptr);
         ASSERT(rhs != nullptr);
-
         auto lhs_type = lhs->get_type();
         auto rhs_type = rhs->get_type();
         ASSERT(lhs_type != nullptr);
         ASSERT(rhs_type != nullptr);
 
         std::ostringstream oss;
-        oss << "infix_operator " << function_name << "(";
+        oss << "infix_operator " << get_operator_name() << "(";
         oss << lhs_type << ", " << rhs_type;
         oss << ")";
         return oss.str();
@@ -62,7 +90,7 @@ struct Infix_operator : Operator {
         ASSERT(rhs != nullptr);
 
         std::ostringstream oss;
-        oss << "infix_operator " << function_name << "(";
+        oss << "infix_operator " << get_operator_name() << "(";
         oss << lhs->toS() << ", " << rhs->toS();
         oss << ")";
         return oss.str();
@@ -91,7 +119,7 @@ struct Prefix_operator : Statement {
         ASSERT(arg_type != nullptr);
 
         std::ostringstream oss;
-        oss << "prefix_operator " << function_name << "(" << arg_type << ")";
+        oss << "prefix_operator " << get_operator_name() << "(" << arg_type << ")";
         return oss.str();
     }
 
@@ -102,7 +130,7 @@ struct Prefix_operator : Statement {
         ASSERT(argument != nullptr);
 
         std::ostringstream oss;
-        oss << "prefix_operator " << function_name << "(" << argument->toS() << ")";
+        oss << "prefix_operator " << get_operator_name() << "(" << argument->toS() << ")";
         return oss.str();
     }
 
@@ -128,7 +156,7 @@ struct Suffix_operator : Statement {
         ASSERT(arg_type != nullptr);
 
         std::ostringstream oss;
-        oss << "suffix_operator " << function_name << "(" << arg_type << ")";
+        oss << "suffix_operator " << get_operator_name() << "(" << arg_type << ")";
         return oss.str();
     }
 
@@ -139,7 +167,7 @@ struct Suffix_operator : Statement {
         ASSERT(argument != nullptr);
 
         std::ostringstream oss;
-        oss << "suffix_operator " << function_name << "(" << argument->toS() << ")";
+        oss << "suffix_operator " << get_operator_name() << "(" << argument->toS() << ")";
         return oss.str();
     }
 
@@ -148,10 +176,8 @@ struct Suffix_operator : Statement {
 
 
 
-
-
 /*
 
-// Generates c-code just like functions does.
+// Generates c-code just like Function_call does.
 
 */

@@ -24,5 +24,5 @@ struct Literal_range : Literal
         return start->toS() + ".." + end->toS();
     }
 
-    std::shared_ptr<const Type> get_type() const override;
+    std::shared_ptr<const Type> get_type() override;
 };

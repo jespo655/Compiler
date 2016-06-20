@@ -82,14 +82,14 @@ struct Literal_int : Literal
 {
     int64_t value = 0;
     std::string toS() const override { return std::to_string(value); }
-    std::shared_ptr<const Type> get_type() const override;
+    std::shared_ptr<const Type> get_type() override;
 };
 
 struct Literal_uint : Literal
 {
     uint64_t value = 0;
     std::string toS() const override { return std::to_string(value); }
-    std::shared_ptr<const Type> get_type() const override;
+    std::shared_ptr<const Type> get_type() override;
 };
 
 

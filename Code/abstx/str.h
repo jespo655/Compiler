@@ -15,5 +15,5 @@ struct Literal_str : Literal
 {
     std::string value = "";
     std::string toS() const override { return '\"' + value + '\"'; }
-    std::shared_ptr<const Type> get_type() const override;
+    std::shared_ptr<const Type> get_type() override;
 };

@@ -1,15 +1,6 @@
 #pragma once
 
 #include "type.h"
-
-struct Type_scope : Type {
-
-    bool dynamic = false;
-
-    std::string toS() const override { return dynamic? "scope(d)" : "scope(s)"; }
-    std::shared_ptr<const Literal> get_default_value() const override;
-};
-
 #include "evaluated_value.h"
 #include "statement.h"
 
@@ -22,6 +13,21 @@ struct Identifier;
 #include <vector>
 #include <string>
 #include <memory>
+
+
+
+struct Type_scope : Type {
+
+    bool dynamic = false;
+
+    Type_scope() {}
+    Type_scope(bool dynamic) : dynamic{dynamic} {}
+
+    std::string toS() const override { return dynamic? "scope(d)" : "scope(s)"; }
+    std::shared_ptr<const Literal> get_default_value() const override;
+};
+
+
 
 // a scope is its own contained block of code
 
@@ -38,6 +44,9 @@ struct Scope : Literal {
     std::map<std::string, std::shared_ptr<Identifier>> identifiers;
     std::map<std::string, std::shared_ptr<Function>> functions;
     std::map<std::string, std::shared_ptr<Type>> types; // if looking up the type name in the 'identifier'-list, they would all have the type 'Type_type'. Their values is stored in this list.
+
+    Scope() {}
+    Scope(bool dynamic) : dynamic{dynamic} {}
 
     void debug_print(Debug_os& os, bool recursive=true) const override {
         os << "{ // " << toS() << std::endl;
@@ -90,14 +99,7 @@ struct Scope : Literal {
         return p;
     }
 
-    std::shared_ptr<const Type> get_type() const override
-    {
-        default_literal->dynamic = dynamic;
-        return default_literal;
-    }
-
-private:
-    std::shared_ptr<Type_scope> default_literal{new Type_scope()};
+    std::shared_ptr<const Type> get_type() override;
 
 };
 

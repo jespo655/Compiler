@@ -47,7 +47,7 @@ std::shared_ptr<const Literal> Type_i64::get_default_value() const
 }
 
 
-std::shared_ptr<const Type> Literal_int::get_type() const
+std::shared_ptr<const Type> Literal_int::get_type()
 {
     return BUILT_IN_TYPE_i64;
 }
@@ -86,7 +86,7 @@ std::shared_ptr<const Literal> Type_u64::get_default_value() const
 }
 
 
-std::shared_ptr<const Type> Literal_uint::get_type() const
+std::shared_ptr<const Type> Literal_uint::get_type()
 {
     return BUILT_IN_TYPE_u64;
 }
@@ -111,7 +111,7 @@ std::shared_ptr<const Literal> Type_f64::get_default_value() const
     return DEFAULT_FLOAT_LITERAL;
 }
 
-std::shared_ptr<const Type> Literal_float::get_type() const
+std::shared_ptr<const Type> Literal_float::get_type()
 {
     return BUILT_IN_TYPE_f64;
 }
@@ -121,7 +121,7 @@ std::shared_ptr<const Type> Literal_float::get_type() const
 
 const std::shared_ptr<const Type> BUILT_IN_TYPE_type{new Type_type()};
 
-std::shared_ptr<const Type> Type::get_type() const
+std::shared_ptr<const Type> Type::get_type()
 {
     return BUILT_IN_TYPE_type;
 }
@@ -133,7 +133,7 @@ std::shared_ptr<const Type> Type::get_type() const
 #include "seq.h"
 #include "scope.h"
 
-std::shared_ptr<const Type> Literal_seq::get_type() const
+std::shared_ptr<const Type> Literal_seq::get_type()
 {
 
     std::shared_ptr<Type_seq> t{new Type_seq()};
@@ -168,7 +168,7 @@ std::shared_ptr<const Literal> Type_str::get_default_value() const
     return DEFAULT_STR_LITERAL;
 }
 
-std::shared_ptr<const Type> Literal_str::get_type() const
+std::shared_ptr<const Type> Literal_str::get_type()
 {
     return BUILT_IN_TYPE_str;
 }
@@ -188,7 +188,7 @@ std::shared_ptr<const Literal> Type_bool::get_default_value() const
     return DEFAULT_BOOL_LITERAL;
 }
 
-std::shared_ptr<const Type> Literal_bool::get_type() const
+std::shared_ptr<const Type> Literal_bool::get_type()
 {
     return BUILT_IN_TYPE_bool;
 }
@@ -209,7 +209,7 @@ std::shared_ptr<const Literal> Type_range::get_default_value() const
     return DEFAULT_RANGE_LITERAL;
 }
 
-std::shared_ptr<const Type> Literal_range::get_type() const
+std::shared_ptr<const Type> Literal_range::get_type()
 {
     return BUILT_IN_TYPE_range;
 }
@@ -231,9 +231,20 @@ std::shared_ptr<const Type> Literal_range::get_type() const
 
 #include "scope.h"
 
-const std::shared_ptr<const Literal> DEFAULT_SCOPE_LITERAL{new Literal_scope()};
+const std::shared_ptr<const Literal> DEFAULT_DYNAMIC_SCOPE_LITERAL{new Literal_scope(true)};
+const std::shared_ptr<const Literal> DEFAULT_STATIC_SCOPE_LITERAL{new Literal_scope(false)};
+
+const std::shared_ptr<const Type> BUILT_IN_TYPE_dynamic_scope{new Type_scope(true)};
+const std::shared_ptr<const Type> BUILT_IN_TYPE_static_scope{new Type_scope(false)};
 
 std::shared_ptr<const Literal> Type_scope::get_default_value() const
 {
-    return DEFAULT_SCOPE_LITERAL;
+    if (dynamic) return DEFAULT_DYNAMIC_SCOPE_LITERAL;
+    else         return DEFAULT_STATIC_SCOPE_LITERAL;
+}
+
+std::shared_ptr<const Type> Literal_scope::get_type()
+{
+    if (dynamic) return BUILT_IN_TYPE_dynamic_scope;
+    else         return BUILT_IN_TYPE_static_scope;
 }

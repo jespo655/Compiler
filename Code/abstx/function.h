@@ -1,8 +1,8 @@
 #pragma once
 
-#include "type.h"               // Type_fn
-#include "evaluated_value.h"    // Function
-#include "statement.h"            // Function_call
+#include "type.h"
+#include "evaluated_value.h"
+#include "statement.h"
 
 #include "identifier.h"         // ip->toS();
 #include "scope.h"              // function_scope->debug_print(os, recursive);
@@ -104,7 +104,7 @@ struct Function : Evaluated_value {
         return oss.str();
     }
 
-    std::shared_ptr<const Type> get_type() const override
+    std::shared_ptr<const Type> get_type() override
     {
         std::shared_ptr<Type_fn> type{new Type_fn()};
         for (auto id : in_parameters) {
@@ -139,11 +139,17 @@ private:
 
 
 
+/*
+A function call is a call to a function. It can also return one or more values.
 
+Some examples:
+foo(); // named call, function_id is an identifier
+fn(){ pln(2); }(); // direct call from a function literal
+foos[2](); // anonymous call from an lookup from an array of functions
+*/
+struct Function_call : Evaluated_value {
 
-struct Function_call : Statement {
-
-    std::string function_name;
+    std::shared_ptr<Evaluated_value> function_identifier;
     std::vector<std::shared_ptr<Evaluated_value>> arguments;
 
     std::shared_ptr<Function> get_identity()
@@ -163,13 +169,38 @@ struct Function_call : Statement {
 
     // get_mangled_identifier() should return the mangled operator name
     // with types - that string will be used for function lookup
-    virtual std::string get_mangled_identifier() const { return function_name; } // FIXME: also include types
+    virtual std::string get_mangled_identifier() const
+    {
+        ASSERT(false, "FIXME: How do you get the mangled identifier from any kind of Evaluated_value?");
+        return "";
+    }
+
+    std::shared_ptr<const Type> get_type() override
+    {
+        auto id = get_identity();
+        if (identity == nullptr) return nullptr;
+        return identity->get_type(); // should always be a Type_fn
+    }
+
+    std::string toS() const override { return "function call"; } // FIXME: better Function_call::toS()
 
 private:
     std::shared_ptr<Function> identity; // points to the function node that represents this function
 
 };
 
+
+
+struct Function_call_statement : Statement
+{
+    std::shared_ptr<Function_call> function_call;
+
+    std::string toS() const override {
+        ASSERT(function_call != nullptr);
+        function_call->toS();
+    }
+
+};
 
 
 

@@ -34,7 +34,7 @@ struct Literal_seq : Literal
         return oss.str();
     }
 
-    std::shared_ptr<const Type> get_type() const override;
+    std::shared_ptr<const Type> get_type() override;
 };
 
 

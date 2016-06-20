@@ -15,5 +15,5 @@ struct Literal_bool : Literal
 {
     bool value = false;
     std::string toS() const override { return value ? "true" : "false"; }
-    std::shared_ptr<const Type> get_type() const override;
+    std::shared_ptr<const Type> get_type() override;
 };

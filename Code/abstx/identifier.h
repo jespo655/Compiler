@@ -24,4 +24,7 @@ struct Identifier : Evaluated_variable {
         if (default_value != nullptr) oss << "=" << default_value->toS();
         return oss.str();
     }
+
+    virtual std::shared_ptr<const Type> get_type() { return type; }
+
 };

@@ -30,7 +30,7 @@ struct Literal_float : Literal
 {
     double value = 0.0;
     std::string toS() const override { return std::to_string(value); }
-    std::shared_ptr<const Type> get_type() const override;
+    std::shared_ptr<const Type> get_type() override;
 };
 
 

@@ -7,8 +7,6 @@ using.h
 
 
 implement ev_values and ev_variables:
-    function_call
-    getter
     cast
     array_lookup
 
