@@ -1,8 +1,9 @@
 
-#include "abstx.h"
-#include "function.h"
-#include "identifier.h"
-#include "../assert.h"
+#include "abstx/abstx.h"
+#include "abstx/function.h"
+#include "abstx/identifier.h"
+#include "utilities/assert.h"
+#include "utilities/unique_id.h"
 
 /*
     TEMPORARY FILE
@@ -39,7 +40,6 @@ std::shared_ptr<Scope> Abstx_node::parent_scope() const
 
 
 
-#include "unique_id.h"
 
 // problem: cannot be declared static in a header file - that
 // will make separate instances of "id" in different files

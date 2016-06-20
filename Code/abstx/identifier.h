@@ -4,7 +4,7 @@
 
 #include "literal.h"
 #include "type.h"
-#include "../assert.h"
+#include "../utilities/assert.h"
 
 #include <string>
 #include <sstream>

@@ -1,11 +1,17 @@
-
 #include "literal.h"
 #include "type.h"
 #include <memory>
 
+/*
+This file creates objects for default values and built in types,
+and stores them on the heap through a std::shared_ptr<>.
 
+That way all reference counting will work as expected, and each
+type and default literal are only stored once.
 
-
+In some cases, there are no specific default literal for a certain
+type. Those cases are solved elsewhere.
+*/
 
 
 /************************** int **************************/

@@ -10,8 +10,8 @@
 
 
 // Declaration
-// /*Syntax:*/ identifier_name : type_name = value ;
-// /*OR*/ identifier_name := value ; // the type will be inferred from the value
+// identifier_name : type_name = value ;
+// identifier_name := value ; // the type will be inferred from the value
 
 a : int; // will be given the default value 0
 b : int = 1;

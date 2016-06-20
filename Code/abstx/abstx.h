@@ -1,6 +1,6 @@
 #pragma once
 
-#include "debug.h"
+#include "../utilities/debug.h"
 #include "../token.h"
 
 #include <memory>

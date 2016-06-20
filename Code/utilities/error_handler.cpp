@@ -33,7 +33,7 @@ void check_for_termination()
 void log_error(const string& msg, const Token_context& context)
 {
     if (!should_log) return;
-    cerr << endl << context << " Error: " << msg << endl;
+    cerr << endl << context.toS() << " Error: " << msg << endl;
     err_count++;
 }
 
@@ -41,15 +41,15 @@ void log_error(const string& msg, const Token_context& context)
 void log_warning(const string& msg, const Token_context& context)
 {
     if (!should_log) return;
-    cerr << endl << context << " Warning: " << msg << endl;
+    cerr << endl << context.toS() << " Warning: " << msg << endl;
 }
 
 
 void add_note(const std::string& msg, const Token_context& context)
 {
     if (!should_log) return;
-    // cerr << context << " Note: " << msg << endl;
-    cerr << "    Note: " << msg << context << endl;
+    // cerr << context.toS() << " Note: " << msg << endl;
+    cerr << "    Note: " << msg << context.toS() << endl;
 }
 
 void add_note(const std::string& msg)

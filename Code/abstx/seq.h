@@ -2,7 +2,7 @@
 
 #include "type.h"
 #include "literal.h"
-#include "../assert.h"
+#include "../utilities/assert.h"
 
 #include <sstream>
 #include <vector>

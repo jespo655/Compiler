@@ -1,14 +1,15 @@
-#include "abstx.h"
-#include "float.h"
-#include "function.h"
-#include "identifier.h"
-#include "if.h"
-#include "int.h"
-#include "literal.h"
-#include "scope.h"
-#include "statement.h"
-#include "type.h"
-#include "unique_id.h"
+#include "abstx/abstx.h"
+#include "abstx/float.h"
+#include "abstx/function.h"
+#include "abstx/identifier.h"
+#include "abstx/if.h"
+#include "abstx/int.h"
+#include "abstx/literal.h"
+#include "abstx/scope.h"
+#include "abstx/statement.h"
+#include "abstx/type.h"
+#include "utilities/unique_id.h"
+#include "utilities/assert.h"
 
 using namespace std;
 
@@ -120,7 +121,6 @@ int main()
 
 
 
-#include "../assert.h"
 
 void size_assertions()
 {

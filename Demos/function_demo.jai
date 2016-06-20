@@ -1,6 +1,6 @@
 
 // Functions
-// /*Syntax:*/ funcion_name := fn(in_parameters)->(out_parameters) { body };
+// funcion_name := fn(in_parameters)->(out_parameters) { body };
 
 // Function calls are illegal in the static scope, so to make this part compile we have to wrap it in a function declaration.
 // That creates a dynamic scope, in which we can call functions, make variable assignments outside of declarations, and more.
