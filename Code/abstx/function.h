@@ -1,7 +1,9 @@
 #pragma once
 
-#include "evaluated_value.h"
-#include "type.h"               // type->toS();
+#include "type.h"               // Type_fn
+#include "evaluated_value.h"    // Function
+#include "statement.h"            // Function_call
+
 #include "identifier.h"         // ip->toS();
 #include "scope.h"              // function_scope->debug_print(os, recursive);
 
@@ -62,6 +64,8 @@ private:
         if (parens) os << ")";
     }
 };
+
+
 
 
 
@@ -129,6 +133,56 @@ private:
 
 
 };
+
+
+
+
+
+
+
+
+struct Function_call : Statement {
+
+    std::string function_name;
+    std::vector<std::shared_ptr<Evaluated_value>> arguments;
+
+    std::shared_ptr<Function> get_identity()
+    {
+        // FIXME: check for identifier, verify that it really is a function we are calling
+        // Then check for perfect match with types
+        // If generic, generate a new type if needed
+
+        if (identity == nullptr) {
+            auto scope = parent_scope();
+            ASSERT(scope != nullptr);
+            identity = scope->get_function(get_mangled_identifier());
+            fully_resolved = true;
+        }
+        return identity;
+    }
+
+    // get_mangled_identifier() should return the mangled operator name
+    // with types - that string will be used for function lookup
+    virtual std::string get_mangled_identifier() const { return function_name; } // FIXME: also include types
+
+private:
+    std::shared_ptr<Function> identity; // points to the function node that represents this function
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,7 +1,7 @@
 #ifndef error_handler_h
 #define error_handler_h
 
-#include "token.h" // Token_context
+#include "../token.h" // Token_context
 #include <string>
 
 #define DEBUG

@@ -7,7 +7,6 @@ using.h
 
 
 implement ev_values and ev_variables:
-    infix_op
     function_call
     getter
     cast
