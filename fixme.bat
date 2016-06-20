@@ -3,4 +3,4 @@
 :: /i   case insensitive
 :: /c	the search string
 :: *.*	matches all files in directory or subdirectories
-findstr /s /n /i /c:"TODO:" *.*
+findstr /s /n /i /c:"FIXME:" *.*
