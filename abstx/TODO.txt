@@ -1,0 +1,19 @@
+
+
+
+
+using.h
+    decide exact syntax and usage, before implementing the class
+
+
+implement ev_values and ev_variables:
+    infix_op
+    function_call
+    getter
+    cast
+    array_lookup
+
+
+
+add functions that gets the type from a vector<Evaluated_value> and vector<Evaluated_variable>
+    the only special case is function_call, which can return a list of type
