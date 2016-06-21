@@ -18,6 +18,9 @@ struct Return_statement : Statement {
 
     std::vector<std::shared_ptr<Evaluated_value>> return_parameters;
 
+    bool allow_in_static_scope() const override { return false; }
+    bool allow_in_dynamic_scope() const override { return true; }
+
     std::string toS() const override {
         return "return statement";
         // FIXME: better return::toS()

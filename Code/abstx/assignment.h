@@ -17,6 +17,9 @@ struct Assignment_statement : Statement {
     std::vector<std::shared_ptr<Evaluated_variable>> lhs;
     std::vector<std::shared_ptr<Evaluated_value>> rhs;
 
+    bool allow_in_static_scope() const override { return false; }
+    bool allow_in_dynamic_scope() const override { return true; }
+
     std::string toS() const override {
         ASSERT(!lhs.empty());
         ASSERT(!rhs.empty());

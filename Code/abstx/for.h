@@ -20,6 +20,8 @@ struct For_statement : Statement {
 
     std::shared_ptr<Scope> scope;
 
+    bool allow_in_static_scope() const override { return false; }
+    bool allow_in_dynamic_scope() const override { return true; }
 
     std::string toS() const override { return "while(){}"; }
 

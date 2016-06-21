@@ -4,6 +4,7 @@
 #include "abstx/identifier.h"
 #include "utilities/assert.h"
 #include "utilities/unique_id.h"
+#include <string>
 
 /*
     TEMPORARY FILE
@@ -62,7 +63,9 @@ int get_unique_id() {
 
 
 
-
+std::string get_unique_id_str() {
+    return std::to_string(get_unique_id());
+}
 
 
 

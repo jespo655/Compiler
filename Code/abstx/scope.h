@@ -106,3 +106,23 @@ struct Scope : Literal {
 // Also call Scope Literal_scope, for naming conventions
 #define Literal_scope Scope
 
+
+
+/*
+An anonymous scope is a statement that just consists of a scope literal.
+That begins a new anonymous scope with the current scope as its owner / parent.
+The dynamic-flag is inherited from the current scope.
+*/
+struct Anonymous_scope : Statement
+{
+    bool allow_in_static_scope() const override { return true; }
+    bool allow_in_dynamic_scope() const override { return true; }
+
+    std::shared_ptr<Literal_scope> scope;
+
+    std::string toS() const override
+    {
+        ASSERT(scope != nullptr);
+        return scope->toS();
+    }
+};

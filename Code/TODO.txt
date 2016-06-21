@@ -62,7 +62,20 @@ workspace
 
 // global_scope har en workspace som parent (subklass till scope), och workspace har själv en pekare till global scope
 
+Alla workspaces delar samma AST, men har olika entry points.
+Alla #run skapar ett nytt workspace med den funktionen som entry point
+
+Compiled_workspace är global / singleton; data i den kan ändras av compile-time fner
 
 
 // någonstans globalt:
 map<string, scope> global_scopes; // 1 global_scope per fil som kompileras
+
+
+
+
+Compile_time exec tests:
+
+Bygg funktioner manuellt, testa compile time execution av dem
+ - någon bastyp-fn länkar till cpp-fner mha string fn-name. Switcha beroende på str.
+

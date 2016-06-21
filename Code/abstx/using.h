@@ -28,6 +28,9 @@ struct Using_statement : Statement {
 
     // std::shared_ptr<Evaluated_value>> subject;
 
+    bool allow_in_static_scope() const override { return true; }
+    bool allow_in_dynamic_scope() const override { return true; }
+
     // std::string toS() const override {}
 };
 

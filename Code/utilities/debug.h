@@ -1,9 +1,9 @@
 #pragma once
 
 #include <iostream>
-#include <type_traits>
 
 #define DEBUG // undef this flag to remove all debug output
+
 
 /*
     Debug_os works as a regular ostream, but with a few quirks.
@@ -20,6 +20,8 @@ struct Debug_os {
     Debug_os(std::ostream& os) : os{os} {}
 
     int spaces_per_indent = 4;
+    int indent_level = 0;
+    bool should_indent = true;
 
     template<typename T> inline Debug_os& operator<<(const T& t)
     {
@@ -48,8 +50,6 @@ struct Debug_os {
 
 private:
     std::ostream& os;
-    bool should_indent = true;
-    int indent_level = 0;
 
     void output_indentation() {
         if (should_indent) {

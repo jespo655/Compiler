@@ -1,7 +1,7 @@
 #ifndef ASSERT_H
 #define ASSERT_H
 
-#include "debug.h"
+#include "debug.h" // defines DEBUG
 
 #ifdef DEBUG
 #include <stdexcept>

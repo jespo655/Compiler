@@ -48,6 +48,9 @@ struct If_statement : Statement {
     std::shared_ptr<Scope> else_scope; // is entered if none of the conditional scopes are entered
     std::shared_ptr<Scope> then_scope; // is entered if not the else_scope is entered
 
+    bool allow_in_static_scope() const override { return false; }
+    bool allow_in_dynamic_scope() const override { return true; }
+
     std::string toS() const override
     {
         std::ostringstream oss;

@@ -7,6 +7,9 @@
 const std::shared_ptr<Workspace> compiled_workspace{new Workspace()};
 
 
+/************************************************
+*       Compile time execution functions
+*************************************************/
 
 void set_entry_point(std::shared_ptr<Function> entry_point, std::vector<std::shared_ptr<Evaluated_value>> arguments) {
     ASSERT(entry_point->fully_resolved);
@@ -14,6 +17,14 @@ void set_entry_point(std::shared_ptr<Function> entry_point, std::vector<std::sha
     compiled_workspace->entry_point = entry_point;
     compiled_workspace->arguments = arguments;
 }
+
+
+void add_c_include_path(std::string path) {
+    ASSERT(!path.empty());
+    compiled_workspace->c_includes.push_back(path);
+}
+
+
 
 
 

@@ -4,10 +4,6 @@
 #include "../token.h" // Token_context
 #include <string>
 
-#define DEBUG
-
-#include "assert.h"
-
 void log_error(const std::string& msg, const Token_context& context);
 void log_warning(const std::string& msg, const Token_context& context);
 

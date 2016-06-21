@@ -1,0 +1,36 @@
+
+
+
+
+Functions with several return values are outputted as a function with the return values as reference arguments
+Named return values are default-initialized at the beginning of the function, to avoid uninizialized usage (for example rval++);
+
+f := foo(a:int, b:int)->(int, int) { return b, a; }
+
+void foo(int a, int b, int& __rval_1, int& __rval_2) {
+    __rval_1 = b; __rval_2 = a; return;     // return statement
+}
+
+
+
+f := foo(a:int, b:int)->(c:int, d:int) { return b, a; }
+
+void foo(int a, int b, int& c, int& d) {
+    c = 0; d = 0;           // default init
+    c = b; d = a; return;   // return statement
+}
+
+
+
+// #c_import fungerar som function body
+// include-paths måste kunna sättas med compile time exec-fner
+
+infix_operator+ = fn(lhs:int, rhs:int)->int #c_import("__add_ints");
+
+// user defined:
+void __add_ints(int, int, int&);
+
+void __add_ints(int lhs, int rhs, int& __rval_1)
+{
+    // HERE BE c-DEFINED CODE
+}
