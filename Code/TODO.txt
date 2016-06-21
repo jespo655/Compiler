@@ -14,3 +14,37 @@ implement ev_values and ev_variables:
 
 add functions that gets the type from a vector<Evaluated_value> and vector<Evaluated_variable>
     the only special case is function_call, which can return a list of type
+
+
+
+
+
+
+check_types(std::vector<Evaluated_variable>, std::vector<Evaluated_value>)
+    for use in assignment and declaration
+
+virtual bool Abstx_node::try_resolve() = 0;
+
+
+auto type = x->get_type();
+if (x->fully_resolved) ASSERT(type != nullptr);
+else if (type == nullptr) {
+    if (!x->try_resolve()); {
+        return; // maybe log something?
+    }
+    type = x->get_type();
+    ASSERT(type != nullptr);
+}
+
+
+struct Type_defined_type : Type {
+    std::shared_ptr<Type> identity;
+    std::string name;
+}
+
+
+ATT TÄNKA PÅ:
+
+Kanske: get_type() måste (KANSKE) returnera en const type, eller vara const själv.
+(Måste man kalla get_type() på en typ? Man ska ju ändå alltid få Type_type i så fall)
+(Att returnera en const type men inte själv vara const borde vara ok)
