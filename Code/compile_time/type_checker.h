@@ -30,7 +30,13 @@ std::vector<std::shared_ptr<const Type>> get_types(std::vector<std::shared_ptr<T
     std::vector<std::shared_ptr<const Type>> types;
     for (auto t_ptr : values) {
         if (auto v = std::dynamic_pointer_cast<Evaluated_value>(t_ptr)) {
-            types.push_back(v->get_type());
+            auto type = v->get_type();
+
+            // FIXME: add special case for when type is nullptr
+            // FIXME: add special case for when type is a list of types
+
+            ASSERT(type != nullptr);
+            types.push_back(type);
         } else {
             // log error?
             ASSERT(false, "Type checker: Unable to get type from non-Evaluated_value");

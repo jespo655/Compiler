@@ -6,8 +6,14 @@ using.h
     decide exact syntax and usage, before implementing the class
 
 
-implement ev_values and ev_variables:
-    array_lookup
+
+Add a type class that just holds a list of types
+    Function_call->get_type() should return one of those
+
+
+Change get_type() to return a non-const type
+    Pointer types has to change constantly when ownership changes
+    (Or find another way to determine pointer ownership)
 
 
 
