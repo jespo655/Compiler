@@ -1,6 +1,9 @@
 #pragma once
 
 #include "statement.h"
+#include "evaluated_value.h"
+
+#include <vector>
 
 /*
 return 1;           // returns the int 1
@@ -16,8 +19,8 @@ struct Return_statement : Statement {
     std::vector<std::shared_ptr<Evaluated_value>> return_parameters;
 
     std::string toS() const override {
-        ASSERT(statement != nullptr);
-        return "defer " + statement->toS();
+        return "return statement";
+        // FIXME: better return::toS()
     }
 };
 

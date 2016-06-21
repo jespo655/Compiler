@@ -1,6 +1,11 @@
 #pragma once
 
 #include "statement.h"
+#include "evaluated_value.h"
+#include "scope.h"
+
+#include <vector>
+#include <sstream>
 
 /*
 if (b1) {}
@@ -36,8 +41,6 @@ struct Conditional_scope : Abstx_node {
 
 
 
-#include <vector>
-#include <sstream>
 
 struct If_statement : Statement {
 

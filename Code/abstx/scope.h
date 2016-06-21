@@ -3,8 +3,8 @@
 #include "type.h"
 #include "evaluated_value.h"
 #include "statement.h"
+#include "literal.h"
 
-struct Literal;
 struct Function;
 struct Type;
 struct Identifier;
@@ -66,7 +66,7 @@ struct Scope : Literal {
 
     // FIXME: these should probably be const
 
-    std::shared_ptr<Identifier> get_identifier(const std::string& id, bool recursive=true)
+    virtual std::shared_ptr<Identifier> get_identifier(const std::string& id, bool recursive=true)
     {
         auto p = identifiers[id];
         while (recursive && p == nullptr) {
@@ -77,7 +77,7 @@ struct Scope : Literal {
         return p;
     }
 
-    std::shared_ptr<Type> get_type(const std::string& id, bool recursive=true)
+    virtual std::shared_ptr<Type> get_type(const std::string& id, bool recursive=true)
     {
         auto p = types[id];
         while (recursive && p == nullptr) {
@@ -88,7 +88,7 @@ struct Scope : Literal {
         return p;
     }
 
-    std::shared_ptr<Function> get_function(const std::string& id, bool recursive=true)
+    virtual std::shared_ptr<Function> get_function(const std::string& id, bool recursive=true)
     {
         auto p = functions[id];
         while (recursive && p == nullptr) {

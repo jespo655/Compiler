@@ -2,6 +2,8 @@
 
 #include "type.h"
 #include "literal.h"
+#include "evaluated_variable.h"
+
 #include "../utilities/assert.h"
 
 #include <sstream>
@@ -70,3 +72,25 @@ private:
 
 
 
+/*
+A sequence lookup grabs a data member from a sequence.
+It will return exactly one value.
+*/
+struct Sequence_lookup : Evaluated_variable {
+
+    std::shared_ptr<Evaluated_value> sequence_identifier;
+    std::shared_ptr<Evaluated_value> index;
+
+    std::shared_ptr<const Type> get_type() override
+    {
+        ASSERT(sequence_identifier != nullptr);
+        auto type = sequence_identifier->get_type();
+        if (auto seq_t = std::dynamic_pointer_cast<const Type_seq>(type)) {
+            return seq_t->type;
+        }
+        return nullptr;
+    }
+
+    std::string toS() const override { return "sequence lookup"; } // FIXME: better Sequence_lookup::toS()
+
+};

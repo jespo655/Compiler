@@ -3,6 +3,7 @@
 #include "statement.h"
 #include "identifier.h"
 #include <sstream>
+#include <vector>
 
 /*
 a : int = 1;    // declares a as the int 1
@@ -30,7 +31,7 @@ struct Declaration_statement : Statement {
             if (id->type == nullptr) all_typed = false;
         }
         if (all_typed) {
-            oss << " : "
+            oss << " : ";
             first = true;
             for (auto id : identifiers) {
                 ASSERT(id != nullptr);

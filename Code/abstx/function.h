@@ -34,8 +34,8 @@ then implicit cast one thing at the time, check for close matches first
 
 struct Type_fn : Type {
 
-    std::vector<std::shared_ptr<Type>> in_types;
-    std::vector<std::shared_ptr<Type>> out_types;
+    std::vector<std::shared_ptr<const Type>> in_types;
+    std::vector<std::shared_ptr<const Type>> out_types;
 
     std::string toS() const
     {
@@ -52,7 +52,7 @@ struct Type_fn : Type {
     }
 
 private:
-    void print_parameter_list(std::ostringstream& os, const std::vector<std::shared_ptr<Type>>& types, bool parens = true) const
+    void print_parameter_list(std::ostringstream& os, const std::vector<std::shared_ptr<const Type>>& types, bool parens = true) const
     {
         if (parens) os << "(";
         bool first = true;
@@ -137,6 +137,18 @@ private:
 
 
 
+struct Compile_time_function : Function
+{
+    std::string identifier; // Maybe replace this with an enum?
+};
+
+
+struct C_linked_function : Function
+{
+    std::string c_name;
+};
+
+
 
 
 /*
@@ -152,7 +164,7 @@ struct Function_call : Evaluated_value {
     std::shared_ptr<Evaluated_value> function_identifier;
     std::vector<std::shared_ptr<Evaluated_value>> arguments;
 
-    std::shared_ptr<Function> get_identity()
+    virtual std::shared_ptr<Function> get_identity()
     {
         // FIXME: check for identifier, verify that it really is a function we are calling
         // Then check for perfect match with types
@@ -184,7 +196,7 @@ struct Function_call : Evaluated_value {
 
     std::string toS() const override { return "function call"; } // FIXME: better Function_call::toS()
 
-private:
+protected:
     std::shared_ptr<Function> identity; // points to the function node that represents this function
 
 };

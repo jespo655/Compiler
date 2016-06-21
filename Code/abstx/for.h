@@ -1,6 +1,8 @@
 #pragma once
 
 #include "statement.h"
+#include "evaluated_value.h"
+#include "scope.h"
 
 /*
 for (n in range) {}
@@ -9,7 +11,7 @@ for (n in range, index=s) {}
 for (n in range, reverse) {}
 */
 
-struct While_statement : Statement {
+struct For_statement : Statement {
 
     std::string index_name;
     std::shared_ptr<Evaluated_value> range;
@@ -23,10 +25,12 @@ struct While_statement : Statement {
 
     void debug_print(Debug_os& os, bool recursive=true) const override
     {
-        os << "while(";
+        // FIXME: better for::toS()
+
+        os << "For(";
         if (recursive) {
-            ASSERT(condition != nullptr);
-            os << condition->toS();
+            ASSERT(range != nullptr);
+            os << range->toS();
         }
         os << ") ";
         if (recursive) {

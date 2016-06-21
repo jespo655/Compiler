@@ -7,7 +7,6 @@ using.h
 
 
 implement ev_values and ev_variables:
-    cast
     array_lookup
 
 
@@ -48,3 +47,22 @@ ATT TÄNKA PÅ:
 Kanske: get_type() måste (KANSKE) returnera en const type, eller vara const själv.
 (Måste man kalla get_type() på en typ? Man ska ju ändå alltid få Type_type i så fall)
 (Att returnera en const type men inte själv vara const borde vara ok)
+
+
+
+
+
+
+
+
+
+
+
+workspace
+
+// global_scope har en workspace som parent (subklass till scope), och workspace har själv en pekare till global scope
+
+
+
+// någonstans globalt:
+map<string, scope> global_scopes; // 1 global_scope per fil som kompileras

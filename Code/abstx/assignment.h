@@ -3,6 +3,7 @@
 #include "statement.h"
 #include "identifier.h"
 #include <sstream>
+#include <vector>
 
 /*
 a = 1;          // a gets the value 1

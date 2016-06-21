@@ -35,6 +35,17 @@ std::shared_ptr<Scope> Abstx_node::parent_scope() const
 
 
 
+std::shared_ptr<Scope> Abstx_node::global_scope() const
+{
+    // The topmost parent scope should always be a Workspace, which has overridden this method
+    auto parent = parent_scope();
+    ASSERT(parent != nullptr);
+    return parent->global_scope();
+}
+
+
+
+
 
 
 

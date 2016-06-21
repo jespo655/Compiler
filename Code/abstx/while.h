@@ -1,6 +1,8 @@
 #pragma once
 
 #include "statement.h"
+#include "evaluated_value.h"
+#include "scope.h"
 
 /*
 while (b) {}

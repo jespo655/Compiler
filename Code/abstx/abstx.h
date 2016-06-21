@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utilities/debug.h"
+#include "../utilities/assert.h"
 #include "../token.h"
 
 #include <memory>
@@ -30,7 +31,8 @@ struct Abstx_node
 
     virtual ~Abstx_node() {}
 
-    std::shared_ptr<Scope> parent_scope() const;
+    virtual std::shared_ptr<Scope> parent_scope() const;
+    virtual std::shared_ptr<Scope> global_scope() const;
 };
 
 

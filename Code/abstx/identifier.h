@@ -11,7 +11,7 @@
 
 
 struct Identifier : Evaluated_variable {
-    std::shared_ptr<Type> type;
+    std::shared_ptr<const Type> type;
     std::string name = "";
     std::shared_ptr<Literal> default_value;
 

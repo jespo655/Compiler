@@ -2,6 +2,7 @@
 
 #include "function.h"
 #include <sstream>
+#include <vector>
 
 /*
 An operator is a special case of a function call, with it's own syntax.
@@ -30,7 +31,7 @@ struct Operator_symbol : Evaluated_value {
 struct Operator : Function_call {
 
     // A more slimmed down version of Function_call's get_identity(). Only check scope->get_function() directly, skip identifiers.
-    std::shared_ptr<Function> get_identity()
+    std::shared_ptr<Function> get_identity() override
     {
         if (identity == nullptr) {
             auto scope = parent_scope();
@@ -41,10 +42,10 @@ struct Operator : Function_call {
         return identity;
     }
 
-    std::string get_operator_name() {
+    std::string get_operator_name() const {
         ASSERT(function_identifier != nullptr);
-        if (auto op = dynamic_pointer_cast<Operator_symbol>(function_identifier)) return op->symbol;
-        if (auto id = dynamic_pointer_cast<Identifier>(function_identifier)) return id->name;
+        if (auto op = std::dynamic_pointer_cast<Operator_symbol>(function_identifier)) return op->symbol;
+        if (auto id = std::dynamic_pointer_cast<Identifier>(function_identifier)) return id->name;
         ASSERT(false, "Operator::function_identifier can only be Operator_symbol or Identifier.");
     }
 
@@ -107,7 +108,7 @@ A prefix operator is just another way to write a function that takes one argumen
 prefix_operator++(1); // returns 2
 ++1; // returns 2
 */
-struct Prefix_operator : Statement {
+struct Prefix_operator : Operator {
 
     std::string get_mangled_identifier() const override
     {
@@ -144,7 +145,7 @@ A suffix operator is just another way to write a function that takes one argumen
 i:=1; suffix_operator++(i); // returns 1. i is now 2.
 i:=1; i++; // returns 1. i is now 2.
 */
-struct Suffix_operator : Statement {
+struct Suffix_operator : Operator {
 
     std::string get_mangled_identifier() const override
     {

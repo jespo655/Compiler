@@ -4,8 +4,7 @@
 #include "identifier.h"
 
 #include <sstream>
-// #include <vector>
-// #include <pair>
+#include <map>
 
 // Structs has no literals.
 // They should instead be assigned to through constructors or getters.
