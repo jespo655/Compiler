@@ -34,3 +34,18 @@ void __add_ints(int lhs, int rhs, int& __rval_1)
 {
     // HERE BE c-DEFINED CODE
 }
+
+
+
+
+
+
+
+
+
+
+
+code generation of static scope:
+
+declare all variables with default values. All "functions" are declared as function pointers.
+declare all functions with unique function identifier

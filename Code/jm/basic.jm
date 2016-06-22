@@ -1,0 +1,13 @@
+
+
+
+
+
+#run fn()
+{
+    set_entry_point(main);
+    add_c_include_path("basic.c");
+}
+
+
+main := fn() #c_include("c_include_test");
