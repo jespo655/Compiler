@@ -16,9 +16,24 @@ Change get_type() to return a non-const type
     (Or find another way to determine pointer ownership)
 
 
+operator::get_mangled_infix(): prefixa med _ för att undvika name clashes med egendefinierade funktioner
+
+
+Debug_os::indent() -> indent(int steps=1)
+int types: int_leastN_t, uint_leastN_t
+
 
 add functions that gets the type from a vector<Evaluated_value> and vector<Evaluated_variable>
     the only special case is function_call, which can return a list of type
+
+set_entry_point() flera gånger -> clash / error
+
+Type::size() som returnerar storleken (i bytes) på typen
+
+struct Value { Type t; void* vp; } som kan användas för compile time exec.
+Använder malloc / free i constnructorn
+Inte en abstx_node
+Workspace: har en map str(id_name)->Value
 
 
 
@@ -84,4 +99,21 @@ Compile_time exec tests:
 
 Bygg funktioner manuellt, testa compile time execution av dem
  - någon bastyp-fn länkar till cpp-fner mha string fn-name. Switcha beroende på str.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
