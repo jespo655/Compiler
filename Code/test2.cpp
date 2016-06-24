@@ -30,6 +30,7 @@
 
 #include "compile_time/compile_time.h"
 #include "compile_time/type_checker.h"
+#include "compile_time/value.h"
 
 #include "utilities/assert.h"
 #include "utilities/debug.h"

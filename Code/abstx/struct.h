@@ -39,6 +39,16 @@ struct Type_struct : Type
     {
         return members.at(name);
     }
+
+
+    int byte_size() override
+    {
+        int size = 0;
+        for (auto p : members) {
+            size += p.second -> get_type() -> byte_size();
+        }
+        return size;
+    }
 };
 
 

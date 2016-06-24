@@ -17,7 +17,7 @@ struct Getter : Evaluated_variable {
     std::shared_ptr<Evaluated_value> getter_identifier;
     std::shared_ptr<Identifier> data_identifier;
 
-    std::shared_ptr<const Type> get_type() override
+    std::shared_ptr<Type> get_type() override
     {
         ASSERT(data_identifier != nullptr);
         auto type = data_identifier->get_type();

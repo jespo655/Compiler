@@ -51,6 +51,8 @@ struct Type_pointer : Type
         ASSERT(false, "Type_pointer::get_default_value() should never be called - pointer literals doesn't exist");
         return nullptr;
     }
+
+    int byte_size() override { return sizeof(void*); }
 };
 
 

@@ -34,8 +34,8 @@ then implicit cast one thing at the time, check for close matches first
 
 struct Type_fn : Type {
 
-    std::vector<std::shared_ptr<const Type>> in_types;
-    std::vector<std::shared_ptr<const Type>> out_types;
+    std::vector<std::shared_ptr<Type>> in_types;
+    std::vector<std::shared_ptr<Type>> out_types;
 
     std::string toS() const
     {
@@ -51,8 +51,10 @@ struct Type_fn : Type {
         return oss.str();
     }
 
+    int byte_size() override { return sizeof(void*); }
+
 private:
-    void print_parameter_list(std::ostringstream& os, const std::vector<std::shared_ptr<const Type>>& types, bool parens = true) const
+    void print_parameter_list(std::ostringstream& os, const std::vector<std::shared_ptr<Type>>& types, bool parens = true) const
     {
         if (parens) os << "(";
         bool first = true;
@@ -104,7 +106,7 @@ struct Function : Evaluated_value {
         return oss.str();
     }
 
-    std::shared_ptr<const Type> get_type() override
+    std::shared_ptr<Type> get_type() override
     {
         std::shared_ptr<Type_fn> type{new Type_fn()};
         for (auto id : in_parameters) {
@@ -187,7 +189,7 @@ struct Function_call : Evaluated_value {
         return "";
     }
 
-    std::shared_ptr<const Type> get_type() override
+    std::shared_ptr<Type> get_type() override
     {
         auto id = get_identity();
         if (identity == nullptr) return nullptr;

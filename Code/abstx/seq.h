@@ -14,7 +14,7 @@
 
 struct Literal_seq : Literal
 {
-    std::shared_ptr<const Type> type;
+    std::shared_ptr<Type> type;
     int size;
     std::vector<std::shared_ptr<Evaluated_value>> members;
 
@@ -36,7 +36,7 @@ struct Literal_seq : Literal
         return oss.str();
     }
 
-    std::shared_ptr<const Type> get_type() override;
+    std::shared_ptr<Type> get_type() override;
 };
 
 
@@ -45,7 +45,7 @@ struct Literal_seq : Literal
 
 struct Type_seq : Type
 {
-    std::shared_ptr<const Type> type;
+    std::shared_ptr<Type> type;
     int size;
     bool dynamic = false;
 
@@ -66,6 +66,8 @@ struct Type_seq : Type
         return default_literal;
     }
 
+    int byte_size() override { return sizeof(uint_least64_t) + sizeof(void*); } // fat pointer - also stores its own size
+
 private:
     std::shared_ptr<Literal_seq> default_literal{new Literal_seq()};
 };
@@ -81,7 +83,7 @@ struct Sequence_lookup : Evaluated_variable {
     std::shared_ptr<Evaluated_value> sequence_identifier;
     std::shared_ptr<Evaluated_value> index;
 
-    std::shared_ptr<const Type> get_type() override
+    std::shared_ptr<Type> get_type() override
     {
         ASSERT(sequence_identifier != nullptr);
         auto type = sequence_identifier->get_type();

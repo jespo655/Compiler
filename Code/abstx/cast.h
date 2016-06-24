@@ -13,7 +13,7 @@ struct Cast : Evaluated_value {
     std::shared_ptr<Evaluated_value> value_identifier;
     std::shared_ptr<Identifier> type_identifier;
 
-    std::shared_ptr<const Type> get_type() override
+    std::shared_ptr<Type> get_type() override
     {
         ASSERT(type_identifier != nullptr);
         if (type_identifier->type != nullptr) return type_identifier->type;

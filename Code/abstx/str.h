@@ -6,6 +6,8 @@ struct Type_str : Type
 {
     std::string toS() const override { return "str"; }
     std::shared_ptr<const Literal> get_default_value() const override;
+
+    int byte_size() override { return sizeof(uint_least64_t) + sizeof(void*); } // fat pointer - also stores its own size
 };
 
 
@@ -15,5 +17,5 @@ struct Literal_str : Literal
 {
     std::string value = "";
     std::string toS() const override { return '\"' + value + '\"'; }
-    std::shared_ptr<const Type> get_type() override;
+    std::shared_ptr<Type> get_type() override;
 };

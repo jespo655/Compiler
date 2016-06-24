@@ -16,7 +16,7 @@ struct Operator_symbol : Evaluated_value {
 
     std::string symbol;
 
-    std::shared_ptr<const Type> get_type()
+    std::shared_ptr<Type> get_type()
     {
         ASSERT(false, "Operator_symbol::get_type() should never be called.");
         return nullptr;

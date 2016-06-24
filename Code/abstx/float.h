@@ -7,12 +7,16 @@ struct Type_f32 : Type
 {
     std::string toS() const override { return "f32"; }
     std::shared_ptr<const Literal> get_default_value() const override;
+
+    int byte_size() override { return sizeof(float); }
 };
 
 struct Type_f64 : Type
 {
     std::string toS() const override { return "f64"; }
     std::shared_ptr<const Literal> get_default_value() const override;
+
+    int byte_size() override { return sizeof(double); }
 };
 
 // struct Type_float : Type
@@ -30,7 +34,7 @@ struct Literal_float : Literal
 {
     double value = 0.0;
     std::string toS() const override { return std::to_string(value); }
-    std::shared_ptr<const Type> get_type() override;
+    std::shared_ptr<Type> get_type() override;
 };
 
 
