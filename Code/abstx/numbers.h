@@ -27,8 +27,8 @@ NUMBER_TYPE(u16, uint_least16_t);
 NUMBER_TYPE(u32, uint_least32_t);
 NUMBER_TYPE(u64, uint_least64_t);
 
-// NUMBER_TYPE(f32, float);
-// NUMBER_TYPE(f64, double);
+NUMBER_TYPE(f32, float);
+NUMBER_TYPE(f64, double);
 
 #define Type_int Type_i64
 #define Type_uint Type_u64

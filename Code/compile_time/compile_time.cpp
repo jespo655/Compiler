@@ -5,8 +5,7 @@
 
 #include "../abstx/workspace.h"
 
-#include "../abstx/int.h"
-#include "../abstx/float.h"
+#include "../abstx/numbers.h"
 #include "../abstx/str.h"
 #include "../abstx/seq.h"
 #include "../abstx/scope.h"
