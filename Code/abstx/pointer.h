@@ -41,18 +41,20 @@ struct Type_pointer : Type
     std::shared_ptr<const Type> type;
     bool owned = false; // if true, then the value is deleted at the end of scope
 
+    std::string toS(void const * value_ptr, int size=0) const override {
+        ASSERT(size == 0 || size == byte_size());
+        std::ostringstream oss;
+        void* ptr = *(void**)value_ptr;
+        oss << "pointer(" << ptr << ")";
+        return oss.str();
+    }
+
     std::string toS() const override {
         ASSERT(type != nullptr);
         return type->toS() + "*" + (owned? "!" : "") ;
     }
 
-    std::shared_ptr<Literal> get_default_value() const override
-    {
-        ASSERT(false, "Type_pointer::get_default_value() should never be called - pointer literals doesn't exist");
-        return nullptr;
-    }
-
-    int byte_size() override { return sizeof(void*); }
+    int byte_size() const override { return sizeof(void*); }
 };
 
 

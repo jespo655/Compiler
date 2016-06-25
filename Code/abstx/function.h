@@ -37,6 +37,14 @@ struct Type_fn : Type {
     std::vector<std::shared_ptr<Type>> in_types;
     std::vector<std::shared_ptr<Type>> out_types;
 
+    std::string toS(void const * value_ptr, int size=0) const override {
+        ASSERT(size == 0 || size == byte_size());
+        std::ostringstream oss;
+        void* fn_ptr = *(void**)value_ptr;
+        oss << "function pointer(" << fn_ptr << ")";
+        return oss.str();
+    }
+
     std::string toS() const
     {
         std::ostringstream oss;
@@ -51,7 +59,7 @@ struct Type_fn : Type {
         return oss.str();
     }
 
-    int byte_size() override { return sizeof(void*); }
+    int byte_size() const override { return sizeof(void*); }
 
 private:
     void print_parameter_list(std::ostringstream& os, const std::vector<std::shared_ptr<Type>>& types, bool parens = true) const

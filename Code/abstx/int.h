@@ -1,104 +1,37 @@
 #pragma once
 
 #include "type.h"
+#include <string>
 
 
-
-
-struct Type_i8 : Type
-{
-    std::string toS() const override { return "i8"; }
-    std::shared_ptr<Literal> get_default_value() const override;
-    int byte_size() override { return sizeof(int_least8_t); }
+#define NUMBER_TYPE(type, cpptype)                                          \
+struct Type_##type : Type                                                   \
+{                                                                           \
+    std::string toS() const override { return "##type##"; }                 \
+    int byte_size() const override { return sizeof(cpptype); }              \
+                                                                            \
+    std::string toS(void const * value_ptr, int size=0) const override {    \
+        ASSERT(size == 0 || size == byte_size())                            \
+        cpptype const * vp  = (cpptype const *) value_ptr;                  \
+        return std::to_string(vp[0]);                                       \
+    }                                                                       \
 };
 
-struct Type_i16 : Type
-{
-    std::string toS() const override { return "i16"; }
-    std::shared_ptr<Literal> get_default_value() const override;
-    int byte_size() override { return sizeof(int_least16_t); }
-};
+NUMBER_TYPE(i8, int_least8_t);
+NUMBER_TYPE(i16, int_least16_t);
+NUMBER_TYPE(i32, int_least32_t);
+NUMBER_TYPE(i64, int_least64_t);
 
-struct Type_i32 : Type
-{
-    std::string toS() const override { return "i32"; }
-    std::shared_ptr<Literal> get_default_value() const override;
-    int byte_size() override { return sizeof(int_least32_t); }
-};
+NUMBER_TYPE(u8, uint_least8_t);
+NUMBER_TYPE(u16, uint_least16_t);
+NUMBER_TYPE(u32, uint_least32_t);
+NUMBER_TYPE(u64, uint_least64_t);
 
-struct Type_i64 : Type
-{
-    std::string toS() const override { return "i64"; }
-    std::shared_ptr<Literal> get_default_value() const override;
-    int byte_size() override { return sizeof(int_least64_t); }
-};
-
-// struct Type_int : Type
-// {
-//     std::string toS() const override { return "int"; }
-// };
+// NUMBER_TYPE(f32, float);
+// NUMBER_TYPE(f64, double);
 
 #define Type_int Type_i64
-
-
-
-struct Type_u8 : Type
-{
-    std::string toS() const override { return "u8"; }
-    std::shared_ptr<Literal> get_default_value() const override;
-    int byte_size() override { return sizeof(uint_least8_t); }
-};
-
-struct Type_u16 : Type
-{
-    std::string toS() const override { return "u16"; }
-    std::shared_ptr<Literal> get_default_value() const override;
-    int byte_size() override { return sizeof(uint_least16_t); }
-};
-
-struct Type_u32 : Type
-{
-    std::string toS() const override { return "u32"; }
-    std::shared_ptr<Literal> get_default_value() const override;
-    int byte_size() override { return sizeof(uint_least32_t); }
-};
-
-struct Type_u64 : Type
-{
-    std::string toS() const override { return "u64"; }
-    std::shared_ptr<Literal> get_default_value() const override;
-    int byte_size() override { return sizeof(uint_least64_t); }
-};
-
-// struct Type_uint : Type
-// {
-//     std::string toS() const override { return "uint"; }
-// };
-
 #define Type_uint Type_u64
-
-
-
-
-
-
-
-
-#include "literal.h"
-
-struct Literal_int : Literal
-{
-    int64_t value = 0;
-    std::string toS() const override { return std::to_string(value); }
-    std::shared_ptr<Type> get_type() override;
-};
-
-struct Literal_uint : Literal
-{
-    uint64_t value = 0;
-    std::string toS() const override { return std::to_string(value); }
-    std::shared_ptr<Type> get_type() override;
-};
 
 
 

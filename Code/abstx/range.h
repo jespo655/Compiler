@@ -1,31 +1,32 @@
 #pragma once
 
 #include "type.h"
+#include <string>
 
+/*
+A range consists of two doubles, a start and an end.
+Ranges can be used in for loops:
+
+range r = 2.5 .. 5.2;
+for (i in r) { ... }
+
+is equivalent to c++:
+
+r_start = 2.5;
+r_end = 5.2;
+step = 1; // the default step is 1
+for (double i = r_start; i <= r_end; i += step) { ... }
+*/
 struct Type_range : Type
 {
     std::string toS() const override { return "range"; }
-    std::shared_ptr<Literal> get_default_value() const override;
 
-    int byte_size() override { return sizeof(uint_least8_t); }
-};
-
-
-#include "literal.h"
-#include "float.h"
-
-struct Literal_range : Literal
-{
-    std::shared_ptr<Literal_float> start{new Literal_float()};
-    std::shared_ptr<Literal_float> end{new Literal_float()};
-
-    std::string toS() const override
-    {
-        ASSERT(start != nullptr);
-        ASSERT(end != nullptr);
-        return start->toS() + ".." + end->toS();
+    std::string toS(void const * value_ptr, int size=0) const override {
+        ASSERT(size == 0 || size == byte_size())
+        double const * vp  = (double const *) value_ptr;
+        return std::to_string(vp[0]) + ".." + std::to_string(vp[1]);
     }
 
-    std::shared_ptr<Type> get_type() override;
-
+    int byte_size() const override { return 2 * sizeof(double); }
 };
+

@@ -34,8 +34,6 @@ std::shared_ptr<Scope> Abstx_node::parent_scope() const
     return nullptr;
 }
 
-
-
 std::shared_ptr<Scope> Abstx_node::global_scope() const
 {
     // The topmost parent scope should always be a Workspace, which has overridden this method
@@ -60,8 +58,6 @@ int get_unique_id() {
     ASSERT(id >= 0); // if id is negative then the int has looped around. More than INT_MAX unique identifiers should never be needed.
     return id++;
 }
-
-
 
 std::string get_unique_id_str() {
     return std::to_string(get_unique_id());

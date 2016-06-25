@@ -28,6 +28,13 @@ struct Abstx_node
     std::weak_ptr<Abstx_node> owner; // points to the parent node in the abstx tree
     bool fully_resolved = false; // should be true when all children are resolved
 
+    template<typename T> void set_owner(std::shared_ptr<T> p)
+    {
+        auto abstx_p = std::dynamic_pointer_cast<Abstx_node>(p);
+        ASSERT(abstx_p != nullptr); // this checks for both if p is nullptr, and if T is a subclass of Abstx_node
+        owner = abstx_p;
+    }
+
     virtual ~Abstx_node() {}
 
     virtual std::shared_ptr<Scope> parent_scope() const;

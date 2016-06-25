@@ -24,9 +24,8 @@ struct Type_scope : Type {
     Type_scope(bool dynamic) : dynamic{dynamic} {}
 
     std::string toS() const override { return dynamic? "scope(d)" : "scope(s)"; }
-    std::shared_ptr<Literal> get_default_value() const override;
 
-    int byte_size() override { return sizeof(void*); } // points to the scope struct
+    int byte_size() const override { return sizeof(void*); } // points to the scope struct
 };
 
 
@@ -114,8 +113,6 @@ struct Scope : Literal {
         }
         return p;
     }
-
-    std::shared_ptr<Type> get_type() override;
 
 };
 

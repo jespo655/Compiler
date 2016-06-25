@@ -35,7 +35,7 @@ utgå från en entry point, börja dynamisk kompilering
         börja dynamisk kompilering av #run_2
     varje statement utförs, Values blir skapade och förstörda, etc.
 */
-
+/*
 Value evaluate(std::shared_ptr<Literal> lit) {
     Value v(lit->get_type());
     if (auto int_l = std::dynamic_pointer_cast<Literal_int>(lit)) v.assign(lit->get_type(), int_l->value);
@@ -53,15 +53,15 @@ Value evaluate(std::shared_ptr<Literal> lit) {
     }
     return v;
 }
-
-
+*/
+/*
 Value evaluate(std::shared_ptr<Evaluated_value> ev) {
     if (auto lit = std::dynamic_pointer_cast<Literal>(ev)) return evaluate(lit);
     // fixme: add evaluate() for all other kinds of values
 
     ASSERT(false, "evaluate of a value of this type NYI");
 }
-
+*/
 
 
 
@@ -69,7 +69,7 @@ struct Local_scope {
 
     std::map<std::string, Value> values; // map identifier name -> value
     std::shared_ptr<Scope> parent_scope;
-
+/*
     Local_scope(std::shared_ptr<Function_call> fc) {
         ASSERT(fc->fully_resolved); // this allows us to ignore expensive assertions - we know that the function call is well formed
 
@@ -99,14 +99,14 @@ struct Local_scope {
             values[name].assign(evaluate(arg.value));
         }
         // expensive assert: assert that all parameters without default value was named
-    }
+    }*/
 
 
 };
 
 
 
-
+/*
 std::vector<std::shared_ptr<Literal>> hashtag_run(std::shared_ptr<Function_call> fc) {
 
     // set up a local scope
@@ -123,7 +123,7 @@ std::vector<Value> evaluate(std::shared_ptr<Function_call> fc) {
 
 }
 
-
+*/
 
 
 

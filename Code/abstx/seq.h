@@ -1,7 +1,6 @@
 #pragma once
 
 #include "type.h"
-#include "literal.h"
 #include "evaluated_variable.h"
 
 #include "../utilities/assert.h"
@@ -9,45 +8,59 @@
 #include <sstream>
 #include <vector>
 
-
+// literal syntax:
 // [int, size=3: 0, 0, 0]
+// [int: 0, 0, 0] // size inferred to 3
+// [0, 0, 0] // type inferred to int (the type of the first element)
 
-struct Literal_seq : Literal
-{
-    std::shared_ptr<Type> type;
-    int size;
-    std::vector<std::shared_ptr<Evaluated_value>> members;
+// [int, size=3: 0, 0, 0, 0, 0] // extra values are cut away. This logs a warning.
+// [int, size=3: 0] // missing values are default initialized without warning.
 
-    std::string toS() const override {
-        ASSERT(type != nullptr);
-        std::ostringstream oss;
-        oss << "[" << type->toS() << ", size=" << size;
-        ASSERT(members.size() == size);
-        if (!members.empty()) oss << ": ";
-        bool first = true;
-        for (auto m : members) {
-            ASSERT(m != nullptr);
-            ASSERT(m->get_type() == type);
-            if (!first) oss << ", ";
-            oss << m->toS();
-            first = false;
-        }
-        oss << "]";
-        return oss.str();
-    }
+// [int, size=3:] // with no values are also ok, but looks a bit wierd
+// [int] // a 1 long sequence of types which contains the type int
+// [int:] // an empty sequence of ints
 
-    std::shared_ptr<Type> get_type() override;
-};
-
-
-// int[3]
-// int[..]
+// type syntax:
+// int[3] // a 3 long sequence of int
+// int[..] // a dynamic sequence of int, initially 0 long
 
 struct Type_seq : Type
 {
     std::shared_ptr<Type> type;
     int size;
     bool dynamic = false;
+
+
+    std::string toS(void const * value_ptr, int size=0) const override {
+        ASSERT(type != nullptr);
+        ASSERT(size == 0 || size == byte_size());
+        std::ostringstream oss;
+        oss << "[" << type->toS() << ", size=" << size;
+        char const * v_ptr = (char const*) value_ptr;
+        if (dynamic) {
+            oss << ", dynamic";
+            ASSERT(sizeof(void*) == 8); // for now, only allow 64 bit
+            ASSERT(byte_size() == 16); // FIXME: special case for 32 bit os
+            void* const* header = (void* const*)value_ptr;
+            ASSERT((uint_least64_t)(header[0]) == size);
+
+            ASSERT(sizeof(char) == 1);
+            v_ptr = (char const*)header[1]; // char is used as "byte"
+        }
+        if (size > 0) {
+            oss << ": ";
+            int member_size = type->byte_size();
+            bool first = true;
+            for (int i = 0; i < size; ++i) {
+                if (!first) oss << ", ";
+                oss << toS(v_ptr + i*member_size, member_size);
+                first = false;
+            }
+        }
+        oss << "]";
+        return oss.str();
+    }
+
 
     std::string toS() const override {
         ASSERT(type != nullptr);
@@ -58,18 +71,14 @@ struct Type_seq : Type
         return oss.str();
     }
 
-    std::shared_ptr<Literal> get_default_value() const override
-    {
-        default_literal->type = type;
-        default_literal->size = size;
-        default_literal->members.resize(size);
-        return default_literal;
+    int byte_size() const override {
+        if (dynamic) return sizeof(uint_least64_t) + sizeof(void*); // fat pointer - also stores its own size
+        else {
+            ASSERT(type != nullptr);
+            return size * type->byte_size(); // stores the whole seq on the stack
+        }
     }
 
-    int byte_size() override { return sizeof(uint_least64_t) + sizeof(void*); } // fat pointer - also stores its own size
-
-private:
-    std::shared_ptr<Literal_seq> default_literal{new Literal_seq()};
 };
 
 
