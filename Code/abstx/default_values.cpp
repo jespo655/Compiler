@@ -18,7 +18,7 @@ type. Those cases are solved elsewhere.
 
 #include "int.h"
 
-const std::shared_ptr<const Literal> DEFAULT_INT_LITERAL{new Literal_int()};
+const std::shared_ptr<Literal> DEFAULT_INT_LITERAL{new Literal_int()};
 
 const std::shared_ptr<Type> BUILT_IN_TYPE_i8{new Type_i8()};
 const std::shared_ptr<Type> BUILT_IN_TYPE_i16{new Type_i16()};
@@ -26,22 +26,22 @@ const std::shared_ptr<Type> BUILT_IN_TYPE_i32{new Type_i32()};
 const std::shared_ptr<Type> BUILT_IN_TYPE_i64{new Type_i64()};
 
 
-std::shared_ptr<const Literal> Type_i8::get_default_value() const
+std::shared_ptr<Literal> Type_i8::get_default_value() const
 {
     return DEFAULT_INT_LITERAL;
 }
 
-std::shared_ptr<const Literal> Type_i16::get_default_value() const
+std::shared_ptr<Literal> Type_i16::get_default_value() const
 {
     return DEFAULT_INT_LITERAL;
 }
 
-std::shared_ptr<const Literal> Type_i32::get_default_value() const
+std::shared_ptr<Literal> Type_i32::get_default_value() const
 {
     return DEFAULT_INT_LITERAL;
 }
 
-std::shared_ptr<const Literal> Type_i64::get_default_value() const
+std::shared_ptr<Literal> Type_i64::get_default_value() const
 {
     return DEFAULT_INT_LITERAL;
 }
@@ -58,29 +58,29 @@ std::shared_ptr<Type> Literal_int::get_type()
 
 #include "int.h"
 
-const std::shared_ptr<const Literal> DEFAULT_UINT_LITERAL{new Literal_uint()};
+const std::shared_ptr<Literal> DEFAULT_UINT_LITERAL{new Literal_uint()};
 
 const std::shared_ptr<Type> BUILT_IN_TYPE_u8{new Type_u8()};
 const std::shared_ptr<Type> BUILT_IN_TYPE_u16{new Type_u16()};
 const std::shared_ptr<Type> BUILT_IN_TYPE_u32{new Type_u32()};
 const std::shared_ptr<Type> BUILT_IN_TYPE_u64{new Type_u64()};
 
-std::shared_ptr<const Literal> Type_u8::get_default_value() const
+std::shared_ptr<Literal> Type_u8::get_default_value() const
 {
     return DEFAULT_UINT_LITERAL;
 }
 
-std::shared_ptr<const Literal> Type_u16::get_default_value() const
+std::shared_ptr<Literal> Type_u16::get_default_value() const
 {
     return DEFAULT_UINT_LITERAL;
 }
 
-std::shared_ptr<const Literal> Type_u32::get_default_value() const
+std::shared_ptr<Literal> Type_u32::get_default_value() const
 {
     return DEFAULT_UINT_LITERAL;
 }
 
-std::shared_ptr<const Literal> Type_u64::get_default_value() const
+std::shared_ptr<Literal> Type_u64::get_default_value() const
 {
     return DEFAULT_UINT_LITERAL;
 }
@@ -96,17 +96,17 @@ std::shared_ptr<Type> Literal_uint::get_type()
 
 #include "float.h"
 
-const std::shared_ptr<const Literal> DEFAULT_FLOAT_LITERAL{new Literal_float()};
+const std::shared_ptr<Literal> DEFAULT_FLOAT_LITERAL{new Literal_float()};
 
 const std::shared_ptr<Type> BUILT_IN_TYPE_f32{new Type_f32()};
 const std::shared_ptr<Type> BUILT_IN_TYPE_f64{new Type_f64()};
 
-std::shared_ptr<const Literal> Type_f32::get_default_value() const
+std::shared_ptr<Literal> Type_f32::get_default_value() const
 {
     return DEFAULT_FLOAT_LITERAL;
 }
 
-std::shared_ptr<const Literal> Type_f64::get_default_value() const
+std::shared_ptr<Literal> Type_f64::get_default_value() const
 {
     return DEFAULT_FLOAT_LITERAL;
 }
@@ -159,11 +159,11 @@ std::shared_ptr<Type> Literal_seq::get_type()
 
 #include "str.h"
 
-const std::shared_ptr<const Literal> DEFAULT_STR_LITERAL{new Literal_str()};
+const std::shared_ptr<Literal> DEFAULT_STR_LITERAL{new Literal_str()};
 
 const std::shared_ptr<Type> BUILT_IN_TYPE_str{new Type_str()};
 
-std::shared_ptr<const Literal> Type_str::get_default_value() const
+std::shared_ptr<Literal> Type_str::get_default_value() const
 {
     return DEFAULT_STR_LITERAL;
 }
@@ -179,11 +179,11 @@ std::shared_ptr<Type> Literal_str::get_type()
 
 #include "bool.h"
 
-const std::shared_ptr<const Literal> DEFAULT_BOOL_LITERAL{new Literal_bool()};
+const std::shared_ptr<Literal> DEFAULT_BOOL_LITERAL{new Literal_bool()};
 
 const std::shared_ptr<Type> BUILT_IN_TYPE_bool{new Type_bool()};
 
-std::shared_ptr<const Literal> Type_bool::get_default_value() const
+std::shared_ptr<Literal> Type_bool::get_default_value() const
 {
     return DEFAULT_BOOL_LITERAL;
 }
@@ -200,11 +200,11 @@ std::shared_ptr<Type> Literal_bool::get_type()
 
 #include "range.h"
 
-const std::shared_ptr<const Literal> DEFAULT_RANGE_LITERAL{new Literal_range()};
+const std::shared_ptr<Literal> DEFAULT_RANGE_LITERAL{new Literal_range()};
 
 const std::shared_ptr<Type> BUILT_IN_TYPE_range{new Type_range()};
 
-std::shared_ptr<const Literal> Type_range::get_default_value() const
+std::shared_ptr<Literal> Type_range::get_default_value() const
 {
     return DEFAULT_RANGE_LITERAL;
 }
@@ -231,13 +231,13 @@ std::shared_ptr<Type> Literal_range::get_type()
 
 #include "scope.h"
 
-const std::shared_ptr<const Literal> DEFAULT_DYNAMIC_SCOPE_LITERAL{new Literal_scope(true)};
-const std::shared_ptr<const Literal> DEFAULT_STATIC_SCOPE_LITERAL{new Literal_scope(false)};
+const std::shared_ptr<Literal> DEFAULT_DYNAMIC_SCOPE_LITERAL{new Literal_scope(true)};
+const std::shared_ptr<Literal> DEFAULT_STATIC_SCOPE_LITERAL{new Literal_scope(false)};
 
 const std::shared_ptr<Type> BUILT_IN_TYPE_dynamic_scope{new Type_scope(true)};
 const std::shared_ptr<Type> BUILT_IN_TYPE_static_scope{new Type_scope(false)};
 
-std::shared_ptr<const Literal> Type_scope::get_default_value() const
+std::shared_ptr<Literal> Type_scope::get_default_value() const
 {
     if (dynamic) return DEFAULT_DYNAMIC_SCOPE_LITERAL;
     else         return DEFAULT_STATIC_SCOPE_LITERAL;

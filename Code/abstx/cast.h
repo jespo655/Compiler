@@ -7,6 +7,10 @@
 /*
 A cast changes the type of a value to another type.
 It will return exactly one value.
+
+It is equivalent to a call to the cast function
+TODO: find exact syntax for how to user define casts
+void _cast_int_float(int v, *float r) { *r = v; }
 */
 struct Cast : Evaluated_value {
 

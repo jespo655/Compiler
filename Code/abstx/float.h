@@ -6,7 +6,7 @@
 struct Type_f32 : Type
 {
     std::string toS() const override { return "f32"; }
-    std::shared_ptr<const Literal> get_default_value() const override;
+    std::shared_ptr<Literal> get_default_value() const override;
 
     int byte_size() override { return sizeof(float); }
 };
@@ -14,7 +14,7 @@ struct Type_f32 : Type
 struct Type_f64 : Type
 {
     std::string toS() const override { return "f64"; }
-    std::shared_ptr<const Literal> get_default_value() const override;
+    std::shared_ptr<Literal> get_default_value() const override;
 
     int byte_size() override { return sizeof(double); }
 };

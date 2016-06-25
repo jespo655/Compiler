@@ -29,7 +29,7 @@ struct Type_struct : Type
         return oss.str();
     }
 
-    std::shared_ptr<const Literal> get_default_value() const override
+    std::shared_ptr<Literal> get_default_value() const override
     {
         ASSERT(false, "Type_struct::get_default_value() should never be called. Set default values recursively for each member instead.");
         return nullptr;

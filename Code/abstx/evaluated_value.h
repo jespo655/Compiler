@@ -4,8 +4,6 @@
 
 struct Type;
 
-#include <string>
-
 // An evaluated value is anything that evaluates to a value that can be read.
 struct Evaluated_value : Abstx_node
 {
@@ -14,4 +12,3 @@ struct Evaluated_value : Abstx_node
 };
 
 
-#include "type.h"

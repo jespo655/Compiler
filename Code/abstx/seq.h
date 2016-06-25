@@ -58,7 +58,7 @@ struct Type_seq : Type
         return oss.str();
     }
 
-    std::shared_ptr<const Literal> get_default_value() const override
+    std::shared_ptr<Literal> get_default_value() const override
     {
         default_literal->type = type;
         default_literal->size = size;

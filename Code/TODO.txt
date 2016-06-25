@@ -2,6 +2,111 @@
 
 
 
+
+vad som kompileras:
+pass 1) statisk kompilering
+alla global scope körs
+varje statement identifieras, sparas i listan av statements.
+    dock ej rekursivt - tex. vid decl så förs identifiers in i scope, men de får inga typer eller värden
+    dependencies bör sättas upp om nödvändigt, tex. identifiers->decl statement
+    använd fully_resolved-flaggan (dependencies)
+definiera entry points, skapa ett workspace för varje och spara dem i en lista
+
+pass 2) dynamisk kompilering av #run (compile time execution)
+utgå från en entry point, börja dynamisk kompilering
+    gå igenom varje statement, försök resolva direkt
+    lös dependencies för alla identifiers som används
+    det enda som inte skulle kunna resolvas direkt är saker som är beroende av andra #run
+    om det händer:
+        spara "bokmärke" så man kan fortsätta på det ställe i kompileringen där man slutade (eller så nära som möjligt)
+        sätt upp dependancy på #run_2
+        kolla att #run_2 inte har dependancy på #run_1 **
+        börja dynamisk kompilering av #run_2
+    varje statement utförs, Values blir skapade och förstörda, etc.
+
+** Vid cyklisk dependancy av #runs:
+    log_error cyklisk dependancy
+    sätt flagga på #runs
+    gå på nästa #run i listan
+
+pass 3) dynamisk kompilering av entry point (c output)
+utgå från den entry point som måste vara satt i pass 2
+dynamisk kompilering från entry point, precis som i pass 2
+istället för att köra, generera c-kod
+
+
+
+
+
+
+skriv om literals:
+
+endast 1 Literal-klass
+Abstx-wrapper för Value
+
+struct Literal : Evaluated_value {
+    Value value;
+    Literal() {}
+    Literal(const Value& value) : value{value} {}
+    Literal(Value&& value) : value{std::move(value)} {}
+}
+
+Varje typ har måste overloada get_default_value
+
+virtual get_default_value() { return Literal(Value(get_type())); }
+
+
+TODO:
+    specialhantering för strängar
+    specialhantering för dynamic seq
+
+
+
+
+
+
+
+
+
+
+#run kör funktionen och returnerar ett värde
+#run är en subklass till Function_call
+evaluate returnerar en std::vector<Value> som sen byggs in som literaler i abstx tree (#run-delen tas bort)
+
+
+
+
+lägg till compile time funktioner för error handler
+
+
+
+kolla upp gcc, se om jag hittar en version som implementerar c99-standarden korrekt
+specifikt int_leastN_t som ska krävas av c99. Alternativ: hitta en senare standardspec
+som kan användas med gcc, som har detta
+    gcc * -std=c99
+
+
+
+
+
+potentiellt problem för compile time execution
+spara pekare som values, sen ändra på det som pekarna pekar på
+-> originalet ändras
+
+
+
+
+reading a function:
+funktionen sparas först med ett internt kompilatornamn
+sparas i local scope
+
+
+
+
+KANSKE TODO: kolla på regex, gör en state machine för syntax patterns för parser
+
+
+
 using.h
     decide exact syntax and usage, before implementing the class
 
@@ -10,13 +115,6 @@ using.h
 Add a type class that just holds a list of types
     Function_call->get_type() should return one of those
 
-
-Change get_type() to return a non-const type
-    Pointer types has to change constantly when ownership changes
-    (Or find another way to determine pointer ownership)
-
-
-operator::get_mangled_infix(): prefixa med _ för att undvika name clashes med egendefinierade funktioner
 
 
 Debug_os::indent() -> indent(int steps=1)
@@ -28,11 +126,9 @@ add functions that gets the type from a vector<Evaluated_value> and vector<Evalu
 
 set_entry_point() flera gånger -> clash / error
 
-Type::size() som returnerar storleken (i bytes) på typen
+
 
 struct Value { Type t; void* vp; } som kan användas för compile time exec.
-Använder malloc / free i constnructorn
-Inte en abstx_node
 Workspace: har en map str(id_name)->Value
 
 
@@ -107,6 +203,69 @@ Bygg funktioner manuellt, testa compile time execution av dem
 
 
 
+
+Att sno från cm:
+pln med syntax
+toS() med användning
+sequence literals
+for-syntax
+ord som infix-op (in, and, or, xor, etc.)
+** för power (eller ^ ?)
+
+
+
+
+Scope::get_x: recursive till parent, icke resursive till using scopes
+
+
+
+Structs should have their own scope, instead of lists of identifiers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// #run demo:
+// TODO: lägg till compile time funktioner för error handler
+
+
+#run print("hej");
+
+
+foo := fn() -> int { return 2; }
+
+
+a = #run foo(); // a = 2;
+a = foo();
+
+
+check_type := fn(t : type) -> bool {
+    if (t == int) return true;
+    if (t == float) return true;
+    return false;
+}
+
+
+foo := fn(t : $T) -> T {
+    #run check_type(T);
+    return t;
+}
+
+
+foo := fn(t : int) -> int { return t; }
 
 
 

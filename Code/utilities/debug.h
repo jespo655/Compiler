@@ -44,8 +44,8 @@ struct Debug_os {
         return *this;
     }
 
-    void indent() { indent_level++; }
-    void unindent() { indent_level--; }
+    void indent(int steps = 1) { indent_level += steps; }
+    void unindent(int steps = 1) { indent_level -= steps; }
     void set_indent_level(int level) { indent_level = level; }
 
 private:

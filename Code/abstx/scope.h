@@ -24,7 +24,7 @@ struct Type_scope : Type {
     Type_scope(bool dynamic) : dynamic{dynamic} {}
 
     std::string toS() const override { return dynamic? "scope(d)" : "scope(s)"; }
-    std::shared_ptr<const Literal> get_default_value() const override;
+    std::shared_ptr<Literal> get_default_value() const override;
 
     int byte_size() override { return sizeof(void*); } // points to the scope struct
 };
@@ -46,6 +46,8 @@ struct Scope : Literal {
     std::map<std::string, std::shared_ptr<Identifier>> identifiers;
     std::map<std::string, std::shared_ptr<Function>> functions;
     std::map<std::string, std::shared_ptr<Type>> types; // if looking up the type name in the 'identifier'-list, they would all have the type 'Type_type'. Their values is stored in this list.
+
+    std::vector<std::shared_ptr<Scope>> pulled_in_scopes; // using statements pulls in scopes here
 
     Scope() {}
     Scope(bool dynamic) : dynamic{dynamic} {}
@@ -71,10 +73,22 @@ struct Scope : Literal {
     virtual std::shared_ptr<Identifier> get_identifier(const std::string& id, bool recursive=true)
     {
         auto p = identifiers[id];
+        if (p != nullptr) return p; // local things goes first
+
         while (recursive && p == nullptr) {
             auto parent = parent_scope();
-            if (parent == nullptr) return nullptr;
+            if (parent == nullptr) break;
             p = parent->get_identifier(id, recursive);
+        }
+        if (recursive) {
+            for (auto scope : pulled_in_scopes) {
+                auto p2 = scope->get_identifier(id, false);
+                if (p == nullptr) p = p2;
+                else {
+                    // FIXME: log error identifier clash
+                    // first found here: p->context
+                }
+            }
         }
         return p;
     }

@@ -46,7 +46,7 @@ struct Type_pointer : Type
         return type->toS() + "*" + (owned? "!" : "") ;
     }
 
-    std::shared_ptr<const Literal> get_default_value() const override
+    std::shared_ptr<Literal> get_default_value() const override
     {
         ASSERT(false, "Type_pointer::get_default_value() should never be called - pointer literals doesn't exist");
         return nullptr;

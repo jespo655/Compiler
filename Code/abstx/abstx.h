@@ -6,10 +6,9 @@
 
 #include <memory>
 #include <iostream>
+#include <string>
 
 struct Scope;
-
-#include <string>
 
 struct Abstx_node
 {

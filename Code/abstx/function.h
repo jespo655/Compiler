@@ -161,10 +161,21 @@ foo(); // named call, function_id is an identifier
 fn(){ pln(2); }(); // direct call from a function literal
 foos[2](); // anonymous call from an lookup from an array of functions
 */
+struct Named_argument {
+    std::string name = ""; // should be empty if not named
+    std::shared_ptr<Evaluated_value> value;
+    bool is_named() { return !name.empty(); }
+    Named_argument() {}
+    Named_argument(std::shared_ptr<Evaluated_value> value, std::string name="") : value{value}, name{name} {}
+    Named_argument(std::string name, std::shared_ptr<Evaluated_value> value) : value{value}, name{name} {}
+};
+
+
 struct Function_call : Evaluated_value {
 
     std::shared_ptr<Evaluated_value> function_identifier;
-    std::vector<std::shared_ptr<Evaluated_value>> arguments;
+    std::vector<Named_argument> arguments; // the string should be the name of a in parameter in the identity function
+    // std::vector<std::shared_ptr<Evaluated_value>> arguments; // the string should be the name of a in parameter in the identity function
 
     virtual std::shared_ptr<Function> get_identity()
     {
@@ -237,6 +248,4 @@ struct Generic_function : Function {
 
 };
 */
-
-
 

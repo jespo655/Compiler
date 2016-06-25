@@ -5,7 +5,7 @@
 struct Type_range : Type
 {
     std::string toS() const override { return "range"; }
-    std::shared_ptr<const Literal> get_default_value() const override;
+    std::shared_ptr<Literal> get_default_value() const override;
 
     int byte_size() override { return sizeof(uint_least8_t); }
 };

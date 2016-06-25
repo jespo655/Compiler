@@ -66,8 +66,8 @@ struct Infix_operator : Operator {
     std::string get_mangled_identifier() const override
     {
         ASSERT(arguments.size() == 2)
-        auto lhs = arguments[0];
-        auto rhs = arguments[1];
+        auto lhs = arguments[0].value;
+        auto rhs = arguments[1].value;
         ASSERT(lhs != nullptr);
         ASSERT(rhs != nullptr);
         auto lhs_type = lhs->get_type();
@@ -76,17 +76,16 @@ struct Infix_operator : Operator {
         ASSERT(rhs_type != nullptr);
 
         std::ostringstream oss;
-        oss << "infix_operator " << get_operator_name() << "(";
-        oss << lhs_type << ", " << rhs_type;
-        oss << ")";
+        oss << "_infix_operator_ " << get_operator_name()
+            << "_" << lhs_type << "_" << rhs_type;
         return oss.str();
     }
 
     std::string toS() const override
     {
         ASSERT(arguments.size() == 2)
-        auto lhs = arguments[0];
-        auto rhs = arguments[1];
+        auto lhs = arguments[0].value;
+        auto rhs = arguments[1].value;
         ASSERT(lhs != nullptr);
         ASSERT(rhs != nullptr);
 
@@ -113,21 +112,22 @@ struct Prefix_operator : Operator {
     std::string get_mangled_identifier() const override
     {
         ASSERT(arguments.size() == 1)
-        auto argument = arguments[0];
+        auto argument = arguments[0].value;
         ASSERT(argument != nullptr);
 
         auto arg_type = argument->get_type();
         ASSERT(arg_type != nullptr);
 
         std::ostringstream oss;
-        oss << "prefix_operator " << get_operator_name() << "(" << arg_type << ")";
+        oss << "_prefix_operator_" << get_operator_name()
+            << "_" << arg_type;
         return oss.str();
     }
 
     std::string toS() const override
     {
         ASSERT(arguments.size() == 1)
-        auto argument = arguments[0];
+        auto argument = arguments[0].value;
         ASSERT(argument != nullptr);
 
         std::ostringstream oss;
@@ -150,21 +150,22 @@ struct Suffix_operator : Operator {
     std::string get_mangled_identifier() const override
     {
         ASSERT(arguments.size() == 1)
-        auto argument = arguments[0];
+        auto argument = arguments[0].value;
         ASSERT(argument != nullptr);
 
         auto arg_type = argument->get_type();
         ASSERT(arg_type != nullptr);
 
         std::ostringstream oss;
-        oss << "suffix_operator " << get_operator_name() << "(" << arg_type << ")";
+        oss << "_suffix_operator_" << get_operator_name()
+            << "_" << arg_type;
         return oss.str();
     }
 
     std::string toS() const override
     {
         ASSERT(arguments.size() == 1)
-        auto argument = arguments[0];
+        auto argument = arguments[0].value;
         ASSERT(argument != nullptr);
 
         std::ostringstream oss;
