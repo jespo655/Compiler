@@ -64,6 +64,12 @@ TODO:
 
 
 
+Range:  a..b, där a och b måste evaluata till double
+Om a<b är default step 1
+Om a>b är default step -1      <- nytt
+
+
+
 
 
 
@@ -276,3 +282,48 @@ foo := fn(t : int) -> int { return t; }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+operator overload syntax
+
+
+
+infix_operator int ** int := fn(a:int, b:int)->r:int
+{
+    r=a;
+    for (i in 1..b)
+        r = r * a;
+}
+
+infix_operator bool USER_DEFINED_AND bool := fn(a:bool, b:bool)->bool
+{
+    return (a and b);
+}
+
+prefix_opreator ! int := fn(a:int)->int { return -a; }
+
+suffix_operator int ++ := fn(a:int*) { *a = *a + 1; } // implicit cast från T till T* i funktionsanrop fungerar pga ingen overloading
+
+
+
+
+
+
+
+
+
+kanske:
+
+default values av return parameters som beror på inparametrar
+
+foo := fn(a:int)->r:int=a {};
+foo(2); // returns 2

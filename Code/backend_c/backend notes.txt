@@ -47,5 +47,15 @@ void __add_ints(int lhs, int rhs, int& __rval_1)
 
 code generation of static scope:
 
-declare all variables with default values. All "functions" are declared as function pointers.
-declare all functions with unique function identifier
+
+Iterate through the "identifier" map:
+    declare all variables with default values. All "functions" are declared as function pointers.
+
+Iterate through the "function" map:
+    declare all functions with unique function identifier
+
+Iterate through the "statement" map:
+    assign variables values
+
+Build a main() function
+    As the only statement, call the entry point function
