@@ -96,6 +96,12 @@ som kan användas med gcc, som har detta
 
 
 
+Parser:
+for incremental compilation, each statement has to know about its own list of tokens (unless finalized)
+
+Istället för Token_context, spara pekare in i listan av tokens (eller kanske dessutom? pekare endast för icke-finalized-saker)
+Se till att listan av tokens inte ändrar på sig. Const? Var speciellt noga med att undvika omallokering av std::vector som växer
+
 
 
 
