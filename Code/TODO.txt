@@ -95,6 +95,24 @@ som kan användas med gcc, som har detta
 
 
 
+
+
+
+
+
+function syntax: tillåt void argument
+
+pln void argument: skriv ut ", "
+a:=1; pln(a,, #a); // 1, a=1
+
+
+function syntax tillåt variabelt antal argument
+foo := fn(rest : ..) {} // eller något liknande. Kolla jai demo!
+
+
+
+
+
 potentiellt problem för compile time execution
 spara pekare som values, sen ändra på det som pekarna pekar på
 -> originalet ändras

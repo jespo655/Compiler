@@ -36,4 +36,7 @@
 #include "utilities/error_handler.h"
 #include "utilities/unique_id.h"
 
+#include "parser/token.h"
+#include "parser/parser.h"
+
 // int main() {}

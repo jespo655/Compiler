@@ -2,7 +2,7 @@
 
 #include "../utilities/debug.h"
 #include "../utilities/assert.h"
-#include "../token.h"
+#include "../parser/token.h"
 
 #include <memory>
 #include <iostream>

@@ -1,8 +1,8 @@
-#ifndef error_handler_h
-#define error_handler_h
+#pragma once
 
-#include "../token.h" // Token_context
 #include <string>
+
+struct Token_context;
 
 void log_error(const std::string& msg, const Token_context& context);
 void log_warning(const std::string& msg, const Token_context& context);
@@ -14,4 +14,3 @@ void exit_if_errors();
 
 void set_logging(bool); // if set to false, no errors will be logged. Default is true.
 
-#endif
