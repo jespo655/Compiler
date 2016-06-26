@@ -124,23 +124,39 @@ struct Token
 
 
 
-
+/*
+The Token_queue holds a list of Tokens and iterates through them.
+Normal usage is one of the following:
+* Get the next token with eat_token(), then check if it's valid. If not, log an error.
+* Get the next token with expect(...). This logs an error if the token wasn't what was expected.
+    Check if the token is valid either manually, or through expect_failed()
+* Get a future token with look_ahead(int) to check several tokens in a row. Then use eat_tokens() to eat them all at once.
+*/
 struct Token_queue
 {
     std::vector<Token> tokens; // should always end with an EOF-token
     int index = 0;
+    bool error = false;
 
 
     // Returns the current token.
-    Token current_token() { return tokens[index]; }
+    Token current_token()
+    {
+        error = false;
+        return tokens[index];
+    }
 
 
     // Returns a token n steps ahead.
+    // Expects the index to be inside the bounds of the token vector
     Token look_ahead(int n)
     {
         ASSERT(index+n >= 0);
-        if (index+n >= tokens.size())
+        if (index+n >= tokens.size()) {
+            error = true;
             return tokens[tokens.size()-1];
+        }
+        error = false;
         return tokens[index+n];
     }
 
@@ -152,10 +168,20 @@ struct Token_queue
     // Returns the current token and increments the index.
     Token eat_token()
     {
-        Token t = current_token();
+        Token t = current_token(); // sets error to false
         if (index < tokens.size()-1)
             index++;
         return t;
+    }
+
+
+    // Increments the index by n.
+    void eat_tokens(int n)
+    {
+        ASSERT(n > 0);
+        if (index+n >= tokens.size()) index = tokens.size();
+        else index += n;
+        error = false;
     }
 
 
@@ -163,9 +189,11 @@ struct Token_queue
     // If the token type didn't match the expected type, also logs an error.
     Token expect(const Token_type& expected_type)
     {
-        Token t = eat_token();
-        if (t.type != expected_type)
+        Token t = eat_token(); // sets error to false
+        if (t.type != expected_type) {
             log_error("Expected token of type "+toS(expected_type)+", but found type "+toS(t.type), t.context);
+            error = true;
+        }
         return t;
     }
 
@@ -174,10 +202,16 @@ struct Token_queue
     // If the token didn't match the expectation, also logs an error.
     Token expect(const Token_type& expected_type, std::string expected_token)
     {
-        Token t = eat_token();
-        if (t.type != expected_type || t.token != expected_token)
+        Token t = eat_token(); // sets error to false
+        if (t.type != expected_type || t.token != expected_token) {
             log_error("Expected token \""+expected_token+"\" ("+toS(expected_type)+"), but found \""+t.token+"\" ("+toS(t.type)+")", t.context);
+            error = true;
+        }
         return t;
     }
+
+
+    // Returns true if the last expect call failed.
+    bool expect_failed() { return error; }
 };
 
