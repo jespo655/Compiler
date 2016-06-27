@@ -3,6 +3,7 @@
 #include "../utilities/debug.h"
 #include "../utilities/assert.h"
 #include "../parser/token.h"
+#include "../parser/parser.h" // Parsing_status
 
 #include <memory>
 #include <iostream>
@@ -24,9 +25,20 @@ struct Abstx_node
     // This method should always be implemented in all non-abstract classes.
     virtual std::string toS() const = 0;
 
-    std::shared_ptr<const Token_context> context = nullptr; // points to the beginning of the code
+    // std::shared_ptr<const Token_context> context = nullptr; // points to the beginning of the code // FIXME: replace with pointer to the first token
     std::weak_ptr<Abstx_node> owner; // points to the parent node in the abstx tree
-    bool fully_resolved = false; // should be true when all children are resolved
+
+    Parsing_status status = Parsing_status::NOT_PARSED;
+    Token const * start_token; // Points to the first token in the expression // FIXME: create a Token_iterator that can initialize with a start_token and then be used with nice functions
+
+    bool fully_resolved() const { return status == Parsing_status::FULLY_RESOLVED; }
+    Token_context context() const { ASSERT(start_token != nullptr) return start_token->context; }
+
+    /*
+    try_resolve() should try to resolve the abstx as much as possible and update the parsing_status with the new status.
+    If the status is SEMANTINC_ERROR or TYPE_ERROR, that can be returned immediately, as those errors will not fix themselves.
+    */
+    Parsing_status try_resolve() = 0;
 
     template<typename T> void set_owner(std::shared_ptr<T> p)
     {

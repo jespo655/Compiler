@@ -1,22 +1,25 @@
-#include "abstx/abstx.h"
-#include "abstx/function.h"
-#include "abstx/identifier.h"
-#include "abstx/if.h"
-#include "abstx/numbers.h"
-#include "abstx/literal.h"
-#include "abstx/scope.h"
-#include "abstx/statement.h"
-#include "abstx/type.h"
-#include "abstx/workspace.h"
-#include "utilities/unique_id.h"
-#include "utilities/assert.h"
+// #include "abstx/abstx.h"
+// #include "abstx/function.h"
+// #include "abstx/identifier.h"
+// #include "abstx/if.h"
+// #include "abstx/numbers.h"
+// #include "abstx/literal.h"
+// #include "abstx/scope.h"
+// #include "abstx/statement.h"
+// #include "abstx/type.h"
+// #include "abstx/workspace.h"
+// #include "utilities/unique_id.h"
+// #include "utilities/assert.h"
 
+
+#include <string>
+#include <iostream>
 using namespace std;
 
 
 void ptr_reference_test()
 {
-    Debug_os os{std::cout};
+    // Debug_os os{std::cout};
 
 
     // auto sp1 = shared_ptr<Scope>(new Scope());
@@ -40,11 +43,11 @@ void ptr_reference_test()
 
 void unique_id_test()
 {
-    cout << get_unique_id() << endl;
-    cout << get_unique_id() << endl;
-    cout << get_unique_id() << endl;
-    cout << get_unique_id() << endl;
-    cout << get_unique_id() << endl;
+    // cout << get_unique_id() << endl;
+    // cout << get_unique_id() << endl;
+    // cout << get_unique_id() << endl;
+    // cout << get_unique_id() << endl;
+    // cout << get_unique_id() << endl;
     // cout << "---------------" << endl;
     // test_unique_id();
     // cout << "---------------" << endl;
@@ -56,36 +59,36 @@ void unique_id_test()
 
 void indent_test()
 {
-    Debug_os os{std::cout};
-    Scope s{};
-    s.debug_print(os);
-    os.indent();
-    s.debug_print(os);
-    os.indent();
-    s.debug_print(os);
-    os.indent();
-    s.debug_print(os);
-    os.unindent();
-    s.debug_print(os);
-    os.unindent();
-    s.debug_print(os);
-    cout << "done!" << endl;
+    // Debug_os os{std::cout};
+    // Scope s{};
+    // s.debug_print(os);
+    // os.indent();
+    // s.debug_print(os);
+    // os.indent();
+    // s.debug_print(os);
+    // os.indent();
+    // s.debug_print(os);
+    // os.unindent();
+    // s.debug_print(os);
+    // os.unindent();
+    // s.debug_print(os);
+    // cout << "done!" << endl;
 }
 
 void size_test()
 {
-    cout << "int8_t: " << sizeof(int8_t) << endl;
-    cout << "int16_t: " << sizeof(int16_t) << endl;
-    cout << "int32_t: " << sizeof(int32_t) << endl;
-    cout << "int64_t: " << sizeof(int64_t) << endl;
+    // cout << "int8_t: " << sizeof(int8_t) << endl;
+    // cout << "int16_t: " << sizeof(int16_t) << endl;
+    // cout << "int32_t: " << sizeof(int32_t) << endl;
+    // cout << "int64_t: " << sizeof(int64_t) << endl;
 
-    cout << "uint8_t: " << sizeof(uint8_t) << endl;
-    cout << "uint16_t: " << sizeof(uint16_t) << endl;
-    cout << "uint32_t: " << sizeof(uint32_t) << endl;
-    cout << "uint64_t: " << sizeof(uint64_t) << endl;
+    // cout << "uint8_t: " << sizeof(uint8_t) << endl;
+    // cout << "uint16_t: " << sizeof(uint16_t) << endl;
+    // cout << "uint32_t: " << sizeof(uint32_t) << endl;
+    // cout << "uint64_t: " << sizeof(uint64_t) << endl;
 
-    cout << "float: " << sizeof(float) << endl;
-    cout << "double: " << sizeof(double) << endl;
+    // cout << "float: " << sizeof(float) << endl;
+    // cout << "double: " << sizeof(double) << endl;
 }
 
 
@@ -107,14 +110,41 @@ void float_test()
 
 
 
+
+void wchar_test() {
+    string s = "a¤";
+    char c = s[0];
+    wchar_t wc = s[0];
+
+    cout << " s=" << s << ", len=" << s.size() << endl;
+    cout << " c=" << c << ", size=" << sizeof(char) << endl;
+    cout << "wc=" << wc << ", size=" << sizeof(wchar_t) << endl;
+    wcout << "wc=" << wc << ", size=" << sizeof(wchar_t) << endl;
+
+    string s2;
+    cin >> s2;
+
+    cout << "s2=" << s2 << ", len=" << s2.size() << endl;
+    cout << "equal to s = " << (s==s2) << endl;
+    c = s[0];
+    wc = s[0];
+
+    cout << " c=" << c << ", size=" << sizeof(char) << endl;
+    cout << "wc=" << wc << ", size=" << sizeof(wchar_t) << endl;
+    wcout << "wc=" << wc << ", size=" << sizeof(wchar_t) << endl;
+}
+
+
+
 int main()
 {
-    Debug_os os{std::cout};
+    // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
     // size_test();
     // indent_test();
-    float_test();
+    // float_test();
+    wchar_test();
 }
 
 
@@ -124,16 +154,16 @@ int main()
 
 void size_assertions()
 {
-    ASSERT(sizeof(int8_t) == 1);
-    ASSERT(sizeof(int16_t) == 2);
-    ASSERT(sizeof(int32_t) == 4);
-    ASSERT(sizeof(int64_t) == 8);
+    // ASSERT(sizeof(int8_t) == 1);
+    // ASSERT(sizeof(int16_t) == 2);
+    // ASSERT(sizeof(int32_t) == 4);
+    // ASSERT(sizeof(int64_t) == 8);
 
-    ASSERT(sizeof(uint8_t) == 1);
-    ASSERT(sizeof(uint16_t) == 2);
-    ASSERT(sizeof(uint32_t) == 4);
-    ASSERT(sizeof(uint64_t) == 8);
+    // ASSERT(sizeof(uint8_t) == 1);
+    // ASSERT(sizeof(uint16_t) == 2);
+    // ASSERT(sizeof(uint32_t) == 4);
+    // ASSERT(sizeof(uint64_t) == 8);
 
-    ASSERT(sizeof(float) == 4);
-    ASSERT(sizeof(double) == 8);
+    // ASSERT(sizeof(float) == 4);
+    // ASSERT(sizeof(double) == 8);
 }
