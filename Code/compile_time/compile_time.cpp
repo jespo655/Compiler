@@ -54,7 +54,7 @@ Value evaluate(std::shared_ptr<Literal> lit) {
 }
 */
 /*
-Value evaluate(std::shared_ptr<Evaluated_value> ev) {
+Value evaluate(std::shared_ptr<Value_expression> ev) {
     if (auto lit = std::dynamic_pointer_cast<Literal>(ev)) return evaluate(lit);
     // fixme: add evaluate() for all other kinds of values
 
@@ -171,7 +171,7 @@ std::vector<Value> evaluate(std::shared_ptr<Literal_seq> lit) {
 *       Compile time execution functions
 *************************************************/
 
-void set_entry_point(std::shared_ptr<Function> entry_point, std::vector<std::shared_ptr<Evaluated_value>> arguments) {
+void set_entry_point(std::shared_ptr<Function> entry_point, std::vector<std::shared_ptr<Value_expression>> arguments) {
     ASSERT(entry_point->fully_resolved);
     // FIXME: type check entry_point and arguments
     ASSERT(compiled_workspace->entry_point == nullptr); // FIXME: log_error instead
@@ -201,7 +201,7 @@ std::shared_ptr<Function> get_compile_time_function(std::string id)
     return nullptr;
 }
 
-void execute_compile_time_function(std::string id, std::vector<std::shared_ptr<Evaluated_value>> arguments)
+void execute_compile_time_function(std::string id, std::vector<std::shared_ptr<Value_expression>> arguments)
 {
 
 }
@@ -215,7 +215,7 @@ void execute_compile_time_function(std::string id, std::vector<std::shared_ptr<E
 
 
 #include "../abstx/cast.h"
-#include "../abstx/evaluated_variable.h"
+#include "../abstx/variable_expression.h"
 #include "../abstx/function.h"
 
 Value evaluate(std::shared_ptr<Cast> cast) {
@@ -226,7 +226,7 @@ Value evaluate(std::shared_ptr<Cast> cast) {
 }
 
 
-Value evaluate(std::shared_ptr<Evaluated_variable> ev) {
+Value evaluate(std::shared_ptr<Variable_expression> ev) {
     std::cout << "Ev variable" << std::endl;
 }
 
@@ -238,7 +238,7 @@ Value evaluate(std::shared_ptr<Function> fn) {
 
 /*
 Cast
-Evaluated_variable
+Variable_expression
 Function
 Function_call // blir en lista
 Literal

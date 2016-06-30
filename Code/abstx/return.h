@@ -1,7 +1,7 @@
 #pragma once
 
 #include "statement.h"
-#include "evaluated_value.h"
+#include "value_expression.h"
 
 #include <vector>
 
@@ -16,7 +16,7 @@ b=2; return 1;      // the return count only has to include all non-named return
 
 struct Return_statement : Statement {
 
-    std::vector<std::shared_ptr<Evaluated_value>> return_parameters;
+    std::vector<std::shared_ptr<Value_expression>> return_parameters;
 
     bool allow_in_static_scope() const override { return false; }
     bool allow_in_dynamic_scope() const override { return true; }

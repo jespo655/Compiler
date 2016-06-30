@@ -1,7 +1,7 @@
 #pragma once
 
 #include "statement.h"
-#include "evaluated_value.h"
+#include "value_expression.h"
 #include "scope.h"
 
 /*
@@ -10,7 +10,7 @@ while (b) {}
 
 struct While_statement : Statement {
 
-    std::shared_ptr<Evaluated_value> condition;
+    std::shared_ptr<Value_expression> condition;
     std::shared_ptr<Scope> scope;
 
     bool allow_in_static_scope() const override { return false; }

@@ -2,6 +2,8 @@
 
 #include "statement.h"
 #include "identifier.h"
+#include <variable_expression.h>
+#include <value_expression.h>
 #include <sstream>
 #include <vector>
 
@@ -14,8 +16,8 @@ a, b = 1, 2;    // more than one variable can be assigned at the same time. The 
 
 struct Assignment_statement : Statement {
 
-    std::vector<std::shared_ptr<Evaluated_variable>> lhs;
-    std::vector<std::shared_ptr<Evaluated_value>> rhs;
+    std::vector<std::shared_ptr<Variable_expression>> lhs;
+    std::vector<std::shared_ptr<Value_expression>> rhs;
 
     bool allow_in_static_scope() const override { return false; }
     bool allow_in_dynamic_scope() const override { return true; }

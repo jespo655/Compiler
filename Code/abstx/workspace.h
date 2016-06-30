@@ -16,7 +16,7 @@ struct Workspace : Scope {
 
     // Function + arguments creates a function call that defines the entry point
     std::shared_ptr<Function> entry_point;
-    std::vector<std::shared_ptr<Evaluated_value>> arguments;
+    std::vector<std::shared_ptr<Value_expression>> arguments;
 
     // c include paths are inserted at the top of the file
     std::vector<std::string> c_includes;

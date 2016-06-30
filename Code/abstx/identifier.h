@@ -1,6 +1,6 @@
 #pragma once
 
-#include "evaluated_variable.h"
+#include "variable_expression.h"
 
 #include "literal.h"
 #include "type.h"
@@ -10,7 +10,7 @@
 #include <sstream>
 
 
-struct Identifier : Evaluated_variable {
+struct Identifier : Variable_expression {
     std::shared_ptr<Type> type;
     std::string name = "";
     std::shared_ptr<Literal> default_value;

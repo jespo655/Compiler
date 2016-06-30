@@ -1,6 +1,7 @@
 #pragma once
 
 #include "function.h"
+#include "value_expression.h"
 #include <sstream>
 #include <vector>
 
@@ -12,7 +13,7 @@ The function_identifier has to be either a single word (identifier), or a symbol
 
 
 // This class is not meant to be used as a value, just as a way to allow symbols as Operator::function_identifier
-struct Operator_symbol : Evaluated_value {
+struct Operator_symbol : Value_expression {
 
     std::string symbol;
 

@@ -73,11 +73,47 @@ Om a>b är default step -1      <- nytt
 
 
 
+Pointer assignment:
+
+
+tp : T*;
+tp2 : T*;
+t : T;
+
+alt2) tp = t; // implicit address_of(t) - tp pekar nu på det t som ligger på stacken. tp blir T* (jag gillar detta bättre)
+    skulle även fungera i fns: skicka in t till en fn som tar T*, används som referens
+tp2 = tp; // pointer assign - tp2 pekar nu på samma sak som tp (tp är T*!, tp2 är T*)
+tp3 : T*! = tp; // pointer assign till ägande pekare -> tar över ägande från tp (tp3 är T*!, tp blir T*)
+
+för att allokera på heapen: använd alloc($T)->T*!
+
+
+
+inte:
+alt1) tp = t; // implicit alloc(t) - plats allokeras på heapen och t memcpyas dit. tp blir T*!
+
+
+
+
+
 
 
 #run kör funktionen och returnerar ett värde
 #run är en subklass till Function_call
 evaluate returnerar en std::vector<Value> som sen byggs in som literaler i abstx tree (#run-delen tas bort)
+
+
+
+
+pln: egen abstx_node
+(#x) tolkas som preprocessor command och görs om till ("x=", x)
+# kopierar strängen fram till nästa ',' eller ')'
+(;) byts också ut mot (", ",)
+Ex:
+    pln(#2; #s.a);
+    pln("2=", 2, ", ", "s.a=", s.a);
+
+
 
 
 

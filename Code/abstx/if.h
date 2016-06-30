@@ -1,7 +1,7 @@
 #pragma once
 
 #include "statement.h"
-#include "evaluated_value.h"
+#include "value_expression.h"
 #include "scope.h"
 
 #include <vector>
@@ -17,7 +17,7 @@ then {}
 
 struct Conditional_scope : Abstx_node {
 
-    std::shared_ptr<Evaluated_value> condition;
+    std::shared_ptr<Value_expression> condition;
     std::shared_ptr<Scope> scope;
 
     std::string toS() const override { return "if(){}"; }

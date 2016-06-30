@@ -1,7 +1,7 @@
 #pragma once
 
 #include "type.h"
-#include "evaluated_value.h"
+#include "value_expression.h"
 #include "statement.h"
 
 #include "identifier.h"         // ip->toS();
@@ -79,7 +79,7 @@ private:
 
 
 
-struct Function : Evaluated_value {
+struct Function : Value_expression {
 
     std::vector<std::shared_ptr<Identifier>> in_parameters;
     std::vector<std::shared_ptr<Identifier>> out_parameters;
@@ -171,19 +171,19 @@ foos[2](); // anonymous call from an lookup from an array of functions
 */
 struct Named_argument {
     std::string name = ""; // should be empty if not named
-    std::shared_ptr<Evaluated_value> value;
+    std::shared_ptr<Value_expression> value;
     bool is_named() { return !name.empty(); }
     Named_argument() {}
-    Named_argument(std::shared_ptr<Evaluated_value> value, std::string name="") : value{value}, name{name} {}
-    Named_argument(std::string name, std::shared_ptr<Evaluated_value> value) : value{value}, name{name} {}
+    Named_argument(std::shared_ptr<Value_expression> value, std::string name="") : value{value}, name{name} {}
+    Named_argument(std::string name, std::shared_ptr<Value_expression> value) : value{value}, name{name} {}
 };
 
 
-struct Function_call : Evaluated_value {
+struct Function_call : Value_expression {
 
-    std::shared_ptr<Evaluated_value> function_identifier;
+    std::shared_ptr<Value_expression> function_identifier;
     std::vector<Named_argument> arguments; // the string should be the name of a in parameter in the identity function
-    // std::vector<std::shared_ptr<Evaluated_value>> arguments; // the string should be the name of a in parameter in the identity function
+    // std::vector<std::shared_ptr<Value_expression>> arguments; // the string should be the name of a in parameter in the identity function
 
     virtual std::shared_ptr<Function> get_identity()
     {
@@ -204,7 +204,7 @@ struct Function_call : Evaluated_value {
     // with types - that string will be used for function lookup
     virtual std::string get_mangled_identifier() const
     {
-        ASSERT(false, "FIXME: How do you get the mangled identifier from any kind of Evaluated_value?");
+        ASSERT(false, "FIXME: How do you get the mangled identifier from any kind of Value_expression?");
         return "";
     }
 

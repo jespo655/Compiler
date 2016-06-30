@@ -1,6 +1,6 @@
 #pragma once
 
-#include "evaluated_variable.h"
+#include "variable_expression.h"
 #include "struct.h"
 #include "scope.h"
 
@@ -12,9 +12,9 @@ x.a; // named getter, getter_id is an identifier
 { a := 2; }.a; // direct access from a scope literal
 xs[2].a; // anonymous call from an lookup from an array of functions
 */
-struct Getter : Evaluated_variable {
+struct Getter : Variable_expression {
 
-    std::shared_ptr<Evaluated_value> getter_identifier;
+    std::shared_ptr<Value_expression> getter_identifier;
     std::shared_ptr<Identifier> data_identifier;
 
     std::shared_ptr<Type> get_type() override

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "evaluated_value.h"
+#include "value_expression.h"
 #include "../compile_time/value.h"
 
 /*
@@ -10,7 +10,7 @@ For compile time execution:
 All subclasses should implement a get_value() function
 which returns a value of the corresponding type
 */
-struct Literal : Evaluated_value {
+struct Literal : Value_expression {
     Value value;
     Literal() {}
     Literal(const Value& value) : value{value} {}

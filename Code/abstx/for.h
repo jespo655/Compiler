@@ -1,7 +1,7 @@
 #pragma once
 
 #include "statement.h"
-#include "evaluated_value.h"
+#include "value_expression.h"
 #include "scope.h"
 
 /*
@@ -14,7 +14,7 @@ for (n in range, reverse) {}
 struct For_statement : Statement {
 
     std::string index_name;
-    std::shared_ptr<Evaluated_value> range;
+    std::shared_ptr<Value_expression> range;
     bool reverse = false;
     double step;
 

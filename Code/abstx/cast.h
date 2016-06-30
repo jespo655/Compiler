@@ -1,6 +1,6 @@
 #pragma once
 
-#include "evaluated_value.h"
+#include "value_expression.h"
 #include "struct.h"
 #include "scope.h"
 
@@ -12,9 +12,9 @@ It is equivalent to a call to the cast function
 TODO: find exact syntax for how to user define casts
 void _cast_int_float(int v, *float r) { *r = v; }
 */
-struct Cast : Evaluated_value {
+struct Cast : Value_expression {
 
-    std::shared_ptr<Evaluated_value> value_identifier;
+    std::shared_ptr<Value_expression> value_identifier;
     std::shared_ptr<Identifier> type_identifier;
 
     std::shared_ptr<Type> get_type() override

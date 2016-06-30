@@ -1,7 +1,7 @@
 #pragma once
 
 #include "type.h"
-#include "evaluated_variable.h"
+#include "variable_expression.h"
 
 #include "../utilities/assert.h"
 
@@ -87,10 +87,10 @@ struct Type_seq : Type
 A sequence lookup grabs a data member from a sequence.
 It will return exactly one value.
 */
-struct Sequence_lookup : Evaluated_variable {
+struct Sequence_lookup : Variable_expression {
 
-    std::shared_ptr<Evaluated_value> sequence_identifier;
-    std::shared_ptr<Evaluated_value> index;
+    std::shared_ptr<Value_expression> sequence_identifier;
+    std::shared_ptr<Value_expression> index;
 
     std::shared_ptr<Type> get_type() override
     {

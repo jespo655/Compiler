@@ -2,6 +2,7 @@
 
 #include "statement.h"
 #include "identifier.h"
+#include <variable_expression.h>
 #include <sstream>
 #include <vector>
 
@@ -15,7 +16,7 @@ a := b;         // infers type from the variable b. The value of b overwrites th
 struct Declaration_statement : Statement {
 
     std::vector<std::shared_ptr<Identifier>> identifiers;
-    std::vector<std::shared_ptr<Evaluated_value>> rhs;
+    std::vector<std::shared_ptr<Variable_expression>> rhs;
 
     bool allow_in_static_scope() const override { return true; }
     bool allow_in_dynamic_scope() const override { return true; }
