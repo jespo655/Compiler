@@ -70,7 +70,7 @@ struct Local_scope {
     std::shared_ptr<Scope> parent_scope;
 /*
     Local_scope(std::shared_ptr<Function_call> fc) {
-        ASSERT(fc->fully_resolved); // this allows us to ignore expensive assertions - we know that the function call is well formed
+        ASSERT(fc->status == Parsing_status::FULLY_RESOLVED); // this allows us to ignore expensive assertions - we know that the function call is well formed
 
         std::shared_ptr<Function> identity = fc->get_identity();
         parent_scope = identity->parent_scope();
@@ -172,7 +172,7 @@ std::vector<Value> evaluate(std::shared_ptr<Literal_seq> lit) {
 *************************************************/
 
 void set_entry_point(std::shared_ptr<Function> entry_point, std::vector<std::shared_ptr<Value_expression>> arguments) {
-    ASSERT(entry_point->fully_resolved);
+    ASSERT(entry_point->status == Parsing_status::FULLY_RESOLVED);
     // FIXME: type check entry_point and arguments
     ASSERT(compiled_workspace->entry_point == nullptr); // FIXME: log_error instead
     compiled_workspace->entry_point = entry_point;

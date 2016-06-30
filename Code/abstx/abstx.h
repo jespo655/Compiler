@@ -38,7 +38,7 @@ struct Abstx_node
     try_resolve() should try to resolve the abstx as much as possible and update the parsing_status with the new status.
     If the status is SEMANTINC_ERROR or TYPE_ERROR, that can be returned immediately, as those errors will not fix themselves.
     */
-    Parsing_status try_resolve() = 0;
+    Parsing_status try_resolve() { return status; };
 
     template<typename T> void set_owner(std::shared_ptr<T> p)
     {

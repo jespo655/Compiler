@@ -26,7 +26,7 @@ struct Cast : Value_expression {
         auto type = scope->get_type(type_identifier->name);
 
         // FIXME: ensure that there is a valid conversion from value_identifier->get_type() to type
-        if (type != nullptr) fully_resolved = true;
+        if (type != nullptr) status = Parsing_status::FULLY_RESOLVED;
         type_identifier->type = type;
         return type;
     }

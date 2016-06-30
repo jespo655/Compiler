@@ -17,7 +17,7 @@ struct Type : Value_expression
     virtual int byte_size() const = 0; // should return the size of the type in bytes.
 
     virtual bool operator==(const Type& o) const {
-        return toS() == o.toS() && *context == *o.context;
+        return toS() == o.toS() && context() == o.context();
     };
     virtual bool operator!=(const Type& o) const { return !(*this==o); }
 };

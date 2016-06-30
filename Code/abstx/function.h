@@ -195,7 +195,7 @@ struct Function_call : Value_expression {
             auto scope = parent_scope();
             ASSERT(scope != nullptr);
             identity = scope->get_function(get_mangled_identifier());
-            fully_resolved = true;
+            status = Parsing_status::FULLY_RESOLVED;
         }
         return identity;
     }

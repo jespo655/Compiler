@@ -37,7 +37,7 @@ struct Getter : Variable_expression {
         }
         if (type != nullptr) {
             data_identifier->type = type;
-            fully_resolved = true;
+            status = Parsing_status::FULLY_RESOLVED;
             return type;
         }
         return nullptr;
