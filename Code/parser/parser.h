@@ -18,9 +18,24 @@ enum struct Parsing_status
     TYPE_ERROR,             // some types doesn't match
     CYCLIC_DEPENDENCY,      // there was a cyclic dependency
     COMPILE_TIME_ERROR,     // there was an error in a #run (that was not one of the above error types)
+    FATAL_ERROR,            // there was an error so bad that we couldn't recover. Continued compilation would give undefined behaviour.
 
     // TODO: Add more error types as they pop up
+
 };
+
+static public is_error(Parsing_status p) {
+    if (p == Parsing_status::NOT_PARSED
+        || p == Parsing_status::PARTIALLY_PARSED
+        || p == Parsing_status::FULLY_RESOLVED
+        || p == Parsing_status::DEPENDENCIES_NEEDED)
+        return false;
+    return true;
+}
+
+static public is_fatal(Parsing_status p) {
+    return p == Parsing_status::FATAL_ERROR;
+}
 
 
 
@@ -136,7 +151,38 @@ Problem:
 
 for incremental compilation, each statement has to know about its own list of tokens (unless finalized)
 
+    Each abstx has a start token pointer
+    To iterate through tokens, construct a token iterator with this pointer
+
+    The list of tokens end with eof token
+    The iterator cannot go past this token
+
+    Make sure that the list of tokens doesn't deallocate or reallocate
+        it cannot change size
+        look out for possible reallocations / heap cleanup (does that even happen in c++?)
+*/
 
 
+
+/*
+
+Partial parsing paren mismatch recovery:
+
+Gå tillbaka till början av statement
+Försök fully resolva statement
+Detta kan ge bra felmeddelanden med sammanhang:
+
+ex:
+    int a = ); // "unexpected ')' in rhs of assignment"
+
+Om det går att städa upp, gör det och skicka tillbaka SYNTAX_ERROR. Om inte, returnera FATAL_ERROR.
+
+
+
+
+i c++:
+
+    {} matchar alltid, oberoende av potentiella fel mellan
+    vid en extra ')': gå till nästa ';' eller '}', men fortsätt matcha scopes {}
 
 */

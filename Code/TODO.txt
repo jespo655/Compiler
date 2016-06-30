@@ -387,3 +387,14 @@ default values av return parameters som beror på inparametrar
 
 foo := fn(a:int)->r:int=a {};
 foo(2); // returns 2
+
+
+
+
+
+
+
+
+
+
+
