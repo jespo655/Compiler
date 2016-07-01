@@ -153,6 +153,8 @@ struct Compile_time_function : Function
 };
 
 
+// used as function literal
+// TODO: determine exact syntax
 struct C_linked_function : Function
 {
     std::string c_name;
@@ -184,6 +186,8 @@ struct Function_call : Value_expression {
     std::shared_ptr<Value_expression> function_identifier;
     std::vector<Named_argument> arguments; // the string should be the name of a in parameter in the identity function
     // std::vector<std::shared_ptr<Value_expression>> arguments; // the string should be the name of a in parameter in the identity function
+
+    bool compile_time = false; // true if prefixed with #run
 
     virtual std::shared_ptr<Function> get_identity()
     {
@@ -227,6 +231,8 @@ protected:
 struct Function_call_statement : Statement
 {
     std::shared_ptr<Function_call> function_call;
+
+    bool compile_time() { ASSERT(function_call != nullptr); return function_call->compile_time; }
 
     std::string toS() const override {
         ASSERT(function_call != nullptr);

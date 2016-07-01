@@ -7,7 +7,7 @@
 // #include "abstx/scope.h"
 // #include "abstx/statement.h"
 // #include "abstx/type.h"
-// #include "abstx/workspace.h"
+// #include "compile_time/workspace.h"
 // #include "utilities/unique_id.h"
 // #include "utilities/assert.h"
 

@@ -1,41 +1,99 @@
 #pragma once
 
-// #include "../abstx/abstx.h"
-// #include "../abstx/workspace.h"
-// #include "token.h"
+#include "../abstx/scope.h"
+#include "../abstx/function.h"
+#include "../abstx/using.h"
+#include "token.h"
 
+#include <memory>
+#include <string>
 
-enum struct Parsing_status
+struct Parsed_scope : Scope
 {
-    NOT_PARSED,             // not parsed at all.
-    PARTIALLY_PARSED,       // parsed to the point that it's apparent what type of expression it is.
-    FULLY_RESOLVED,         // the expression and all sub-expressions are fully parsed without errors.
-
-    DEPENDENCIES_NEEDED,    // the expression cannot yet be fully parsed because it's waiting for other things to parse first
-
-    // Error codes: the expression cannot be fully parsed because:
-    SYNTAX_ERROR,           // there was a syntax error
-    TYPE_ERROR,             // some types doesn't match
-    CYCLIC_DEPENDENCY,      // there was a cyclic dependency
-    COMPILE_TIME_ERROR,     // there was an error in a #run (that was not one of the above error types)
-    FATAL_ERROR,            // there was an error so bad that we couldn't recover. Continued compilation would give undefined behaviour.
-
-    // TODO: Add more error types as they pop up
-
+    std::vector<std::shared_ptr<Function_call_statement>> run_statements;
+    std::vector<std::shared_ptr<Using_statement>> using_statements;
+    std::vector<std::shared_ptr<Anonymous_scope>> anonymous_scopes;
 };
 
-static public is_error(Parsing_status p) {
-    if (p == Parsing_status::NOT_PARSED
-        || p == Parsing_status::PARTIALLY_PARSED
-        || p == Parsing_status::FULLY_RESOLVED
-        || p == Parsing_status::DEPENDENCIES_NEEDED)
-        return false;
-    return true;
-}
+struct Global_scope : Parsed_scope
+{
+    std::string file_name;
+    std::vector<Token> tokens; // should be treated as const
+};
 
-static public is_fatal(Parsing_status p) {
-    return p == Parsing_status::FATAL_ERROR;
-}
+std::shared_ptr<Global_scope> parse_file(const std::string& file);
+std::shared_ptr<Global_scope> parse_string(const std::string& string);
+
+
+
+
+/**
+förarbete:
+    Global_scope skapas och läggs in i en map file_name -> global_scope
+    UTF8 character stream skaps av input (läses från fil eller string)
+    En lista av tokens skapas och sparas i global_scope
+
+pass 1) listan av tokens gås igenom, en lista av statement ställs upp
+
+    identifiers läggs till i scope
+        varje identifier måste veta i vilket statement den blev deklarerad (owner?)
+    en lista på using statements sparas
+    en lista på #run statements sparas
+    en lista på under-scopes sparas
+
+    parentes mismatch -> FATAL_ERROR, avbryter kompilering
+    andra errors -> tolka som "undefined statement" som får resolvas senare, gå till nästa ';' i samma paren-nivå som början av statement
+
+    slut av pass 1:
+    markera som partially parsed
+    importera saker med using (partially parsa dem först)
+    partially parsa alla under-scopes
+
+pass 2) #runs gås igenom
+    varje statement fully resolvas först, sen körs
+    en funktion är fully resolvad om alla identifiers i den är fully resolvade
+        och om alla funktioner som anropas är åtminstone partially resolved
+
+pass 3) output
+    funktioner gås igenom från entry point
+    följ funktionsanrop från entry point och ställ upp en lista på alla saker som används
+    alla funktioner och datatyper som används fördeklareras
+    sen skriv ut definitioner av alla datatyper
+    sen skriv ut alla funktioner som används
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

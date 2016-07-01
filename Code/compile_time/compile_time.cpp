@@ -3,7 +3,7 @@
 #include "value.h"
 #include <iostream>
 
-#include "../abstx/workspace.h"
+#include "workspace.h"
 
 #include "../abstx/numbers.h"
 #include "../abstx/str.h"

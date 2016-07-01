@@ -1,7 +1,7 @@
 #pragma once
 
-#include "scope.h"
-#include "../compile_time/compile_time.h"
+#include "../abstx/scope.h"
+#include "compile_time.h"
 
 
 /*
@@ -34,8 +34,6 @@ struct Workspace : Scope {
     {
         return AST_root;
     }
-
-
 
 
 

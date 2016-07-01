@@ -73,18 +73,21 @@ struct Scope : Literal {
         auto p = identifiers[id];
         if (p != nullptr) return p; // local things goes first
 
-        while (recursive && p == nullptr) {
-            auto parent = parent_scope();
-            if (parent == nullptr) break;
-            p = parent->get_identifier(id, recursive);
-        }
         if (recursive) {
+            // check parent scope
+            while (p == nullptr) {
+                auto parent = parent_scope();
+                if (parent == nullptr) break;
+                p = parent->get_identifier(id, recursive);
+            }
+
+            // check pulled in scopes
             for (auto scope : pulled_in_scopes) {
                 auto p2 = scope->get_identifier(id, false);
                 if (p == nullptr) p = p2;
                 else {
                     // FIXME: log error identifier clash
-                    // first found here: p->context
+                    // first found here: p->context()
                 }
             }
         }
@@ -94,10 +97,25 @@ struct Scope : Literal {
     virtual std::shared_ptr<Type> get_type(const std::string& id, bool recursive=true)
     {
         auto p = types[id];
-        while (recursive && p == nullptr) {
-            auto parent = parent_scope();
-            if (parent == nullptr) return nullptr;
-            p = parent->get_type(id, recursive);
+        if (p != nullptr) return p; // local things goes first
+
+        if (recursive) {
+            // check parent scope
+            while (p == nullptr) {
+                auto parent = parent_scope();
+                if (parent == nullptr) break;
+                p = parent->get_type(id, recursive);
+            }
+
+            // check pulled in scopes
+            for (auto scope : pulled_in_scopes) {
+                auto p2 = scope->get_type(id, false);
+                if (p == nullptr) p = p2;
+                else {
+                    // FIXME: log error identifier clash
+                    // first found here: p->context()
+                }
+            }
         }
         return p;
     }
@@ -105,10 +123,25 @@ struct Scope : Literal {
     virtual std::shared_ptr<Function> get_function(const std::string& id, bool recursive=true)
     {
         auto p = functions[id];
-        while (recursive && p == nullptr) {
-            auto parent = parent_scope();
-            if (parent == nullptr) return nullptr;
-            p = parent->get_function(id, recursive);
+        if (p != nullptr) return p; // local things goes first
+
+        if (recursive) {
+            // check parent scope
+            while (p == nullptr) {
+                auto parent = parent_scope();
+                if (parent == nullptr) break;
+                p = parent->get_function(id, recursive);
+            }
+
+            // check pulled in scopes
+            for (auto scope : pulled_in_scopes) {
+                auto p2 = scope->get_function(id, false);
+                if (p == nullptr) p = p2;
+                else {
+                    // FIXME: log error identifier clash
+                    // first found here: p->context()
+                }
+            }
         }
         return p;
     }
