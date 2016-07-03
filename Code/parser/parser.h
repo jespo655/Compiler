@@ -22,10 +22,6 @@ struct Global_scope : Parsed_scope
     const std::vector<Token> tokens; // should be treated as const
 
     Global_scope(const std::vector<Token>& tokens) : tokens{tokens} {}
-
-    // parse_partially goes through the list of tokens and parses them partially.
-    // If called when the status is anything other NOT_PARSED, this function does nothing.
-    virtual Parsing_status parse_partially();
 };
 
 std::shared_ptr<Global_scope> parse_file(const std::string& file, const std::string& name = ""); // default name is the file name
@@ -90,7 +86,17 @@ struct Token_iterator
     int current_index = 0;
     bool error = false;
 
-    Token_iterator(const std::vector<Token>& tokens, int current_index=0) : tokens{tokens}, current_index{current_index} {}
+    Token_iterator(const std::vector<Token>& tokens, int current_index=0) : tokens{tokens}, current_index{current_index}
+    {
+        ASSERT(!tokens.empty()); // not empty
+        ASSERT(tokens[tokens.size()-1].is_eof()); // last token is eof token
+    }
+
+    // iterator interface: prefix* and prefix++ operators
+    const Token& operator*() { return current_token(); }
+    const Token_iterator& operator++() { eat_token(); return *this; }
+    Token const * operator->() { return &current_token(); }
+    const Token& operator[](int index) { return look_ahead(index-current_index); }
 
 
     // Returns the current token.
@@ -168,7 +174,7 @@ struct Token_iterator
     bool expect_failed() { return error; }
 
 
-    // If error, returns -1
+    // If error, logs an appropriate error and returns -1
     int find_matching_token(int index, const std::string& expected_closing_token, const std::string& range_name, const std::string& error_string, bool forward=true)
     {
         const Token& start_token = look_ahead(index-current_index);
@@ -177,17 +183,21 @@ struct Token_iterator
         int step = forward ? 1 : -1;
 
         while(true) {
-            index += step;
             const Token& t = look_ahead(index-current_index);
 
             if (t.is_eof()) {
                 log_error("Missing \""+expected_closing_token+"\" at end of file",t.context);
-                add_note("In "+range_name+" that started here: ",start_token.context);
+                if (forward) add_note("In "+range_name+" that started here: ",start_token.context);
+                else add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                error = true;
                 return -1;
             }
             if (t.type == Token_type::SYMBOL) {
 
-                if (t.token == expected_closing_token) return index; // done!
+                if (t.token == expected_closing_token) {
+                    error = false;
+                    return index; // done!
+                }
 
                 if (forward) {
                     if      (t.token == "(") index = find_matching_paren(index);
@@ -197,6 +207,7 @@ struct Token_iterator
                     else if (t.token == ")" || t.token == "]" || t.token == "}") {
                         log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
                         add_note("In "+range_name+" that started here: ",start_token.context);
+                        error = true;
                         return -1;
                     }
                 } else {
@@ -207,41 +218,47 @@ struct Token_iterator
                     else if (t.token == "(" || t.token == "[" || t.token == "{") {
                         log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
                         add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                        error = true;
                         return -1;
                     }
                 }
 
                 if (index == -1) return -1;
             }
+            index += step;
         }
     }
 
-    int find_matching_paren(int index)
+    int find_matching_paren(int index=-1)
     {
+        if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
         ASSERT(tokens[index].token == "(" || tokens[index].token == ")");
-        if (tokens[index].token == ")") return find_matching_token(index,"(","paren","Mismatched paren", false); // search backwards
-        return find_matching_token(index,")","paren","Mismatched paren");
+        if (tokens[index].token == ")") return find_matching_token(index-1,"(","paren","Mismatched paren", false); // search backwards
+        return find_matching_token(index+1,")","paren","Mismatched paren");
     }
 
-    int find_matching_bracket(int index)
+    int find_matching_bracket(int index=-1)
     {
+        if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
         ASSERT(tokens[index].token == "[" || tokens[index].token == "]");
-        if (tokens[index].token == "]") return find_matching_token(index,"[","bracket","Mismatched bracket", false); // search backwards
-        return find_matching_token(index,"]","bracket","Mismatched bracket");
+        if (tokens[index].token == "]") return find_matching_token(index-1,"[","bracket","Mismatched bracket", false); // search backwards
+        return find_matching_token(index+1,"]","bracket","Mismatched bracket");
     }
 
-    int find_matching_brace(int index)
+    int find_matching_brace(int index=-1)
     {
+        if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
         ASSERT(tokens[index].token == "{" || tokens[index].token == "}");
-        if (tokens[index].token == "}") return find_matching_token(index,"{","brace","Mismatched brace", false); // search backwards
-        return find_matching_token(index,"}","brace","Mismatched brace");
+        if (tokens[index].token == "}") return find_matching_token(index-1,"{","brace","Mismatched brace", false); // search backwards
+        return find_matching_token(index+1,"}","brace","Mismatched brace");
     }
 
-    int find_matching_semicolon(int index)
+    int find_matching_semicolon(int index=-1)
     {
+        if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size());
         return find_matching_token(index, ";", "statement","Missing ';' at the end of statement");
     }

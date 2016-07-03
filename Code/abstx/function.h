@@ -146,7 +146,8 @@ private:
 
 
 
-
+// This is the type of function returned when looking for a function that is only reachable
+// at compile time. To call it, switch on the identifier and call the correct c++-function.
 struct Compile_time_function : Function
 {
     std::string identifier; // Maybe replace this with an enum?
@@ -183,11 +184,12 @@ struct Named_argument {
 
 struct Function_call : Value_expression {
 
+    bool compile_time = false; // true if prefixed with #run
     std::shared_ptr<Value_expression> function_identifier;
     std::vector<Named_argument> arguments; // the string should be the name of a in parameter in the identity function
+                                            // FIXME: this should be a map @typechecking
     // std::vector<std::shared_ptr<Value_expression>> arguments; // the string should be the name of a in parameter in the identity function
 
-    bool compile_time = false; // true if prefixed with #run
 
     virtual std::shared_ptr<Function> get_identity()
     {
@@ -232,7 +234,11 @@ struct Function_call_statement : Statement
 {
     std::shared_ptr<Function_call> function_call;
 
-    bool compile_time() { ASSERT(function_call != nullptr); return function_call->compile_time; }
+    // only allow compile time functions in static scopes
+    bool allow_in_static_scope() const override { return compile_time(); }
+    bool allow_in_dynamic_scope() const override { return true; }
+
+    bool compile_time() const { ASSERT(function_call != nullptr); return function_call->compile_time; }
 
     std::string toS() const override {
         ASSERT(function_call != nullptr);

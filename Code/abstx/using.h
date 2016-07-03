@@ -31,7 +31,7 @@ struct Using_statement : Statement {
     bool allow_in_static_scope() const override { return true; }
     bool allow_in_dynamic_scope() const override { return true; }
 
-    // std::string toS() const override {}
+    std::string toS() const override { return "using statement"; }
 };
 
 

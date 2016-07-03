@@ -34,10 +34,6 @@ struct Abstx_node
     // check if the syntax node is fully resolved
     virtual bool fully_resolved() const { return status == Parsing_status::FULLY_RESOLVED; }
 
-    // try_resolve() should try to resolve the abstx as much as possible and update the parsing_status with the new status.
-    // In some cases where the status is not expected to change (for example with syntax errors), the status can be returned immediately.
-    virtual Parsing_status try_resolve() { return status; };
-
     // Set owner in a type safe way
     template<typename T> void set_owner(std::shared_ptr<T> p)
     {
@@ -54,3 +50,17 @@ struct Abstx_node
 
 
 
+/*
+    // Should not use:
+    // The problem is that the object doesn't know about its own shared_ptr, so it can't set ownership of its children correctly
+    // For these functions to work, they would have to take a shared_ptr self in-parameter (which is unsafe) or hold a weak_ptr
+    // to itself (which feels awkward). Instead, put this functionality somewhere in the parser.
+
+    // try_resolve() should try to resolve the abstx as much as possible and update the parsing_status with the new status.
+    // In some cases where the status is not expected to change (for example with syntax errors), the status can be returned immediately.
+    virtual Parsing_status try_resolve(const std::vector<Token>& tokens) { return status; } // FIXME: make abstract
+
+    // parse_partially goes through the list of tokens and parses them partially.
+    // If called when the status is anything other NOT_PARSED, this function does nothing.
+    virtual Parsing_status parse_partially(const std::vector<Token>& tokens) { return status; } // FIXME: make abstract
+*/
