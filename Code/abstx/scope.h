@@ -45,7 +45,7 @@ struct Scope : Literal {
     std::map<std::string, std::shared_ptr<Function>> functions;
     std::map<std::string, std::shared_ptr<Type>> types; // if looking up the type name in the 'identifier'-list, they would all have the type 'Type_type'. Their values is stored in this list.
 
-    std::vector<std::shared_ptr<Scope>> pulled_in_scopes; // using statements pulls in scopes here
+    std::map<std::string, std::shared_ptr<Scope>> pulled_in_scopes; // using statements pulls in scopes here. The key is used to not pull in the same scope twice.
 
     Scope() {}
     Scope(bool dynamic) : dynamic{dynamic} {}
@@ -82,7 +82,8 @@ struct Scope : Literal {
             }
 
             // check pulled in scopes
-            for (auto scope : pulled_in_scopes) {
+            for (auto scope_pair : pulled_in_scopes) {
+                auto scope = scope_pair.second;
                 auto p2 = scope->get_identifier(id, false);
                 if (p == nullptr) p = p2;
                 else {
@@ -108,7 +109,8 @@ struct Scope : Literal {
             }
 
             // check pulled in scopes
-            for (auto scope : pulled_in_scopes) {
+            for (auto scope_pair : pulled_in_scopes) {
+                auto scope = scope_pair.second;
                 auto p2 = scope->get_type(id, false);
                 if (p == nullptr) p = p2;
                 else {
@@ -134,7 +136,8 @@ struct Scope : Literal {
             }
 
             // check pulled in scopes
-            for (auto scope : pulled_in_scopes) {
+            for (auto scope_pair : pulled_in_scopes) {
+                auto scope = scope_pair.second;
                 auto p2 = scope->get_function(id, false);
                 if (p == nullptr) p = p2;
                 else {

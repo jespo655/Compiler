@@ -11,7 +11,6 @@
 
 struct Parsed_scope : Scope
 {
-    std::vector<std::shared_ptr<Function_call_statement>> run_statements;
     std::vector<std::shared_ptr<Using_statement>> using_statements;
     std::vector<std::shared_ptr<Anonymous_scope>> anonymous_scopes;
 };
@@ -20,6 +19,8 @@ struct Global_scope : Parsed_scope
 {
     std::string file_name;
     const std::vector<Token> tokens; // should be treated as const
+
+    std::vector<std::shared_ptr<Function_call_statement>> run_statements;
 
     Global_scope(const std::vector<Token>& tokens) : tokens{tokens} {}
 };

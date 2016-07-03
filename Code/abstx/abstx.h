@@ -13,11 +13,13 @@ struct Scope;
 
 struct Abstx_node
 {
+    // should be set immediately on creation:
     std::weak_ptr<Abstx_node> owner; // points to the parent node in the abstx tree
     Token_context context;
-
-    Parsing_status status = Parsing_status::NOT_PARSED;
     int start_token_index = -1; // Points to the first token in the expression
+
+    // should be set a bit later:
+    Parsing_status status = Parsing_status::NOT_PARSED;
 
     // debug_print(): print all data about the node, on one or several lines.
     // If recursive=true, then also call debug_print() on all child nodes.
@@ -45,7 +47,7 @@ struct Abstx_node
     virtual ~Abstx_node() {}
 
     virtual std::shared_ptr<Scope> parent_scope() const;
-    // virtual std::shared_ptr<Scope> global_scope() const;
+    virtual std::shared_ptr<Scope> global_scope() const;
 };
 
 
