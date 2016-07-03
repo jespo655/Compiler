@@ -62,53 +62,160 @@ std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, con
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<For_statement>& statement)
+// Partial parse of declaration statement
+Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Declaration_statement>& statement, int declaration_index, std::shared_ptr<Scope> parent_scope)
 {
-    return Parsing_status::NOT_PARSED;
+    ASSERT (!it.error);
+    ASSERT (it[declaration_index].type == Token_type::SYMBOL && it[declaration_index].token == ":");
+    ASSERT (it.current_index < declaration_index);
+
+    statement = std::shared_ptr<Declaration_statement>{new Declaration_statement()};
+
+    bool first = true;
+
+    while(!it.error && it.current_index < declaration_index) {
+
+        if (!first) it.expect(Token_type::SYMBOL, ",");
+        if (it.error) break;
+
+        const Token& identifier_token = it.expect(Token_type::IDENTIFIER);
+
+        if (!it.error) {
+            auto id = std::shared_ptr<Identifier>(new Identifier());
+            id->name = identifier_token.token;
+            id->context = identifier_token.context;
+            id->owner = statement;
+            id->status = Parsing_status::PARTIALLY_PARSED;
+            id->start_token_index = it.current_index-1;
+
+            statement->identifiers.push_back(id);
+            parent_scope->identifiers[id->name] = id;
+        }
+
+        if (it.current_index == declaration_index) break;
+
+        first = false;
+    }
+
+    if (it.error) statement->status = Parsing_status::FATAL_ERROR;
+    else statement->status = Parsing_status::PARTIALLY_PARSED;
+
+    return statement->status;
 }
 
 
 
 
-Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<If_statement>& statement)
-{
-    ASSERT (it->type != Token_type::STRING && it->token == "if");
-    it.eat_token(); // eat the "if" token
 
-    statement = std::shared_ptr<If_statement>{new If_statement()};
+// Partial parse of for statement
+Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<For_statement>& statement)
+{
+    ASSERT (it->type != Token_type::STRING && it->token == "for");
+    ASSERT (!it.error);
+
+    statement = std::shared_ptr<For_statement>{new For_statement()};
+
+    it.eat_token(); // eat the "for" token
+
     it.expect(Token_type::SYMBOL, "(");
     if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1; // go back to the previous "(" and search from there
+
+    statement->scope = std::shared_ptr<Scope>{new Scope()};
+    statement->scope->owner = statement;
+    statement->scope->start_token_index = it.current_index;
+
     if (!it.error) it.expect(Token_type::SYMBOL, "{");
     if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1; // same as above
 
-    while (!it.error && it->type != Token_type::STRING && it->token == "elsif") {
-        // FIXME: also add the scopes and other possibly interesting information to the if statement
-        it.eat_token();
+    if (it.error) statement->status = Parsing_status::FATAL_ERROR;
+    else statement->status = Parsing_status::PARTIALLY_PARSED;
+
+    return statement->status;
+}
+
+
+
+
+// Partial parse of while statement
+Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<While_statement>& statement)
+{
+    ASSERT (it->type != Token_type::STRING && it->token == "while");
+    ASSERT (!it.error);
+
+    statement = std::shared_ptr<While_statement>{new While_statement()};
+
+    it.eat_token(); // eat the "while" token
+
+    it.expect(Token_type::SYMBOL, "(");
+    if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1; // go back to the previous "(" and search from there
+
+    statement->scope = std::shared_ptr<Scope>{new Scope()};
+    statement->scope->owner = statement;
+    statement->scope->start_token_index = it.current_index;
+
+    if (!it.error) it.expect(Token_type::SYMBOL, "{");
+    if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1; // same as above
+
+    if (it.error) statement->status = Parsing_status::FATAL_ERROR;
+    else statement->status = Parsing_status::PARTIALLY_PARSED;
+
+    return statement->status;
+}
+
+
+
+
+// Partial parse of if statement
+Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<If_statement>& statement)
+{
+    ASSERT (it->type != Token_type::STRING && it->token == "if");
+    ASSERT (!it.error);
+
+    statement = std::shared_ptr<If_statement>{new If_statement()};
+
+    // read any number of conditional scopes (if, elsif, elsif, ...)
+    do {
+        it.eat_token(); // eat the "if"/"elsif" token
+
+        auto cs = std::shared_ptr<Conditional_scope>{new Conditional_scope()};
+        cs->owner = statement;
+        cs->start_token_index = it.current_index;
+        statement->conditional_scopes.push_back(cs);
+
         it.expect(Token_type::SYMBOL, "(");
-        if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1;
+        if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1; // go back to the previous "(" and search from there
+
+        cs->scope = std::shared_ptr<Scope>{new Scope()};
+        cs->scope->owner = cs;
+        cs->scope->start_token_index = it.current_index;
+
         if (!it.error) it.expect(Token_type::SYMBOL, "{");
-        if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1;
-    }
+        if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1; // same as above
+
+    } while (!it.error && it->type != Token_type::STRING && it->token == "elsif");
+
     if (!it.error && it->type != Token_type::STRING && it->token == "else") {
-        it.eat_token();
+
+        it.eat_token(); // eat the "else" token
+
+        statement->else_scope = std::shared_ptr<Scope>{new Scope()};
+        statement->else_scope->owner = statement;
+        statement->else_scope->start_token_index = it.current_index;
+
         if (!it.error) it.expect(Token_type::SYMBOL, "{");
-        if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1;
+        if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1; // same as above
     }
+
     if (!it.error && it->type != Token_type::STRING && it->token == "then") {
-        it.eat_token();
+
+        it.eat_token(); // eat the "then" token
+
+        statement->then_scope = std::shared_ptr<Scope>{new Scope()};
+        statement->then_scope->owner = statement;
+        statement->then_scope->start_token_index = it.current_index;
+
         if (!it.error) it.expect(Token_type::SYMBOL, "{");
-        if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1;
+        if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1; // same as above
     }
 
     if (it.error) statement->status = Parsing_status::FATAL_ERROR;
@@ -173,32 +280,21 @@ std::shared_ptr<Statement> examine_statement(Token_iterator& it, std::shared_ptr
         auto for_s = std::shared_ptr<For_statement>{new For_statement()};
         partially_parse(it, for_s);
         statement = std::static_pointer_cast<Statement>(for_s);
-
-
-
-        // statement = std::shared_ptr<Statement>{new For_statement()};
-        // statement_ends_with_semicolon = false;
-        // it.eat_token(); // eat the "for" token
-        // it.expect(Token_type::SYMBOL, "(");
-        // if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1; // go back to the previous "(" and search from there
-        // if (!it.error) it.expect(Token_type::SYMBOL, "{");
-        // if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1; // go back to the previous "{" and search from there
     }
 
     else if (start_token.type != Token_type::STRING && start_token.token == "while") {
         if (!allow_dynamic) log_error("while statement not allowed in static scope", start_token.context); // FIXME: proper error message
-        statement = std::shared_ptr<Statement>{new While_statement()};
-        it.eat_token(); // eat the "while" token
-        it.expect(Token_type::SYMBOL, "(");
-        if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1; // go back to the previous "(" and search from there
-        if (!it.error) it.expect(Token_type::SYMBOL, "{");
-        if (!it.error) it.current_index = it.find_matching_brace(it.current_index-1) + 1; // go back to the previous "{" and search from there
+        auto while_s = std::shared_ptr<While_statement>{new While_statement()};
+        partially_parse(it, while_s);
+        statement = std::static_pointer_cast<Statement>(while_s);
     }
 
     else if (start_token.type != Token_type::STRING && start_token.token == "return") {
         if (!allow_dynamic) log_error("Return statement not allowed in static scope", start_token.context); // FIXME: proper error message
         statement = std::shared_ptr<Statement>{new Return_statement()};
         it.current_index = it.find_matching_semicolon(it.current_index) + 1;
+        if (it.error) statement->status = Parsing_status::FATAL_ERROR;
+        else statement->status = Parsing_status::PARTIALLY_PARSED;
     }
 
     else while (!it.error && !it->is_eof()) {
@@ -213,14 +309,19 @@ std::shared_ptr<Statement> examine_statement(Token_iterator& it, std::shared_ptr
 
             if (t.token == ":") {
                 statement = std::shared_ptr<Statement>(new Declaration_statement());
-                ASSERT(false, "decl assignment partial parsing nyi"); // FIXME: add the declared identifiers to the scope
-                if (go_to_next_statement) it.current_index = it.find_matching_semicolon(it.current_index) + 1;
+                auto decl_s = std::shared_ptr<Declaration_statement>{new Declaration_statement()};
+                int decl_index = it.current_index-1; // the ':' token
+                it.current_index = start_index;
+                partially_parse(it, decl_s, decl_index, parent_scope);
+                statement = std::static_pointer_cast<Statement>(decl_s);
                 break;
             }
 
             if (t.token == "=") {
                 statement = std::shared_ptr<Statement>(new Assignment_statement());
                 if (go_to_next_statement) it.current_index = it.find_matching_semicolon(it.current_index) + 1;
+                if (it.error) statement->status = Parsing_status::FATAL_ERROR;
+                else statement->status = Parsing_status::PARTIALLY_PARSED;
                 break;
             }
 

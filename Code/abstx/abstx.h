@@ -17,7 +17,7 @@ struct Abstx_node
     Token_context context;
 
     Parsing_status status = Parsing_status::NOT_PARSED;
-    int start_token_index; // Points to the first token in the expression
+    int start_token_index = -1; // Points to the first token in the expression
 
     // debug_print(): print all data about the node, on one or several lines.
     // If recursive=true, then also call debug_print() on all child nodes.
