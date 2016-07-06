@@ -1,6 +1,6 @@
 @echo off
 :: g++ -std=c++11 *.cpp abstx/*.cpp utilities/*.cpp compile_time/*.cpp %*
-g++ -std=c++11 *.cpp utilities/*.cpp compile_time/*.cpp %*
+g++ -std=c++11 parser/*.cpp *.cpp utilities/*.cpp compile_time/*.cpp %*
 
 :: /B indicates a binary file
 :: /Y supresses prompting to confirm you want to overwrite an existing destination file (seems to not do anything)

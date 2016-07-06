@@ -34,5 +34,8 @@ NUMBER_TYPE(f64, double);
 #define Type_uint Type_u64
 
 
-
-
+// #define CAST_GENERATOR(from_t, from_cppt, to_t, to_cppt)
+// Value cast_##from_t##to_t (const Value& v, const std::shared_ptr<to_t>& to_type) {      \
+//     to_cppt data = ((from_cppt*)v.get_value());                                         \
+//     return Value(to_type, data);                                                        \
+// }

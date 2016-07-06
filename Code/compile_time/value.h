@@ -10,6 +10,9 @@
 
 struct Value {
 
+    std::shared_ptr<Type> get_type() const { return type; }
+    void const * get_value() const { return value_ptr; }
+
     void alloc(std::shared_ptr<Type> t, bool initialize=true) {
         ASSERT(t != nullptr)
         ASSERT(type == nullptr || *type == *t);
@@ -55,9 +58,6 @@ struct Value {
         v.type = nullptr;
         v.value_ptr = nullptr;
     }
-
-    std::shared_ptr<Type> get_type() const { return type; }
-    void const * get_value() const { return value_ptr; }
 
     Value() {}
     ~Value() { free(); }

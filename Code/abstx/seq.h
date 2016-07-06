@@ -2,6 +2,7 @@
 
 #include "type.h"
 #include "variable_expression.h"
+#include "literal.h"
 
 #include "../utilities/assert.h"
 
@@ -103,5 +104,34 @@ struct Sequence_lookup : Variable_expression {
     }
 
     std::string toS() const override { return "sequence lookup"; } // FIXME: better Sequence_lookup::toS()
+
+};
+
+
+
+struct Literal_seq : Value_expression {
+
+    std::shared_ptr<Type_seq> type;
+    std::vector<std::shared_ptr<Value_expression>> members;
+
+    std::shared_ptr<Type> get_type() override { return type; };
+
+    std::string toS() const override {
+        ASSERT(type != nullptr);
+        std::ostringstream oss;
+        oss << "[" << type->type->toS() << ", size=" << type->size;
+        if (type->dynamic) {
+            oss << ", dynamic";
+        }
+        oss << ": ";
+        bool first = true;
+        for (auto m : members) {
+            ASSERT(m != nullptr);
+            if (!first) oss << ", ";
+            oss << m->toS();
+        }
+        oss << "]";
+        return oss.str();
+    }
 
 };

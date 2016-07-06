@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "parsing_status.h"
+#include "token_iterator.h"
 
 #include "../abstx/scope.h"
 #include "../abstx/using.h"
@@ -20,8 +21,10 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Declaration_s
 Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<If_statement>& statement);
 Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<For_statement>& statement);
 Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<While_statement>& statement);
-Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Parsed_scope>& scope);
+Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Parsed_scope>& scope, bool dynamic); // should set the iterator index before calling
 
+Parsing_status fully_resolve(std::shared_ptr<Identifier>& identifier);
+Parsing_status fully_resolve(std::shared_ptr<Declaration_statement>& declaration);
 
 
 
@@ -34,7 +37,7 @@ std::map<std::string, std::shared_ptr<Global_scope>> global_scopes;
 
 // FIXME: store a map name -> global scope with parsed scopes
 // If the name already has a global scope, return that instead.
-std::shared_ptr<Global_scope> parse_file(const std::string& file, const std::string& name) // default name is the file name
+std::shared_ptr<Global_scope> parse_file(const std::string& file, std::string name) // default name is the file name
 {
     if (name == "") name = file;
     if (global_scopes[name] != nullptr) return global_scopes[name];
@@ -55,11 +58,12 @@ std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, con
     if (global_scopes[name] != nullptr) return global_scopes[name];
     if (tokens.size() <= 1) return nullptr;
 
-    std::shared_ptr<Global_scope> global_scope{new Global_scope(tokens)};
+    auto global_scope = std::shared_ptr<Global_scope>(new Global_scope(tokens));
     Token_iterator it = Token_iterator(tokens);
 
-    partially_parse(it, global_scope);
-    ASSERT(global_scope.status != Parsing_status::NOT_PARSED);
+    auto parsed_scope = std::static_pointer_cast<Parsed_scope>(global_scope);
+    partially_parse(it, parsed_scope, false); // static scope -> dynamic = false
+    ASSERT(global_scope->status != Parsing_status::NOT_PARSED);
 
     global_scopes[name] = global_scope;
 
@@ -101,6 +105,70 @@ std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, con
 
 
 
+// --------------------------------------------------------------------------------------------------------------------
+//
+//          Parsing pass 2: Stepping through #runs, fully resolving everything reached.
+//          This parsing is recursive.
+//          The only special case is function calls - the function only has to be partially parsed
+//            for the caller to be classified as fully parsed.
+//
+//          FIXME: watch out for cyclic dependencies
+//
+// --------------------------------------------------------------------------------------------------------------------
+
+Parsing_status fully_resolve(std::shared_ptr<Identifier>& identifier)
+{
+    ASSERT(identifier != nullptr);
+    ASSERT(identifier->name != "");
+    auto parent_scope = identifier->parent_scope();
+    ASSERT(parent_scope != nullptr);
+    auto identity = parent_scope->get_identifier(identifier->name);
+    if (identity == nullptr) {
+        log_error("Undeclared identifier \""+identifier->name+"\"", identifier->context);
+        identifier->status = Parsing_status::UNDECLARED_IDENTIFIER;
+        return identifier->status;
+    }
+    identifier = identity;
+
+    if (identifier->status == Parsing_status::FULLY_RESOLVED || is_error(identifier->status))
+        return identifier->status;
+
+    ASSERT(identifier->owner.lock() != nullptr);
+    auto declaration = std::dynamic_pointer_cast<Declaration_statement>(identifier->owner.lock());
+    ASSERT(declaration != nullptr);
+
+    fully_resolve(declaration);
+    identifier->status = declaration->status;
+    ASSERT(identifier->status != Parsing_status::NOT_PARSED);
+    ASSERT(identifier->status != Parsing_status::PARTIALLY_PARSED);
+    return identifier->status;
+}
+
+
+Parsing_status fully_resolve(std::shared_ptr<Declaration_statement>& declaration)
+{
+    // TODO:
+    // it's partially parsed up till the ':' token
+    // After that: check for an optional list of type identifiers
+    // If no type list, expect '=' token
+    // If type list, update the types of the identifiers, then check for optional '=' token
+    // If '=' token, expect a list of value expressions
+    // Fully resolve them and store their return values in a vector
+    // If type list, check the vector against the types, ensure they match
+    // If no type list, update the types of the identifiers
+    // Expect ';'
+
+    return declaration->status;
+}
+
+
+Parsing_status fully_resolve(std::shared_ptr<Assignment_statement>& assignment)
+{
+    // TODO:
+    // Read and fully resolve variable expressions up to the '=' token, store their types in a vector
+    // Read and fully resolve value expressions up to the ';' token, store their types in a vector
+    // Ensure that the types match
+}
 
 
 
@@ -137,66 +205,67 @@ std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, con
 
 
 
-Parsing_status fully_resolve(Token_iterator& it, std::shared_ptr<Using_statement> statement)
+Parsing_status fully_resolve(Token_iterator& it, std::shared_ptr<Using_statement>& statement)
 {
-    if (statement->status == Parsing_status::FULLY_RESOLVED || statement->status->is_error()) {
+    if (statement->status == Parsing_status::FULLY_RESOLVED || is_error(statement->status)) {
         return statement->status;
     }
 
-    it.current_index = statement.start_token_index;
+    it.current_index = statement->start_token_index;
     it.error = false;
 
     ASSERT(statement->status == Parsing_status::PARTIALLY_PARSED);
-    ASSERT(it->type == Token_type::KEYWORD && ut->token == "using");
+    ASSERT(it->type == Token_type::KEYWORD && it->token == "using");
 
     it.eat_token(); // eat the "using" token
+
+    std::shared_ptr<Scope> parent_scope = statement->parent_scope();
+    ASSERT(parent_scope != nullptr);
 
     std::shared_ptr<Scope> scope;
     std::string key = "";
 
     const Token& id_token = it.eat_token();
-    if (id_token->type == STRING) {
+    if (id_token.type == Token_type::STRING) {
         it.expect(Token_type::SYMBOL, ";");
-        if (it.error) statement->state == Parsing_status::SYNTAX_ERROR;
+        if (it.error) statement->status = Parsing_status::SYNTAX_ERROR;
         else {
-            key = "_file_"+id_token->token;
+            key = "_file_"+id_token.token;
             if(parent_scope->pulled_in_scopes[key] == nullptr)
-                scope = parse_file(id_token->token);
+                scope = parse_file(id_token.token);
 
-            statement->state = Parsing_status::FULLY_RESOLVED;
+            statement->status = Parsing_status::FULLY_RESOLVED;
         }
 
-    } else if (id_token->type == IDENTIFIER) {
+    } else if (id_token.type == Token_type::IDENTIFIER) {
         it.expect(Token_type::SYMBOL, ";");
-        if (it.error) statement->state == Parsing_status::SYNTAX_ERROR;
+        if (it.error) statement->status == Parsing_status::SYNTAX_ERROR;
         else {
-            key = "_id_"+id_token->token;
+            key = "_id_"+id_token.token;
 
             // FIXME: pull in scope from identifier
             // Fully resolve identifier
             // If type is not Type_scope, then log error
             // Else find its identity
             // If the identifier could not be resolved, return Parsing_status::DEPENDENCIES_NEEDED
-            // statement-state = Parsing_status::DEPENDENCIES_NEEDED;
-            log_error("Including scopes by name not yet implemented", id_token->context);
+            // statement->status = Parsing_status::DEPENDENCIES_NEEDED;
+            log_error("Including scopes by name not yet implemented", id_token.context);
             add_note("In the meantime, put the scope in a separate file and include by filename");
-            statement-state = Parsing_status::SYNTAX_ERROR;
+            statement->status = Parsing_status::SYNTAX_ERROR;
         }
 
     } else {
         log_error("Unexpected token in using statement: expected a string literal (filename) or a scope identifier but found \""
-            +t.token+"\" ("+toS(t.type)+")", t.context);
-        statement-state = Parsing_status::SYNTAX_ERROR;
+            +id_token.token+"\" ("+toS(id_token.type)+")", id_token.context);
+        statement->status = Parsing_status::SYNTAX_ERROR;
     }
 
     if (scope != nullptr) {
         ASSERT(key != "");
-        auto parent_scope = statement->parent_scope();
-        ASSERT(parent_scope != nullptr);
         ASSERT(parent_scope->pulled_in_scopes[key] == nullptr)
         parent_scope->pulled_in_scopes[key] = scope;
     }
-    return statement->state;
+    return statement->status;
 }
 
 
@@ -210,7 +279,7 @@ void resolve_imports(Token_iterator& it, std::shared_ptr<Parsed_scope>& scope)
     while(scope->using_statements.size() > 0) {
         remaining.clear();
 
-        for (auto us& : scope->using_statements) {
+        for (auto& us : scope->using_statements) {
             Parsing_status status = fully_resolve(it, us);
             if (status == Parsing_status::DEPENDENCIES_NEEDED) {
                 remaining.push_back(us);
@@ -220,8 +289,8 @@ void resolve_imports(Token_iterator& it, std::shared_ptr<Parsed_scope>& scope)
             // we could assert that the status is not NOT_PARSED or PARTIALLY_PARSED, but it doesn't seem necessary
         }
 
-        if (scope->using_statements.size() == remaining->size()) {
-            for (auto us& : remaining) {
+        if (scope->using_statements.size() == remaining.size()) {
+            for (auto& us : remaining) {
                 log_error("Unable to resolve using statement", us->context);
             }
             break;
@@ -238,10 +307,12 @@ void resolve_imports(Token_iterator& it, std::shared_ptr<Parsed_scope>& scope)
 // If global scope, where there is no '{}', it should be at start of the first statement.
 Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Parsed_scope>& scope, bool dynamic)
 {
-    scope = std::shared_ptr<Parsed_scope>(new Parsed_scope());
+    ASSERT(scope != nullptr);
+
     scope->start_token_index = it.current_index;
     scope->context = it->context;
     bool global = true;
+
     if (it->type == Token_type::SYMBOL && it->token == "{") {
         global == false;
         it.eat_token();
@@ -250,23 +321,23 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Parsed_scope>
     // if global, read to eof
     // else, read to '}'
 
-    while (!it->is_eof() && !(it->type == Token_type::SYMBOL && it->token == "}") {
+    while (!it->is_eof() && !(it->type == Token_type::SYMBOL && it->token == "}")) {
 
-        std::shared_ptr<Statement> s = examine_statement(it, global_scope, dynamic);
+        std::shared_ptr<Statement> s = examine_statement(it, scope, dynamic);
         ASSERT(s != nullptr);
         if (s->status == Parsing_status::FATAL_ERROR) {
-            global_scope->status = Parsing_status::FATAL_ERROR;
+            scope->status = Parsing_status::FATAL_ERROR;
             return Parsing_status::FATAL_ERROR;
         }
 
-        global_scope->statements.push_back(s);
+        scope->statements.push_back(s);
     }
     ASSERT(it->is_eof() || (it->type == Token_type::SYMBOL && it->token == "}"));
 
     if (it->type == Token_type::SYMBOL && it->token == "}") {
         if (global) {
             log_error("Unexpected token "+it->token+" in unresolved statement.", it->context);
-            global_scope->status = Parsing_status::FATAL_ERROR;
+            scope->status = Parsing_status::FATAL_ERROR;
             return Parsing_status::FATAL_ERROR;
         } else {
             it.eat_token(); // eat the '}' token
@@ -276,7 +347,7 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Parsed_scope>
         if(!global) {
             log_error("Missing '}' at end of scope: found unexpected end of file", it->context);
             add_note("In scope that started here:", scope->context);
-            global_scope->status = Parsing_status::FATAL_ERROR;
+            scope->status = Parsing_status::FATAL_ERROR;
             return Parsing_status::FATAL_ERROR;
         }
     }
@@ -288,14 +359,17 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Parsed_scope>
             // note: care for the case where you want to import a scope which is only reachable through another scope you are importing
 
     for (auto& s : scope->anonymous_scopes) {
-        partially_parse(s);
+        it.current_index = s->start_token_index;
+        log_error("Anonymous scopes not yet implemented",it->context);
+        // partially_parse(it, s, dynamic); // FIXME: anonymous_scope is not parsed_scope, sadly
+
         // FIXME: what should happen if the scope encounters a fatal error?
         // current approach: act as if the scope didn't exist, ignore #runs from it
     }
 
     // FIXME: add a way to reach all #run-statements for pass 2
 
-    return scope->starus;
+    return scope->status;
 }
 
 
@@ -532,6 +606,7 @@ std::shared_ptr<Statement> examine_statement(Token_iterator& it, std::shared_ptr
 
     } else if (start_token.type == Token_type::SYMBOL && start_token.token == "{") {
         auto scope = std::shared_ptr<Anonymous_scope>{new Anonymous_scope()};
+        scope->start_token_index = it.current_index;
         parent_scope->anonymous_scopes.push_back(scope);
         it.current_index = it.find_matching_brace();
         statement = std::static_pointer_cast<Statement>(scope);
@@ -611,7 +686,7 @@ std::shared_ptr<Statement> examine_statement(Token_iterator& it, std::shared_ptr
                         fc->context = it[start_index+1].context;
 
                         auto scope = parent_scope->global_scope();
-                        if (scope == nullptr) global_scopes = parent_scope;
+                        if (scope == nullptr) scope = std::static_pointer_cast<Scope>(parent_scope);
                         auto global_scope = std::dynamic_pointer_cast<Global_scope>(scope);
                         ASSERT(global_scope != nullptr);
 

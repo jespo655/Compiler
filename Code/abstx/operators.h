@@ -2,6 +2,7 @@
 
 #include "function.h"
 #include "value_expression.h"
+#include "type.h"
 #include <sstream>
 #include <vector>
 
@@ -30,6 +31,8 @@ struct Operator_symbol : Value_expression {
 
 
 struct Operator : Function_call {
+
+    int priority=0; // higher priority goes first
 
     // A more slimmed down version of Function_call's get_identity(). Only check scope->get_function() directly, skip identifiers.
     std::shared_ptr<Function> get_identity() override
@@ -184,3 +187,31 @@ struct Suffix_operator : Operator {
 // Generates c-code just like Function_call does.
 
 */
+
+
+
+
+
+
+struct Type_operator : Type_fn
+{
+    std::string toS(void const * value_ptr, int size=0) const override {
+        ASSERT(size == 0 || size == byte_size());
+        std::ostringstream oss;
+        void* fn_ptr = *(void**)value_ptr;
+        oss << "operator pointer(" << fn_ptr << ")";
+        return oss.str();
+    }
+};
+struct Type_prefix_op : Type_operator
+{
+
+};
+struct Type_suffix_op : Type_operator
+{
+
+};
+struct Type_infix_op : Type_operator
+{
+
+};

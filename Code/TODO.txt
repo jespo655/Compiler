@@ -39,6 +39,40 @@ istället för att köra, generera c-kod
 
 
 
+
+
+operatorer:
+
+infix_operator + := fn(a:float, b:int)->int { return a+b; }, 100;
+
+operator_declaration
+
+
+lägger till operator identifier som identifier med type Type_operator, owner är scopet
+Scope::get_operator(std::string op_name);
+
+Scope:: map op_namn -> vector<operator overloads>
+
+Varje overload kan identifieras med in-typer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 skriv om literals:
 
 endast 1 Literal-klass

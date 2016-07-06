@@ -14,6 +14,7 @@ enum struct Parsing_status
     TYPE_ERROR,             // some types doesn't match
     CYCLIC_DEPENDENCY,      // there was a cyclic dependency
     COMPILE_TIME_ERROR,     // there was an error in a #run (that was not one of the above error types)
+    UNDECLARED_IDENTIFIER,  // it tried to use an identifier which was not yet declared
     FATAL_ERROR,            // there was an error so bad that we couldn't recover. Continued compilation would give undefined behaviour.
 
     // TODO: Add more error types as they pop up
