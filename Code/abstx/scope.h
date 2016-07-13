@@ -7,6 +7,7 @@
 struct Function;
 struct Type;
 struct Identifier;
+struct Using_statement;
 
 #include <map>
 #include <vector>
@@ -22,9 +23,21 @@ struct Type_scope : Type {
     Type_scope() {}
     Type_scope(bool dynamic) : dynamic{dynamic} {}
 
+
+    static std::shared_ptr<Scope> cpp_value(void const* value_ptr, int size=0) {
+        ASSERT(size == 0 || size == byte_size());
+        std::shared_ptr<Scope>* const ptr_ptr = (std::shared_ptr<Scope>* const)value_ptr;
+        return *ptr_ptr;
+    }
+
+    std::string toS(void const * value_ptr, int size=0) const override {
+        return cpp_value->toS();
+    }
+
+
     std::string toS() const override { return dynamic? "scope(d)" : "scope(s)"; }
 
-    int byte_size() const override { return sizeof(void*); } // points to the scope struct
+    int byte_size() const override { return sizeof(std::shared_ptr<Scope>); } // points to the scope struct
 };
 
 
@@ -37,7 +50,7 @@ struct Type_scope : Type {
 
 struct Scope : Literal {
 
-    bool dynamic = false;
+    bool dynamic = false; // FIXME: maybe not needed. remove? Dynamic-ness can be inferred from the context instead. (no dynamic scopes are partially parsed in parsing pass 1)
     std::vector<std::shared_ptr<Statement>> statements;
 
     // maps from identifier string to abstx node
@@ -46,6 +59,7 @@ struct Scope : Literal {
     std::map<std::string, std::shared_ptr<Type>> types; // if looking up the type name in the 'identifier'-list, they would all have the type 'Type_type'. Their values is stored in this list.
 
     std::map<std::string, std::shared_ptr<Scope>> pulled_in_scopes; // using statements pulls in scopes here. The key is used to not pull in the same scope twice.
+    std::vector<std::shared_ptr<Using_statement>> using_statements; // used in the parsing process
 
     Scope() {}
     Scope(bool dynamic) : dynamic{dynamic} {}

@@ -7,10 +7,11 @@
 
 
 struct Function;
-struct Evaluated_value;
+struct Value_expression;
 
 std::shared_ptr<Function> get_compile_time_function(std::string id);
 
-void execute_compile_time_function(std::string id, std::vector<std::shared_ptr<Evaluated_value>> arguments);
+void execute_compile_time_function(std::string id, std::vector<std::shared_ptr<Value_expression>> arguments);
 
 
+Value eval(std::shared_ptr<Value_expression> expr);

@@ -1,4 +1,11 @@
 
+Fully resolve Assignment:
+Om '=' prefixas av infix operator, används den på följande sätt:
+
+a + = b; // a = a + b;
+a xor= b; // a = a xor b;
+
+
 
 
 
