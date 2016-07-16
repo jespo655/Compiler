@@ -32,12 +32,25 @@ Token_iterator get_iterator(std::shared_ptr<T> abstx, int index=0);
 std::shared_ptr<Global_scope> get_global_scope(std::shared_ptr<Scope> scope);
 
 
+// FIXME: separate read_X(it&, parent) and compile_X(it&, parent)
+// read_X would only be used in static contexts,
+//    and would only do as little as possible (returns an abstx node and places it at the beginning of the next thing)
+// compile_X would be used in dynamic contexts,
+//    where everything should be compiled immediately.
+//    It should immediately try to fully resolve the statement.
+// natural extention: compile_X(string, parent, string_context)
+//    just be careful with assertions, stuff like parens and eof is not checked if no global parsing pass is done first
+
+
+// default compile_X behaviour:
+// x = read_X(); fully_resolve_X(x); return x;
+// more complex / optimized:
+// return compile_X();
+
+
 // scope_parser.cpp
 std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<Scope> read_dynamic_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<Scope> fully_resolve_dynamic_scope(std::shared_ptr<Scope> scope);
-
-
+std::shared_ptr<Scope> compile_dynamic_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 // identifier_parser.cpp
@@ -49,6 +62,7 @@ Parsing_status fully_resolve_identifier(std::shared_ptr<Identifier>& identifier)
 // statement_parser.cpp
 struct Statement;
 std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Statement> compile_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 // FIXME: NYI:
 Parsing_status fully_resolve_statement(std::shared_ptr<Statement> statement);
 
@@ -59,14 +73,21 @@ std::shared_ptr<Using_statement> read_using_statement(Token_iterator& it, std::s
 Parsing_status fully_resolve_using(std::shared_ptr<Using_statement> using_statement);
 void resolve_imports(std::shared_ptr<Scope> scope);
 
+// literal_parser.cpp
+std::shared_ptr<Literal> read_int_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> read_float_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> read_string_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> read_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
 
 // TODO:
-std::shared_ptr<If_statement> read_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<For_statement> read_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<while_statement> read_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<return_statement> read_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// fixme i read_sequence_literal
+std::shared_ptr<If_statement> compile_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<For_statement> compile_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<while_statement> compile_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<return_statement> compile_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<assignment_statement> compile_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 std::shared_ptr<declaration_statement> read_declaration_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<assignment_statement> read_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 

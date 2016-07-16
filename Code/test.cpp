@@ -14,7 +14,29 @@
 
 #include <string>
 #include <iostream>
+#include <cstdlib>
 using namespace std;
+
+
+void str_test()
+{
+    std::string s = "asd";
+    int len = s.size();
+
+    // char v[len+1];
+    char* v = (char*)malloc(len+1);
+
+    for (int i = 0; i < s.size(); ++i)
+        v[i] = s[i];
+    v[len] = '\0';
+
+    cout << "len=" << len << endl;
+    cout << "v=" << v << endl;
+
+    delete v;
+
+}
+
 
 
 void ptr_reference_test()
@@ -144,7 +166,8 @@ int main()
     // size_test();
     // indent_test();
     // float_test();
-    wchar_test();
+    // wchar_test();
+    str_test();
 }
 
 

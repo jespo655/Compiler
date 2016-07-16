@@ -10,8 +10,8 @@ They hold a size and a pointer to string of characters.
 
 // fat pointer - also stores its own size
 struct Str_header {
-    uint_least64_t len;
-    char* v;
+    uint_least64_t len; // not needed if we don't allow [] operator for strings (each string is an atom)
+    char* v; // '\0' terminated array of characters. byte size = len+1, counting the mandatory '\0'
 };
 
 
@@ -25,10 +25,12 @@ struct Type_str : Type
         // copy characters until end of buffer or until '\0' is found
         // FIXME: optimization, strcpy?
         // FIXME: maybe skip the size in the header? The string is always '\0' terminated anyways (or should be, at least)
-        for (int i = 0; i < header_ptr->len; ++i) {
-            if (header_ptr->v[i] == '\0') break;
-            oss << char_ptr[i];
-        }
+
+        oss << header_ptr->v; // should be '\0' terminated so everything is fine
+        // for (int i = 0; i < header_ptr->len; ++i) {
+        //     if (header_ptr->v[i] == '\0') break;
+        //     oss << char_ptr[i];
+        // }
         return oss.str();
     }
 

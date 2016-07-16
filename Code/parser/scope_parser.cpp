@@ -2,6 +2,9 @@
 
 
 
+
+
+
 // read_static_scope: read and partially parse statements until end of scope
 //      also store all using-statements in a separate list for easier access
 //      For each run-statement, find global scope and put it there for later
@@ -71,7 +74,10 @@ std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Sco
 // The dynamic scope are first actually read in the middle of a compile time evaluation
 // (either in a #run or when making the output bytecode), so each statement it can and
 // should be fully parsed immediately when read.
-std::shared_ptr<Scope> read_dynamic_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+
+// FIXME: remove token assertions and log_error instead, we can't assume
+// that we already did the global parsing pass before
+std::shared_ptr<Scope> compile_dynamic_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
     ASSERT(it->type == Token_type::SYMBOL && t->token == "{");
 
@@ -83,10 +89,9 @@ std::shared_ptr<Scope> read_dynamic_scope(Token_iterator& it, std::shared_ptr<Sc
 
     while (!it->is_eof() && !(it->type == Token_type::SYMBOL && it->token == "}")) {
 
-        std::shared_ptr<Statement> s = read_statement(it, scope);
+        std::shared_ptr<Statement> s = compile_statement(it, scope);
         ASSERT(s != nullptr);
 
-        fully_resolve_statement(s);
         if (is_error(s->status)) {
             scope->status = s->status;
             return scope->status;

@@ -2,6 +2,7 @@
 
 #include "token.h"
 #include "../utilities/error_handler.h"
+#include "../utilities/assert.h"
 
 #include <memory>
 #include <string>
@@ -110,9 +111,17 @@ struct Token_iterator
     // Returns true if the last expect call failed.
     bool expect_failed() { return error; }
 
+    // ASSERTs that the current token is next, then eat it
+    // Used like expect, but gives compiler runtime error instead of a logged compile error.
+    const Token& assert(const Token_type& expected_type, std::string expected_token)
+    {
+        ASSERT(it->type == Token_type::COMPILER_COMMAND && it->token == "#eval");
+        return it.eat_token();
+    }
+
 
     // If error, logs an appropriate error and returns -1
-    int find_matching_token(int index, const Token_type& expected_closing_type, const std::string& expected_closing_token, const std::string& range_name, const std::string& error_string, bool forward=true)
+    int find_matching_token(int index, const Token_type& expected_closing_type, const std::string& expected_closing_token, const std::string& range_name, const std::string& error_string, bool forward=true, bool log_errors=true)
     {
         const Token& start_token = look_ahead(index-current_index);
         ASSERT(!start_token.is_eof());
@@ -123,9 +132,11 @@ struct Token_iterator
             const Token& t = look_ahead(index-current_index);
 
             if (t.is_eof()) {
-                log_error("Missing \""+expected_closing_token+"\" at end of file",t.context);
-                if (forward) add_note("In "+range_name+" that started here: ",start_token.context);
-                else add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                if (log_errors) {
+                    log_error("Missing \""+expected_closing_token+"\" at end of file",t.context);
+                    if (forward) add_note("In "+range_name+" that started here: ",start_token.context);
+                    else add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                }
                 error = true;
                 return -1;
             }
@@ -143,8 +154,10 @@ struct Token_iterator
                     else if (t.token == "{") index = find_matching_brace(index);
 
                     else if (t.token == ")" || t.token == "]" || t.token == "}") {
-                        log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
-                        add_note("In "+range_name+" that started here: ",start_token.context);
+                        if (log_errors) {
+                            log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
+                            add_note("In "+range_name+" that started here: ",start_token.context);
+                        }
                         error = true;
                         return -1;
                     }
@@ -154,8 +167,10 @@ struct Token_iterator
                     else if (t.token == "}") index = find_matching_brace(index);
 
                     else if (t.token == "(" || t.token == "[" || t.token == "{") {
-                        log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
-                        add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                        if (log_errors) {
+                            log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
+                            add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                        }
                         error = true;
                         return -1;
                     }
