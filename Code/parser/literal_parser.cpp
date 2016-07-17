@@ -6,7 +6,7 @@
 #include <cstdlib>
 
 
-std::shared_ptr<Literal> read_int_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+std::shared_ptr<Literal> compile_int_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
     ASSERT(it->type == Token_type::INTEGER && !it->token.empty());
     ASSERT(!it.error);
@@ -37,7 +37,7 @@ std::shared_ptr<Literal> read_int_literal(Token_iterator& it, std::shared_ptr<Sc
 
 
 
-std::shared_ptr<Literal> read_float_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+std::shared_ptr<Literal> compile_float_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
     ASSERT(it->type == Token_type::FLOAT && !it->token.empty());
     ASSERT(!it.error);
@@ -57,6 +57,27 @@ std::shared_ptr<Literal> read_float_literal(Token_iterator& it, std::shared_ptr<
     if (!is_error(literal->status))
         literal->status = Parsing_status::FULLY_RESOLVED;
     it.eat_token(); // eat the float token
+    return literal;
+}
+
+
+std::shared_ptr<Literal> compile_bool_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+{
+    ASSERT(it->token == "true" || it->token == "false");
+
+    auto literal = std::shared_ptr<Literal>(new Literal());
+    literal->start_token_index = it.current_index;
+    literal->owner = parent_scope;
+    literal->context = it->context;
+
+    bool v = (it->token == "true");
+    literal->value.asssign(std::shared_ptr<Type>(new Type_bool()), v);
+
+    it.assert(Token_type::BOOL);
+
+    if (!is_error(literal->status))
+        literal->status = Parsing_status::FULLY_RESOLVED;
+
     return literal;
 }
 
@@ -92,7 +113,7 @@ private:
 
 String_container _string_container{}; // singleton
 
-std::shared_ptr<Literal> read_string_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+std::shared_ptr<Literal> compile_string_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
     ASSERT(it->type == Token_type::STRING && !it->token.empty());
     ASSERT(!it.error);
@@ -121,7 +142,6 @@ std::shared_ptr<Literal> read_string_literal(Token_iterator& it, std::shared_ptr
 
 
 
-// compile_sequence_literal: 137 lines + some more (FIXME: type checking)
 std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
     ASSERT(it->type == Token_type::SYMBOL && it->token == "[");
@@ -187,15 +207,35 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
 
         if (!it.error && id.token == "size" && symbol.token == "=") {
             // TODO: allow more complex expressions here, not just integer literal
-            const Token& size_literal = it.expect(Token_type::INTEGER);
-            if (!it.error) {
-                // ASSERT(false, "FIXME: stoi")
-                seq->size = std::stoi(size_literal.token);
-                has_size_data = true;
+            auto size_expr = compile_value_expression(it, parent_scope);
+            ASSERT(size_expr != nullptr);
+            if (size_expr->status == Parsing_status::FATAL_ERROR) {
+                seq->satus = FATAL_ERROR;
+                return;
+            } else if (is_error(size_expr->status)) {
+                seq->status = size_expr->status;
             } else {
-                add_note("Only integer literals are supported for sequence literal size declaration");
-                seq->status = Parsing_status::SYNTAX_ERROR;
+                ASSERT(size_expr->status == Parsing_status::FULLY_RESOLVED);
+                Value v = eval(size_expr);
+                ASSERT(v.type != nullptr);
+                if (i_type = std::dynamic_pointer_cast<Type_int>(v.type)) { // if (v.type->is_integer_type())
+                    seq->type->size = i_type->cpp_value(v.get_value());
+                    has_size_data = true;
+                } else {
+                    log_error("Type mismatch: expected integer type but found "+v.type->toS(), size_expr->context);
+                    seq->status == Parsing_status::TYPE_ERROR;
+                }
             }
+
+            // const Token& size_literal = it.expect(Token_type::INTEGER);
+            // if (!it.error) {
+            //     // ASSERT(false, "FIXME: stoi")
+            //     seq->type->size = std::stoi(size_literal.token);
+            //     has_size_data = true;
+            // } else {
+            //     add_note("Only integer literals are supported for sequence literal size declaration");
+            //     seq->status = Parsing_status::SYNTAX_ERROR;
+            // }
         }
 
         if (!it.error) it.expect(Token_type::SYMBOL, ":");
@@ -276,6 +316,25 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
 
     if (!is_error(seq->status))
         seq->status = Parsing_status::FULLY_RESOLVED) {
+    }
+
+    if (!has_size_data) {
+        seq->type->size = seq->members.size();
+    } else {
+        if (seq->type->size < seq->members.size()) {
+            // if size < members.size, give warning and cut off
+            log_warning("Give size is less than the number of elements in the sequence literal. Exess members are ignored.", seq->context);
+            seq->members.resize(seq->type->size);
+        } else while (seq->type->size > seq->members.size()) {
+            // if size > members.size, pad with default literals
+            auto default_literal = std::shared_ptr<Literal>(new Literal());
+            default_literal->owner = seq;
+            default_literal->start_token_index = it.current_index - 1;
+            default_literal->context = it.look_back(1).context;
+            default_literal->status = Parsing_status::FULLY_RESOLVED;
+            default_literal->value.alloc(seq->type->type);
+            seq->members.push_back(default_literal);
+        }
     }
 
     return seq;

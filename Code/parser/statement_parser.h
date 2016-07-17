@@ -18,7 +18,7 @@
 // returns nullptr if no more statements could be read.
 std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
-    ASSERT(parent_scope != nullptr);
+    ASSERT(parent_scope != nullptr && parent_scope->dynamic == false); // This function should only be used during parsing pass 1
 
     if (it->is_eof()) {
         // no error, just return nullptr as expected

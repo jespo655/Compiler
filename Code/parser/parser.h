@@ -63,7 +63,7 @@ Parsing_status fully_resolve_identifier(std::shared_ptr<Identifier>& identifier)
 struct Statement;
 std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 std::shared_ptr<Statement> compile_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-// FIXME: NYI:
+// TODO:
 Parsing_status fully_resolve_statement(std::shared_ptr<Statement> statement);
 
 
@@ -73,32 +73,69 @@ std::shared_ptr<Using_statement> read_using_statement(Token_iterator& it, std::s
 Parsing_status fully_resolve_using(std::shared_ptr<Using_statement> using_statement);
 void resolve_imports(std::shared_ptr<Scope> scope);
 
+
 // literal_parser.cpp
-std::shared_ptr<Literal> read_int_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<Literal> read_float_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<Literal> read_string_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<Literal> read_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> compile_int_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> compile_float_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> compile_bool_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+std::shared_ptr<Literal> compile_string_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> compile_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
-// TODO:
-// fixme i read_sequence_literal
-std::shared_ptr<If_statement> compile_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<For_statement> compile_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<while_statement> compile_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<return_statement> compile_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<assignment_statement> compile_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<declaration_statement> read_declaration_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-
-
-
-
-
-// TODO:
-// literal_parser.cpp
-// assignment_parser.cpp
 // declaration_parser.cpp
+std::shared_ptr<Declaration_statement> read_declaration_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+Parsing_status fully_resolve_declaration(std::shared_ptr<Declaration_statement>& declaration);
+std::shared_ptr<Declaration_statement> compile_declaration_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// if_parser.cpp
+std::shared_ptr<If_statement> read_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<If_statement> compile_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// for_parser.cpp
+std::shared_ptr<For_statement> read_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+std::shared_ptr<For_statement> compile_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// while_parser.cpp
+std::shared_ptr<While_statement> read_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+std::shared_ptr<While_statement> compile_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// return_parser.cpp
+std::shared_ptr<Return_statement> read_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+std::shared_ptr<Return_statement> compile_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// assignment_parser.cpp
+std::shared_ptr<Assignment_statement> read_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+std::shared_ptr<Assignment_statement> compile_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
 // defer_parser.cpp
-// for, if, while
+std::shared_ptr<Defer_statement> read_defer_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Defer_statement> compile_defer_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+
+// TODO:
+// operators rewrite
+
+
+// TODO:
+std::shared_ptr<Function_call> compile_function_call(Token_iterator& it, std::shared_ptr<Value_expression> fn_id);
+std::shared_ptr<Seq_lookup> compile_seq_indexing(Token_iterator& it, std::shared_ptr<Value_expression> seq_id);
+std::shared_ptr<Getter> compile_getter(Token_iterator& it, std::shared_ptr<Value_expression> struct_id);
+
+
+
+// TODO:
 // variable_expression_parser.cpp + helpers
 // value_expression_parser.cpp + helpers
 // (read_comma_separated_value_list?)
@@ -108,3 +145,40 @@ std::shared_ptr<declaration_statement> read_declaration_statement(Token_iterator
 
 
 
+/*
+
+Pass 1:
+
+Read static scopes:
+    Declarations (up to ':' token, add identifiers to scope)
+    Using statements (only "using" token, add statement to special list in scope)
+    Chained static scopes (partially parse just like global scope)
+    #run statements (only "#run" token, add statement to special list in GLLOBAL scope)
+    Infix_operator op := (add as operator to scope)
+    Prefix_operator op := (add as operator to scope)
+
+Not allowed:
+    Assignment (ends with ';')
+    If, For, While (ends with dynamic scope '{}')
+    Return (ends with ';')
+    Statements with only function calls or operators (ends with ';')
+    Other statements which cannot yet be identified (ends with ';')
+
+
+
+Pass 2:
+
+Compile statements and go through dynamic scopes:
+All statements allowed
+Compile immediately, using the current state of the local scopes
+
+Start with a #run. When done, eval it. Log error if failed to FULLY_RESOLVE immediately.
+
+
+Pass 3:
+
+Just like pass 2, but instead if evaling compiled functions, output C code that represents it
+Start at set entry point
+When done, if no logged errors, construct a gcc call and compile the c code
+
+*/

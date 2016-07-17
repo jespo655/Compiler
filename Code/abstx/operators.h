@@ -6,6 +6,108 @@
 #include <sstream>
 #include <vector>
 
+
+
+
+
+
+
+
+/*
+FIXME: rewrite this!
+
+*/
+
+struct Prefix_expr : Value_expression
+{
+    std::shared_ptr<Identifier> op_id;
+    std::shared_ptr<Value_expression> expr;
+
+    std::shared_ptr<Type> get_type()
+    {
+        if (expr_t == nullptr || op_id == nullptr) return nullptr;
+        auto expr_t = expr->get_type();
+        if (expr_t == nullptr) return nullptr;
+
+        // FIXME: check for the correct operator overload from parent_scope
+        // Return its return value
+        ASSERT(false, "NYI");
+        return nullptr;
+    }
+
+    std::string toS() const override { return op_id->toS() + "(" + expr->toS() + ")"; }
+
+};
+
+
+
+struct Infix_expr : Value_expression
+{
+    std::shared_ptr<Identifier> op_id;
+    std::shared_ptr<Value_expression> lhs;
+    std::shared_ptr<Value_expression> rhs;
+
+    std::shared_ptr<Type> get_type()
+    {
+        if (expr_t == nullptr || op_id == nullptr) return nullptr;
+        auto expr_t = expr->get_type();
+        if (expr_t == nullptr) return nullptr;
+
+        // FIXME: check for the correct operator overload from parent_scope
+        // Return its return value
+        ASSERT(false, "NYI");
+        return nullptr;
+    }
+
+    std::string toS() const override { return op_id->toS() + "(" + lhs->toS() + ", " + rhs->toS() + ")"; }
+
+};
+
+
+
+struct Type_operator : Type_fn
+{
+    // FIXME: different prios is needed for prefix and infix
+    int get_prio() { ASSERT(false, "NYI"); }
+
+    std::string toS(void const * value_ptr, int size=0) const override {
+        ASSERT(size == 0 || size == byte_size());
+        std::ostringstream oss;
+        void* fn_ptr = *(void**)value_ptr;
+        oss << "operator pointer(" << fn_ptr << ")";
+        return oss.str();
+    }
+
+    bool is_operator_type() const override { return true; }
+    int get_operator_prio() const override { return get_prio(); }
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 An operator is a special case of a function call, with it's own syntax.
 The function_identifier has to be either a single word (identifier), or a symbol
@@ -193,16 +295,7 @@ struct Suffix_operator : Operator {
 
 
 
-struct Type_operator : Type_fn
-{
-    std::string toS(void const * value_ptr, int size=0) const override {
-        ASSERT(size == 0 || size == byte_size());
-        std::ostringstream oss;
-        void* fn_ptr = *(void**)value_ptr;
-        oss << "operator pointer(" << fn_ptr << ")";
-        return oss.str();
-    }
-};
+/*
 struct Type_prefix_op : Type_operator
 {
 
@@ -215,3 +308,4 @@ struct Type_infix_op : Type_operator
 {
 
 };
+*/

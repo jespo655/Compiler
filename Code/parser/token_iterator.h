@@ -45,21 +45,23 @@ struct Token_iterator
     }
 
 
-    // Returns a token n steps ahead.
-    // Expects the current_index to be inside the bounds of the token vector
-    const Token& look_ahead(int n)
-    {
-        if (current_index+n < 0 || current_index+n >= tokens.size()) {
+    // Returns the token at a specific index.
+    // Expects the index n to be inside the bounds of the token vector
+    const Token& look_at(int n) {
+        if (n < 0 || n >= token.size()) {
             error = true;
-            return tokens[tokens.size()-1]; // should be EOF token
+            return tokens[token.size()-1];
         }
         error = false;
-        return tokens[current_index+n];
+        return tokens[n];
     }
+
+    // Returns a token n steps ahead.
+    const Token& look_ahead(int n) { return look_at(current_index+n); }
 
 
     // Returns a token n steps back.
-    const Token& look_back(int n) { return look_ahead(-n); }
+    const Token& look_back(int n) { return look_at(current_index-n); }
 
 
     // Returns the current token and increments the current_index.
@@ -107,6 +109,26 @@ struct Token_iterator
         return t;
     }
 
+    const Token& expect_current(const Token_type& expected_type)
+    {
+        const Token& t = current_token(); // sets error to false
+        if (t.type != expected_type) {
+            log_error("Expected token of type "+toS(expected_type)+", but found type "+toS(t.type), t.context);
+            error = true;
+        }
+        return t;
+    }
+
+    const Token& expect_current(const Token_type& expected_type, std::string expected_token)
+    {
+        const Token& t = current_token(); // sets error to false
+        if (t.type != expected_type || t.token != expected_token) {
+            log_error("Expected token \""+expected_token+"\" ("+toS(expected_type)+"), but found \""+t.token+"\" ("+toS(t.type)+")", t.context);
+            error = true;
+        }
+        return t;
+    }
+
 
     // Returns true if the last expect call failed.
     bool expect_failed() { return error; }
@@ -115,21 +137,29 @@ struct Token_iterator
     // Used like expect, but gives compiler runtime error instead of a logged compile error.
     const Token& assert(const Token_type& expected_type, std::string expected_token)
     {
+        ASSERT(!error);
         ASSERT(it->type == Token_type::COMPILER_COMMAND && it->token == "#eval");
         return it.eat_token();
+    }
+
+    const Token& assert_current(const Token_type& expected_type, std::string expected_token)
+    {
+        ASSERT(!error);
+        ASSERT(it->type == Token_type::COMPILER_COMMAND && it->token == "#eval");
+        return it.current_token();
     }
 
 
     // If error, logs an appropriate error and returns -1
     int find_matching_token(int index, const Token_type& expected_closing_type, const std::string& expected_closing_token, const std::string& range_name, const std::string& error_string, bool forward=true, bool log_errors=true)
     {
-        const Token& start_token = look_ahead(index-current_index);
+        const Token& start_token = look_at(index);
         ASSERT(!start_token.is_eof());
 
         int step = forward ? 1 : -1;
 
         while(true) {
-            const Token& t = look_ahead(index-current_index);
+            const Token& t = look_at(index);
 
             if (t.is_eof()) {
                 if (log_errors) {

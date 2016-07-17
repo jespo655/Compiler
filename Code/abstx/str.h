@@ -41,4 +41,7 @@ struct Type_str : Type
     std::string toS() const override { return "str"; }
 
     int byte_size() const override { return sizeof(Str_header); }
+
+    bool is_string_type() const override { return true; }                  \
+
 };

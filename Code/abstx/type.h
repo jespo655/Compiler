@@ -20,6 +20,17 @@ struct Type : Value_expression
         return toS() == o.toS() && context == o.context;
     };
     virtual bool operator!=(const Type& o) const { return !(*this==o); }
+
+    virtual bool is_number_type() const { return false; }
+    virtual bool is_integer_type() const { return false; }
+    virtual bool is_float_type() const { return false; }
+    virtual bool is_string_type() const { return false; }
+    virtual bool is_type_type() const { return false; }
+    virtual bool is_bool_type() const { return false; }
+    virtual bool is_seq_type() const { return false; }
+    virtual bool is_function_type() const { return false; }
+    virtual bool is_operator_type() const { return false; }
+
 };
 
 
@@ -30,5 +41,7 @@ struct Type_type : Type
 
     std::string toS() const override { return "type"; }
     int byte_size() const override { return 0; } // all info about types are handled at compile time, so no alloc needed at runtime
+
+    bool is_type_type() const override { return true; }
 };
 
