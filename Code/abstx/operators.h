@@ -25,7 +25,7 @@ struct Prefix_expr : Value_expression
 
     std::shared_ptr<Type> get_type()
     {
-        if (expr_t == nullptr || op_id == nullptr) return nullptr;
+        if (expr == nullptr || op_id == nullptr) return nullptr;
         auto expr_t = expr->get_type();
         if (expr_t == nullptr) return nullptr;
 
@@ -49,9 +49,9 @@ struct Infix_expr : Value_expression
 
     std::shared_ptr<Type> get_type()
     {
-        if (expr_t == nullptr || op_id == nullptr) return nullptr;
-        auto expr_t = expr->get_type();
-        if (expr_t == nullptr) return nullptr;
+        if (lhs == nullptr || rhs == nullptr || op_id == nullptr) return nullptr;
+        // auto expr_t = expr->get_type();
+        // if (expr_t == nullptr) return nullptr;
 
         // FIXME: check for the correct operator overload from parent_scope
         // Return its return value
@@ -68,7 +68,7 @@ struct Infix_expr : Value_expression
 struct Type_operator : Type_fn
 {
     // FIXME: different prios is needed for prefix and infix
-    int get_prio() { ASSERT(false, "NYI"); }
+    int get_prio() const { ASSERT(false, "NYI"); }
 
     std::string toS(void const * value_ptr, int size=0) const override {
         ASSERT(size == 0 || size == byte_size());
@@ -79,7 +79,7 @@ struct Type_operator : Type_fn
     }
 
     bool is_operator_type() const override { return true; }
-    int get_operator_prio() const override { return get_prio(); }
+    // int get_operator_prio() const override { return get_prio(); }
 
 };
 

@@ -130,7 +130,7 @@ struct Token
     std::string toS() {
         std::ostringstream oss;
         oss << token;
-        oss << " (" << toS(type) << ")";
+        oss << " (" << ::toS(type) << ")";
         return oss.str();
     }
 };

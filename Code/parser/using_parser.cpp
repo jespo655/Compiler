@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "../abstx/using.h"
-
+#include "../abstx/str.h"
+#include "../compile_time/compile_time.h"
 
 // syntax:
 // using val_expr;
@@ -12,13 +13,10 @@ std::shared_ptr<Using_statement> read_using_statement(Token_iterator& it, std::s
     us->context = it->context;
     us->start_token_index = it.current_index;
 
-    it.eat_token(); // eat the using token
-    us->subject = read_value_expression(it, parent_scope);
-
-    if (!it.error) it.expect(Token_type::SYMBOL, ";");
+    it.current_index = it.find_matching_semicolon() + 1;
 
     if (it.error) us->status = Parsing_status::FATAL_ERROR;
-    else us->status = us->subject->status;
+    else us->status = Parsing_status::PARTIALLY_PARSED;
 
     return us;
 }
@@ -31,23 +29,28 @@ Parsing_status fully_resolve_using(std::shared_ptr<Using_statement> us)
     if (us->status == Parsing_status::FULLY_RESOLVED || is_error(us->status))
         return us->status;
 
-    auto parent = us->parent_scope();
-    ASSERT(parent != nullptr);
+    auto parent_scope = us->parent_scope();
+    ASSERT(parent_scope != nullptr);
 
-    us->status = fully_resolve_value_expression(us->subject);
+    // ASSERT(false, "using NYI"); // beware of infinite dependency loops
+    us->status = Parsing_status::DEPENDENCIES_NEEDED;
+    Token_iterator it = get_iterator(us, us->start_token_index+1);
+    us->subject = compile_value_expression(it, parent_scope);
+    us->status = us->subject->status;
+
     if (is_error(us->status) || us->status == Parsing_status::DEPENDENCIES_NEEDED) {
         return us->status;
     }
 
     // Evaluate the expression and get the scope from it
-    Value value = eval(subject); // compile time execution, yay!
+    Value value = eval(us->subject); // compile time execution, yay!
 
     std::shared_ptr<Scope> scope{nullptr};
     auto type = value.get_type();
-    if (auto t = dynamic_pointer_cast<Type_str>(type) {
+    if (auto t = std::dynamic_pointer_cast<Type_str>(type)) {
         // direct scope include
         scope = t->cpp_value(value.get_value());
-    } else if (auto t = dynamic_pointer_cast<Type_str>(type) {
+    } else if (auto t = std::dynamic_pointer_cast<Type_str>(type)) {
         // string type -> treat it as a file include
         std::string file_name = t->cpp_value(value.get_value());
         scope = std::static_pointer_cast<Scope>(parse_file(file_name));
@@ -63,7 +66,7 @@ Parsing_status fully_resolve_using(std::shared_ptr<Using_statement> us)
         us->status = scope->status;
     } else {
         ASSERT(scope->status == Parsing_status::PARTIALLY_PARSED || scope->status == Parsing_status::FULLY_RESOLVED);
-        parent->pulled_in_scopes.push_back(scope);
+        parent_scope->pulled_in_scopes.push_back(scope);
         us->status = Parsing_status::FULLY_RESOLVED;
     }
 
@@ -100,4 +103,5 @@ void resolve_imports(std::shared_ptr<Scope> scope)
 
         scope->using_statements = std::move(remaining);
     }
+    scope->using_statements.clear();
 }

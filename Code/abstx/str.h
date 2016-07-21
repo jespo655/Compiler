@@ -18,7 +18,7 @@ struct Str_header {
 struct Type_str : Type
 {
     static std::string cpp_value(void const* value_ptr, int size=0) {
-        ASSERT(size == 0 || size == byte_size());
+        ASSERT(size == 0 || size == sizeof(Str_header));
         std::ostringstream oss;
 
         Str_header* const header_ptr = (Str_header* const)value_ptr;

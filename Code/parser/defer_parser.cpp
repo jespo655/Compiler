@@ -46,7 +46,7 @@ std::shared_ptr<Defer_statement> compile_defer_statement(Token_iterator& it, std
     it.assert(Token_type::KEYWORD, "defer");
     ds->statement = compile_statement(it, parent_scope);
     ASSERT(ds->statement != nullptr);
-    ds->staus = ds->statement->status;
+    ds->status = ds->statement->status;
 
     return ds;
 }

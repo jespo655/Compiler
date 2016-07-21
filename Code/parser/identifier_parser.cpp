@@ -1,5 +1,6 @@
 #include "parser.h"
-
+#include "../abstx/identifier.h"
+#include "../abstx/declaration.h"
 
 // FIXME: read dump variable _
 
@@ -20,7 +21,12 @@ std::shared_ptr<Identifier> read_identifier(Token_iterator& it, std::shared_ptr<
     return id;
 }
 
-
+std::shared_ptr<Identifier> compile_identifier(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+{
+    auto id = read_identifier(it, parent_scope);
+    fully_resolve_identifier(id);
+    return id;
+}
 
 
 
@@ -28,9 +34,9 @@ std::shared_ptr<Identifier> read_identifier(Token_iterator& it, std::shared_ptr<
 Parsing_status fully_resolve_identifier(std::shared_ptr<Identifier>& identifier)
 {
     ASSERT(identifier != nullptr);
-    if (is_error(identifier.status) || identifier.status == Parsing_status::FULLY_RESOLVED) {
+    if (is_error(identifier->status) || identifier->status == Parsing_status::FULLY_RESOLVED) {
         // no use doing anything
-        return identifier.status;
+        return identifier->status;
     }
 
     // find the identity from the parent scope
@@ -46,18 +52,27 @@ Parsing_status fully_resolve_identifier(std::shared_ptr<Identifier>& identifier)
         identifier->status = Parsing_status::UNDECLARED_IDENTIFIER;
         return identifier->status;
     }
+
+    auto owner = identifier->owner.lock();
+    ASSERT(owner != nullptr)
     identifier = identity;
 
     if (identifier->status == Parsing_status::FULLY_RESOLVED || is_error(identifier->status))
         return identifier->status;
 
-    ASSERT(identifier->owner.lock() != nullptr);
+    ASSERT(identifier->owner.lock() != nullptr); // this should be the identifier declaration
     auto declaration = std::dynamic_pointer_cast<Declaration_statement>(identifier->owner.lock());
     ASSERT(declaration != nullptr);
+    ASSERT(declaration != owner);
 
+    Parsing_status old_status = owner->status;
+    owner->status = Parsing_status::DEPENDENCIES_NEEDED;
     fully_resolve_declaration(declaration);
+    owner->status = old_status;
+
     identifier->status = declaration->status;
     ASSERT(identifier->status != Parsing_status::NOT_PARSED);
     ASSERT(identifier->status != Parsing_status::PARTIALLY_PARSED);
+
     return identifier->status;
 }

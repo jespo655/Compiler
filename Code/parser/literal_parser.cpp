@@ -3,6 +3,7 @@
 #include "../abstx/numbers.h"
 #include "../abstx/str.h"
 #include "../abstx/seq.h"
+#include "../compile_time/compile_time.h"
 #include <cstdlib>
 
 
@@ -16,12 +17,12 @@ std::shared_ptr<Literal> compile_int_literal(Token_iterator& it, std::shared_ptr
     literal->context = it->context;
 
     try {
-        if (it->token[0] '-') {
+        if (it->token[0] == '-') {
             int_least64_t v = std::stoll(it->token);
-            literal->value.asssign(std::shared_ptr<Type>(new Type_int()), v);
+            literal->value.assign(std::shared_ptr<Type>(new Type_int()), v);
         } else {
-            uint_least64_t v = std::stoll(it->token); // FIXME: can't handle overflow
-            literal->value.asssign(std::shared_ptr<Type>(new Type_uint()), v);
+            uint_least64_t v = std::stoull(it->token);
+            literal->value.assign(std::shared_ptr<Type>(new Type_uint()), v);
         }
     } catch (std::out_of_range e) {
         log_error("Integer literal too large to fit!", it->context);
@@ -48,7 +49,7 @@ std::shared_ptr<Literal> compile_float_literal(Token_iterator& it, std::shared_p
 
     try {
         double v = std::stod(it->token);
-        literal->value.asssign(std::shared_ptr<Type>(new Type_float()), v);
+        literal->value.assign(std::shared_ptr<Type>(new Type_float()), v);
     } catch (std::out_of_range e) {
         log_error("Float literal too large to fit!", it->context);
         literal->status = Parsing_status::FATAL_ERROR;
@@ -71,7 +72,7 @@ std::shared_ptr<Literal> compile_bool_literal(Token_iterator& it, std::shared_pt
     literal->context = it->context;
 
     bool v = (it->token == "true");
-    literal->value.asssign(std::shared_ptr<Type>(new Type_bool()), v);
+    literal->value.assign(std::shared_ptr<Type>(new Type_bool()), v);
 
     it.assert(Token_type::BOOL);
 
@@ -84,12 +85,13 @@ std::shared_ptr<Literal> compile_bool_literal(Token_iterator& it, std::shared_pt
 
 
 
-struct String_container() {
+struct String_container {
 
     char* push(const std::string& s) {
         // FIXME: check if the string already exists in the list
         // if so, delete the pointer and return the old one
 
+        int len = s.size();
         char* c = (char*)malloc(len+1); // '\0' terminated
         for (int i = 0; i < len; ++i) {
             c[i] = s[i];  // FIXME: better lexer support for utf8 than std::string
@@ -109,7 +111,8 @@ struct String_container() {
 
 private:
     std::vector<char*> strings;
-}
+};
+
 
 String_container _string_container{}; // singleton
 
@@ -128,7 +131,7 @@ std::shared_ptr<Literal> compile_string_literal(Token_iterator& it, std::shared_
     header.len = len;
     header.v = _string_container.push(it->token);
 
-    literal->value.asssign(std::shared_ptr<Type>(new Type_str()), v);
+    literal->value.assign(std::shared_ptr<Type>(new Type_str()), header);
 
     literal->status = Parsing_status::FULLY_RESOLVED;
     it.eat_token(); // eat the string token
@@ -171,7 +174,7 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
     bool has_size_data = false;
     int i = 0;
 
-    int meta_index = find_matching_token(it.current_index, Token_type::SYMBOL, ":",
+    int meta_index = it.find_matching_token(it.current_index, Token_type::SYMBOL, ":",
         "sequence literal", "", true, false); // search forward without logging errors
     bool has_metadata = it.error;
 
@@ -210,19 +213,19 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
             auto size_expr = compile_value_expression(it, parent_scope);
             ASSERT(size_expr != nullptr);
             if (size_expr->status == Parsing_status::FATAL_ERROR) {
-                seq->satus = FATAL_ERROR;
-                return;
+                seq->status = Parsing_status::FATAL_ERROR;
+                return seq;
             } else if (is_error(size_expr->status)) {
                 seq->status = size_expr->status;
             } else {
                 ASSERT(size_expr->status == Parsing_status::FULLY_RESOLVED);
                 Value v = eval(size_expr);
-                ASSERT(v.type != nullptr);
-                if (i_type = std::dynamic_pointer_cast<Type_int>(v.type)) { // if (v.type->is_integer_type())
+                ASSERT(v.get_type() != nullptr);
+                if (auto i_type = std::dynamic_pointer_cast<Type_int>(v.get_type())) { // if (v.type->is_integer_type())
                     seq->type->size = i_type->cpp_value(v.get_value());
                     has_size_data = true;
                 } else {
-                    log_error("Type mismatch: expected integer type but found "+v.type->toS(), size_expr->context);
+                    log_error("Type mismatch: expected integer type but found "+v.get_type()->toS(), size_expr->context);
                     seq->status == Parsing_status::TYPE_ERROR;
                 }
             }
@@ -269,7 +272,7 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
             // try to recover
             it.current_index = it.find_matching_token(it.current_index, Token_type::SYMBOL, "]", "Seq_literal", "Missing \"]\"") + 1;
             if(it.error) {
-                seq->status = FATAL_ERROR;
+                seq->status = Parsing_status::FATAL_ERROR;
                 return seq; // not ok, undefined behaviour if we continue
             }
             break; // we didn't read the whole sequence, but that's ok. We log an error and continue with the next thing.
@@ -306,7 +309,7 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
     } else if (!type_errors.empty()) {
         log_error("Incompatible types in sequence literal of type "+seq->type->type->toS(), seq->context);
         for (auto member : type_errors) {
-            add_note("Member of type "+member->type+" found here:",member->context);
+            add_note("Member of type "+member->get_type()+" found here:",member->context);
         }
         seq->status = Parsing_status::TYPE_ERROR;
         seq->type->status = Parsing_status::TYPE_ERROR;
@@ -314,8 +317,8 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
         seq->type->status = seq->type->type->status;
     }
 
-    if (!is_error(seq->status))
-        seq->status = Parsing_status::FULLY_RESOLVED) {
+    if (!is_error(seq->status)) {
+        seq->status = Parsing_status::FULLY_RESOLVED;
     }
 
     if (!has_size_data) {

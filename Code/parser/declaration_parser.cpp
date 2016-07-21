@@ -1,5 +1,5 @@
 #include "parser.h"
-
+#include "../abstx/declaration.h"
 
 
 // syntax:
@@ -37,7 +37,7 @@ std::shared_ptr<Declaration_statement> read_declaration_statement(Token_iterator
             } else {
                 auto id = read_identifier(it, parent_scope);
                 id->owner = decl;
-                decl->identifier.push_back(id);
+                decl->identifiers.push_back(id);
                 parent_scope->identifiers[id->name] = id;
             }
         }
@@ -47,7 +47,7 @@ std::shared_ptr<Declaration_statement> read_declaration_statement(Token_iterator
 
         it.expect(Token_type::SYMBOL, ",");
         if (it.error) {
-            decl->status == SYNTAX_ERROR;
+            decl->status == Parsing_status::SYNTAX_ERROR;
             break;
         }
     }

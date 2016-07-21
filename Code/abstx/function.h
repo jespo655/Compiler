@@ -234,10 +234,6 @@ struct Function_call_statement : Statement
 {
     std::shared_ptr<Function_call> function_call;
 
-    // only allow compile time functions in static scopes
-    bool allow_in_static_scope() const override { return compile_time(); }
-    bool allow_in_dynamic_scope() const override { return true; }
-
     bool compile_time() const { ASSERT(function_call != nullptr); return function_call->compile_time; }
 
     std::string toS() const override {

@@ -48,9 +48,9 @@ struct Token_iterator
     // Returns the token at a specific index.
     // Expects the index n to be inside the bounds of the token vector
     const Token& look_at(int n) {
-        if (n < 0 || n >= token.size()) {
+        if (n < 0 || n >= tokens.size()) {
             error = true;
-            return tokens[token.size()-1];
+            return tokens[tokens.size()-1];
         }
         error = false;
         return tokens[n];
@@ -135,18 +135,18 @@ struct Token_iterator
 
     // ASSERTs that the current token is next, then eat it
     // Used like expect, but gives compiler runtime error instead of a logged compile error.
-    const Token& assert(const Token_type& expected_type, std::string expected_token)
+    const Token& assert(const Token_type& expected_type, std::string expected_token="")
     {
         ASSERT(!error);
-        ASSERT(it->type == Token_type::COMPILER_COMMAND && it->token == "#eval");
-        return it.eat_token();
+        ASSERT((*this)->type == expected_type && expected_token=="" || (*this)->token == expected_token);
+        return eat_token();
     }
 
-    const Token& assert_current(const Token_type& expected_type, std::string expected_token)
+    const Token& assert_current(const Token_type& expected_type, std::string expected_token="")
     {
         ASSERT(!error);
-        ASSERT(it->type == Token_type::COMPILER_COMMAND && it->token == "#eval");
-        return it.current_token();
+        ASSERT((*this)->type == expected_type && expected_token=="" || (*this)->token == expected_token);
+        return current_token();
     }
 
 
@@ -216,7 +216,7 @@ struct Token_iterator
     {
         if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
-        ASSERT(tokens[index].token == "(" || tokens[index].token == ")");
+        // ASSERT(tokens[index].token == "(" || tokens[index].token == ")");
         if (tokens[index].token == ")")
              return find_matching_token(index-1, Token_type::SYMBOL, "(","paren","Mismatched paren", false); // search backwards
         else return find_matching_token(index+1, Token_type::SYMBOL, ")","paren","Mismatched paren");
@@ -226,7 +226,7 @@ struct Token_iterator
     {
         if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
-        ASSERT(tokens[index].token == "[" || tokens[index].token == "]");
+        // ASSERT(tokens[index].token == "[" || tokens[index].token == "]");
         if (tokens[index].token == "]")
              return find_matching_token(index-1, Token_type::SYMBOL, "[","bracket","Mismatched bracket", false); // search backwards
         else return find_matching_token(index+1, Token_type::SYMBOL, "]","bracket","Mismatched bracket");
@@ -236,7 +236,7 @@ struct Token_iterator
     {
         if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
-        ASSERT(tokens[index].token == "{" || tokens[index].token == "}");
+        // ASSERT(tokens[index].token == "{" || tokens[index].token == "}");
         if (tokens[index].token == "}")
              return find_matching_token(index-1, Token_type::SYMBOL, "{","brace","Mismatched brace", false); // search backwards
         else return find_matching_token(index+1, Token_type::SYMBOL, "}","brace","Mismatched brace");

@@ -18,9 +18,6 @@ struct Declaration_statement : Statement {
     std::vector<std::shared_ptr<Identifier>> identifiers;
     std::vector<std::shared_ptr<Variable_expression>> rhs;
 
-    bool allow_in_static_scope() const override { return true; }
-    bool allow_in_dynamic_scope() const override { return true; }
-
     std::string toS() const override {
         ASSERT(!identifiers.empty());
         std::ostringstream oss;

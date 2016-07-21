@@ -22,5 +22,6 @@ std::shared_ptr<Declaration_statement> read_operator_declaration(Token_iterator&
     // optional ',' token, then expect expression which evaluates to exactly 1 int value
 
     ASSERT(false, "NYI");
+    return nullptr;
 
 }

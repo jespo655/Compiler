@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "../abstx/if.h"
+#include "../abstx/bool.h"
 
 
 // if statement during static scope: log error and go to the end of statement.
@@ -89,7 +90,7 @@ std::shared_ptr<If_statement> compile_if_statement(Token_iterator& it, std::shar
         ASSERT(cs->condition != nullptr);
         cs->condition->owner = cs;
 
-        if (cs->condition->status == FATAL_ERROR) {
+        if (cs->condition->status == Parsing_status::FATAL_ERROR) {
             is->status = Parsing_status::FATAL_ERROR;
             return is;
         }
@@ -127,7 +128,7 @@ std::shared_ptr<If_statement> compile_if_statement(Token_iterator& it, std::shar
         if (!it.error) {
             is->else_scope = compile_dynamic_scope(it, parent_scope);
             is->else_scope->owner = is;
-            if (is_error(is->else_scope)) is->status = is->else_scope->status;
+            if (is_error(is->else_scope->status)) is->status = is->else_scope->status;
         }
     }
 
@@ -137,7 +138,7 @@ std::shared_ptr<If_statement> compile_if_statement(Token_iterator& it, std::shar
         if (!it.error) {
             is->then_scope = compile_dynamic_scope(it, parent_scope);
             is->then_scope->owner = is;
-            if (is_error(is->then_scope)) is->status = is->then_scope->status;
+            if (is_error(is->then_scope->status)) is->status = is->then_scope->status;
         }
     }
 

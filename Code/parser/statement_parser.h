@@ -39,43 +39,37 @@ std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Sc
 
     } else if (it->type == Token_type::SYMBOL && it->token == "{") {
         // nested scope
-        if (parent_scope->dynamic) return read_dynamic_scope(it, parent_scope);
-        else return read_static_scope(it, parent_scope);
+        return read_static_scope(it, parent_scope);
         // return std::static_pointer_cast<Statement>(scope);
 
-    } else if (it->type != Token_type::STRING && it->token == "if") {
+    } else if (it->type == Token_type::KEYWORD && it->token == "if") {
         // if statement
         return read_if_statement(it, parent_scope);
         // return std::static_pointer_cast<Statement>(if_s);
-    }
 
-    else if (it->type != Token_type::STRING && it->token == "for") {
+    } else if (it->type == Token_type::KEYWORD && it->token == "for") {
         // for statement
         return read_for_statement(it, parent_scope);
         // return std::static_pointer_cast<Statement>(for_s);
 
-        // FIXME: move this error message to read_for_statement()
-        // if (!parent_scope->dynamic) log_error("for statement not allowed in static scope", it->context); // FIXME: proper error message
-    }
-
-    else if (it->type != Token_type::STRING && it->token == "while") {
+    } else if (it->type == Token_type::KEYWORD && it->token == "while") {
         // while statement
         return read_while_statement(it, parent_scope);
         // return std::static_pointer_cast<Statement>(while_s);
 
-        // FIXME: move this error message to read_while_statement()
-        // if (!parent_scope->dynamic) log_error("while statement not allowed in static scope", it->context); // FIXME: proper error message
-    }
-
-    else if (it->type != Token_type::STRING && it->token == "return") {
+    } else if (it->type == Token_type::KEYWORD && it->token == "return") {
         // return statement
         return read_return_statement(it, parent_scope);
 
-        // FIXME: move this error message to read_return_statement()
-        // if (!parent_scope->dynamic) log_error("Return statement not allowed in static scope", it->context); // FIXME: proper error message
-    }
+    } else if (it->type == Token_type::KEYWORD && it->token == "infix_operator") {
+        // infix operator declaration
+        return read_operator_declaration(it, parent_scope);
 
-    else {
+    } else if (it->type == Token_type::KEYWORD && it->token == "prefix_operator") {
+        // prefix operator declaration
+        return read_operator_declaration(it, parent_scope);
+
+    } else {
 
         int start_index = it.current_index;
         Token_context context = it->context;
@@ -84,8 +78,6 @@ std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Sc
 
             // look for ':' (declaration), '=' (assignment) and ';' (unknown statement)
             // the first such matching symbol found determines the type of statement.
-
-            // If an unknown statement ends with ");", then it might be a function call, but it's not certain.
 
             const Token& t = it.eat_token();
 
@@ -105,20 +97,34 @@ std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Sc
 
                 if (t.token == ";") {
                     // its a line with only a value expression in it
+                    // could contain a #run somewhere, but we cant determine that yet
                     it.current_index = start_index;
-                    return read_expression_statement(it, parent_scope);
+
+                    auto statement = std::shared_ptr<Statement>(new Unknown_statement());
+                    statement->start_token_index = start_index;
+                    statement->owner = parent_scope;
+                    statement->context = it.look_at(start_index).context;
+                    statement->status = Parsing_status::NOT_PARSED;
+                    auto global_scope = get_global_scope(parent_scope);
+                    global_scope->unknown_statements.push_back(statement); // compile it later
+
+                    return statement;
                 }
 
                 if (t.token == "(") it.current_index = it.find_matching_paren(it.current_index-1) + 1;  // go back to the previous "(" and search from there
                 else if (t.token == "[") it.current_index = it.find_matching_bracket(it.current_index-1) + 1;
                 else if (t.token == "{") it.current_index = it.find_matching_brace(it.current_index-1) + 1;
 
-                else if (t.token == ")" || t.token == "]" || t.token == "}") {
+                else if (t.is_eof() || t.token == ")" || t.token == "]" || t.token == "}") {
                     log_error("Unexpected token "+t.token+" in unresolved statement.", t.context);
+
+                    log_error("Missing ';' at the end of statement: expected \";\" before \""+t.token+"\"", t.context);
+                    add_note("In unresolved statement that started here: ", start_token.context);
+
                     auto statement = std::shared_ptr<Statement>(new Unknown_statement());
                     statement->start_token_index = start_index;
                     statement->owner = parent_scope;
-                    statement->context = context;
+                    statement->context = it.look_at(start_index).context;
                     statement->status = Parsing_status::FATAL_ERROR;
                     it.error = true;
                     return statement;

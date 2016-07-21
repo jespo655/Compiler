@@ -1,7 +1,7 @@
 #pragma once
 
 #include "type.h"
-#include "../utilitites/assert.h"
+#include "../utilities/assert.h"
 #include <string>
 
 

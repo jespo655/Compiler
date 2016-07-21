@@ -3,6 +3,7 @@
 #include "../abstx/scope.h"
 #include "../abstx/function.h"
 #include "token.h"
+#include "token_iterator.h"
 
 #include <memory>
 #include <string>
@@ -16,6 +17,7 @@ struct Global_scope : Scope
     const std::vector<Token> tokens; // should be treated as const
 
     std::vector<std::shared_ptr<Function_call_statement>> run_statements;
+    std::vector<std::shared_ptr<Unknown_statement>> unknown_statements;
 
     Global_scope(const std::vector<Token>& tokens) : tokens{tokens} {}
 
@@ -49,6 +51,7 @@ std::shared_ptr<Global_scope> get_global_scope(std::shared_ptr<Scope> scope);
 
 
 // scope_parser.cpp
+std::shared_ptr<Global_scope> read_global_scope(const std::vector<Token>& tokens, const std::string& name);
 std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 std::shared_ptr<Scope> compile_dynamic_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
@@ -56,6 +59,7 @@ std::shared_ptr<Scope> compile_dynamic_scope(Token_iterator& it, std::shared_ptr
 // identifier_parser.cpp
 struct Identifier;
 std::shared_ptr<Identifier> read_identifier(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Identifier> compile_identifier(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 Parsing_status fully_resolve_identifier(std::shared_ptr<Identifier>& identifier);
 
 
@@ -75,14 +79,16 @@ void resolve_imports(std::shared_ptr<Scope> scope);
 
 
 // literal_parser.cpp
+struct Literal;
 std::shared_ptr<Literal> compile_int_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 std::shared_ptr<Literal> compile_float_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<Literal> compile_bool_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+std::shared_ptr<Literal> compile_bool_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 std::shared_ptr<Literal> compile_string_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<Literal> compile_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 // declaration_parser.cpp
+struct Declaration_statement;
 std::shared_ptr<Declaration_statement> read_declaration_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 // TODO:
 Parsing_status fully_resolve_declaration(std::shared_ptr<Declaration_statement>& declaration);
@@ -90,37 +96,49 @@ std::shared_ptr<Declaration_statement> compile_declaration_statement(Token_itera
 
 
 // if_parser.cpp
+struct If_statement;
 std::shared_ptr<If_statement> read_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 std::shared_ptr<If_statement> compile_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 // for_parser.cpp
+struct For_statement;
 std::shared_ptr<For_statement> read_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 // TODO:
 std::shared_ptr<For_statement> compile_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 // while_parser.cpp
+struct While_statement;
 std::shared_ptr<While_statement> read_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 // TODO:
 std::shared_ptr<While_statement> compile_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 // return_parser.cpp
+struct Return_statement;
 std::shared_ptr<Return_statement> read_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 // TODO:
 std::shared_ptr<Return_statement> compile_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 // assignment_parser.cpp
+struct Assignment_statement;
 std::shared_ptr<Assignment_statement> read_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 // TODO:
 std::shared_ptr<Assignment_statement> compile_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 // defer_parser.cpp
+struct Defer_statement;
 std::shared_ptr<Defer_statement> read_defer_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 std::shared_ptr<Defer_statement> compile_defer_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// expression_parser.cpp
+struct Value_expression;
+std::shared_ptr<Value_expression> compile_value_expression(Token_iterator& it, std::shared_ptr<Scope> parent_scope, int min_operator_prio=0);
+std::shared_ptr<Variable_expression> compile_variable_expression(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 
@@ -129,9 +147,12 @@ std::shared_ptr<Defer_statement> compile_defer_statement(Token_iterator& it, std
 
 
 // TODO:
-std::shared_ptr<Function_call> compile_function_call(Token_iterator& it, std::shared_ptr<Value_expression> fn_id);
-std::shared_ptr<Seq_lookup> compile_seq_indexing(Token_iterator& it, std::shared_ptr<Value_expression> seq_id);
-std::shared_ptr<Getter> compile_getter(Token_iterator& it, std::shared_ptr<Value_expression> struct_id);
+struct Function_call;
+struct Seq_lookup;
+struct Getter;
+std::shared_ptr<Value_expression> compile_function_call(Token_iterator& it, std::shared_ptr<Value_expression> fn_id);
+std::shared_ptr<Value_expression> compile_seq_indexing(Token_iterator& it, std::shared_ptr<Value_expression> seq_id);
+std::shared_ptr<Value_expression> compile_getter(Token_iterator& it, std::shared_ptr<Value_expression> struct_id);
 
 
 

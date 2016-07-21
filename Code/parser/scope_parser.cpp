@@ -5,6 +5,40 @@
 
 
 
+std::shared_ptr<Global_scope> read_global_scope(const std::vector<Token>& tokens, const std::string& name)
+{
+    auto global_scope = std::shared_ptr<Global_scope>(new Global_scope(tokens));
+    global_scope->file_name = name;
+
+    Token_iterator it = global_scope->iterator();
+    global_scope->start_token_index = 0;
+    global_scope->context = it->context;
+
+    global_scope->dynamic = false;
+
+    while (!it->is_eof()) {
+
+        std::shared_ptr<Statement> s = read_statement(it, global_scope);
+        ASSERT(s != nullptr);
+        if (s->status == Parsing_status::FATAL_ERROR) {
+            global_scope->status = Parsing_status::FATAL_ERROR;
+            return global_scope;
+        }
+
+        global_scope->statements.push_back(s);
+    }
+
+    global_scope->status = Parsing_status::PARTIALLY_PARSED;
+    return global_scope;
+
+}
+
+
+
+
+
+
+
 // read_static_scope: read and partially parse statements until end of scope
 //      also store all using-statements in a separate list for easier access
 //      For each run-statement, find global scope and put it there for later
@@ -13,7 +47,7 @@
 // FIXME: add a way to reach all #run-statements for pass 2
 std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
-    ASSERT(parent_scope == nullptr || parent_scope->dynamic = false);
+    ASSERT(parent_scope != nullptr && parent_scope->dynamic == false);
 
     auto scope = std::shared_ptr<Scope>(new Scope());
     scope->start_token_index = it.current_index;
@@ -21,44 +55,27 @@ std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Sco
     scope->owner = parent_scope;
     scope->dynamic = false;
 
-    bool global = true;
-    if (it->type == Token_type::SYMBOL && it->token == "{") {
-        global == false;
-        it.eat_token();
-    }
-    // if global, read to eof
-    // else, read to '}'
-
     while (!it->is_eof() && !(it->type == Token_type::SYMBOL && it->token == "}")) {
 
         std::shared_ptr<Statement> s = read_statement(it, scope);
         ASSERT(s != nullptr);
         if (s->status == Parsing_status::FATAL_ERROR) {
             scope->status = Parsing_status::FATAL_ERROR;
-            return Parsing_status::FATAL_ERROR;
+            return scope;
         }
 
         scope->statements.push_back(s);
     }
-    ASSERT(it->is_eof() || (it->type == Token_type::SYMBOL && it->token == "}"));
 
-    if (it->type == Token_type::SYMBOL && it->token == "}") {
-        if (global) {
-            log_error("Unexpected token "+it->token+" in unresolved statement.", it->context);
-            scope->status = Parsing_status::FATAL_ERROR;
-            return Parsing_status::FATAL_ERROR;
-        } else {
-            it.eat_token(); // eat the '}' token
-        }
-    } else {
-        ASSERT(it->is_eof());
-        if(!global) {
-            log_error("Missing '}' at end of scope: found unexpected end of file", it->context);
-            add_note("In scope that started here:", scope->context);
-            scope->status = Parsing_status::FATAL_ERROR;
-            return Parsing_status::FATAL_ERROR;
-        }
+    if (it->is_eof()) {
+        log_error("Missing '}' at end of scope: found unexpected end of file", it->context);
+        add_note("In scope that started here:", scope->context);
+        scope->status = Parsing_status::FATAL_ERROR;
+        return scope;
     }
+
+    ASSERT (it->type == Token_type::SYMBOL && it->token == "}");
+    it.eat_token(); // eat the '}' token
 
     ASSERT(scope->status != Parsing_status::FATAL_ERROR); // in this case we should have returned already.
     scope->status = Parsing_status::PARTIALLY_PARSED;
@@ -79,7 +96,7 @@ std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Sco
 // that we already did the global parsing pass before
 std::shared_ptr<Scope> compile_dynamic_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
-    ASSERT(it->type == Token_type::SYMBOL && t->token == "{");
+    ASSERT(it->type == Token_type::SYMBOL && it->token == "{");
 
     auto scope = std::shared_ptr<Scope>(new Scope());
     scope->start_token_index = it.current_index;
@@ -92,19 +109,24 @@ std::shared_ptr<Scope> compile_dynamic_scope(Token_iterator& it, std::shared_ptr
         std::shared_ptr<Statement> s = compile_statement(it, scope);
         ASSERT(s != nullptr);
 
-        if (is_error(s->status)) {
+        if (s->status == Parsing_status::FATAL_ERROR) {
             scope->status = s->status;
-            return scope->status;
+            return scope;
+        }
+        else if (is_error(s->status)) {
+            scope->status = s->status;
+            it.current_index = it.find_matching_brace();
+            break;
         }
 
-        ASSERT(s->status == Parsing_status::FULLY_PARSED);
+        ASSERT(s->status == Parsing_status::FULLY_RESOLVED);
         scope->statements.push_back(s);
     }
     ASSERT(it->type == Token_type::SYMBOL && it->token == "}");
     it.eat_token(); // eat the '}' token
 
-    scope->status = Parsing_status::FULLY_PARSED;
-
+    if (!is_error(scope->status))
+        scope->status = Parsing_status::FULLY_RESOLVED;
     return scope;
 }
 
