@@ -14,7 +14,29 @@
 
 #include <string>
 #include <iostream>
+#include <cstdlib>
 using namespace std;
+
+
+void str_test()
+{
+    std::string s = "asd";
+    int len = s.size();
+
+    // char v[len+1];
+    char* v = (char*)malloc(len+1);
+
+    for (int i = 0; i < s.size(); ++i)
+        v[i] = s[i];
+    v[len] = '\0';
+
+    cout << "len=" << len << endl;
+    cout << "v=" << v << endl;
+
+    delete v;
+
+}
+
 
 
 void ptr_reference_test()
@@ -77,6 +99,7 @@ void indent_test()
 
 void size_test()
 {
+    cout << "bool: " << sizeof(bool) << endl;
     // cout << "int8_t: " << sizeof(int8_t) << endl;
     // cout << "int16_t: " << sizeof(int16_t) << endl;
     // cout << "int32_t: " << sizeof(int32_t) << endl;
@@ -141,10 +164,11 @@ int main()
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
-    // size_test();
+    size_test();
     // indent_test();
     // float_test();
-    wchar_test();
+    // wchar_test();
+    // str_test();
 }
 
 

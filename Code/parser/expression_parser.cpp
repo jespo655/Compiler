@@ -1,27 +1,50 @@
-#include "expression_parser.h"
+#include "parser.h"
 #include "../abstx/value_list.h"
 #include "../abstx/scope.h"
 #include "../abstx/seq.h"
+#include "../abstx/operators.h"
+#include "../compile_time/compile_time.h"
+
+const int eval_prio = 1000; // FIXME: fix. Maybe use the current operator prio?
 
 
-std::shared_ptr<Value_expression> parse_value_list(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-std::shared_ptr<Value_expression> parse_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
-
-
-
-
-// parse_value_list: 43 lines
-std::shared_ptr<Value_expression> parse_value_list(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+std::shared_ptr<Literal> compile_eval_expr(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
-    ASSERT(it->type == Token_type::SYMBOL && it->token == "(");
-    ASSERT(!it.error);
+    auto lit = std::shared_ptr<Literal>(new Literal());
+    lit->owner = parent_scope;
+    lit->start_token_index = it.current_index;
+    lit->context = it->context;
 
+    it.assert(Token_type::COMPILER_COMMAND, "#eval"); // eat the eval token
+    auto expr = compile_value_expression(it, parent_scope, eval_prio);
+
+    lit->status = expr->status;
+
+    if (expr->status == Parsing_status::FULLY_RESOLVED) {
+        lit->value = eval(expr);
+        ASSERT(lit->value.is_allocated());
+    } else {
+        log_error("Unable to evaluate expression",lit->context);
+    }
+
+    return lit;
+}
+
+
+
+
+
+
+
+
+std::shared_ptr<Value_expression> compile_value_list(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+{
     auto v_list = std::shared_ptr<Value_list>(new Value_list());
     v_list->owner = parent_scope;
     v_list->context = it->context;
     v_list->start_token_index = it.current_index;
 
-    it.eat_token(); // eat the "(" token
+    it.assert(Token_type::SYMBOL, "("); // eat the "(" token
 
     bool first = true;
     while(true) {
@@ -33,11 +56,11 @@ std::shared_ptr<Value_expression> parse_value_list(Token_iterator& it, std::shar
         if (it.error) {
             v_list->status = Parsing_status::SYNTAX_ERROR;
             it.current_index = it.find_matching_token(it.current_index, Token_type::SYMBOL, ")", "Value_list", "Missing \")\"") + 1;
-            ASSERT(!it.error); // we know that the ')' exists because the statement passed partial scope parsing
-            break;
+            if (it.error) v_list->status = Parsing_status::FATAL_ERROR;
+            return v_list;
         }
 
-        auto value_expr = parse_value_expression(it, parent_scope);
+        auto value_expr = compile_value_expression(it, parent_scope);
         ASSERT(value_expr != nullptr);
         value_expr->owner = v_list;
         v_list->expressions.push_back(value_expr);
@@ -49,178 +72,11 @@ std::shared_ptr<Value_expression> parse_value_list(Token_iterator& it, std::shar
     }
 
     if (!is_error(v_list->status)) {
-        v_list->status = Parsing_status::FULLY_RESOLVED)
+        v_list->status = Parsing_status::FULLY_RESOLVED;
     }
 
     return v_list;
 }
-
-
-
-
-// parse_sequence_literal: 137 lines + some more (FIXME: type checking)
-std::shared_ptr<Value_expression> parse_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
-{
-    ASSERT(it->type == Token_type::SYMBOL && it->token == "[");
-    ASSERT(!it.error);
-
-    auto seq = std::shared_ptr<Literal_seq>(new Literal_seq());
-
-    seq->owner = parent_scope;
-    seq->context = it->context;
-    seq->start_token_index = it.current_index;
-
-    seq->type = std::shared_ptr<Type_seq>(new Type_seq());
-    seq->type->owner = seq;
-    seq->type->context = seq->context;
-    seq->type->start_token_index = seq->start_token_index;
-
-    it.eat_token(); // eat the "[" token
-
-    // literal syntax:
-    // [int, size=3: 0, 0, 0]
-    // [int: 0, 0, 0] // size inferred to 3
-    // [size=3: 0, 0, 0] // type inferred to int (the type of the first element)
-    // [0, 0, 0] // type inferred to int (the type of the first element), size inferred to 3
-
-    // look ahead and search for ':' token
-
-    bool has_metadata = false;
-    int first_member_index = it.current_index;
-    bool has_size_data = false;
-    int i = 0;
-
-    while(true) {
-        const Token& t = it.look_ahead(i++); // look ahead and increment i
-        if (t.type == Token_type::SYMBOL) {
-            if (t.token == ":") {
-                has_metadata = true;
-                first_member_index = it.current_index + i;
-                break;
-            } else if (t.token == "]") {
-                has_metadata = false;
-                break;
-            }
-        }
-        ASSERT(!is_eof(t)); // since the statement passed partial scope parse, the statement must be well formed
-    }
-    if (has_metadata) {
-        Token id, symbol;
-        id = it.expect(Token_type::IDENTIFIER);
-        if (!it.error) symbol = it.expect(Token_type::SYMBOL);
-
-        if (!it.error && symbol.token == "," || symbol.token == ":") {
-            // treat as type identifier
-            auto type = parent_scope->get_type(id.token);
-            if (type == nullptr) {
-                log_error("Type not found: \""+id.token+"\" undeclared",id.context);
-
-                //   Maybe: (this could log strange errors if multiple definitions of id)
-                // auto t_id = parent_scope->get_identifier(id.token);
-                // if (t_id != nullptr) {
-                //     add_note("\""+id.token"\" is declared as a non-type variable here:", t_id->context);
-                // }
-
-            } else seq->type->type = type;
-        }
-
-        if (!it.error && symbol.token == ",") {
-            // expect "size" token, then expect "=" token
-            id = it.expect(Token_type::IDENTIFIER, "size");
-            if (!it.error) symbol = it.expect(Token_type::SYMBOL, "=");
-        }
-
-        if (!it.error && id.token == "size" && symbol.token == "=") {
-            // TODO: allow more complex expressions here, not just integer literal
-            const Token& size_literal = it.expect(Token_type::INTEGER);
-            if (!it.error) {
-                // ASSERT(false, "FIXME: stoi")
-                seq->size = std::stoi(size_literal.token);
-                has_size_data = true;
-            } else {
-                add_note("Only integer literals are supported for sequence literal size declaration");
-            }
-        }
-
-        if (!it.error) it.expect(Token_type::SYMBOL, ":");
-
-        ASSERT(it.error || it.current_index == first_member_index);
-
-        if (it.error) {
-            add_note("In the meta data of sequence literal that started here: ", seq->context);
-            seq->status = Parsing_status::SYNTAX_ERROR;
-        }
-
-        it.current_index = first_member_index;
-    }
-
-    // read value expressions until "]" token
-    // check the type of each expression, log error if unable to get type
-    // if seq->type is nullptr, get the type from the first value
-    // else if v->type != seq->type log error
-
-    bool first = true;
-    std::vector<std::shared_ptr<Value_expression>> type_errors;
-    while(true) {
-        if (it->type == Token_type::SYMBOL && it->token == "]") {
-            it.eat_token();
-            break; // ok
-        }
-        if (!first) it.expect(Token_type::SYMBOL, ",");
-        if (it.error) {
-            seq->status = Parsing_status::SYNTAX_ERROR;
-            it.current_index = it.find_matching_token(it.current_index, Token_type::SYMBOL, "]", "Seq_literal", "Missing \"]\"") + 1;
-            ASSERT(!it.error); // we know that the ']' exists because the statement passed partial scope parsing
-            break;
-        }
-
-        auto value_expr = parse_value_expression(it, parent_scope);
-        ASSERT(value_expr != nullptr);
-        value_expr->owner = seq;
-        seq->members.push_back(value_expr);
-        if (is_error(value_expr->status)) {
-            seq->status = value_expr->status;
-        } else {
-            ASSERT(value_expr->status == Parsing_status::FULLY_RESOLVED); // FIXME: it might have dependencies?
-            auto member_type = value_expr->get_type();
-            ASSERT(member_type != nullptr);
-
-            if (seq->type->type == nullptr) seq->type = member_type; // infer the type from the first member
-            else if (seq->type->type != member_type) {
-                type_errors.push_back(value_expr);
-            }
-        }
-
-        first = false;
-    }
-
-    if (seq->type->type == nullptr) {
-        log_error("Unable to infer the type of sequence literal", seq->context);
-        seq->status = Parsing_status::TYPE_ERROR;
-        seq->type->status = Parsing_status::TYPE_ERROR;
-    } else if (!type_errors.empty()) {
-        log_error("Incompatible types in sequence literal of type "+seq->type->type->toS(), seq->context);
-        for (auto member : type_errors) {
-            add_note("Member of type "+member->type+" found here:",member->context);
-        }
-        seq->status = Parsing_status::TYPE_ERROR;
-        seq->type->status = Parsing_status::TYPE_ERROR;
-    } else {
-        seq->type->status = seq->type->type->status;
-    }
-
-    if (!is_error(seq->status))
-        seq->status = Parsing_status::FULLY_RESOLVED) {
-    }
-
-    return seq;
-}
-
-
-
-
-
-
 
 
 
@@ -248,40 +104,133 @@ std::shared_ptr<Value_expression> parse_sequence_literal(Token_iterator& it, std
 
 
 
-std::shared_ptr<Value_expression> parse_value_expression(Token_iterator& it, std::shared_ptr<Scope> parent_scope, int min_operator_prio)
-{
-    // Part 1:
-    // if token is '(' read value list
-    // else if token is '[' read seq literal
-    // else if token is integer, float, bool or string literal, construct appropriate literal node
-    // else if token is symbol or identifier, check if it's a prefix operator
-    //      if it is, read value expression (with min_prio = op.prio), then construct prefix operator node
-    // else if token is identifier, check if the identifier exists. If not, log error undeclared variable
-    // if none of those applies, log error unexpected token
+// Part 1:
+// if token is '(' read value list
+// else if token is '[' read seq literal
+// else if token is integer, float, bool or string literal, construct appropriate literal node
+// else if token is symbol or identifier, check if it's a prefix operator
+//      if it is, read value expression (with min_prio = op.prio), then construct prefix operator node
+// else if token is identifier, check if the identifier exists. If not, log error undeclared variable
+// if none of those applies, log error unexpected token
 
-    // Part 2: suffix operators:
-    // '(' function operator
-    // '[' indexing operator
-    // '.' getter operator
-    // other identifier or symbol token: check if it's an infix operator with prio > min_prio
-    //      if it is, read value expression (with min_prio = op.prio), then construct infix operator node
-    return nullptr;
+// Part 2: suffix operators:
+// '(' function operator
+// '[' indexing operator
+// '.' getter operator
+// other identifier or symbol token: check if it's an infix operator with prio > min_prio
+//      if it is, read value expression (with min_prio = op.prio), then construct infix operator node
+std::shared_ptr<Value_expression> compile_value_expression(Token_iterator& it, std::shared_ptr<Scope> parent_scope, int min_operator_prio)
+{
+    std::shared_ptr<Value_expression> expr{nullptr};
+
+    ASSERT(!it->is_eof());
+
+    if (it->type == Token_type::COMPILER_COMMAND && it->token == "#eval") {
+        auto lit = compile_eval_expr(it, parent_scope);
+        expr = std::static_pointer_cast<Value_expression>(lit);
+
+    } else if (it->type == Token_type::SYMBOL && it->token == "(") {
+        auto vl = compile_value_list(it, parent_scope);
+        expr = std::static_pointer_cast<Value_expression>(vl);
+
+    } else if (it->type == Token_type::SYMBOL && it->token == "[") {
+        expr = compile_sequence_literal(it, parent_scope);
+
+    } else if (it->type == Token_type::INTEGER) {
+        expr = compile_int_literal(it, parent_scope);
+
+    } else if (it->type == Token_type::FLOAT) {
+        expr = compile_float_literal(it, parent_scope);
+
+    } else if (it->type == Token_type::STRING) {
+        expr = compile_string_literal(it, parent_scope);
+
+    } else if (it->type == Token_type::BOOL) {
+        expr = compile_bool_literal(it, parent_scope);
+
+    } else if (it->type == Token_type::IDENTIFIER) {
+        // This can be either a variable identifier or an infix operator.
+        // Create a prefix expr node while it still is untouched, just in case
+        auto p_expr = std::shared_ptr<Prefix_expr>(new Prefix_expr());
+        p_expr->owner = parent_scope;
+        p_expr->start_token_index = it.current_index;
+        p_expr->context = it->context;
+
+        auto identifier = compile_identifier(it, parent_scope);
+        // FIXME: handle undeclared identifier
+
+        if (auto op_t = std::dynamic_pointer_cast<Type_operator>(identifier->get_type())) {
+            // FIXME: rewrite the operator system (abstx)
+            p_expr->op_id = identifier;
+            p_expr->expr = compile_value_expression(it, parent_scope, op_t->get_prio());
+            p_expr->expr->owner = p_expr;
+            expr = std::static_pointer_cast<Value_expression>(p_expr);
+        } else {
+            expr = std::static_pointer_cast<Value_expression>(identifier);
+        }
+
+    } else {
+        log_error("Unable to parse expression",it->context);
+        ASSERT(false, "FIXME: what to do?");
+    }
+
+    if (expr->status == Parsing_status::FATAL_ERROR) return expr;
+    ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED);
+
+    // Part 2: chained suffix operators
+    // expr = compile_chained_suffixes(it, expr);
+    while (true) {
+        if (it->type == Token_type::SYMBOL && it->token == "(") {
+            expr = compile_function_call(it, expr);
+        } else if (it->type == Token_type::SYMBOL && it->token == "[") {
+            expr = compile_seq_indexing(it, expr);
+        } else if (it->type == Token_type::SYMBOL && it->token == ".") {
+            expr = compile_getter(it, expr);
+        } else if (it->type == Token_type::SYMBOL || it->type == Token_type::IDENTIFIER) {
+            ASSERT(false, "infix operators NYI");
+            // could be an infix opreator. Check if it is.
+            // If it isn't, break. Otherwise:
+
+            int op_prio = 0; // FIXME: set correctly
+            bool right_associative = false; // FIXME: set correctly
+            if (op_prio > min_operator_prio || right_associative && op_prio == min_operator_prio) {
+                auto i_expr = std::shared_ptr<Infix_expr>(new Infix_expr());
+                i_expr->owner = parent_scope;
+                i_expr->start_token_index = it.current_index;
+                i_expr->context = it->context;
+                it.eat_token();
+
+                i_expr->lhs = expr;
+                i_expr->rhs = compile_value_expression(it, parent_scope, op_prio);
+                // FIXME: check for fatal error
+                i_expr->rhs->owner = i_expr;
+                expr->owner = i_expr;
+                expr = std::static_pointer_cast<Value_expression>(i_expr);
+            } else {
+                break;
+            }
+
+        } else {
+            break;
+        }
+    }
+
+    ASSERT(expr != nullptr);
+    ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED);
+    return expr;
 }
 
 
-std::shared_ptr<Variable_expression> parse_variable_expression(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+std::shared_ptr<Variable_expression> compile_variable_expression(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
 {
     auto context = it->context;
-    auto value_expr = parse_value_expression(it, parent_scope);
+    auto value_expr = compile_value_expression(it, parent_scope);
+    ASSERT(value_expr != nullptr);
     if (auto var_expr = std::dynamic_pointer_cast<Variable_expression>(value_expr)) {
         return var_expr; // ok
     }
 
-    if (value_expr != nullptr)
-        log_error("Found value expression in a context where a variable expression was expected",context);
-    else
-        log_error("Unable to parse variable expression",context);
-
+    log_error("Found value expression in a context where a variable expression was expected", context);
     return nullptr;
 }
 
@@ -305,85 +254,117 @@ std::shared_ptr<Variable_expression> parse_variable_expression(Token_iterator& i
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// COMMENTS FROM OLD .h-FILE
 
 
 
 /*
-
-Parsing_status parse_comma_separated_values(
-    std::shared_ptr<Scope> parent_scope,
-    std::shared_ptr<Abstx_node> owner,
-    std::vector<std::shared_ptr<Value_expression>>& expressions,
-    Token_type  expected_closing_type,
-    std::string expected_closing_token);
-{
-    Parsing_status status = Parsing_status::NOT_PARSED;
-    bool first = true;
-    while(true) {
-        if (it->type == expected_closing_type && it->token == expected_closing_token) {
-            it.eat_token();
-            break; // ok
-        }
-        if (!first) it.expect(Token_type::SYMBOL, ",");
-        if (it.error) {
-            status = Parsing_status::SYNTAX_ERROR;
-            it.current_index = find_matching_token(it.current_index, expected_closing_token, expected_closing_token, "Missing \""+expected_closing_token+"\"") + 1;
-            ASSERT(!it.error); // we know that the token exists because the statement passed partial scope parsing
-            break;
-        }
-
-        auto value_expr = parse_value_expression(it, parent_scope); // FIXME: add parent_scope to fn signature
-        ASSERT(value_expr != nullptr);
-        value_expr->owner = owner;
-        expressions.push_back(value_expr);
-        if (is_error(value_expr->status)) {
-            status = value_expr->status;
-        } else ASSERT(value_expr->status == Parsing_status::FULLY_RESOLVED);
-
-        first = false;
-    }
-}
+Parsing expressions are the most complex part of the parsing process.
+There are so many special cases and complex complications that this deserves to be in a separate file.
 */
+
+
+
+// These parsing functions start at the current iterator position, and reads one expression.
+// The parsing will stop at the first encountered ',', ')', or any other unexpected token (without logging an error).
+// When the function returns, the iterator will point to said unexpected token.
+
+
+
+/*
+P   prefix operator
+S   suffix operator
+I   infix operator
+
+High priority special operators:
+()  function call (as suffix), or a sequence of expressions (surrounding other expressions)
+[]  array indexing (as suffix), or an array literal (surrounding other expressions)
+ MAYBE: || absolute value (surrounding other expressions that evaluate to numbmers)
+.   getter
+
+
+
+Valid expressions: (where expr is an expression and expr_list is a comma separated list of expressions)
+
+literal             (bool, int, float, string)
+identifier
+P expr
+expr S
+expr I expr
+expr(expr_list)
+(expr_list)
+expr[expr]
+expr . identifier
+
+
+A value expression is a variable expression if:
+    * Getter
+    * Array indexing
+    * Identifier
+    * Function or operator that returns a pointer
+
+
+Complex expressions
+
+P P P expr              // P(P(P(expr)))
+expr S S S              // (((expr)S)S)S
+expr I1 expr I2 expr    // (expr I1 expr) I2 expr if I1.prio>=I2.prio, else expr I1 (expr I2 expr)
+P expr I expr           // (P expr) I1 expr if P.prio>=I.prio, else P(expr I expr)
+expr I expr S           // (expr I1 expr) S if I.prio>=S.prio, else expr I (expr S)
+P expr S                // (P expr) S if P.prio>=I.prio, else P(expr S)
+expr S I expr           // (expr S) I1 expr
+expr I P expr           // expr I1 (P expr)
+
+Even more complex: if @ is both P, I and S at the same time:
+
+expr @ expr             // @ is I
+@ expr                  // @ is P
+expr @                  // @ is S
+expr @1 @2 expr         // @1=I, @2=P OR @1=S, @2=I. If both these combinations are possible, then logs an error
+
+
+
+
+
+Error handling:
+
+expr P I expr           // syntax error, "P can't modify an operator"
+expr SI PI expr         // SI is suffix and infix, and PI is infix and prefix. syntax error "Unable to resolve order of operators"
+
+
+
+
+
+
+
+
+
+inbyggda operatorer:
+
+infix_operator .. := fn(low:$N1, high:$N2)->r:range
+{
+    #run assert_number(N1);
+    #run assert_number(N2);
+    r.low = low.float; // guaranteed to work after the assert
+    r.high = high.float;
+};
+
+
+
+infix
+
+
+
+*/
+
+
+
+
+// Backup-functions if genereics doesn't work out:
+
+// infix_operator .. := fn(low:float, high:float)->r:range { r.low = low; r.high = high; };
+// infix_operator .. := fn(low:float, high:int)->r:range { r.low = low; r.high = high.float; };
+// infix_operator .. := fn(low:int, high:int)->r:range { r.low = low.float; r.high = high.float; };
+
+
+

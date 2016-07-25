@@ -26,10 +26,7 @@ TODO: decide exact syntax and usage, before implementing the class
 
 struct Using_statement : Statement {
 
-    // std::shared_ptr<Value_expression>> subject;
-
-    bool allow_in_static_scope() const override { return true; }
-    bool allow_in_dynamic_scope() const override { return true; }
+    std::shared_ptr<Value_expression> subject;
 
     std::string toS() const override { return "using statement"; }
 };

@@ -37,7 +37,7 @@ struct Value {
 
     void assign(const Value& v) {
         ASSERT(v.is_allocated());
-        if (!is_allocated()) alloc(v.type);
+        if (!is_allocated()) alloc(v.type, false);
         ASSERT(*type == *(v.type));
         memcpy(value_ptr, v.value_ptr, type->byte_size());
         initialized = true;
@@ -46,7 +46,7 @@ struct Value {
     template<typename T>
     void assign(std::shared_ptr<Type> type, const T& value) {
         ASSERT(type->byte_size() == sizeof(T));
-        alloc(type);
+        alloc(type, false);
         memcpy(value_ptr, &value, type->byte_size());
         initialized = true;
     }

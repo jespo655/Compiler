@@ -80,6 +80,8 @@ struct Type_seq : Type
         }
     }
 
+    bool is_seq_type() const override { return true; }
+
 };
 
 

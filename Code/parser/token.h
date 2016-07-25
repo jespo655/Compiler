@@ -126,6 +126,13 @@ struct Token
     // bool operator>=(const Token& t) const { return context >= t.context; }
 
     bool is_eof() const { return ::is_eof(type); }
+
+    std::string toS() {
+        std::ostringstream oss;
+        oss << token;
+        oss << " (" << ::toS(type) << ")";
+        return oss.str();
+    }
 };
 
 

@@ -2,94 +2,209 @@
 
 #include "../abstx/scope.h"
 #include "../abstx/function.h"
-#include "../abstx/using.h"
 #include "token.h"
+#include "token_iterator.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
 
-struct Parsed_scope : Scope
-{
-    std::vector<std::shared_ptr<Using_statement>> using_statements;
-    std::vector<std::shared_ptr<Anonymous_scope>> anonymous_scopes;
-};
 
-struct Global_scope : Parsed_scope
+struct Global_scope : Scope
 {
     std::string file_name;
     const std::vector<Token> tokens; // should be treated as const
 
     std::vector<std::shared_ptr<Function_call_statement>> run_statements;
+    std::vector<std::shared_ptr<Unknown_statement>> unknown_statements;
 
     Global_scope(const std::vector<Token>& tokens) : tokens{tokens} {}
+
+    Token_iterator iterator(int index=0) { return Token_iterator(tokens, index); }
 };
 
-std::shared_ptr<Global_scope> parse_file(const std::string& file, std::string name = ""); // default name is the file name
+// parser.cpp
+std::shared_ptr<Global_scope> parse_file(const std::string& file_name);
 std::shared_ptr<Global_scope> parse_string(const std::string& string, const std::string& name = ""); // FIXME: add string context
 std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, const std::string& name = "");
 
+template<typename T>
+Token_iterator get_iterator(std::shared_ptr<T> abstx, int index=0); // FIXME: undefined reference to implementation ?
+std::shared_ptr<Global_scope> get_global_scope(std::shared_ptr<Scope> scope);
+
+
+// FIXME: separate read_X(it&, parent) and compile_X(it&, parent)
+// read_X would only be used in static contexts,
+//    and would only do as little as possible (returns an abstx node and places it at the beginning of the next thing)
+// compile_X would be used in dynamic contexts,
+//    where everything should be compiled immediately.
+//    It should immediately try to fully resolve the statement.
+// natural extention: compile_X(string, parent, string_context)
+//    just be careful with assertions, stuff like parens and eof is not checked if no global parsing pass is done first
+
+
+// default compile_X behaviour:
+// x = read_X(); fully_resolve_X(x); return x;
+// more complex / optimized:
+// return compile_X();
+
+
+// scope_parser.cpp
+std::shared_ptr<Global_scope> read_global_scope(const std::vector<Token>& tokens, const std::string& name);
+std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Anonymous_scope> read_anonymous_static_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Scope> compile_dynamic_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// identifier_parser.cpp
+struct Identifier;
+std::shared_ptr<Identifier> read_identifier(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Identifier> compile_identifier(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+Parsing_status fully_resolve_identifier(std::shared_ptr<Identifier>& identifier);
+
+
+// statement_parser.cpp
+struct Statement;
+std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Statement> compile_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+Parsing_status fully_resolve_statement(std::shared_ptr<Statement> statement);
+
+
+// using_parser.cpp
+struct Using_statement;
+std::shared_ptr<Using_statement> read_using_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+Parsing_status fully_resolve_using(std::shared_ptr<Using_statement> using_statement);
+void resolve_imports(std::shared_ptr<Scope> scope);
+
+
+// literal_parser.cpp
+struct Literal;
+std::shared_ptr<Literal> compile_int_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> compile_float_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> compile_bool_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Literal> compile_string_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// declaration_parser.cpp
+struct Declaration_statement;
+std::shared_ptr<Declaration_statement> read_declaration_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+Parsing_status fully_resolve_declaration(std::shared_ptr<Declaration_statement>& declaration);
+std::shared_ptr<Declaration_statement> compile_declaration_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// if_parser.cpp
+struct If_statement;
+std::shared_ptr<If_statement> read_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<If_statement> compile_if_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// for_parser.cpp
+struct For_statement;
+std::shared_ptr<For_statement> read_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+std::shared_ptr<For_statement> compile_for_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// while_parser.cpp
+struct While_statement;
+std::shared_ptr<While_statement> read_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+std::shared_ptr<While_statement> compile_while_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// return_parser.cpp
+struct Return_statement;
+std::shared_ptr<Return_statement> read_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+std::shared_ptr<Return_statement> compile_return_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// assignment_parser.cpp
+struct Assignment_statement;
+std::shared_ptr<Assignment_statement> read_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+// TODO:
+std::shared_ptr<Assignment_statement> compile_assignment_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// defer_parser.cpp
+struct Defer_statement;
+std::shared_ptr<Defer_statement> read_defer_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Defer_statement> compile_defer_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+
+
+// expression_parser.cpp
+struct Value_expression;
+std::shared_ptr<Value_expression> compile_value_expression(Token_iterator& it, std::shared_ptr<Scope> parent_scope, int min_operator_prio=0);
+std::shared_ptr<Variable_expression> compile_variable_expression(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
 
-/**
-förarbete:
-    Global_scope skapas och läggs in i en map file_name -> global_scope
-    UTF8 character stream skaps av input (läses från fil eller string)
-    En lista av tokens skapas och sparas i global_scope
+// TODO:
+// operators rewrite
 
-pass 1) listan av tokens gås igenom, en lista av statement ställs upp
 
-    identifiers läggs till i scope
-        varje identifier måste veta i vilket statement den blev deklarerad (owner?)
-    en lista på using statements sparas
-    en lista på #run statements sparas
-    en lista på under-scopes sparas
+// TODO:
+struct Function_call;
+struct Seq_lookup;
+struct Getter;
+std::shared_ptr<Value_expression> compile_function_call(Token_iterator& it, std::shared_ptr<Value_expression> fn_id);
+std::shared_ptr<Value_expression> compile_seq_indexing(Token_iterator& it, std::shared_ptr<Value_expression> seq_id);
+std::shared_ptr<Value_expression> compile_getter(Token_iterator& it, std::shared_ptr<Value_expression> struct_id);
+std::shared_ptr<Statement> read_operator_declaration(Token_iterator& it, std::shared_ptr<Value_expression> struct_id);
 
-    parentes mismatch -> FATAL_ERROR, avbryter kompilering
-    andra errors -> tolka som "undefined statement" som får resolvas senare, gå till nästa ';' i samma paren-nivå som början av statement
 
-    slut av pass 1:
-    markera som partially parsed
-    importera saker med using (partially parsa dem först)
-    partially parsa alla under-scopes
 
-pass 2) #runs gås igenom
-    varje statement fully resolvas först, sen körs
-    en funktion är fully resolvad om alla identifiers i den är fully resolvade
-        och om alla funktioner som anropas är åtminstone partially resolved
+// TODO:
+// variable_expression_parser.cpp + helpers
+// value_expression_parser.cpp + helpers
+// (read_comma_separated_value_list?)
 
-pass 3) output
-    funktioner gås igenom från entry point
-    följ funktionsanrop från entry point och ställ upp en lista på alla saker som används
-    alla funktioner och datatyper som används fördeklareras
-    sen skriv ut definitioner av alla datatyper
-    sen skriv ut alla funktioner som används
+
+
+
+
+
+/*
+
+Pass 1:
+
+Read static scopes:
+    Declarations (up to ':' token, add identifiers to scope)
+    Using statements (only "using" token, add statement to special list in scope)
+    Chained static scopes (partially parse just like global scope)
+    #run statements (only "#run" token, add statement to special list in GLLOBAL scope)
+    Infix_operator op := (add as operator to scope)
+    Prefix_operator op := (add as operator to scope)
+
+Not allowed:
+    Assignment (ends with ';')
+    If, For, While (ends with dynamic scope '{}')
+    Return (ends with ';')
+    Statements with only function calls or operators (ends with ';')
+    Other statements which cannot yet be identified (ends with ';')
+
+
+
+Pass 2:
+
+Compile statements and go through dynamic scopes:
+All statements allowed
+Compile immediately, using the current state of the local scopes
+
+Start with a #run. When done, eval it. Log error if failed to FULLY_RESOLVE immediately.
+
+
+Pass 3:
+
+Just like pass 2, but instead if evaling compiled functions, output C code that represents it
+Start at set entry point
+When done, if no logged errors, construct a gcc call and compile the c code
 
 */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -101,149 +216,45 @@ pass 3) output
 
 
 /*
-Pass 1: Partial parsing
-
-Alla filer gås igenom och dess static scope parsas partiellt
-
-
-Varje statement gås igenom mha parentes-checkar (allt som nämns här är endast utanför parenteser)
-
-TILLÅTET I STATIC SCOPE:
-
-Hittar ':' token: declaration
-    Allting innan ':' måste vara nydeklarerade identifiers (detta kan kollas)
-    Deklarerade identifiers läggs till i local_scope->identifiers
-    Inget efter ':' parsas.
-    -> gå till nästa ';'
-
-using statement (using "file.h"; using test;)
-    Lägg till i en lista av using-statements, resolva dem sist (måste fully resolvas innan scope är partially resolvat)
-    Om string literal -> inkludera den filen (kolla först i listan av kompilerade filer)
-        öppna den filen, skapa nytt workspace, försök partially resolva det, lägg till global scope i using-listan
-    Om identifier -> försök partially resolva den. Om scope identifier, lägg till i using-listan. Om något annat -> type error
-    -> gå till ';'
-
-statement som börjar med '{'
-    Anonymous scope
-    Parsa partiellt sist (efter using)
-    -> gå till matchande '}'
-
-statement som börjar med #run
-    lägg till i en lista av #run (i workspace)
-    lägg inte till som statement i static scope
-    kör sist (efter using och efter anonymous scopes, de kan också innehålla #runs) (compile time execution)
-    (om det inte finns några #run, avsluta kompileringen med tom output. Entry point måste sättas någonstans.)
-    -> gå till ';'
+Demo notes:
 
 
 
+Vector :: struct (n: s64) {
+    a : [N] s64;
+}
 
-INTE TILLÅTET I STATIC SCOPE: (detta skulle ge SYNTAX_ERROR)
+foo := (v : $T/Vector) { ... }
 
-Inget av detta hittas, men expr slutar med en parentes '()' och sen direkt ';': Function call
-    Inget parsas.
-    -> gå till ';'
+Table :: struct (Key_type: Type, Value_type: Type) { ... }
 
-return statement
-    Inget parsas.
-    -> gå till ';'
+foo := (table: *$T/Table, key: T.Key_type, value: T.Value_type) { ... }
+foo := (table: *Table($K, $V), key: K, value: V) { ... }
 
-if, elsif, else, then, for, while
-    Kräv följande '()' (där det är relevant) och '{}'-scope
-    -> gå till matchande '}''
 
-Hittar '=' token: assignment
-    Inget parsas.
-    -> gå till nästa ';'
-
-Inget av detta, men följer operator mönster:
-    expr @ expr; -> infix_operator
-    expr @; -> suffix_operator
-    @ expr; -> prefix_operator
-        (där @ är en identifier eller symbol token)
-    Ger syntax error i pass 1 ("unable to parse statement"), men borde kunna tolkas och parsas fullt direkt i pass 2 och 3
-    -> gå till ';'
-
-Vad som helst annat:
-    Syntax error
-    -> gå till ';'
+KANSKE:
+Struct definitions använder parent scope för att spara funktioner
+Första argumentet är alltid *this
+dot operator function calls kollar genom struct_type.parent_scope() efter matchande fn
+Problem: Flera fner med samma namn i olika structar clashar
 
 
 
-
-Pass 2: #run
-
-Alla #run från global scope körs
-
-Ett statement i taget parsas helt
-Sätt upp dependencies om något inte går att parsa, och parsa dem först.
-    Dependencies behövs endast för att undvika cykler
-    Om en cyklisk dependency hittas -> log error (CYCLIC_DEPENDENCY)
-
-Interpretera koden och kör den compile time, en funktion i taget.
-    Runtime error -> fånga och log error (COMPILE_TIME_ERROR)
-
-När alla #runs är klara, se till att output entry point är satt
-    Annars -> log error (COMPILE_TIME_ERROR)
-
-
-
-
-Pass 3: output
-
-Utgå från output entry point
-Kör som i pass 2, men istället för att evaluera allt, översätt till c-kod och skriv till fil
-Fully resolva ett statement i taget och översätt. Allt borde vara mycket likt pass 2.
 
 */
-
-
-
-
 
 /*
-The parser builds an abstract syntax tree from a set of tokens
-*/
+TODO:
 
+1) FIXA BUGGAR
+2) pusha till master
+3) rewrite av fn, op, struct, hur de sparas i scope
 
+type system måste funka runtime -> ge varje type ett value (UID)
+type comparison: uid==uid
 
-/*
-Problem:
-
-for incremental compilation, each statement has to know about its own list of tokens (unless finalized)
-
-    Each abstx has a start token pointer
-    To iterate through tokens, construct a token iterator with this pointer
-
-    The list of tokens end with eof token
-    The iterator cannot go past this token
-
-    Make sure that the list of tokens doesn't deallocate or reallocate
-        it cannot change size
-        look out for possible reallocations / heap cleanup (does that even happen in c++?)
-*/
-
-
-
-/*
-
-Partial parsing paren mismatch recovery:
-
-Gå tillbaka till början av statement
-Försök fully resolva statement
-Detta kan ge bra felmeddelanden med sammanhang:
-
-ex:
-    int a = ); // "unexpected ')' in rhs of assignment"
-
-Om det går att städa upp, gör det och skicka tillbaka SYNTAX_ERROR. Om inte, returnera FATAL_ERROR.
-
-
-
-
-i c++:
-
-    {} matchar alltid, oberoende av potentiella fel mellan
-    vid en extra ')': gå till nästa ';' eller '}', men fortsätt matcha scopes {}
+typeof: endast compile time?
 
 */
+
+
