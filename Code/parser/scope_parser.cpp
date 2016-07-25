@@ -83,6 +83,23 @@ std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Sco
 }
 
 
+std::shared_ptr<Anonymous_scope> read_anonymous_static_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+{
+    ASSERT(parent_scope != nullptr && parent_scope->dynamic == false);
+
+    auto scope = std::shared_ptr<Anonymous_scope>(new Anonymous_scope());
+    scope->start_token_index = it.current_index;
+    scope->context = it->context;
+    scope->owner = parent_scope;
+
+    scope->scope = read_static_scope(it, parent_scope);
+    scope->scope->owner = scope;
+    scope->status = scope->scope->status;
+
+    return scope;
+}
+
+
 
 
 

@@ -34,7 +34,10 @@ Parsing_status fully_resolve_using(std::shared_ptr<Using_statement> us)
 
     // ASSERT(false, "using NYI"); // beware of infinite dependency loops
     us->status = Parsing_status::DEPENDENCIES_NEEDED;
-    Token_iterator it = get_iterator(us, us->start_token_index+1);
+
+    Token_iterator it = get_global_scope(us->parent_scope())->iterator(us->start_token_index+1);
+    // Token_iterator it = get_iterator(us, us->start_token_index+1); // FIXME: undefined reference to get_iterator(...) ??????
+
     us->subject = compile_value_expression(it, parent_scope);
     us->status = us->subject->status;
 
@@ -47,7 +50,7 @@ Parsing_status fully_resolve_using(std::shared_ptr<Using_statement> us)
 
     std::shared_ptr<Scope> scope{nullptr};
     auto type = value.get_type();
-    if (auto t = std::dynamic_pointer_cast<Type_str>(type)) {
+    if (auto t = std::dynamic_pointer_cast<Type_scope>(type)) {
         // direct scope include
         scope = t->cpp_value(value.get_value());
     } else if (auto t = std::dynamic_pointer_cast<Type_str>(type)) {

@@ -45,6 +45,7 @@ NUMBER_TYPE(f64, double, false);
 
 #define Type_int Type_i64
 #define Type_uint Type_u64
+#define Type_float Type_f64
 
 
 // #define CAST_GENERATOR(from_t, from_cppt, to_t, to_cppt)

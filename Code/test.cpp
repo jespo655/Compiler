@@ -99,6 +99,7 @@ void indent_test()
 
 void size_test()
 {
+    cout << "bool: " << sizeof(bool) << endl;
     // cout << "int8_t: " << sizeof(int8_t) << endl;
     // cout << "int16_t: " << sizeof(int16_t) << endl;
     // cout << "int32_t: " << sizeof(int32_t) << endl;
@@ -163,11 +164,11 @@ int main()
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
-    // size_test();
+    size_test();
     // indent_test();
     // float_test();
     // wchar_test();
-    str_test();
+    // str_test();
 }
 
 

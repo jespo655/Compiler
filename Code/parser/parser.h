@@ -30,7 +30,7 @@ std::shared_ptr<Global_scope> parse_string(const std::string& string, const std:
 std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, const std::string& name = "");
 
 template<typename T>
-Token_iterator get_iterator(std::shared_ptr<T> abstx, int index=0);
+Token_iterator get_iterator(std::shared_ptr<T> abstx, int index=0); // FIXME: undefined reference to implementation ?
 std::shared_ptr<Global_scope> get_global_scope(std::shared_ptr<Scope> scope);
 
 
@@ -53,6 +53,7 @@ std::shared_ptr<Global_scope> get_global_scope(std::shared_ptr<Scope> scope);
 // scope_parser.cpp
 std::shared_ptr<Global_scope> read_global_scope(const std::vector<Token>& tokens, const std::string& name);
 std::shared_ptr<Scope> read_static_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
+std::shared_ptr<Anonymous_scope> read_anonymous_static_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 std::shared_ptr<Scope> compile_dynamic_scope(Token_iterator& it, std::shared_ptr<Scope> parent_scope);
 
 
@@ -153,6 +154,7 @@ struct Getter;
 std::shared_ptr<Value_expression> compile_function_call(Token_iterator& it, std::shared_ptr<Value_expression> fn_id);
 std::shared_ptr<Value_expression> compile_seq_indexing(Token_iterator& it, std::shared_ptr<Value_expression> seq_id);
 std::shared_ptr<Value_expression> compile_getter(Token_iterator& it, std::shared_ptr<Value_expression> struct_id);
+std::shared_ptr<Statement> read_operator_declaration(Token_iterator& it, std::shared_ptr<Value_expression> struct_id);
 
 
 
@@ -203,3 +205,56 @@ Start at set entry point
 When done, if no logged errors, construct a gcc call and compile the c code
 
 */
+
+
+
+
+
+
+
+
+
+
+/*
+Demo notes:
+
+
+
+Vector :: struct (n: s64) {
+    a : [N] s64;
+}
+
+foo := (v : $T/Vector) { ... }
+
+Table :: struct (Key_type: Type, Value_type: Type) { ... }
+
+foo := (table: *$T/Table, key: T.Key_type, value: T.Value_type) { ... }
+foo := (table: *Table($K, $V), key: K, value: V) { ... }
+
+
+KANSKE:
+Struct definitions använder parent scope för att spara funktioner
+Första argumentet är alltid *this
+dot operator function calls kollar genom struct_type.parent_scope() efter matchande fn
+Problem: Flera fner med samma namn i olika structar clashar
+
+
+
+
+*/
+
+/*
+TODO:
+
+1) FIXA BUGGAR
+2) pusha till master
+3) rewrite av fn, op, struct, hur de sparas i scope
+
+type system måste funka runtime -> ge varje type ett value (UID)
+type comparison: uid==uid
+
+typeof: endast compile time?
+
+*/
+
+

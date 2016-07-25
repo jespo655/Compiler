@@ -1,6 +1,7 @@
 #include "parser.h"
 
 #include "../abstx/numbers.h"
+#include "../abstx/bool.h"
 #include "../abstx/str.h"
 #include "../abstx/seq.h"
 #include "../compile_time/compile_time.h"
@@ -293,7 +294,7 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
             auto member_type = value_expr->get_type();
             ASSERT(member_type != nullptr);
 
-            if (seq->type->type == nullptr) seq->type = member_type; // infer the type from the first member
+            if (seq->type->type == nullptr) seq->type->type = member_type; // infer the type from the first member
             else if (seq->type->type != member_type) {
                 type_errors.push_back(value_expr);
             }
@@ -309,7 +310,7 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
     } else if (!type_errors.empty()) {
         log_error("Incompatible types in sequence literal of type "+seq->type->type->toS(), seq->context);
         for (auto member : type_errors) {
-            add_note("Member of type "+member->get_type()+" found here:",member->context);
+            add_note("Member of type "+member->get_type()->toS()+" found here:", member->context);
         }
         seq->status = Parsing_status::TYPE_ERROR;
         seq->type->status = Parsing_status::TYPE_ERROR;

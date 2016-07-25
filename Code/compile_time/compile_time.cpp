@@ -15,6 +15,10 @@ const std::shared_ptr<Workspace> compiled_workspace{new Workspace()};
 
 
 
+Value eval(std::shared_ptr<Value_expression> expr)
+{
+    ASSERT(false, "NYI");
+}
 
 
 

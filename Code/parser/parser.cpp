@@ -72,7 +72,7 @@ Token_iterator get_iterator(std::shared_ptr<T> tp, int index)
 {
     auto gs = std::dynamic_pointer_cast<Global_scope>(tp);
     if (gs == nullptr) {
-        auto abstx = std::dynamic_pointer_cast<Abstx_node>(tp));
+        auto abstx = std::dynamic_pointer_cast<Abstx_node>(tp);
         ASSERT(abstx != nullptr);
         gs = get_global_scope(abstx->parent_scope());
     }

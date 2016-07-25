@@ -68,6 +68,15 @@ std::string get_unique_id_str() {
 
 
 
+const auto type_type = std::shared_ptr<Type>(new Type_type());
+
+std::shared_ptr<Type> Type::get_type()
+{
+    // should return Type_type for all types
+    return type_type;
+}
+
+
 
 
 

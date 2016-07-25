@@ -70,8 +70,8 @@ struct Scope : Literal {
             }
 
             // check pulled in scopes
-            for (auto scope_pair : pulled_in_scopes) {
-                auto scope = scope_pair.second;
+            for (auto scope : pulled_in_scopes) {
+                // auto scope = scope_pair.second;
                 auto p2 = scope->get_identifier(id, false);
                 if (p == nullptr) p = p2;
                 else {
@@ -97,8 +97,8 @@ struct Scope : Literal {
             }
 
             // check pulled in scopes
-            for (auto scope_pair : pulled_in_scopes) {
-                auto scope = scope_pair.second;
+            for (auto scope : pulled_in_scopes) {
+                // auto scope = scope_pair.second;
                 auto p2 = scope->get_type(id, false);
                 if (p == nullptr) p = p2;
                 else {
@@ -124,8 +124,8 @@ struct Scope : Literal {
             }
 
             // check pulled in scopes
-            for (auto scope_pair : pulled_in_scopes) {
-                auto scope = scope_pair.second;
+            for (auto scope : pulled_in_scopes) {
+                // auto scope = scope_pair.second;
                 auto p2 = scope->get_function(id, false);
                 if (p == nullptr) p = p2;
                 else {

@@ -1,6 +1,15 @@
 #include "parser.h"
+// all types of statements are needed for static casts
 #include "../abstx/statement.h"
-
+#include "../abstx/declaration.h"
+#include "../abstx/assignment.h"
+#include "../abstx/if.h"
+#include "../abstx/for.h"
+#include "../abstx/while.h"
+#include "../abstx/using.h"
+#include "../abstx/return.h"
+#include "../abstx/defer.h"
+#include "../abstx/scope.h"
 
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -34,40 +43,42 @@ std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Sc
         auto us = read_using_statement(it, parent_scope);
         ASSERT(us != nullptr);
         parent_scope->using_statements.push_back(us);
-        return us;
-        // return std::static_pointer_cast<Statement>(us);
+        return std::static_pointer_cast<Statement>(us);
 
     } else if (it->type == Token_type::SYMBOL && it->token == "{") {
         // nested scope
-        return read_static_scope(it, parent_scope);
-        // return std::static_pointer_cast<Statement>(scope);
+        auto scope = read_anonymous_static_scope(it, parent_scope);
+        return std::static_pointer_cast<Statement>(scope);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "if") {
         // if statement
-        return read_if_statement(it, parent_scope);
-        // return std::static_pointer_cast<Statement>(if_s);
+        auto if_s = read_if_statement(it, parent_scope);
+        return std::static_pointer_cast<Statement>(if_s);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "for") {
         // for statement
-        return read_for_statement(it, parent_scope);
-        // return std::static_pointer_cast<Statement>(for_s);
+        auto for_s = read_for_statement(it, parent_scope);
+        return std::static_pointer_cast<Statement>(for_s);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "while") {
         // while statement
-        return read_while_statement(it, parent_scope);
-        // return std::static_pointer_cast<Statement>(while_s);
+        auto while_s = read_while_statement(it, parent_scope);
+        return std::static_pointer_cast<Statement>(while_s);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "return") {
         // return statement
-        return read_return_statement(it, parent_scope);
+        auto ret_s = read_return_statement(it, parent_scope);
+        return std::static_pointer_cast<Statement>(ret_s);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "infix_operator") {
         // infix operator declaration
-        return read_operator_declaration(it, parent_scope);
+        auto decl_s = read_operator_declaration(it, parent_scope);
+        return std::static_pointer_cast<Statement>(decl_s);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "prefix_operator") {
         // prefix operator declaration
-        return read_operator_declaration(it, parent_scope);
+        auto decl_s = read_operator_declaration(it, parent_scope);
+        return std::static_pointer_cast<Statement>(decl_s);
 
     } else {
 
@@ -86,13 +97,15 @@ std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Sc
                 if (t.token == ":") {
                     // declaration statement
                     it.current_index = start_index;
-                    return read_declaration_statement(it, parent_scope);
+                    auto decl_s = read_declaration_statement(it, parent_scope);
+                    return std::static_pointer_cast<Statement>(decl_s);
                 }
 
                 if (t.token == "=") {
                     // assignment statement
                     it.current_index = start_index;
-                    return read_assignment_statement(it, parent_scope);
+                    auto ass_s = read_assignment_statement(it, parent_scope);
+                    return std::static_pointer_cast<Statement>(ass_s);
                 }
 
                 if (t.token == ";") {
@@ -100,15 +113,15 @@ std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Sc
                     // could contain a #run somewhere, but we cant determine that yet
                     it.current_index = start_index;
 
-                    auto statement = std::shared_ptr<Statement>(new Unknown_statement());
-                    statement->start_token_index = start_index;
-                    statement->owner = parent_scope;
-                    statement->context = it.look_at(start_index).context;
-                    statement->status = Parsing_status::NOT_PARSED;
+                    auto us = std::shared_ptr<Unknown_statement>(new Unknown_statement());
+                    us->start_token_index = start_index;
+                    us->owner = parent_scope;
+                    us->context = it.look_at(start_index).context;
+                    us->status = Parsing_status::NOT_PARSED;
                     auto global_scope = get_global_scope(parent_scope);
-                    global_scope->unknown_statements.push_back(statement); // compile it later
+                    global_scope->unknown_statements.push_back(us); // compile it later
 
-                    return statement;
+                    return std::static_pointer_cast<Statement>(us);
                 }
 
                 if (t.token == "(") it.current_index = it.find_matching_paren(it.current_index-1) + 1;  // go back to the previous "(" and search from there
@@ -116,17 +129,18 @@ std::shared_ptr<Statement> read_statement(Token_iterator& it, std::shared_ptr<Sc
                 else if (t.token == "{") it.current_index = it.find_matching_brace(it.current_index-1) + 1;
 
                 else if (t.is_eof() || t.token == ")" || t.token == "]" || t.token == "}") {
-                    log_error("Unexpected token "+t.token+" in unresolved statement.", t.context);
+                    // log_error("Unexpected token "+t.token+" in unresolved statement.", t.context);
 
-                    log_error("Missing ';' at the end of statement: expected \";\" before \""+t.token+"\"", t.context);
-                    add_note("In unresolved statement that started here: ", start_token.context);
 
                     auto statement = std::shared_ptr<Statement>(new Unknown_statement());
                     statement->start_token_index = start_index;
                     statement->owner = parent_scope;
                     statement->context = it.look_at(start_index).context;
                     statement->status = Parsing_status::FATAL_ERROR;
-                    it.error = true;
+
+                    log_error("Missing ';' at the end of statement: expected \";\" before \""+t.token+"\"", t.context);
+                    add_note("In unresolved statement that started here: ", statement->context);
+
                     return statement;
                 }
             }
@@ -150,4 +164,15 @@ Parsing_status fully_resolve_statement(std::shared_ptr<Statement> statement)
 
     ASSERT(statement->status == Parsing_status::FULLY_RESOLVED || is_error(statement->status));
     return statement->status;
+}
+
+
+std::shared_ptr<Statement> compile_statement(Token_iterator& it, std::shared_ptr<Scope> parent_scope)
+{
+    log_warning("compile_statement may not work as expected", it->context);
+    auto statement = read_statement(it, parent_scope);
+    if (!is_error(statement->status)) {
+        fully_resolve_statement(statement);
+    }
+    return statement;
 }
