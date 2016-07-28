@@ -10,12 +10,156 @@
 // #include "compile_time/workspace.h"
 // #include "utilities/unique_id.h"
 // #include "utilities/assert.h"
+#include "abstx/cb_types.h"
+#include "utilities/assert.h"
 
 
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include <memory>
 using namespace std;
+
+
+
+
+struct AB {
+    char a, b;
+};
+
+
+
+
+void cb_types_test()
+{
+    // CB_i8 i;
+    // CB_String s;
+    CB_struct<CB_i8, CB_String, CB_i16> s{}; // no init on str is likely to crash
+    CB_struct<> s2{}; // no init on str is likely to crash
+
+    // s.get<CB_i8>(0).v = 1;
+    // s.get<CB_i16>(2).v = 4;
+    s.get<CB_String>(1) = "9"; // string("9");
+
+    cout << "i8: " << s.get<CB_i8>(0).toS() << endl;
+    cout << "i16: " << s.get<CB_i16>(2).toS() << endl;
+    cout << "string: " << s.get<CB_String>(1).toS() << endl;
+
+    cout << "s1: " << s.toS() << endl;
+    cout << "s2: " << s2.toS() << endl;
+
+    cout << endl;
+
+    cout << "size i8: " << sizeof(CB_i8) << endl;
+    // cout << "size value: " << sizeof(CB_Value) << endl;
+    cout << "size type: " << sizeof(CB_Type) << endl;
+    cout << "size bool: " << sizeof(CB_bool) << endl;
+    cout << "size i16: " << sizeof(CB_i16) << endl;
+    cout << "size string: " << sizeof(CB_String) << endl;
+    cout << "size pointer: " << sizeof(CB_owning_pointer<Metadata>) << endl;
+    cout << "size struct real: " << sizeof(s) << endl;
+    cout << "size struct approx: " << sizeof_struct<CB_i8, CB_String, CB_i16>() <<
+        " + " << sizeof(CB_owning_pointer<Metadata>) << " = " <<
+        sizeof_struct<CB_i8, CB_String, CB_i16>() + sizeof(CB_owning_pointer<Metadata>) << endl;
+
+    cout << "cpp  tests: " << sizeof(AB) << endl;
+    cout << "cube tests: " << sizeof(CB_struct<CB_i8, CB_i8>) << endl;
+    cout << "cube tests: " << sizeof(CB_struct<>) << endl;
+    cout << "cube tests: " << sizeof(CB_range) << endl;
+
+
+    CB_f32 f = 2;
+    CB_bool b = true;
+
+
+
+    // cpp_struct<int, float, int> s{{"a", "b", "c"}};
+    // s.v = CB_struct<int, float, int>(make_tuple(1, 2.5, 2));
+    // // s.identifiers = {"a", "b", "c"};
+
+    // s.get_member("a");
+    // // cout << "a: " << s.get_member("a") << endl;
+    // // cout << "b: " << s.get_member("b") << endl;
+    // // cout << "c: " << s.get_member("c") << endl;
+
+    // tuple<int, int> t = make_tuple(1, 2);
+    // cout << get<1>(t) << endl;
+    // cout << get<1>(s.v.v) << endl;
+    // cout << s.get<1>() << endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct Dummy {
+    int i;
+    int get_i() {
+        return i;
+    }
+};
+
+ostream& operator<<(ostream& os, const Dummy& d)
+{
+    return os << d.i;
+}
+
+template<typename Seq_t>
+void seq_generic_test(Seq_t& seq)
+{
+    cout << "test begin" << endl;
+    cout << "sizeof(seq) = " << sizeof(seq) << endl;
+    int min = 5;
+    int max = 100;
+    for (int i = min; i < max; ++i) {
+        // ostringstream oss;
+        // oss << i;
+        // seq.set(i, oss.str());
+        // seq.set(i, i);
+        Dummy d;
+        d.i = i;
+        seq.set(i, d);
+        if (i%10 == 0) cout << "size: " << seq.get_size() << ", capacity: " << seq.get_capacity() << endl;
+    }
+    for (int i = min-1; i < max+1; ++i)
+        cout << "seq[" << i << "] = " << seq[i] << endl;
+    cout << "sizeof(seq) = " << sizeof(seq) << endl;
+
+    cout << "test complete" << endl;
+}
+
+
+void seq_test()
+{
+    // CB_Static_seq<Dummy, 50> s_seq;
+    // CB_Dynamic_seq<Dummy> d_seq;
+
+    // // CB_Static_seq<int, 5> s_seq;
+    // // CB_Dynamic_seq<int> d_seq;
+
+    // seq_generic_test(s_seq);
+    // seq_generic_test(d_seq);
+
+    // cout << "size = " << sizeof(CB_Static_seq<int, 0>);
+}
+
+
+
+
+
+
+
+
+
 
 
 void str_test()
@@ -99,7 +243,7 @@ void indent_test()
 
 void size_test()
 {
-    cout << "bool: " << sizeof(bool) << endl;
+    // cout << "bool: " << sizeof(bool) << endl;
     // cout << "int8_t: " << sizeof(int8_t) << endl;
     // cout << "int16_t: " << sizeof(int16_t) << endl;
     // cout << "int32_t: " << sizeof(int32_t) << endl;
@@ -112,6 +256,11 @@ void size_test()
 
     // cout << "float: " << sizeof(float) << endl;
     // cout << "double: " << sizeof(double) << endl;
+
+    cout << "unique size = " << sizeof(std::unique_ptr<int>) << endl;
+    cout << "shared size = " << sizeof(std::shared_ptr<int>) << endl;
+    cout << "bool size = " << sizeof(bool);
+
 }
 
 
@@ -164,11 +313,13 @@ int main()
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
-    size_test();
+    // size_test();
     // indent_test();
     // float_test();
     // wchar_test();
     // str_test();
+    // seq_test();
+    cb_types_test();
 }
 
 

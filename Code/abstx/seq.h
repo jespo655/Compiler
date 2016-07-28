@@ -9,6 +9,10 @@
 #include <sstream>
 #include <vector>
 
+
+
+
+// All literals are static.
 // literal syntax:
 // [int, size=3: 0, 0, 0]
 // [int: 0, 0, 0] // size inferred to 3
@@ -30,7 +34,6 @@ struct Type_seq : Type
     std::shared_ptr<Type> type;
     int size;
     bool dynamic = false;
-
 
     std::string toS(void const * value_ptr, int size=0) const override {
         ASSERT(type != nullptr);
@@ -137,3 +140,16 @@ struct Literal_seq : Value_expression {
     }
 
 };
+
+
+
+// template<typename T>
+// struct Static_seq<std::shared_ptr<T>, int size> {
+//     std::shared_ptr<Type> get_type() { return T; }
+// };
+
+
+// struct Dynamic_seq {
+
+// };
+

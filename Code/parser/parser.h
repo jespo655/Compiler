@@ -246,9 +246,7 @@ Problem: Flera fner med samma namn i olika structar clashar
 /*
 TODO:
 
-1) FIXA BUGGAR
-2) pusha till master
-3) rewrite av fn, op, struct, hur de sparas i scope
+rewrite av fn, op, struct, hur de sparas i scope
 
 type system måste funka runtime -> ge varje type ett value (UID)
 type comparison: uid==uid

@@ -1,5 +1,55 @@
 #pragma once
 
+
+/*
+
+Fner:
+
+anonyma funktioner är ett fn-objekt, typen bestäms av in- och utparametrar
+in- och utparametrar kan vara generic
+
+overloading är ej tillåtet.
+funktionspekaren sparas som value på den identifier som finns i scope.
+
+
+
+operatorer sparas som en lista av overloads.
+op_name sparas som identifier i scope
+value är en dynamisk array av funktionspekare
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "type.h"
 #include "statement.h"
 #include "literal.h"
