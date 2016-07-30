@@ -10,7 +10,7 @@
 // #include "compile_time/workspace.h"
 // #include "utilities/unique_id.h"
 // #include "utilities/assert.h"
-#include "abstx/cb_types.h"
+#include "types/cb_types.h"
 #include "utilities/assert.h"
 
 
@@ -20,6 +20,35 @@
 #include <cstdlib>
 #include <memory>
 using namespace std;
+
+
+
+
+
+void any_test()
+{
+    CB_Any any;
+    cout << any.toS() << endl;
+    any = CB_Int(2);
+    cout << any.toS() << endl;
+    any.~CB_Any();
+    cout << any.toS() << endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -96,7 +125,7 @@ struct Verbose
 CB_Owning_pointer<Verbose> create_verbose()
 {
     cout << "creating" << endl;
-    CB_Owning_pointer<Verbose> vp = Verbose();
+    CB_Owning_pointer<Verbose> vp = alloc(Verbose());
     cout << "returning" << endl;
     return vp;
 }
@@ -118,6 +147,16 @@ void owning_test()
 }
 
 
+void range_test()
+{
+    CB_Range r;
+    r.r_start = 2.1;
+    r.r_end = 10.4;
+    cout << "range: " << r.toS() << endl;
+    for (auto f : r) {
+        cout << f.toS() << endl;
+    }
+}
 
 void print_types()
 {
@@ -142,6 +181,8 @@ void print_types()
     cout << CB_Uint::type.toS() << ": CB_Uint, size = " << sizeof(CB_Uint) << endl;
     cout << CB_Float::type.toS() << ": CB_Float, size = " << sizeof(CB_Float) << endl;
 
+    cout << CB_Any::type.toS() << ": CB_Any, size = " << sizeof(CB_Any) << endl;
+
     cout << CB_Range::type.toS() << ": CB_Range, size = " << sizeof(CB_Range) << endl;
     cout << CB_Function::type.toS() << ": CB_Function, size = " << sizeof(CB_Function) << endl;
     cout << CB_Generic_function::type.toS() << ": CB_Generic_function, size = " << sizeof(CB_Generic_function) << endl;
@@ -162,8 +203,6 @@ void print_types()
 
 void cb_fn_test()
 {
-    print_types();
-
     CB_Function fn;
     fn.v = (void (*)())plus_ints;
     fn.set_in_args<CB_i8, CB_i16>();
@@ -206,9 +245,9 @@ void cb_types_test()
     cout << "size string: " << sizeof(CB_String) << endl;
     cout << "size pointer: " << sizeof(CB_Owning_pointer<Struct_metadata>) << endl;
     cout << "size struct real: " << sizeof(s) << endl;
-    cout << "size struct approx: " << sizeof_struct<CB_i8, CB_String, CB_i16>() <<
-        " + " << sizeof(CB_Owning_pointer<Struct_metadata>) << " = " <<
-        sizeof_struct<CB_i8, CB_String, CB_i16>() + sizeof(CB_Owning_pointer<Struct_metadata>) << endl;
+    // cout << "size struct approx: " << sizeof_struct<CB_i8, CB_String, CB_i16>() <<
+    //     " + " << sizeof(CB_Owning_pointer<Struct_metadata>) << " = " <<
+    //     sizeof_struct<CB_i8, CB_String, CB_i16>() + sizeof(CB_Owning_pointer<Struct_metadata>) << endl;
 
     cout << "cpp  tests: " << sizeof(AB) << endl;
     cout << "cube tests: " << sizeof(CB_Struct<CB_i8, CB_i8>) << endl;
@@ -239,7 +278,7 @@ void cb_types_test()
     CB_i8 a8 = 2;
     CB_i16 b8 = 5;
     CB_i32 c8;
-    fn(&a8,&b8,&c8);
+    fn(a8,b8,&c8);
     cout << dec << a8.toS() << " + " << b8.toS() << " = " << c8.toS() << endl;
 
 
@@ -497,6 +536,7 @@ void wchar_test() {
 
 int main()
 {
+    print_types();
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
@@ -509,7 +549,9 @@ int main()
     // cb_types_test();
     // owning_test();
     // template_test();
-    cb_fn_test();
+    // cb_fn_test();
+    // range_test();
+    // any_test();
 }
 
 
