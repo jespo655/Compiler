@@ -30,20 +30,45 @@ struct CB_Any {
     }
 
     template<typename T>
+    const T& value() const {
+        ASSERT(v_ptr != nullptr);
+        ASSERT(T::type == v_type);
+        return *(T*)v_ptr;
+    }
+
+    CB_Any& operator=(const CB_Any& any) {
+        any.assign_callback(*this, any);
+    }
+    template<typename T, typename Type=CB_Type*, Type=&T::type>
     CB_Any& operator=(const T& t) {
-        allocate<T>(false);
-        new (v_ptr) T(t);
+        ASSERT(T::type != CB_Any::type);
+        ASSERT(T::type == t.type);
+        if (T::type == v_type) {
+            *(T*)v_ptr = T(t);
+        } else {
+            allocate<T>(false);
+            new (v_ptr) T(t);
+        }
     }
     template<typename T>
-    CB_Any(const T& t) { *this = t; }
+    CB_Any(const T& t) { set_default_callbacks(); *this = t; }
 
-    template<typename T>
+    CB_Any& operator=(CB_Any&& t) {
+        v_type = t.v_type;
+        v_ptr = t.v_ptr;
+        destructor_callback = t.destructor_callback;
+        toS_callback = t.toS_callback;
+        assign_callback = t.assign_callback;
+        t.v_ptr = nullptr;
+    }
+    template<typename T, typename Type=CB_Type*, Type=&T::type>
     CB_Any& operator=(T&& t) {
+        ASSERT(T::type != CB_Any::type);
         allocate<T>(false);
         new (v_ptr) T(std::move(t));
     }
     template<typename T>
-    CB_Any(T&& t) { *this = std::move(t); }
+    CB_Any(T&& t) { set_default_callbacks(); *this = std::move(t); }
 
     template<typename T>
     void allocate(bool init=true) {
@@ -57,6 +82,7 @@ struct CB_Any {
 private:
     void (*destructor_callback)(CB_Any&); // only compile time
     std::string (*toS_callback)(const CB_Any&); // only compile time
+    void (*assign_callback)(CB_Any&, const CB_Any&); // only compile time
 
     template<typename T> void set_callbacks();
     void set_default_callbacks();
@@ -72,22 +98,31 @@ std::string toS_any_callback(const CB_Any& any) {
 template<typename T>
 void destroy_any_callback(CB_Any& any)
 {
+    ASSERT(T::type == any.v_type);
     ((T*)any.v_ptr)->~T();
     free(any.v_ptr);
     any.v_ptr = nullptr;
 }
+template<typename T>
+void assign_any_callback(CB_Any& obj, const CB_Any& any)
+{
+    ASSERT(T::type == any.v_type);
+    obj = any.value<T>();
+}
 
 static std::string toS_null_callback(const CB_Any& any) { ASSERT(any.v_ptr == nullptr); return "any(null)"; }
 static void destroy_null_callback(CB_Any& any) { ASSERT(any.v_ptr == nullptr); }
-
+static void assign_null_callback(CB_Any& obj, const CB_Any& any) { ASSERT(any.v_ptr == nullptr); obj.~CB_Any(); }
 
 template<typename T>
 void CB_Any::set_callbacks() {
     destructor_callback = destroy_any_callback<T>;
     toS_callback = toS_any_callback<T>;
+    assign_callback = assign_any_callback<T>;
 }
 
 void CB_Any::set_default_callbacks() {
     destructor_callback = destroy_null_callback;
     toS_callback = toS_null_callback;
+    assign_callback = assign_null_callback;
 }

@@ -35,7 +35,7 @@ struct CB_Function
     CB_Owning_pointer<Function_metadata> metadata = alloc(Function_metadata());
     void (*v)() = nullptr; // function pointer
 
-    std::string toS() {
+    std::string toS() const {
         return "function"; // FIXME: better toS()
     }
 

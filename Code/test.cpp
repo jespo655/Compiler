@@ -27,12 +27,13 @@ using namespace std;
 
 void any_test()
 {
-    CB_Any any;
-    cout << any.toS() << endl;
-    any = CB_Int(2);
-    cout << any.toS() << endl;
-    any.~CB_Any();
-    cout << any.toS() << endl;
+    CB_Any any;      cout << any.toS() << endl;
+    any = CB_Int(2); cout << any.toS() << endl;
+    any.~CB_Any();   cout << any.toS() << endl;
+    CB_Any any2 = CB_Float(2); cout << any2.toS() << endl;
+    any = any2;      cout << any.toS() << endl;
+    any = CB_Int(2); cout << any.toS() << endl;
+    CB_Int i = any.value<CB_Int>(); cout << i.toS() << endl;
 }
 
 
@@ -194,7 +195,7 @@ void print_types()
     cout << CB_Owning_pointer<CB_Int>::type.toS() << ": CB_Owning_pointer<CB_Int>, size = " << sizeof(CB_Owning_pointer<CB_Int>) << endl;
     cout << CB_Sharing_pointer<CB_Int>::type.toS() << ": CB_Sharing_pointer<CB_Int>, size = " << sizeof(CB_Sharing_pointer<CB_Int>) << endl;
 
-    cout << CB_Struct<CB_Int>::type.toS() << ": CB_Struct<CB_Int>, size = " << sizeof(CB_Struct<CB_Int>) << endl;
+    // cout << CB_Struct<CB_Int>::type.toS() << ": CB_Struct<CB_Int>, size = " << sizeof(CB_Struct<CB_Int>) << endl;
 
     cout << endl;
 }
@@ -221,19 +222,19 @@ void cb_types_test()
 {
     // CB_i8 i;
     // CB_String s;
-    CB_Struct<CB_i8, CB_String, CB_i16> s{}; // no init on str is likely to crash
-    CB_Struct<> s2{}; // no init on str is likely to crash
+    // CB_Struct<CB_i8, CB_String, CB_i16> s{}; // no init on str is likely to crash
+    // CB_Struct<> s2{}; // no init on str is likely to crash
 
     // s.get<CB_i8>(0).v = 1;
     // s.get<CB_i16>(2).v = 4;
-    s.get<CB_String>(1) = "9"; // string("9");
+    // s.get<CB_String>(1) = "9"; // string("9");
 
-    cout << "i8: " << s.get<CB_i8>(0).toS() << endl;
-    cout << "i16: " << s.get<CB_i16>(2).toS() << endl;
-    cout << "string: " << s.get<CB_String>(1).toS() << endl;
+    // cout << "i8: " << s.get<CB_i8>(0).toS() << endl;
+    // cout << "i16: " << s.get<CB_i16>(2).toS() << endl;
+    // cout << "string: " << s.get<CB_String>(1).toS() << endl;
 
-    cout << "s1: " << s.toS() << endl;
-    cout << "s2: " << s2.toS() << endl;
+    // cout << "s1: " << s.toS() << endl;
+    // cout << "s2: " << s2.toS() << endl;
 
     cout << endl;
 
@@ -243,15 +244,15 @@ void cb_types_test()
     cout << "size bool: " << sizeof(CB_Bool) << endl;
     cout << "size i16: " << sizeof(CB_i16) << endl;
     cout << "size string: " << sizeof(CB_String) << endl;
-    cout << "size pointer: " << sizeof(CB_Owning_pointer<Struct_metadata>) << endl;
-    cout << "size struct real: " << sizeof(s) << endl;
+    // cout << "size pointer: " << sizeof(CB_Owning_pointer<Struct_metadata>) << endl;
+    // cout << "size struct real: " << sizeof(s) << endl;
     // cout << "size struct approx: " << sizeof_struct<CB_i8, CB_String, CB_i16>() <<
     //     " + " << sizeof(CB_Owning_pointer<Struct_metadata>) << " = " <<
     //     sizeof_struct<CB_i8, CB_String, CB_i16>() + sizeof(CB_Owning_pointer<Struct_metadata>) << endl;
 
     cout << "cpp  tests: " << sizeof(AB) << endl;
-    cout << "cube tests: " << sizeof(CB_Struct<CB_i8, CB_i8>) << endl;
-    cout << "cube tests: " << sizeof(CB_Struct<>) << endl;
+    // cout << "cube tests: " << sizeof(CB_Struct<CB_i8, CB_i8>) << endl;
+    // cout << "cube tests: " << sizeof(CB_Struct<>) << endl;
     cout << "cube tests: " << sizeof(CB_Range) << endl;
 
 
@@ -551,7 +552,7 @@ int main()
     // template_test();
     // cb_fn_test();
     // range_test();
-    // any_test();
+    any_test();
 }
 
 

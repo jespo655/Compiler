@@ -15,7 +15,7 @@ CB_Type CB_Bool::type = CB_Type("bool");
 
 
 
-#define GENERATE_OPERATORS(CB_t)                                        \
+#define GENERATE_PRIMITIVE_OPERATORS(CB_t)                              \
 bool operator==(const CB_t& a, const CB_t& b) { return a.v == b.v; }    \
 bool operator!=(const CB_t& a, const CB_t& b) { return !(a == b); }     \
 bool operator<(const CB_t& a, const CB_t& b) { return a.v < b.v; }      \
@@ -44,7 +44,7 @@ struct CB_##T {                                              \
 CB_Type CB_##T::type = CB_Type(#T);                          \
 CB_##T CB_##T::MIN_VALUE = std::numeric_limits<CPP_t>::min();\
 CB_##T CB_##T::MAX_VALUE = std::numeric_limits<CPP_t>::max();\
-GENERATE_OPERATORS(CB_##T);                                  \
+GENERATE_PRIMITIVE_OPERATORS(CB_##T);                                  \
 
 
 
@@ -83,7 +83,7 @@ struct CB_Int {
 CB_Type CB_Int::type = CB_Type("int");
 CB_Int CB_Int::MIN_VALUE = std::numeric_limits<int64_t>::min();
 CB_Int CB_Int::MAX_VALUE = std::numeric_limits<int64_t>::max();
-GENERATE_OPERATORS(CB_Int);
+GENERATE_PRIMITIVE_OPERATORS(CB_Int);
 
 // generic unsigned int - stored as u64 but can be implicitly casted to any integer type
 struct CB_Uint {
@@ -107,7 +107,7 @@ struct CB_Uint {
 CB_Type CB_Uint::type = CB_Type("uint");
 CB_Uint CB_Uint::MIN_VALUE = std::numeric_limits<uint64_t>::min();
 CB_Uint CB_Uint::MAX_VALUE = std::numeric_limits<uint64_t>::max();
-GENERATE_OPERATORS(CB_Uint);
+GENERATE_PRIMITIVE_OPERATORS(CB_Uint);
 
 // generic float - stored as f64 but can be implicitly casted to any floating point type
 struct CB_Float {
@@ -124,7 +124,7 @@ struct CB_Float {
 CB_Type CB_Float::type = CB_Type("float");
 CB_Float CB_Float::MIN_VALUE = std::numeric_limits<double>::min();
 CB_Float CB_Float::MAX_VALUE = std::numeric_limits<double>::max();
-GENERATE_OPERATORS(CB_Float);
+GENERATE_PRIMITIVE_OPERATORS(CB_Float);
 
 
 

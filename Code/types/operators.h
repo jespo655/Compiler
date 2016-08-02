@@ -25,7 +25,7 @@ struct CB_Operator
     CB_Dynamic_seq<CB_Function> infix_fns;
     CB_Dynamic_seq<CB_Function> prefix_fns;
 
-    std::string toS() {
+    std::string toS() const {
         return "operator("+metadata->symbol.toS()+", p="+metadata->prefix_prio.toS()+", i="+metadata->infix_prio.toS()+")";
     }
 

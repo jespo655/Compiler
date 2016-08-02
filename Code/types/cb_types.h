@@ -14,6 +14,7 @@
 #include "generic_function.h"
 #include "operators.h"
 #include "any.h"
+#include "flag.h"
 
 /*
 This is a list of built in types
@@ -25,7 +26,6 @@ Things that is supplied here:
 * The field 'static CB_Type type', which is
     an unique type identifier. It does not take any space,
     and is always constexpr in compiled code.
-    Supplied for each type.
 
 * Implicit cast operators (if applicable)
 
@@ -38,4 +38,5 @@ Built in functions that refer to types:
 
 */
 
-
+template<typename T, typename S=std::string(T::*)() const, S=T::toS>
+std::ostream& operator<<(std::ostream& os, const T& t) { return os << t.toS(); }

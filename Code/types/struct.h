@@ -2,8 +2,50 @@
 
 #include "type.h"
 #include "pointers.h"
-
+#include "any.h"
 #include <string>
+
+
+/*
+NOTE: the struct system has to be remade - it's impossible to create templated types
+from run time information and that must happen all the time in the parser.
+
+
+*/
+
+struct Struct_member {
+    CB_String id;
+    CB_Type type;
+    CB_Any default_value;
+    CB_Bool initialized;
+};
+
+struct Struct_metadata {
+    CB_Dynamic_seq<Struct_member> members;
+};
+
+struct Struct {
+    CB_Type type;
+    CB_Owning_pointer<Struct_metadata> metadata;
+    CB_Dynamic_seq<CB_Any> values;
+
+    void init_members() {
+        ASSERT(metadata != nullptr);
+        values.clear();
+        for (auto& member : metadata->members) {
+
+        }
+    }
+};
+
+
+
+
+
+
+
+/*
+
 
 
 
@@ -159,3 +201,4 @@ template<typename... Members>
 CB_Type CB_Struct<Members...>::type = CB_Type("struct");
 
 
+*/

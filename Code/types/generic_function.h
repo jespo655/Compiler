@@ -56,7 +56,7 @@ struct CB_Generic_function
     CB_Dynamic_seq<CB_Function> constructed_fns;
     CB_Sharing_pointer<Abstx_Generic_function> abstx; // only compile time
 
-    std::string toS() {
+    std::string toS() const {
         return "generic_function"; // FIXME: better toS()
     }
 
