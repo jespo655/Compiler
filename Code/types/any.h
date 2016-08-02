@@ -23,13 +23,6 @@ struct CB_Any {
     }
 
     template<typename T>
-    T& value() {
-        ASSERT(v_ptr != nullptr);
-        ASSERT(T::type == v_type);
-        return *(T*)v_ptr;
-    }
-
-    template<typename T>
     const T& value() const {
         ASSERT(v_ptr != nullptr);
         ASSERT(T::type == v_type);
@@ -43,7 +36,7 @@ struct CB_Any {
     CB_Any& operator=(const T& t) {
         ASSERT(T::type != CB_Any::type);
         ASSERT(T::type == t.type);
-        if (T::type == v_type) {
+        if (T::type == v_type && v_ptr != nullptr) {
             *(T*)v_ptr = T(t);
         } else {
             allocate<T>(false);
@@ -64,8 +57,13 @@ struct CB_Any {
     template<typename T, typename Type=CB_Type*, Type=&T::type>
     CB_Any& operator=(T&& t) {
         ASSERT(T::type != CB_Any::type);
-        allocate<T>(false);
-        new (v_ptr) T(std::move(t));
+        ASSERT(T::type == t.type);
+        if (T::type == v_type && v_ptr != nullptr) {
+            *(T*)v_ptr = std::move(t);
+        } else {
+            allocate<T>(false);
+            new (v_ptr) T(std::move(t));
+        }
     }
     template<typename T>
     CB_Any(T&& t) { set_default_callbacks(); *this = std::move(t); }
@@ -110,9 +108,9 @@ void assign_any_callback(CB_Any& obj, const CB_Any& any)
     obj = any.value<T>();
 }
 
-static std::string toS_null_callback(const CB_Any& any) { ASSERT(any.v_ptr == nullptr); return "any(null)"; }
-static void destroy_null_callback(CB_Any& any) { ASSERT(any.v_ptr == nullptr); }
-static void assign_null_callback(CB_Any& obj, const CB_Any& any) { ASSERT(any.v_ptr == nullptr); obj.~CB_Any(); }
+static std::string toS_void_callback(const CB_Any& any) { ASSERT(any.v_ptr == nullptr); return "any(void)"; }
+static void destroy_void_callback(CB_Any& any) { ASSERT(any.v_ptr == nullptr); }
+static void assign_void_callback(CB_Any& obj, const CB_Any& any) { ASSERT(any.v_ptr == nullptr); obj.~CB_Any(); }
 
 template<typename T>
 void CB_Any::set_callbacks() {
@@ -122,7 +120,7 @@ void CB_Any::set_callbacks() {
 }
 
 void CB_Any::set_default_callbacks() {
-    destructor_callback = destroy_null_callback;
-    toS_callback = toS_null_callback;
-    assign_callback = assign_null_callback;
+    destructor_callback = destroy_void_callback;
+    toS_callback = toS_void_callback;
+    assign_callback = assign_void_callback;
 }
