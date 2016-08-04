@@ -23,7 +23,16 @@ using namespace std;
 
 
 
+struct Generic_type {
+    CB_Type type; // each generic type is different
+    std::string name;
+    Generic_type() {}
+    Generic_type(const std::string& name) type{name}, name{name} {}
+};
 
+struct Generic_statement {
+    Statement s; // contains some Generic_types instead of types
+};
 
 void any_test()
 {
