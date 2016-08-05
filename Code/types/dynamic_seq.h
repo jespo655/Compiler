@@ -25,7 +25,7 @@ struct CB_Dynamic_seq {
 
     std::string toS() const {
         std::ostringstream oss;
-        oss << "[" << type.toS() << ", dynamic: ";
+        oss << "[" << member_type.toS() << ", dynamic: ";
         for (uint32_t i = 0; i < size; ++i) {
             if (i != 0) oss << ", ";
             oss << v_ptr[i].toS();
@@ -163,4 +163,4 @@ struct CB_Dynamic_seq {
 };
 
 template<typename T>
-CB_Type CB_Dynamic_seq<T>::type = CB_Type(T::type.toS()+"[]");
+CB_Type CB_Dynamic_seq<T>::type = CB_Type("[]"+T::type.toS(), CB_Dynamic_seq<T>());

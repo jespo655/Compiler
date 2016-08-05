@@ -1,6 +1,7 @@
 #pragma once
 
 #include "type.h"
+#include <type_traits>
 
 /*
 The type Any can be assigned a value of any type. The type information is then stored alongside the object,
@@ -30,10 +31,14 @@ struct CB_Any {
     }
 
     CB_Any& operator=(const CB_Any& any) {
+        // std::cout << "any copy op = any of type " << any.v_type.toS() << std::endl;
         any.assign_callback(*this, any);
     }
+    CB_Any(const CB_Any& any) { set_default_callbacks(); *this = any; }
+
     template<typename T, typename Type=CB_Type*, Type=&T::type>
     CB_Any& operator=(const T& t) {
+        // std::cout << "any copy op = " << T::type.toS() << std::endl;
         ASSERT(T::type != CB_Any::type);
         ASSERT(T::type == t.type);
         if (T::type == v_type && v_ptr != nullptr) {
@@ -46,16 +51,22 @@ struct CB_Any {
     template<typename T>
     CB_Any(const T& t) { set_default_callbacks(); *this = t; }
 
-    CB_Any& operator=(CB_Any&& t) {
-        v_type = t.v_type;
-        v_ptr = t.v_ptr;
-        destructor_callback = t.destructor_callback;
-        toS_callback = t.toS_callback;
-        assign_callback = t.assign_callback;
-        t.v_ptr = nullptr;
+    // CB_Any& operator=(CB_Any&& any) = delete;
+    CB_Any& operator=(CB_Any&& any) {
+        // std::cout << "any move op = any of type " << any.v_type.toS() << std::endl;
+        v_type = any.v_type;
+        v_ptr = any.v_ptr;
+        destructor_callback = any.destructor_callback;
+        toS_callback = any.toS_callback;
+        assign_callback = any.assign_callback;
+        any.v_ptr = nullptr;
+        any.set_default_callbacks();
     }
+    CB_Any(CB_Any&& any) { set_default_callbacks(); *this = std::move(any); }
+
     template<typename T, typename Type=CB_Type*, Type=&T::type>
     CB_Any& operator=(T&& t) {
+        // std::cout << "any move op = " << T::type.toS() << std::endl;
         ASSERT(T::type != CB_Any::type);
         ASSERT(T::type == t.type);
         if (T::type == v_type && v_ptr != nullptr) {
@@ -73,6 +84,7 @@ struct CB_Any {
         this->~CB_Any();
         v_type = T::type;
         v_ptr = malloc(sizeof(T));
+        ASSERT(v_ptr != nullptr); // FIXME: better handling of bad alloc
         if (init) new ((T*)v_ptr) T();
         set_callbacks<T>();
     }
@@ -91,23 +103,42 @@ CB_Type CB_Any::type = CB_Type("any");
 template<typename T>
 std::string toS_any_callback(const CB_Any& any) {
     ASSERT(T::type == any.v_type);
+    ASSERT(any.v_ptr != nullptr);
     return ((T*)any.v_ptr)->toS();
 }
 template<typename T>
 void destroy_any_callback(CB_Any& any)
 {
     ASSERT(T::type == any.v_type);
+    ASSERT(any.v_ptr != nullptr, "Trying to delete null of type "+T::type.toS());
     ((T*)any.v_ptr)->~T();
     free(any.v_ptr);
     any.v_ptr = nullptr;
 }
-template<typename T>
-void assign_any_callback(CB_Any& obj, const CB_Any& any)
-{
-    ASSERT(T::type == any.v_type);
-    obj = any.value<T>();
-}
 
+template<typename T, bool> struct assign_any_callback {};
+
+template<typename T>
+struct assign_any_callback<T,true>{
+    static void f(CB_Any& obj, const CB_Any& any) {
+        ASSERT(T::type == any.v_type);
+        obj = any.value<T>();
+    }
+};
+template<typename T>
+struct assign_any_callback<T,false>{
+    static void f(CB_Any& obj, const CB_Any& any) {
+        ASSERT(false, "Non copy constructible objects can't be copied through any!");
+    }
+};
+
+
+// template<typename T>
+// void assign_any_callback(CB_Any& obj, const CB_Any& any)
+// {
+//     ASSERT(T::type == any.v_type);
+//     obj = any.value<T>();
+// }
 static std::string toS_void_callback(const CB_Any& any) { ASSERT(any.v_ptr == nullptr); return "any(void)"; }
 static void destroy_void_callback(CB_Any& any) { ASSERT(any.v_ptr == nullptr); }
 static void assign_void_callback(CB_Any& obj, const CB_Any& any) { ASSERT(any.v_ptr == nullptr); obj.~CB_Any(); }
@@ -116,7 +147,7 @@ template<typename T>
 void CB_Any::set_callbacks() {
     destructor_callback = destroy_any_callback<T>;
     toS_callback = toS_any_callback<T>;
-    assign_callback = assign_any_callback<T>;
+    assign_callback = assign_any_callback<T, std::is_copy_constructible<T>::value>::f;
 }
 
 void CB_Any::set_default_callbacks() {

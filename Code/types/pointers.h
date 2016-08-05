@@ -69,7 +69,8 @@ struct CB_Owning_pointer {
     CB_Owning_pointer(T*&& ptr) { *this = std::move(ptr); }
 };
 template<typename T>
-CB_Type CB_Owning_pointer<T>::type = CB_Type(T::type.toS()+"*!");
+// CB_Type CB_Owning_pointer<T>::type = CB_Type("*!"+T::type.toS());
+CB_Type CB_Owning_pointer<T>::type = CB_Type("*!"+T::type.toS(), CB_Owning_pointer<T>());
 
 
 template<typename T>
@@ -107,8 +108,8 @@ struct CB_Sharing_pointer {
     CB_Sharing_pointer() {}
     ~CB_Sharing_pointer() { v = nullptr; }
 
-    T* operator->() { ASSERT(v != nullptr); return v; }
-    T& operator*() { ASSERT(v != nullptr); return *v; }
+    T* operator->() const { ASSERT(v != nullptr); return v; }
+    T& operator*() const { ASSERT(v != nullptr); return *v; }
 
     // copy
     CB_Sharing_pointer& operator=(const CB_Sharing_pointer& ptr) { v = ptr.v; return *this; }
@@ -124,7 +125,7 @@ struct CB_Sharing_pointer {
     CB_Sharing_pointer(const nullptr_t& ptr) { *this = ptr; }
 };
 template<typename T>
-CB_Type CB_Sharing_pointer<T>::type = CB_Type(T::type.toS()+"*");
+CB_Type CB_Sharing_pointer<T>::type = CB_Type("*"+T::type.toS(), CB_Sharing_pointer<T>());
 
 // comparison betweens different kinds of pointers
 template<typename T> bool operator==(const CB_Sharing_pointer<T>& lhs, const CB_Sharing_pointer<T>& rhs) { return lhs.v == rhs.v; }

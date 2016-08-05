@@ -26,7 +26,7 @@ struct CB_Static_seq {
 
     std::string toS() const {
         std::ostringstream oss;
-        oss << "[" << type.toS() << ", size=" << size << ": ";
+        oss << "[" << member_type.toS() << ", size=" << size << ": ";
         for (uint32_t i = 0; i < size; ++i) {
             if (i != 0) oss << ", ";
             oss << v[i].toS();
@@ -90,5 +90,5 @@ struct CB_Static_seq {
 };
 
 template<typename T, uint32_t size>
-CB_Type CB_Static_seq<T, size>::type = CB_Type(T::type.toS()+"["+std::to_string(size)+"]");
+CB_Type CB_Static_seq<T, size>::type = CB_Type("["+std::to_string(size)+"]"+T::type.toS(), CB_Static_seq<T,size>());
 

@@ -11,7 +11,7 @@ struct CB_Bool {
     operator bool() { return v; } // necessary for compact if() statements
     std::string toS() const { return v? "true" : "false"; }
 };
-CB_Type CB_Bool::type = CB_Type("bool");
+CB_Type CB_Bool::type = CB_Type("bool", CB_Bool());
 
 
 
@@ -36,15 +36,15 @@ struct CB_##T {                                              \
     static CB_Type type;                                     \
     static CB_##T MIN_VALUE;                                 \
     static CB_##T MAX_VALUE;                                 \
-    CPP_t v = 0;                                             \
+    CPP_t v = 0; /* default value */                         \
     CB_##T() {}                                              \
     CB_##T(const CPP_t& v) { this->v = v; }                  \
     std::string toS() const { return std::to_string(v); }    \
 };                                                           \
-CB_Type CB_##T::type = CB_Type(#T);                          \
+CB_Type CB_##T::type = CB_Type(#T, CB_##T());                \
 CB_##T CB_##T::MIN_VALUE = std::numeric_limits<CPP_t>::min();\
 CB_##T CB_##T::MAX_VALUE = std::numeric_limits<CPP_t>::max();\
-GENERATE_PRIMITIVE_OPERATORS(CB_##T);                                  \
+GENERATE_PRIMITIVE_OPERATORS(CB_##T);                        \
 
 
 
@@ -66,7 +66,7 @@ struct CB_Int {
     static CB_Type type;
     static CB_Int MIN_VALUE;
     static CB_Int MAX_VALUE;
-    int64_t v;
+    int64_t v = 0;
     CB_Int() {}
     CB_Int(const int64_t& v) { this->v = v; }
     std::string toS() const { return std::to_string(v); }
@@ -80,7 +80,7 @@ struct CB_Int {
     operator CB_u32() { CB_u32 i; i.v = v; return i; }
     operator CB_u64() { CB_u64 i; i.v = v; return i; }
 };
-CB_Type CB_Int::type = CB_Type("int");
+CB_Type CB_Int::type = CB_Type("int", CB_Int());
 CB_Int CB_Int::MIN_VALUE = std::numeric_limits<int64_t>::min();
 CB_Int CB_Int::MAX_VALUE = std::numeric_limits<int64_t>::max();
 GENERATE_PRIMITIVE_OPERATORS(CB_Int);
@@ -90,7 +90,7 @@ struct CB_Uint {
     static CB_Type type;
     static CB_Uint MIN_VALUE;
     static CB_Uint MAX_VALUE;
-    uint64_t v;
+    uint64_t v = 0;
     CB_Uint() {}
     CB_Uint(const uint64_t& v) { this->v = v; }
     std::string toS() const { return std::to_string(v); }
@@ -104,7 +104,7 @@ struct CB_Uint {
     operator CB_u32() { CB_u32 i; i.v = v; return i; }
     operator CB_u64() { CB_u64 i; i.v = v; return i; }
 };
-CB_Type CB_Uint::type = CB_Type("uint");
+CB_Type CB_Uint::type = CB_Type("uint", CB_Uint());
 CB_Uint CB_Uint::MIN_VALUE = std::numeric_limits<uint64_t>::min();
 CB_Uint CB_Uint::MAX_VALUE = std::numeric_limits<uint64_t>::max();
 GENERATE_PRIMITIVE_OPERATORS(CB_Uint);
@@ -114,14 +114,14 @@ struct CB_Float {
     static CB_Type type;
     static CB_Float MIN_VALUE;
     static CB_Float MAX_VALUE;
-    double v;
+    double v = 0.0;
     CB_Float() {}
     CB_Float(const double& v) { this->v = v; }
     std::string toS() const { return std::to_string(v); }
     operator CB_f32() { CB_f32 i; i.v = v; return i; }
     operator CB_f64() { CB_f64 i; i.v = v; return i; }
 };
-CB_Type CB_Float::type = CB_Type("float");
+CB_Type CB_Float::type = CB_Type("float", CB_Float());
 CB_Float CB_Float::MIN_VALUE = std::numeric_limits<double>::min();
 CB_Float CB_Float::MAX_VALUE = std::numeric_limits<double>::max();
 GENERATE_PRIMITIVE_OPERATORS(CB_Float);

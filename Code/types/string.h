@@ -56,11 +56,16 @@ struct CB_String {
         if (capacity < str.size)
             reallocate(str.size, false);
         ASSERT(capacity >= str.size);
+        ASSERT(v_ptr != nullptr);
         memcpy(v_ptr, str.v_ptr, size+1);
         size = str.size;
         return *this;
     }
-    CB_String(const CB_String& str) { *this = str; }
+    CB_String(const CB_String& str) {
+        v_ptr = (char*)malloc(capacity+1);
+        memset(v_ptr, 0, capacity+1);
+        *this = str;
+    }
 
     // move
     CB_String& operator=(CB_String&& str) {
@@ -83,6 +88,5 @@ struct CB_String {
     }
 };
 
-CB_Type CB_String::type = CB_Type("string");
-
+CB_Type CB_String::type = CB_Type("string", CB_String(""));
 
