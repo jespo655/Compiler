@@ -19,6 +19,44 @@ op2 : T*! = op; // op2 grabs the object from op and is now the owner of the obje
 */
 
 
+
+/*
+CB_Owning_pointer should have deleted copy construcor and copy assignment operator.
+However, that gives lots of problems with template classes such as seq<OP> and any (assignment callbacks).
+
+
+*/
+
+template<typename T> struct CB_Owning_pointer;
+template<typename T> CB_Owning_pointer<T> alloc(const T& t);
+template<typename T> CB_Owning_pointer<T> alloc(T&& t);
+template<typename T, bool> struct deep_copy;
+
+
+
+// template<typename T, bool> struct assign_any_callback {};
+
+// template<typename T>
+// struct assign_any_callback<T,true>{
+//     static void f(CB_Any& obj, const CB_Any& any) {
+//         ASSERT(T::type == any.v_type);
+//         obj = any.value<T>();
+//     }
+// };
+// template<typename T>
+// struct assign_any_callback<T,false>{
+//     static void f(CB_Any& obj, const CB_Any& any) {
+//         ASSERT(false, "Non copy constructible objects can't be copied through any!");
+//     }
+// };
+
+    // assign_callback = assign_any_callback<T, std::is_copy_constructible<T>::value>::f;
+
+
+
+
+
+
 // owning pointer - owns the object and deallocates it when done.
 template<typename T> // T is a CB type
 struct CB_Owning_pointer {
@@ -44,9 +82,13 @@ struct CB_Owning_pointer {
     T* operator->() const { ASSERT(v != nullptr); return v; }
     T& operator*() const { ASSERT(v != nullptr); return *v; }
 
-    // copy - not allowed. If passing a owned_ptr to a function, move constructor must be used. (In CB this will be done automatically)
-    CB_Owning_pointer& operator=(const CB_Owning_pointer& ptr) = delete;
-    CB_Owning_pointer(const CB_Owning_pointer& ptr) = delete;
+    // copy - not allowed (makes a deep copy?). If passing a owned_ptr to a function, move constructor should be used. (In CB this will be done automatically)
+    CB_Owning_pointer& operator=(const CB_Owning_pointer& ptr)
+    {
+        if (v == nullptr) *this = std::move(ptr.deep_copy());
+        else *v = *ptr;
+    }
+    CB_Owning_pointer(const CB_Owning_pointer& ptr) { *this = ptr; }
 
     CB_Owning_pointer& operator=(const nullptr_t& ptr) { ASSERT(ptr == nullptr); this->~CB_Owning_pointer(); return *this; }
     CB_Owning_pointer(const nullptr_t& ptr) { *this = ptr; }
@@ -67,6 +109,11 @@ struct CB_Owning_pointer {
         return *this;
     }
     CB_Owning_pointer(T*&& ptr) { *this = std::move(ptr); }
+
+    CB_Owning_pointer deep_copy() const {
+        return ::deep_copy<T, std::is_copy_constructible<T>::value>()(*this);
+        // return alloc<T>(*v);
+    }
 };
 template<typename T>
 // CB_Type CB_Owning_pointer<T>::type = CB_Type("*!"+T::type.toS());
@@ -77,6 +124,7 @@ template<typename T>
 CB_Owning_pointer<T> alloc(const T& t) {
     CB_Owning_pointer<T> ptr;
     ptr.v = (T*)malloc(sizeof(T));
+    ASSERT(ptr.v != nullptr);
     new (ptr.v) T(t);
     return ptr;
 }
@@ -88,6 +136,41 @@ CB_Owning_pointer<T> alloc(T&& t) {
     new (ptr.v) T(std::move(t));
     return ptr;
 }
+
+template<typename T> struct deep_copy<T,true> { // copy constructible
+    CB_Owning_pointer<T> operator()(const CB_Owning_pointer<T>& ptr) {
+        if (ptr == nullptr) return nullptr;
+        else return alloc<T>(*ptr);
+    }
+};
+template<typename T> struct deep_copy<T,false> { // non-copy constructible - deep copies are not allowed.
+    CB_Owning_pointer<T> operator()(const CB_Owning_pointer<T>& ptr) { ASSERT(false); return nullptr; }
+};
+
+// template<typename T, bool> struct assign_any_callback {};
+
+// template<typename T>
+// struct assign_any_callback<T,true>{
+//     static void f(CB_Any& obj, const CB_Any& any) {
+//         ASSERT(T::type == any.v_type);
+//         obj = any.value<T>();
+//     }
+// };
+// template<typename T>
+// struct assign_any_callback<T,false>{
+//     static void f(CB_Any& obj, const CB_Any& any) {
+//         ASSERT(false, "Non copy constructible objects can't be copied through any!");
+//     }
+// };
+
+    // assign_callback = assign_any_callback<T, std::is_copy_constructible<T>::value>::f;
+
+
+
+
+
+
+
 
 
 // sharing pointer - never deallocates the object
@@ -118,8 +201,8 @@ struct CB_Sharing_pointer {
     CB_Sharing_pointer& operator=(const CB_Owning_pointer<T>& ptr) { v = ptr.v; return *this; }
     CB_Sharing_pointer(const CB_Owning_pointer<T>& ptr) { *this = ptr; }
 
-    CB_Sharing_pointer& operator=(const T*& ptr) { v = ptr; return *this; }
-    CB_Sharing_pointer(const T*& ptr) { *this = ptr; }
+    CB_Sharing_pointer& operator=(T* ptr) { v = ptr; return *this; }
+    CB_Sharing_pointer(T* ptr) { *this = ptr; }
 
     CB_Sharing_pointer& operator=(const nullptr_t& ptr) { ASSERT(ptr == nullptr); v = ptr; return *this; }
     CB_Sharing_pointer(const nullptr_t& ptr) { *this = ptr; }

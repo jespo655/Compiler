@@ -19,8 +19,9 @@ struct CB_Type
     CB_Type(const std::string& name) { typenames[uid] = name; }
     template<typename T, typename Type=CB_Type*, Type=&T::type>
     CB_Type(const std::string& name, T&& default_value);
+    virtual ~CB_Type() {}
 
-    std::string toS() const {
+    virtual std::string toS() const {
         const std::string& name = typenames[uid];
         if (name == "") return "anonymous type("+std::to_string(uid)+")";
         return name; // +"("+std::to_string(uid)+")";
@@ -39,17 +40,13 @@ struct CB_Type
 
 };
 std::map<int, std::string> CB_Type::typenames{};
-CB_Type CB_Type::type = CB_Type("type"); // no default value
+// CB_Type CB_Type::type = CB_Type("type"); // no default value
 
 
 
-/*
-Default values are problematic - using the constructor in static context crashes for CB_String, but not for CB_Bool.
-    Fixed for CB_String, but not for CB_Type: move constructor didn't work as expected
-*/
 #include "any.h"
 std::map<int, CB_Any> CB_Type::default_values{};
-// CB_Type CB_Type::type = CB_Type("type", CB_Type("DEFAULT_TYPE")); // if we want a default value, this line has to be after the default_values initialization line
+CB_Type CB_Type::type = CB_Type("type", CB_Type("void")); // if we want a default value, this line has to be after the default_values initialization line
 
 template<typename T, typename Type, Type>
 CB_Type::CB_Type(const std::string& name, T&& default_value)

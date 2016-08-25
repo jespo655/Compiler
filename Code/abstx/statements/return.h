@@ -1,9 +1,7 @@
 #pragma once
 
 #include "statement.h"
-#include "value_expression.h"
-
-#include <vector>
+#include "../expressions/value_expression.h"
 
 /*
 return 1;           // returns the int 1
@@ -16,7 +14,7 @@ b=2; return 1;      // the return count only has to include all non-named return
 
 struct Return_statement : Statement {
 
-    std::vector<std::shared_ptr<Value_expression>> return_parameters;
+    seq<owned<Value_expression>> return_parameters;
 
     std::string toS() const override {
         return "return statement";

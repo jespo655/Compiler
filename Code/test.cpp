@@ -10,6 +10,7 @@
 // #include "compile_time/workspace.h"
 // #include "utilities/unique_id.h"
 // #include "utilities/assert.h"
+#include "abstx/all_abstx.h"
 #include "types/cb_types.h"
 #include "utilities/assert.h"
 
@@ -23,28 +24,63 @@ using namespace std;
 
 
 
-struct Generic_type {
-    CB_Type type; // each generic type is different
-    std::string name;
-    Generic_type() {}
-    Generic_type(const std::string& name) type{name}, name{name} {}
-};
+// struct Generic_type {
+//     CB_Type type; // each generic type is different
+//     std::string name;
+//     Generic_type() {}
+//     Generic_type(const std::string& name) : type{name}, name{name} {}
+// };
 
-struct Generic_statement {
-    Statement s; // contains some Generic_types instead of types
-};
+// struct Generic_statement {
+//     Statement s; // contains some Generic_types instead of types
+// };
 
 void any_test()
 {
-    CB_Any any;      cout << any.toS() << endl;
-    any = CB_Int(2); cout << any.toS() << endl;
-    any.~CB_Any();   cout << any.toS() << endl;
-    CB_Any any2 = CB_Float(2); cout << any2.toS() << endl;
-    any = any2;      cout << any.toS() << endl;
-    any = CB_Int(2); cout << any.toS() << endl;
-    CB_Int i = any.value<CB_Int>(); cout << i.toS() << endl;
+    // cout << "~ any test ~" << endl;
+    // CB_Any any;      // cout << any.toS() << endl;
+    // any = CB_Int(2); // cout << any.toS() << endl;
+    // any.~CB_Any();   // cout << any.toS() << endl;
+    // CB_Any any2 = CB_Float(2); // cout << any2.toS() << endl;
+    // any = any2;      // cout << any.toS() << endl;
+    // any = CB_Int(2); // cout << any.toS() << endl;
+    // CB_Int i = any.value<CB_Int>(); // cout << i.toS() << endl;
+
+
+    // cout << "1"; const CB_Owning_pointer<CB_Int> ptr;
+    // cout << "2"; const CB_Any any_ptr = ptr; // error move
+    // cout << "3"; any_ptr = std::move(ptr); // ok
+
+    // cout << "4"; CB_Any any_ptr2 = any_ptr; // error move
+    // cout << "5"; any_ptr2 = std::move(any_ptr); // ok
+    // cout << "~ any test complete ~" << endl;
+
 }
 
+
+void flag_test()
+{
+
+    CB_Flag f0 = 0;
+    CB_Flag f1 = 1;
+    CB_Flag f2 = 2;
+    CB_Flag f3 = 3;
+    CB_Flag f4 = 4;
+    CB_Flag f5 = 5;
+    CB_Flag f10 = 10;
+    CB_Flag f16 = 16;
+    CB_Flag f64 = 64;
+
+    CB_u8 flags1 = f0+f2;
+    CB_u16 flags2 = (CB_Uint)f16;
+
+    cout << flags1.toS() << endl;
+    cout << flags2.toS() << endl;
+    // cout << (1<<(0U-1)) << endl;
+    // cout << CB_Uint(1ULL<<63) << endl;
+    // cout << CB_Uint(1ULL<<64) << endl;
+    // cout << CB_Uint(1ULL<<65) << endl;
+}
 
 
 
@@ -122,7 +158,7 @@ void plus_ints(CB_i8 lhs, CB_i16 rhs, CB_i32* sum) {
 
 struct Verbose
 {
-    int i = get_unique_id();
+    int i = CB_Type::get_unique_type_id();
     Verbose() { cout << "V " << i << " constructed" << endl; }
     ~Verbose() { cout << "V " << i << " deleted" << endl; }
     Verbose(const Verbose& v) { cout << "V " << i << " copy constructor from " << v.i << endl; }
@@ -170,39 +206,39 @@ void range_test()
 
 void print_types()
 {
-    cout << CB_Type::type.toS() << ": CB_Type, size = " << sizeof(CB_Type) << endl;
-    cout << CB_String::type.toS() << ": CB_String, size = " << sizeof(CB_String) << endl;
-    cout << CB_Bool::type.toS() << ": CB_Bool, size = " << sizeof(CB_Bool) << endl;
+    cout << CB_Type::type.toS() << ": CB_Type, size = " << sizeof(CB_Type) << endl; //", default value = " << CB_Type::type.default_value().toS() << endl;
+    cout << CB_String::type.toS() << ": CB_String, size = " << sizeof(CB_String) << ", default value = " << CB_String::type.default_value().toS() << endl;
+    cout << CB_Bool::type.toS() << ": CB_Bool, size = " << sizeof(CB_Bool) << ", default value = " << CB_Bool::type.default_value().toS() << endl;
 
-    cout << CB_i8::type.toS() << ": CB_i8, size = " << sizeof(CB_i8) << endl;
-    cout << CB_i16::type.toS() << ": CB_i16, size = " << sizeof(CB_i16) << endl;
-    cout << CB_i32::type.toS() << ": CB_i32, size = " << sizeof(CB_i32) << endl;
-    cout << CB_i64::type.toS() << ": CB_i64, size = " << sizeof(CB_i64) << endl;
+    cout << CB_i8::type.toS() << ": CB_i8, size = " << sizeof(CB_i8) << ", default value = " << CB_i8::type.default_value().toS() << endl;
+    cout << CB_i16::type.toS() << ": CB_i16, size = " << sizeof(CB_i16) << ", default value = " << CB_i16::type.default_value().toS() << endl;
+    cout << CB_i32::type.toS() << ": CB_i32, size = " << sizeof(CB_i32) << ", default value = " << CB_i32::type.default_value().toS() << endl;
+    cout << CB_i64::type.toS() << ": CB_i64, size = " << sizeof(CB_i64) << ", default value = " << CB_i64::type.default_value().toS() << endl;
 
-    cout << CB_u8::type.toS() << ": CB_u8, size = " << sizeof(CB_u8) << endl;
-    cout << CB_u16::type.toS() << ": CB_u16, size = " << sizeof(CB_u16) << endl;
-    cout << CB_u32::type.toS() << ": CB_u32, size = " << sizeof(CB_u32) << endl;
-    cout << CB_u64::type.toS() << ": CB_u64, size = " << sizeof(CB_u64) << endl;
+    cout << CB_u8::type.toS() << ": CB_u8, size = " << sizeof(CB_u8) << ", default value = " << CB_u8::type.default_value().toS() << endl;
+    cout << CB_u16::type.toS() << ": CB_u16, size = " << sizeof(CB_u16) << ", default value = " << CB_u16::type.default_value().toS() << endl;
+    cout << CB_u32::type.toS() << ": CB_u32, size = " << sizeof(CB_u32) << ", default value = " << CB_u32::type.default_value().toS() << endl;
+    cout << CB_u64::type.toS() << ": CB_u64, size = " << sizeof(CB_u64) << ", default value = " << CB_u64::type.default_value().toS() << endl;
 
-    cout << CB_f32::type.toS() << ": CB_f32, size = " << sizeof(CB_f32) << endl;
-    cout << CB_f64::type.toS() << ": CB_f64, size = " << sizeof(CB_f64) << endl;
+    cout << CB_f32::type.toS() << ": CB_f32, size = " << sizeof(CB_f32) << ", default value = " << CB_f32::type.default_value().toS() << endl;
+    cout << CB_f64::type.toS() << ": CB_f64, size = " << sizeof(CB_f64) << ", default value = " << CB_f64::type.default_value().toS() << endl;
 
-    cout << CB_Int::type.toS() << ": CB_Int, size = " << sizeof(CB_Int) << endl;
-    cout << CB_Uint::type.toS() << ": CB_Uint, size = " << sizeof(CB_Uint) << endl;
-    cout << CB_Float::type.toS() << ": CB_Float, size = " << sizeof(CB_Float) << endl;
+    cout << CB_Int::type.toS() << ": CB_Int, size = " << sizeof(CB_Int) << ", default value = " << CB_Int::type.default_value().toS() << endl;
+    cout << CB_Uint::type.toS() << ": CB_Uint, size = " << sizeof(CB_Uint) << ", default value = " << CB_Uint::type.default_value().toS() << endl;
+    cout << CB_Float::type.toS() << ": CB_Float, size = " << sizeof(CB_Float) << ", default value = " << CB_Float::type.default_value().toS() << endl;
 
-    cout << CB_Any::type.toS() << ": CB_Any, size = " << sizeof(CB_Any) << endl;
+    cout << CB_Any::type.toS() << ": CB_Any, size = " << sizeof(CB_Any) << endl; // ", default value = " << CB_Any::type.default_value().toS() << endl;
 
-    cout << CB_Range::type.toS() << ": CB_Range, size = " << sizeof(CB_Range) << endl;
-    cout << CB_Function::type.toS() << ": CB_Function, size = " << sizeof(CB_Function) << endl;
-    cout << CB_Generic_function::type.toS() << ": CB_Generic_function, size = " << sizeof(CB_Generic_function) << endl;
-    cout << CB_Operator::type.toS() << ": CB_Operator, size = " << sizeof(CB_Operator) << endl;
+    cout << CB_Range::type.toS() << ": CB_Range, size = " << sizeof(CB_Range) << ", default value = " << CB_Range::type.default_value().toS() << endl;
+    cout << CB_Function::type.toS() << ": CB_Function, size = " << sizeof(CB_Function) << endl; // ", default value = " << CB_Function::type.default_value().toS() << endl;
+    cout << CB_Generic_function::type.toS() << ": CB_Generic_function, size = " << sizeof(CB_Generic_function) << endl; // ", default value = " << CB_Generic_function::type.default_value().toS() << endl;
+    cout << CB_Operator::type.toS() << ": CB_Operator, size = " << sizeof(CB_Operator) << ", default value = " << endl; //CB_Operator::type.default_value().toS() << endl;
 
-    cout << CB_Dynamic_seq<CB_Int>::type.toS() << ": CB_Dynamic_seq<CB_Int>, size = " << sizeof(CB_Dynamic_seq<CB_Int>) << endl;
-    cout << CB_Static_seq<CB_Int, 5>::type.toS() << ": CB_Static_seq<CB_Int, 5>, size = " << sizeof(CB_Static_seq<CB_Int, 5>) << endl;
+    cout << CB_Dynamic_seq<CB_Int>::type.toS() << ": CB_Dynamic_seq<CB_Int>, size = " << sizeof(CB_Dynamic_seq<CB_Int>) << ", default value = " << CB_Dynamic_seq<CB_Int>::type.default_value().toS() << endl;
+    cout << CB_Static_seq<CB_Int, 5>::type.toS() << ": CB_Static_seq<CB_Int, 5>, size = " << sizeof(CB_Static_seq<CB_Int, 5>) << ", default value = " << CB_Static_seq<CB_Int, 5>::type.default_value().toS() << endl;
 
-    cout << CB_Owning_pointer<CB_Int>::type.toS() << ": CB_Owning_pointer<CB_Int>, size = " << sizeof(CB_Owning_pointer<CB_Int>) << endl;
-    cout << CB_Sharing_pointer<CB_Int>::type.toS() << ": CB_Sharing_pointer<CB_Int>, size = " << sizeof(CB_Sharing_pointer<CB_Int>) << endl;
+    cout << CB_Owning_pointer<CB_Int>::type.toS() << ": CB_Owning_pointer<CB_Int>, size = " << sizeof(CB_Owning_pointer<CB_Int>) << ", default value = " << CB_Owning_pointer<CB_Int>::type.default_value().toS() << endl;
+    cout << CB_Sharing_pointer<CB_Int>::type.toS() << ": CB_Sharing_pointer<CB_Int>, size = " << sizeof(CB_Sharing_pointer<CB_Int>) << ", default value = " << CB_Sharing_pointer<CB_Int>::type.default_value().toS() << endl;
 
     // cout << CB_Struct<CB_Int>::type.toS() << ": CB_Struct<CB_Int>, size = " << sizeof(CB_Struct<CB_Int>) << endl;
 
@@ -544,9 +580,109 @@ void wchar_test() {
 
 
 
+
+
+
+void jocke_test()
+{
+    cout << "hej" << endl;
+
+    int a = 2;
+    int b = 3;
+    int c = a + b;
+
+    cout << c << endl;
+
+
+    CB_Dynamic_seq<CB_Int> seq;
+    for (int i = 0; i < 10; ++i)
+    {
+        seq.add(i);
+    }
+    cout << "listan innehåller: ";
+    for (CB_Int i : seq) {
+        cout << i << " ";
+    }
+    cout << endl;
+
+    cout << (char)0b00111111 << endl;
+    cout << (int)0b00111111 << endl;
+}
+
+
+
+template<typename T, typename Type=CB_Type*, Type=&T::type>
+void generic_type_test(const T& t) {
+    // std::cout << "any move op = " << T::type.toS() << std::endl;
+    ASSERT(T::type != CB_Any::type);
+    cout << "t: " << t.toS();
+    cout << "type: " << t.type.toS() << endl;
+}
+
+
+void struct_test() {
+    Struct_type Vector3{"Vector3"};
+    Vector3.metadata->members.add(Struct_member("x", CB_Int::type, CB_Int()));
+    Vector3.metadata->members.add(Struct_member("y", CB_Int::type, CB_Int()));
+    Vector3.metadata->members.add(Struct_member("z", CB_Int::type, CB_Int()));
+    cout << "Type Vector3: " << Vector3.toS() << endl;
+
+    Struct_instance v3{Vector3};
+    cout << endl << "Instance of Vector3: " << v3 << endl;
+    v3.member("x") = CB_Int(1);
+    v3.member("y") = CB_Int(4);
+    v3.member("z") = CB_Int(9);
+    cout << "Instance of Vector3 given values: " << v3 << endl;
+
+    CB_Any any3 = v3;
+    cout << "CB_Any holding a struct: " << any3.toS() << endl;
+
+    Struct_instance copy3 = v3;
+    cout << "after copy assignment: " << endl;
+    cout << "Old instance: " << v3.toS() << endl;
+    cout << "New instance: " << copy3.toS() << endl;
+
+    copy3 = std::move(v3);
+    cout << "after move assignment: " << endl;
+    // cout << "Old instance: " << v3.toS() << endl; // crashes
+    cout << "New instance: " << copy3.toS() << endl;
+
+
+    Struct_type Vector4{"Vector4"};
+    Vector4.metadata->members.add(Struct_member("v", Vector3, Vector3(), true));
+    // Vector4.metadata->members.add(Struct_member("u", Vector3, Vector3(), true)); // using=true
+    Vector4.metadata->members.add(Struct_member("w", CB_Int::type, CB_Int()));
+    cout << "Type Vector4: " << Vector4.toS() << endl;
+
+    Struct_instance v4{Vector4};
+    cout << endl << "Instance of Vector4: " << v4 << endl;
+    v4.member("v").value<Struct_instance>().member("x") = CB_Int(1);
+    v4.member("v").value<Struct_instance>().member("y") = CB_Int(1);
+    v4.member("v").value<Struct_instance>().member("z") = CB_Int(1);
+    v4.member("x") = CB_Int(2);
+    v4.member("y") = CB_Int(2);
+    v4.member("z") = CB_Int(2);
+    v4.member("w") = CB_Int(3);
+    cout << "Instance of Vector4 given values: " << v4 << endl;
+
+    CB_Any any4 = v4;
+    cout << "CB_Any holding a struct: " << any4.toS() << endl;
+
+    Struct_instance copy4 = v4;
+    cout << "after copy assignment: " << endl;
+    cout << "Old instance: " << v4.toS() << endl;
+    cout << "New instance: " << copy4.toS() << endl;
+
+    copy4 = std::move(v4);
+    cout << "after move assignment: " << endl;
+    // cout << "Old instance: " << v4.toS() << endl; // chrashes
+    cout << "New instance: " << copy4.toS() << endl;
+}
+
+
 int main()
 {
-    print_types();
+    // print_types();
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
@@ -561,7 +697,10 @@ int main()
     // template_test();
     // cb_fn_test();
     // range_test();
-    any_test();
+    // any_test();
+    // flag_test();
+    // jocke_test();
+    struct_test();
 }
 
 

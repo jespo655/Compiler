@@ -48,8 +48,12 @@ struct CB_String {
         v_ptr = nullptr;
     }
 
-    bool operator==(const CB_String& str) const { return size == str.size && strcmp(v_ptr, str.v_ptr); }
+    bool operator==(const CB_String& str) const { return size == str.size && strcmp(v_ptr, str.v_ptr) == 0; }
     bool operator!=(const CB_String& str) const { !(*this == str); }
+    bool operator<(const CB_String& str) const { return strcmp(v_ptr, str.v_ptr) < 0; }
+    bool operator>=(const CB_String& str) const { return !(*this < str); }
+    bool operator>(const CB_String& str) const { return str < *this; }
+    bool operator<=(const CB_String& str) const { return !(str < *this); }
 
     // copy
     CB_String& operator=(const CB_String& str) {

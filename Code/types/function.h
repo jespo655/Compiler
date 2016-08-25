@@ -22,6 +22,8 @@ struct Function_arg {
     CB_String id;
     CB_Type type;
     CB_Bool has_default_value;
+
+    std::string toS() const { return "Function_arg(" + id.toS() + ":" + type.toS() + ")"; }
 };
 
 struct Function_metadata {

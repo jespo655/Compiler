@@ -16,39 +16,6 @@
 */
 
 
-// problem: cannot dynamic_cast to pointer to incomplete type
-// Scope is incomplete until Abstx_node is complete
-
-// Go up in the Abstx tree until a parent scope is found.
-// If no scope is found, return nullptr
-std::shared_ptr<Scope> Abstx_node::parent_scope() const
-{
-    std::shared_ptr<Abstx_node> abstx = owner.lock();
-    while (abstx != nullptr) {
-        if (std::shared_ptr<Scope> scope = std::dynamic_pointer_cast<Scope>(abstx)) {
-            return scope;
-        } else {
-            abstx = abstx->owner.lock();
-        }
-    }
-    return nullptr;
-}
-
-
-// global scope is probably not needed, so it's commented out for now
-std::shared_ptr<Scope> Abstx_node::global_scope() const
-{
-    auto parent = parent_scope();
-    if (parent == nullptr) return nullptr;
-    if (parent->owner.lock() == nullptr) return parent;
-    else return parent->global_scope();
-}
-
-
-
-
-
-
 
 
 
@@ -66,15 +33,6 @@ std::string get_unique_id_str() {
 }
 
 
-
-
-const auto type_type = std::shared_ptr<Type>(new Type_type());
-
-std::shared_ptr<Type> Type::get_type()
-{
-    // should return Type_type for all types
-    return type_type;
-}
 
 
 

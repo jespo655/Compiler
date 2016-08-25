@@ -8,7 +8,7 @@ struct CB_Bool {
     bool v = false;
     CB_Bool() {}
     CB_Bool(bool b) { this->v = b; }
-    operator bool() { return v; } // necessary for compact if() statements
+    operator bool() const { return v; } // necessary for compact if() statements
     std::string toS() const { return v? "true" : "false"; }
 };
 CB_Type CB_Bool::type = CB_Type("bool", CB_Bool());
@@ -70,15 +70,15 @@ struct CB_Int {
     CB_Int() {}
     CB_Int(const int64_t& v) { this->v = v; }
     std::string toS() const { return std::to_string(v); }
-    operator CB_i8() { CB_i8 i; i.v = v; return i; }
-    operator CB_i16() { CB_i16 i; i.v = v; return i; }
-    operator CB_i32() { CB_i32 i; i.v = v; return i; }
-    operator CB_i64() { CB_i64 i; i.v = v; return i; }
+    operator CB_i8() const { CB_i8 i; i.v = v; return i; }
+    operator CB_i16() const { CB_i16 i; i.v = v; return i; }
+    operator CB_i32() const { CB_i32 i; i.v = v; return i; }
+    operator CB_i64() const { CB_i64 i; i.v = v; return i; }
 
-    operator CB_u8() { CB_u8 i; i.v = v; return i; }
-    operator CB_u16() { CB_u16 i; i.v = v; return i; }
-    operator CB_u32() { CB_u32 i; i.v = v; return i; }
-    operator CB_u64() { CB_u64 i; i.v = v; return i; }
+    operator CB_u8() const { CB_u8 i; i.v = v; return i; }
+    operator CB_u16() const { CB_u16 i; i.v = v; return i; }
+    operator CB_u32() const { CB_u32 i; i.v = v; return i; }
+    operator CB_u64() const { CB_u64 i; i.v = v; return i; }
 };
 CB_Type CB_Int::type = CB_Type("int", CB_Int());
 CB_Int CB_Int::MIN_VALUE = std::numeric_limits<int64_t>::min();
@@ -94,15 +94,15 @@ struct CB_Uint {
     CB_Uint() {}
     CB_Uint(const uint64_t& v) { this->v = v; }
     std::string toS() const { return std::to_string(v); }
-    operator CB_i8() { CB_i8 i; i.v = v; return i; }
-    operator CB_i16() { CB_i16 i; i.v = v; return i; }
-    operator CB_i32() { CB_i32 i; i.v = v; return i; }
-    operator CB_i64() { CB_i64 i; i.v = v; return i; }
+    operator CB_i8() const { CB_i8 i; i.v = v; return i; }
+    operator CB_i16() const { CB_i16 i; i.v = v; return i; }
+    operator CB_i32() const { CB_i32 i; i.v = v; return i; }
+    operator CB_i64() const { CB_i64 i; i.v = v; return i; }
 
-    operator CB_u8() { CB_u8 i; i.v = v; return i; }
-    operator CB_u16() { CB_u16 i; i.v = v; return i; }
-    operator CB_u32() { CB_u32 i; i.v = v; return i; }
-    operator CB_u64() { CB_u64 i; i.v = v; return i; }
+    operator CB_u8() const { CB_u8 i; i.v = v; return i; }
+    operator CB_u16() const { CB_u16 i; i.v = v; return i; }
+    operator CB_u32() const { CB_u32 i; i.v = v; return i; }
+    operator CB_u64() const { CB_u64 i; i.v = v; return i; }
 };
 CB_Type CB_Uint::type = CB_Type("uint", CB_Uint());
 CB_Uint CB_Uint::MIN_VALUE = std::numeric_limits<uint64_t>::min();
@@ -118,8 +118,8 @@ struct CB_Float {
     CB_Float() {}
     CB_Float(const double& v) { this->v = v; }
     std::string toS() const { return std::to_string(v); }
-    operator CB_f32() { CB_f32 i; i.v = v; return i; }
-    operator CB_f64() { CB_f64 i; i.v = v; return i; }
+    operator CB_f32() const { CB_f32 i; i.v = v; return i; }
+    operator CB_f64() const { CB_f64 i; i.v = v; return i; }
 };
 CB_Type CB_Float::type = CB_Type("float", CB_Float());
 CB_Float CB_Float::MIN_VALUE = std::numeric_limits<double>::min();

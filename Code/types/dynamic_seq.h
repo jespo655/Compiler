@@ -15,12 +15,14 @@ a : T[] = [size=N: t1, t2, t3]; // T inferred from the type of the members
 a : T[] = [t1, t2, t3]; // T and N inferred
 */
 
+const int DEFAULT_CAPACITY = 16; // arbitrary power of 2
+
 template<typename T> // T is a CB type
 struct CB_Dynamic_seq {
     static CB_Type type;
     constexpr static CB_Type& member_type = T::type;
     uint32_t size = 0;
-    uint32_t capacity = 16; // arbitrary power of 2
+    uint32_t capacity = DEFAULT_CAPACITY;
     T* v_ptr = nullptr;
 
     std::string toS() const {
@@ -36,7 +38,7 @@ struct CB_Dynamic_seq {
 
     CB_Dynamic_seq() {
         size = 0;
-        capacity = 16; // arbitrary power of 2
+        capacity = DEFAULT_CAPACITY; // arbitrary power of 2
         v_ptr = (T*)malloc(capacity*sizeof(T));
         // size is always 0 at init, so no need to init members
     }
@@ -91,6 +93,8 @@ struct CB_Dynamic_seq {
     }
 
     void set(uint32_t index, const T& t) {
+        ASSERT(v_ptr != nullptr);
+        ASSERT(capacity != 0);
         if (index < size)
             v_ptr[index] = t;
         else {
@@ -134,6 +138,7 @@ struct CB_Dynamic_seq {
     }
 
     void reallocate(uint32_t capacity, bool move=true) {
+        if (this->capacity == capacity) return;
         this->capacity = capacity;
         T* new_ptr = (T*)malloc(capacity*sizeof(T));
         ASSERT(new_ptr != nullptr);
@@ -164,3 +169,46 @@ struct CB_Dynamic_seq {
 
 template<typename T>
 CB_Type CB_Dynamic_seq<T>::type = CB_Type("[]"+T::type.toS(), CB_Dynamic_seq<T>());
+
+
+
+
+
+
+/*
+// Problem: Partial template of functions doesn't work
+
+// copy
+template<typename T>
+CB_Dynamic_seq<T>& CB_Dynamic_seq<T>::operator=(const CB_Dynamic_seq<T>& seq) {
+    for (uint32_t i = 0; i < size; ++i) {
+        v_ptr[i].~T();
+    }
+    resize(seq.size, false);
+    for (uint32_t i = 0; i < size; ++i) {
+        new (&v_ptr[i]) T(seq.v_ptr[i]);
+    }
+    return *this;
+}
+
+#include "pointers.h"
+template<typename T, typename PT=CB_Owning_pointer<T>>
+CB_Dynamic_seq<PT>& CB_Dynamic_seq<PT>::operator=(const CB_Dynamic_seq<PT>& seq) {
+    for (uint32_t i = 0; i < size; ++i) {
+        v_ptr[i].~T();
+    }
+    resize(seq.size, false);
+    for (uint32_t i = 0; i < size; ++i) {
+        // new (&v_ptr[i]) T(seq.v_ptr[i]);
+    }
+    return *this;
+}
+
+
+*/
+
+
+
+
+
+

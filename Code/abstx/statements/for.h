@@ -1,8 +1,8 @@
 #pragma once
 
 #include "statement.h"
-#include "value_expression.h"
 #include "scope.h"
+#include "../expressions/value_expression.h"
 
 /*
 for (n in range) {}
@@ -13,12 +13,12 @@ for (n in range, reverse) {}
 
 struct For_statement : Statement {
 
-    std::string index_name;
-    std::shared_ptr<Value_expression> range;
-    bool reverse = false;
-    double step;
+    CB_String index_name;
+    owned<Value_expression> range; // range or sequence
+    CB_Bool reverse = false;
+    CB_Float step;
 
-    std::shared_ptr<Scope> scope;
+    owned<CB_Scope> scope;
 
     std::string toS() const override { return "while(){}"; }
 

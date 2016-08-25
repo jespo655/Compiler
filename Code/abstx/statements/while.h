@@ -1,8 +1,8 @@
 #pragma once
 
 #include "statement.h"
-#include "value_expression.h"
 #include "scope.h"
+#include "../expressions/value_expression.h"
 
 /*
 while (b) {}
@@ -10,8 +10,8 @@ while (b) {}
 
 struct While_statement : Statement {
 
-    std::shared_ptr<Value_expression> condition;
-    std::shared_ptr<Scope> scope;
+    owned<Value_expression> condition;
+    owned<CB_Scope> scope;
 
     std::string toS() const override { return "while(){}"; }
 

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "abstx.h"
-#include "value_expression.h"
+#include "../abstx.h"
 
 // A statement is a line of code.
 // This is also the smallest unit of compilation.
@@ -18,13 +17,17 @@ struct Unknown_statement : Statement
 };
 
 
-// An expression statement is a single expression on a line.
-//   Some examples:
-// foo();
-// ++i;
-struct Expression_statement : Statement
-{
-    std::shared_ptr<Value_expression> expr;
-    std::string toS() const override { return "Expression statement"; }
-};
-
+/*
+Statement:
+    If
+    For
+    While
+    Return
+    Assignment
+    Declaration
+    Using
+    Anonymous scope
+    Pure value_expression / function call (operators or function call with side effects, just a single identifier is not ok)
+    Defer
+Modifiers: Generic
+*/

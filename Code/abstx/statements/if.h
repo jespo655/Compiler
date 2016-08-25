@@ -1,13 +1,13 @@
 #pragma once
 
 #include "statement.h"
-#include "value_expression.h"
 #include "scope.h"
+#include "../expressions/value_expression.h"
 
-#include <vector>
 #include <sstream>
 
 /*
+Syntax:
 if (b1) {}
 elsif (b2) {}
 elsif (b3) {}
@@ -17,8 +17,8 @@ then {}
 
 struct Conditional_scope : Abstx_node {
 
-    std::shared_ptr<Value_expression> condition;
-    std::shared_ptr<Scope> scope;
+    owned<Value_expression> condition;
+    owned<CB_Scope> scope;
 
     std::string toS() const override { return "if(){}"; }
 
@@ -44,15 +44,15 @@ struct Conditional_scope : Abstx_node {
 
 struct If_statement : Statement {
 
-    std::vector<std::shared_ptr<Conditional_scope>> conditional_scopes;
-    std::shared_ptr<Scope> else_scope; // is entered if none of the conditional scopes are entered
-    std::shared_ptr<Scope> then_scope; // is entered if not the else_scope is entered
+    seq<owned<Conditional_scope>> conditional_scopes;
+    owned<CB_Scope> else_scope; // is entered if none of the conditional scopes are entered
+    owned<CB_Scope> then_scope; // is entered if not the else_scope is entered
 
     std::string toS() const override
     {
         std::ostringstream oss;
         bool first = true;
-        for (auto cs : conditional_scopes) {
+        for (auto& cs : conditional_scopes) {
             ASSERT(cs != nullptr);
             if (!first) oss << " els";
             oss << cs->toS();
@@ -65,7 +65,7 @@ struct If_statement : Statement {
 
     void debug_print(Debug_os& os, bool recursive=true) const override
     {
-        for (auto cs : conditional_scopes) {
+        for (auto& cs : conditional_scopes) {
             ASSERT(cs != nullptr);
             cs->debug_print(os, recursive);
         }

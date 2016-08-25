@@ -1,0 +1,24 @@
+#pragma once
+
+#include "variable_expression.h"
+
+#include <sstream>
+
+
+struct Identifier : Variable_expression {
+    shared<CB_Type> type = nullptr; // nullptr if not yet inferred
+    CB_String name = "";
+    CB_Any value; // For default value, use type.default_value()
+
+    std::string toS() const override {
+        ASSERT(name.size > 0);
+        std::ostringstream oss;
+        oss << name.toS() << ":";
+        if (type == nullptr) oss << "???";
+        else oss << type->toS();
+        return oss.str();
+    }
+
+    virtual shared<CB_Type> get_type() { return type; }
+
+};

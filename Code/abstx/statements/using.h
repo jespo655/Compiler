@@ -1,10 +1,10 @@
 #pragma once
 
 #include "statement.h"
-#include "identifier.h"
-#include <sstream>
+#include "../expressions/value_expression.h"
 
 /*
+Synatx:
 s := {}; // s is assigned a scope literal
 using s; // all names from s are pulled into the local scope
 
@@ -19,14 +19,13 @@ using a:=s;     // the members of a is pulled in, but are also accessable throug
 using a:=ST();  // the members of a is pulled in, but are also accessable through a
     // this is using the regular declaration syntax
 
-
 TODO: decide exact syntax and usage, before implementing the class
 
 */
 
 struct Using_statement : Statement {
 
-    std::shared_ptr<Value_expression> subject;
+    owned<Value_expression> subject;
 
     std::string toS() const override { return "using statement"; }
 };

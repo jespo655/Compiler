@@ -5,16 +5,21 @@
 #include "../parser/token.h"
 #include "../parser/parsing_status.h"
 
-#include <memory>
-#include <iostream>
 #include <string>
+#include <iostream> // for debug purposes
 
-struct Scope;
+#include "../types/cb_types.h"
+template<typename T> using shared = CB_Sharing_pointer<T>;
+template<typename T> using owned = CB_Owning_pointer<T>;
+template<typename T> using seq = CB_Dynamic_seq<T>;
+template<typename T, int i> using fixed_seq = CB_Static_seq<T,i>;
+
+struct CB_Scope;
 
 struct Abstx_node
 {
     // should be set immediately on creation:
-    std::weak_ptr<Abstx_node> owner; // points to the parent node in the abstx tree
+    shared<Abstx_node> owner; // points to the parent node in the abstx tree
     Token_context context;
     int start_token_index = -1; // Points to the first token in the expression
 
@@ -33,36 +38,92 @@ struct Abstx_node
     // This method should always be implemented in all non-abstract classes.
     virtual std::string toS() const = 0;
 
-    // check if the syntax node is fully resolved
-    virtual bool fully_resolved() const { return status == Parsing_status::FULLY_RESOLVED; }
-
     // Set owner in a type safe way
-    template<typename T> void set_owner(std::shared_ptr<T> p)
+    template<typename T> void set_owner(const shared<T>& p)
     {
-        auto abstx_p = std::dynamic_pointer_cast<Abstx_node>(p);
+        auto abstx_p = dynamic_pointer_cast<Abstx_node>(p);
         ASSERT(abstx_p != nullptr); // this checks for both if p is nullptr, and if T is a subclass of Abstx_node
         owner = abstx_p;
     }
 
     virtual ~Abstx_node() {}
 
-    virtual std::shared_ptr<Scope> parent_scope() const;
-    virtual std::shared_ptr<Scope> global_scope() const;
+    shared<CB_Scope> parent_scope() const;
+    shared<CB_Scope> global_scope() ;
 };
+
+#include "statements/scope.h"
+// Go up in the Abstx tree until a parent scope is found.
+// If no scope is found, return nullptr
+shared<CB_Scope> Abstx_node::parent_scope() const
+{
+    shared<Abstx_node> abstx = owner;
+    while (abstx != nullptr) {
+        shared<CB_Scope> scope = dynamic_pointer_cast<CB_Scope>(abstx);
+        if (scope != nullptr) return scope;
+        else abstx = abstx->owner;
+    }
+    return nullptr;
+}
+
+shared<CB_Scope> Abstx_node::global_scope()
+{
+    auto parent = parent_scope();
+    if (parent == nullptr) return dynamic_pointer_cast<CB_Scope>(shared<Abstx_node>(this));
+    if (parent->owner == nullptr) return parent;
+    else return parent->global_scope();
+}
 
 
 
 /*
-    // Should not use:
-    // The problem is that the object doesn't know about its own shared_ptr, so it can't set ownership of its children correctly
-    // For these functions to work, they would have to take a shared_ptr self in-parameter (which is unsafe) or hold a weak_ptr
-    // to itself (which feels awkward). Instead, put this functionality somewhere in the parser.
 
-    // try_resolve() should try to resolve the abstx as much as possible and update the parsing_status with the new status.
-    // In some cases where the status is not expected to change (for example with syntax errors), the status can be returned immediately.
-    virtual Parsing_status try_resolve(const std::vector<Token>& tokens) { return status; } // FIXME: make abstract
 
-    // parse_partially goes through the list of tokens and parses them partially.
-    // If called when the status is anything other NOT_PARSED, this function does nothing.
-    virtual Parsing_status parse_partially(const std::vector<Token>& tokens) { return status; } // FIXME: make abstract
+Statement:
+    If
+    For
+    While
+    Return
+    Assignment
+    Declaration
+    Using
+    Scope declaration (Anonymous or Named, maybe with keyword modifiers such as Async)
+    Pure value_expression (operators or function call with side effects)
+    Defer
+Modifiers: Generic
+
+Value_expression:
+    Variable_expression
+    Literal (bool, int, string, float, seq)
+    Cast (?)
+    Prefix operator
+    Infix operator
+    Function call
+
+Variable_expression:
+    Getter
+    Array indexing
+
+
+
+
+
+// Anonymous scope:
+{...}
+
+// Named scope:
+Name {...}
+
+// Keywords:
+Async {...}
+Async Name {...}
+
+
+
+
+
+
+
+
+
 */
