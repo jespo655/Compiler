@@ -43,17 +43,6 @@ struct CB_String {
         v_ptr = (char*)malloc(size+1);
         memcpy(v_ptr, cstr, size+1);
     }
-    ~CB_String() {
-        free(v_ptr);
-        v_ptr = nullptr;
-    }
-
-    bool operator==(const CB_String& str) const { return size == str.size && strcmp(v_ptr, str.v_ptr) == 0; }
-    bool operator!=(const CB_String& str) const { !(*this == str); }
-    bool operator<(const CB_String& str) const { return strcmp(v_ptr, str.v_ptr) < 0; }
-    bool operator>=(const CB_String& str) const { return !(*this < str); }
-    bool operator>(const CB_String& str) const { return str < *this; }
-    bool operator<=(const CB_String& str) const { return !(str < *this); }
 
     // copy
     CB_String& operator=(const CB_String& str) {
@@ -61,8 +50,8 @@ struct CB_String {
             reallocate(str.size, false);
         ASSERT(capacity >= str.size);
         ASSERT(v_ptr != nullptr);
-        memcpy(v_ptr, str.v_ptr, size+1);
         size = str.size;
+        memcpy(v_ptr, str.v_ptr, size+1);
         return *this;
     }
     CB_String(const CB_String& str) {
@@ -79,7 +68,22 @@ struct CB_String {
         str.v_ptr = nullptr;
         return *this;
     }
-    CB_String(CB_String&& str) { *this = std::move(str); }
+    CB_String(CB_String&& str) {
+        *this = std::move(str);
+    }
+
+    // destructor
+    ~CB_String() {
+        free(v_ptr);
+        v_ptr = nullptr;
+    }
+
+    bool operator==(const CB_String& str) const { return size == str.size && strcmp(v_ptr, str.v_ptr) == 0; }
+    bool operator!=(const CB_String& str) const { !(*this == str); }
+    bool operator<(const CB_String& str) const { return strcmp(v_ptr, str.v_ptr) < 0; }
+    bool operator>=(const CB_String& str) const { return !(*this < str); }
+    bool operator>(const CB_String& str) const { return str < *this; }
+    bool operator<=(const CB_String& str) const { return !(str < *this); }
 
     void reallocate(uint32_t capacity, bool move=true) {
         this->capacity = capacity;
@@ -91,6 +95,5 @@ struct CB_String {
         v_ptr = new_ptr;
     }
 };
-
 CB_Type CB_String::type = CB_Type("string", CB_String(""));
 

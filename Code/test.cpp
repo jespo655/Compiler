@@ -621,6 +621,9 @@ void generic_type_test(const T& t) {
 
 
 void struct_test() {
+
+    cout << endl << " ------------------ TEST BEGIN ------------------ " << endl;
+
     Struct_type Vector3{"Vector3"};
     Vector3.metadata->members.add(Struct_member("x", CB_Int::type, CB_Int()));
     Vector3.metadata->members.add(Struct_member("y", CB_Int::type, CB_Int()));
@@ -649,16 +652,16 @@ void struct_test() {
 
 
     Struct_type Vector4{"Vector4"};
-    Vector4.metadata->members.add(Struct_member("v", Vector3, Vector3(), true));
+    Vector4.metadata->members.add(Struct_member("v3", Vector3, Vector3(), true));
     // Vector4.metadata->members.add(Struct_member("u", Vector3, Vector3(), true)); // using=true
     Vector4.metadata->members.add(Struct_member("w", CB_Int::type, CB_Int()));
     cout << "Type Vector4: " << Vector4.toS() << endl;
 
     Struct_instance v4{Vector4};
     cout << endl << "Instance of Vector4: " << v4 << endl;
-    v4.member("v").value<Struct_instance>().member("x") = CB_Int(1);
-    v4.member("v").value<Struct_instance>().member("y") = CB_Int(1);
-    v4.member("v").value<Struct_instance>().member("z") = CB_Int(1);
+    v4.member("v3").value<Struct_instance>().member("x") = CB_Int(1);
+    v4.member("v3").value<Struct_instance>().member("y") = CB_Int(1);
+    v4.member("v3").value<Struct_instance>().member("z") = CB_Int(1);
     v4.member("x") = CB_Int(2);
     v4.member("y") = CB_Int(2);
     v4.member("z") = CB_Int(2);
@@ -677,7 +680,11 @@ void struct_test() {
     cout << "after move assignment: " << endl;
     // cout << "Old instance: " << v4.toS() << endl; // chrashes
     cout << "New instance: " << copy4.toS() << endl;
+
+    cout << " ------------------ TEST END ------------------ " << endl << endl;
+
 }
+
 
 
 int main()
