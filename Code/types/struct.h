@@ -22,8 +22,8 @@ a.a = 4;
 a.b = "asd";
 a.ásdas; // log_error("ásdas is not a member of a", context);
 
-typeof(T) // unik struct_type (ny type for varje "struct"-keyword)
-valueof(T) // data struktur med metadata om vilka identifiers som finns, med namn och default values
+typeof(T) // type
+valueof(T) // unik struct_type (ny för varje "struct"-keyword)
 
 
 Weight := struct { float kg; }
@@ -106,7 +106,7 @@ struct Struct_type : CB_Type {
 
 
 struct Struct_instance {
-    static CB_Type type; // Type "Struct_instance" - only here to conform to standard for a CB value. Special cases are needed elsewhere.
+    static CB_Type type; // Type "Struct_instance" - only here to conform to standard for a CB value. Special cases are needed elsewhere, to use struct_type instead for type checking.
     Struct_type struct_type;
 
     CB_Dynamic_seq<CB_Any> values;
