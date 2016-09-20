@@ -48,8 +48,8 @@ struct Abstx_node
 
     virtual ~Abstx_node() {}
 
-    shared<CB_Scope> parent_scope() const;
-    shared<CB_Scope> global_scope() ;
+    virtual shared<CB_Scope> parent_scope() const;
+    virtual shared<CB_Scope> global_scope() ;
 };
 
 #include "statements/scope.h"

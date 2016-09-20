@@ -13,15 +13,85 @@ Range - a compact data structure with a start and an end.
 Can be iterated over
 
 Syntax:
-foo : fn(int, int)->(int, int) = fn(a: int, b: int)->(c: int, d: int) { return a, b; };
-sum : fn(int, int)->int = fn(a: int, b: int)->int { return a+b; }; // only one return value -> don't need the paren
-bar : fn() = fn() {}; // no return value -> don't need the arrow
+foo : fn(int, int)->(int, int);
+sum : fn(int, int)->int;            // only one return value -> don't need the paren
+bar : fn();                         // no return value -> don't need the arrow
 */
+
+struct Function_type : CB_Type
+{
+    CB_Dynamic_seq<CB_Sharing_pointer<CB_Type>> in_types;
+    CB_Dynamic_seq<CB_Sharing_pointer<CB_Type>> out_types;
+
+    operator CB_Type() { return *this; }
+
+    std::string toS() const override {
+        std::ostringstream oss;
+
+        oss << "fn(";
+        for (int i = 0; i < in_types.size; ++i) {
+            if (i > 0) oss << ", ";
+            oss << in_types[i].toS();
+        }
+        oss << ")";
+        if (out_types.size == 0) return oss.str();
+
+        oss << "->";
+        if (out_types.size > 1) oss "(";
+        for (int i = 0; i < out_types.size; ++i) {
+            if (i > 0) oss << ", ";
+            oss << out_types[i].toS();
+        }
+        if (out_types.size > 1) oss ")";
+        return oss.str();
+    }
+
+    bool operator==(const Function_type& o) const { return o.in_types == in_types && o.out_types == out_types; }
+    bool operator!=(const Function_type& o) const { return !(*this==o); }
+    bool operator==(const CB_Type& o) const { toS() == o.toS(); }
+    bool operator!=(const CB_Type& o) const { return !(*this==o); }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
 
 struct Function_arg {
     CB_String id;
     CB_Type type;
-    CB_Bool has_default_value;
+    CB_Any default_value;
+    CB_Bool is_using = false; // only for structs - imports that struct's members into the function scope
+    CB_Bool has_default_value = false;
+    CB_Bool explicit_uninitialized = false;
+
+    Function_arg() {};
+    Function_arg(const CB_String& id, const CB_Type& type, const CB_Any& default_value, bool is_using=false)
+        : id{id}, type{type}, default_value{default_value}, is_using{is_using} {};
 
     std::string toS() const { return "Function_arg(" + id.toS() + ":" + type.toS() + ")"; }
 };
@@ -29,12 +99,77 @@ struct Function_arg {
 struct Function_metadata {
     CB_Dynamic_seq<Function_arg> in_args;
     CB_Dynamic_seq<Function_arg> out_args;
+
+    // Constructors has to be speficied, otherwise the default move constructor is used when we want to copy
+    Function_metadata() {};
+    Function_metadata(const Function_metadata& fm) { *this = fm; }
+    Function_metadata(Function_metadata&& fm) { *this = std::move(fm); }
+    Function_metadata& operator=(const Function_metadata& fm) { in_args = fm.in_args; out_args = fm.out_args; }
+    Function_metadata& operator=(Function_metadata&& fm) { in_args = std::move(fm.in_args); out_args = std::move(fm.out_args); }
+    ~Function_metadata() {}
 };
 
-struct CB_Function
+struct Function_type : CB_Type
 {
+    CB_Owning_pointer<Function_metadata> metadata = alloc<Function_metadata>(Function_metadata());
+
+    Function_type() : CB_Type{} {}
+
+    operator CB_Type() { return *this; }
+
+    std::string toS() const override {
+        ASSERT(metadata != nullptr);
+        std::ostringstream oss;
+
+        oss << "fn(";
+        for (int i = 0; i < metadata.in_args.size; ++i) {
+            Function_arg& arg = metadata->in_args[i];
+            if (i > 0) oss << ", ";
+            if (arg.is_using) oss << "using ";
+            ASSERT(arg.id.size > 0);
+            oss << arg.id.toS() << ":" << arg.type.toS();
+            if (arg.explicit_uninitialized) { ASSERT(arg.has_default_value); oss << "=---"; }
+            else if (arg.has_default_value) oss << arg.default_value.toS();
+        }
+        oss << ")";
+        if (metadata.out_args.size == 0) return oss.str();
+
+        oss << "->";
+        if (metadata.out_args.size > 1) oss "(";
+        for (int i = 0; i < metadata.out_args.size; ++i) {
+            Function_arg& arg = metadata->out_args[i];
+            if (i > 0) oss << ", ";
+            if (arg.is_using) { ASSERT(arg.id.size > 0); oss << "using "; }
+            if (arg.id.size > 0) { oss << arg.id.toS() << ":"; }
+            oss << arg.type.toS();
+            if (arg.explicit_uninitialized) { ASSERT(arg.has_default_value && arg.id.size > 0); oss << "=---"; }
+            else if (arg.has_default_value) { ASSERT(arg.id.size > 0); oss << arg.default_value.toS(); }
+        }
+        if (metadata.out_args.size > 1) oss ")";
+        return oss.str();
+    }
+
+    bool operator==(const Function_type& o) const { return true; } // all function pointers are the same
+    bool operator!=(const Function_type& o) const { return !(*this==o); }
+
+};
+
+
+
+
+
+
+struct Function_instance {
+    static CB_Type type; // Type "Function_pointer" - only here to conform to standard for a CB value. Special cases are needed elsewhere, to use function_type instead for type checking.
+    Function_type function_type;
+
+
+
+
+
+
+
     static CB_Type type;
-    CB_Owning_pointer<Function_metadata> metadata = alloc(Function_metadata());
     void (*v)() = nullptr; // function pointer
 
     std::string toS() const {
@@ -168,3 +303,5 @@ private:
 CB_Type CB_Function::type = CB_Type("fn");
 
 
+
+*/

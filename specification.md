@@ -1,4 +1,4 @@
-[[Cube specification]]
+[[Cube specification v0.4]]
 
 
 [[Table of contents]]

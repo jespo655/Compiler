@@ -4,6 +4,7 @@
 
 #include <string>
 #include <sstream>
+#include <type_traits>
 
 /*
 There are two types of pointers: owning and sharing.
@@ -31,29 +32,6 @@ template<typename T> struct CB_Owning_pointer;
 template<typename T> CB_Owning_pointer<T> alloc(const T& t);
 template<typename T> CB_Owning_pointer<T> alloc(T&& t);
 template<typename T, bool> struct deep_copy;
-
-
-
-// template<typename T, bool> struct assign_any_callback {};
-
-// template<typename T>
-// struct assign_any_callback<T,true>{
-//     static void f(CB_Any& obj, const CB_Any& any) {
-//         ASSERT(T::type == any.v_type);
-//         obj = any.value<T>();
-//     }
-// };
-// template<typename T>
-// struct assign_any_callback<T,false>{
-//     static void f(CB_Any& obj, const CB_Any& any) {
-//         ASSERT(false, "Non copy constructible objects can't be copied through any!");
-//     }
-// };
-
-    // assign_callback = assign_any_callback<T, std::is_copy_constructible<T>::value>::f;
-
-
-
 
 
 
@@ -112,7 +90,6 @@ struct CB_Owning_pointer {
 
     CB_Owning_pointer deep_copy() const {
         return ::deep_copy<T, std::is_copy_constructible<T>::value>()(*this);
-        // return alloc<T>(*v);
     }
 };
 template<typename T>
@@ -146,31 +123,6 @@ template<typename T> struct deep_copy<T,true> { // copy constructible
 template<typename T> struct deep_copy<T,false> { // non-copy constructible - deep copies are not allowed.
     CB_Owning_pointer<T> operator()(const CB_Owning_pointer<T>& ptr) { ASSERT(false); return nullptr; }
 };
-
-// template<typename T, bool> struct assign_any_callback {};
-
-// template<typename T>
-// struct assign_any_callback<T,true>{
-//     static void f(CB_Any& obj, const CB_Any& any) {
-//         ASSERT(T::type == any.v_type);
-//         obj = any.value<T>();
-//     }
-// };
-// template<typename T>
-// struct assign_any_callback<T,false>{
-//     static void f(CB_Any& obj, const CB_Any& any) {
-//         ASSERT(false, "Non copy constructible objects can't be copied through any!");
-//     }
-// };
-
-    // assign_callback = assign_any_callback<T, std::is_copy_constructible<T>::value>::f;
-
-
-
-
-
-
-
 
 
 // sharing pointer - never deallocates the object

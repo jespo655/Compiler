@@ -101,8 +101,10 @@ struct Struct_type : CB_Type {
         oss << "}";
         return oss.str();
     }
-};
 
+    bool operator==(const Struct_type& o) const { return *this == (CB_Type)o; } // different struct types are all different
+    bool operator!=(const Struct_type& o) const { return !(*this==o); }
+};
 
 
 struct Struct_instance {

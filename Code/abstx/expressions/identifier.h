@@ -21,4 +21,11 @@ struct Identifier : Variable_expression {
 
     virtual shared<CB_Type> get_type() { return type; }
 
+    virtual seq<owned<Value_expression>> eval()
+    {
+        seq<owned<Value_expression>> s;
+        s.add(alloc(*this));
+        return s;
+    }
+
 };
