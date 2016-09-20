@@ -1,10 +1,10 @@
-[[Cube specification v0.4]]
+#Cube specification v0.4
 
 
-[[Table of contents]]
+##Table of contents
 
 
-[[Introduction]]
+##Introduction
 
 This is a reference manual for the Cube programming language.
 
@@ -14,25 +14,25 @@ Cube allows for compile time execution of arbitrary code.
 
 Cube has no built in exception handling system, but strives to give well defined behaviour for many edge cases which makes exceptions redundant. Some run time performance is sacrificed in order to accomplish this.
 
-[[Comments]]
+##Comments
 
 Single line comments are started with "//". These end at the next end of line.
 Block comments are contained with "/*" and "*/". Block comments can be nested.
 Comments cannot start inside a string literal.
 
-[[Integer literals]]
+##Integer literals
 
 An integer literal is a sequence of digits representing an integer constant. All integer constants must be in the decimal format.
 
 An integer literal can be implicitly casted to any singed or unsigned integer or floating point type, or to the 'flag' type.
 
-[[Floaing-point literals]]
+##Floaing-point literals
 
 A floating-point literal is a decimal representation of a floating-point constant. It has an integer part, a decimal point, and a fractional part.
 
 A floating point literal can be implicitly casted to any floating point type.
 
-[[String literals]]
+##String literals
 
 A string literal represents a string constant obtained from concatenating a sequence of characters. There are two forms: raw string literals and here-strings.
 
@@ -55,7 +55,7 @@ Some examples of valid strings are the following.
         All newlines and other formatting will be included in the string literal.
     HERE
 
-[[Identifiers]]
+##Identifiers
 
 An identifier is a name for some variable in the program. Identifiers must follow the following format:
 It must start with a letter in [a-z, A-Z].
@@ -74,7 +74,7 @@ Example of invalid identifiers:
     _starts_with_underscore
     contains?symbol
 
-[[Keywords]]
+##Keywords
 
 The following keywords are reserved and may not be used as identifiers.
 
@@ -87,8 +87,10 @@ The following keywords are reserved and may not be used as identifiers.
     for
     while
     struct
+    in
+    by
 
-[[Variables]]
+##Variables
 
 A variable is a storage location for holding a value. The set of permissible values is determined by the variable's type.
 
@@ -99,7 +101,7 @@ A variable is declared with the following syntax:
     x := 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x := foo();     // x is assigned the return value of the function foo(), computed at run time.
 
-[[Constants]]
+##Constants
 
 A constant acts much like a variable but can never change. The value of constants are always computed compile time and takes no storage space in the final run time program.
 
@@ -107,17 +109,17 @@ A constant acts much like a variable but can never change. The value of constant
     x :: 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x :: foo();     // x is assigned the return value of the function foo(), computed at compile time.
 
-[[Types]]
+##Types
 
 A type determines the set of values and operations specific to values of that type. Named instances of the boolean, numeric, and string types are predeclared. Composite types - array, struct, pointer, and function types - may be constructed during compile time.
 
-[[Booleans]]
+###Booleans
 
 A boolean type represents the set of Boolean truth values denoted by the predeclared constants true and false. The predeclared boolean type is bool.
 
     b : bool = true;
 
-[[Numeric Types]]
+###Numeric Types
 
 A numeric type represents sets of integer or floating-point values. The predeclared architecture-independent numeric types are:
 
@@ -141,13 +143,13 @@ A numeric type represents sets of integer or floating-point values. The predecla
 
 The value of an n-bit integer is n bits wide and represented using two's complement arithmetic.
 
-[[Strings]]
+###Strings
 
 A string type represents the set of string values. A string value is a (possibly empty) sequence of bytes.
 
     s : string = "foo";
 
-[[Static sequences]]
+###Static sequences
 
 A static sequence is an fixed size set of elements of a single type. The size is a part of the type and is determined at compile time.
 
@@ -156,7 +158,7 @@ A static sequence is an fixed size set of elements of a single type. The size is
 
 Static sequences can be accessed with the [] operator. If the index is negative or larger than the size of the sequence, a temporary default intialized value of the corresponding type is returned.
 
-[[Dynamic sequences]]
+###Dynamic sequences
 
 A dynamic sequence consists of a header containing the current length, capacity and location of the actual data. The actual data is stored on the heap, and it may be relocated if the size of the sequence changes.
 
@@ -165,7 +167,7 @@ A dynamic sequence consists of a header containing the current length, capacity 
 
 Dynamic sequences works very similarly to static sequences. They can be accessed with the [] operator. If the index is negative, a temporary default intialized value of the corresponding type is returned. If the index is larger than the current size, the sequence will insert default initialized values until the necessary size is reached, then the requested value is returned.
 
-[[Structs]]
+###Structs
 
 A struct type is a sequence of named elements, called fields, each of which has a name and a type and possibly a default value. Each struct type, identified by the "struct" keyword, is unique.
 
@@ -181,7 +183,7 @@ Struct instances can then be created just like for any type.
     s1 : S1;                        // s1 is a default initialized struct of type S1.
     s2 : S2 = make_S2();            // s2 is a S2 returned by the function make_S2.
 
-[[Functions]]
+###Functions
 
 A function type is defined as a set of in (argument) and out (return) types. A function variable are essentially a pointer to the code to be executed. The syntax is the following.
 
@@ -212,13 +214,15 @@ If the function are declared as a constant, additional metadata from the initial
 
 The default value of a function is an empty code block.
 
-[[Generic functions]]
+Values are by default passed to the function by constant references, and thus all in parameters are treated as constants.
+
+###Generic functions
 
 *** TODO
 
 *** Uses function literal meta data, so only possible for constant functions
 
-[[Pointers]]
+###Pointers
 
 A pointer type denotes the set of all pointers to variables of a given type, called the base type of the pointer. There are two kinds of pointers: owning and sharing pointers. The default value for both pointer types are null. If a null pointer would be dereferenced, a default initialized temporary value of the base type is returned.
 
@@ -232,6 +236,18 @@ A sharing pointer is pointing to an already existing object, managed by somethin
 Returning an owning pointer from a function does not move the allocated object. If the returned variable is assigned to a shared pointer, a temporary anonymous owning pointer is created in that scope instead.
 
 Using an owning pointer as an argument to a function taking a owning pointer in parameter will mark the pointer as destroyed, without moving the actual object. The ownership is simply passed into the function scope instead, and the object is destroyed at the end of that scope.
+
+## Threads
+
+Functions may be called asynchronously using the keyword "async".
+
+    foo();              // runs foo() directly and waits for it to finish before continue the program flow.
+    async foo();        // starts a new thread and runs foo() there. After the thread is created this statement is complete - it doesn't wait for foo() to complete.
+
+Asynchronous function calls can not return anything. Any in parameters will be passed by deep copy (instead of the normal const reference).
+
+*** TODO: channels, or some other way to allow different threads to synchronize or communicate
+
 
 
 
@@ -264,8 +280,27 @@ Expressions
 Operators
 
 
+type any
 
 
+Maps
+
+    s : [string] int = ["a"->1, "b"->2];
+    s : [string] int = [string->int: ];
+
+
+
+for i, v in [1, 2, 3] {}
+for k, v in ["a"->1, "b"->2] {}
+for i, v in 1..2 {}
+
+blank identifier, _
+
+
+
+    static_seq : [5] int;       // [] contains the number of elements in the sequence (compile time calculated integer value)
+    dynamic_seq : [..] int;     // [] contains the symbol ".."
+    map : [string] int;         // [] contains the key type
 
 
 
@@ -286,3 +321,51 @@ Programs are constructed from packages, whose properties allow efficient managem
 
 
 The length of a string s (its size in bytes) can be discovered using the built-in function len. The length is a compile-time constant if the string is a constant. A string's bytes can be accessed by integer indices 0 through len(s)-1.
+
+
+
+
+
+
+
+
+
+
+Go channels:
+
+    messages := make(chan string)           // create the channel
+    go func() { messages <- "ping" }()      // put a message in the channel in a different thread (blocks the thread until the message is read)
+    msg := <- messages;                     // receive the message in this thread (blocks the thread until a message is received)
+
+
+Buffered channels:
+
+    messages := mage(chan string, 2)        // create the channel, buffering up to 2 values
+    messages <- "buffered"                  // put 2 values in the buffer
+    messages <- "channel"                   // if a 3rd value would be put in here, it would block the thread until a message was read
+    msg1 := <- messages                     // receive 2 values from the buffer
+    msg2 := <- messages                     // if a 3rd value would be read here, it would block the thread until a message was sent
+
+Receive only channels (chan<-):
+
+    func ping(pings chan<- stringm, msg string) { pings <- msg }
+
+Read only channels (<-chan):
+
+    func pong(pings <-chan string, pongs chan<- string) { msg:=<-pings; pongs<-msg }
+
+Waiting for several channels simultaneously with select (also showing timeouts):
+
+    select {
+        case msg1 := <-channel1: foo1()                 // if msg1 was received first, do foo1()
+        case msg2 := <-channel2: foo2()                 // if msg2 was received first, do foo2()
+        case <-time.After(time.Second*2): foo3()        // if none was received before 2 seconds, do foo3()
+    }
+
+Non-blocking operations with select default:
+
+    select {
+        case msg1 := <-channel1: foo1()                 // if msg1 has a message, do foo1()
+        case msg2 := <-channel2: foo2()                 // if msg2 has a message, do foo2()
+        default: foo3();                                // if none of them have a message waiting, do foo3()
+    }
