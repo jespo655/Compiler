@@ -160,12 +160,19 @@ Static sequences can be accessed with the [] operator. If the index is negative 
 
 ###Dynamic sequences
 
-A dynamic sequence consists of a header containing the current length, capacity and location of the actual data. The actual data is stored on the heap, and it may be relocated if the size of the sequence changes.
+A dynamic sequence consists of a header containing the current length, capacity and location of the actual data. The actual data is stored on the heap, and it may be relocated if the size of the sequence changes. Dynamic sequence types are marked by that the [] contains the symbol "..".
 
-    s : [..] int = [1, 2, 3, 4, 5];
+    s : [..] int = [1, 2, 3, 4, 5];   
     s : [..] int = [size=10, int: ...];
 
 Dynamic sequences works very similarly to static sequences. They can be accessed with the [] operator. If the index is negative, a temporary default intialized value of the corresponding type is returned. If the index is larger than the current size, the sequence will insert default initialized values until the necessary size is reached, then the requested value is returned.
+
+### Maps
+
+A map is a set of objects which is indexed with a specific key type. Map types are marked by that the [] contains the type identifier defining the key type.
+
+    s : [int] int = [1->1, 2->2];  	   	
+    s : [string] int = ["a"->1, "b"->2];
 
 ###Structs
 
@@ -204,7 +211,7 @@ Functions can be called using the () operator.
     f1 := fn(a:int, b:int)->int { return a+2*b; }; // declared as a variable / function pointer, its value can change at run time
     f1(1, 2); // returns 5
 
-If the function are declared as a constant, additional metadata from the initial function literal can also be used in the function call.
+If a function is declared as a constant, additional metadata from the initial function literal can also be used in the function call.
 
     f2 :: fn(a:int=3, b:int=4)->int { return a+2*b; }; // declared as a constant, evaluated compile time
     f2(1, 2); // returns 5.
