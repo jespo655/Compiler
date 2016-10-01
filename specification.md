@@ -89,6 +89,7 @@ The following keywords are reserved and may not be used as identifiers.
     struct
     in
     by
+    operator
 
 ## Variables
 
@@ -109,7 +110,7 @@ A constant acts much like a variable but can never change. The value of constant
     x :: 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x :: foo();     // x is assigned the return value of the function foo(), computed at compile time.
 
-# ypes
+# Types
 
 A type determines the set of values and operations specific to values of that type. Named instances of the boolean, numeric, and string types are predeclared. Composite types - array, struct, pointer, and function types - may be constructed during compile time.
 
@@ -287,11 +288,6 @@ Owning pointers are automatically casted to their base type, but not for assignm
     *op1 = t2; // the value that op1 points to is now a copy of t2
     // op1 = t2; // not allowed since op1 can never own t1
 
-
-
-
-
-
 ## Operators
 
 Operators is a terse way of writing function calls. An operator is defined by it preceding type(s), name, and succeeding type(s). Operators can be declared only as constants. The syntax for an operator identifier is the following.
@@ -413,6 +409,12 @@ After an infix operator is used, it can also be used for terse assignment togeth
     a += 2;
 
 
+
+
+
+
+<!--
+# TODO
 
     <<
     >>
@@ -592,3 +594,5 @@ Non-blocking operations with select default:
         case msg2 := <-channel2: foo2()                 // if msg2 has a message, do foo2()
         default: foo3();                                // if none of them have a message waiting, do foo3()
     }
+
+-->
