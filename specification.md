@@ -420,11 +420,15 @@ text between
     intendet
 
 * dot
+
 *dot
 
 **double dot nospace
+
 * *double dot 1 space a
+
 ** double dot 1 space b
+
 * * double dot 2 space
 
 
