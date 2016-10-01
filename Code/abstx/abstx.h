@@ -16,6 +16,12 @@ template<typename T, int i> using fixed_seq = CB_Static_seq<T,i>;
 
 struct CB_Scope;
 
+/*
+    An Abstx_node is a node in the abstract syntax tree.
+    It has a pointer to its owner (using polymorphism)
+    It knows its own start token index (so it can create a new iterator and index through the tokens later)
+        and token context (so it can give correct error messages).
+*/
 struct Abstx_node
 {
     // should be set immediately on creation:
@@ -46,9 +52,13 @@ struct Abstx_node
         owner = abstx_p;
     }
 
+    // Virtual destructor needd for polymorphism
     virtual ~Abstx_node() {}
 
+    // Return a pointer to the closest parent scope in the tree
     virtual shared<CB_Scope> parent_scope() const;
+
+    // Return a pointer to the root parent scope in the tree
     virtual shared<CB_Scope> global_scope() ;
 };
 
@@ -94,29 +104,44 @@ Modifiers: Generic
 
 Value_expression:
     Variable_expression
-    Literal (bool, int, string, float, seq)
-    Cast (?)
-    Prefix operator
-    Infix operator
+    Literal (bool, int, string, float, seq, map)
     Function call
 
 Variable_expression:
+    Identifier
     Getter
-    Array indexing
 
 
 
 
+deprecated:
+    // Cast (?)            // equivalent with function call
+    // Prefix operator     // equivalent with function call
+    // Infix operator      // equivalent with function call
+    // Array indexing      // equivalent with function call that returns a sharing pointer
+
+
+
+
+
+// TODO: scope syntax
 
 // Anonymous scope:
 {...}
 
 // Named scope:
 Name {...}
+Name :: {...}; // maybe?
+
 
 // Keywords:
 Async {...}
 Async Name {...}
+
+
+
+
+
 
 
 
