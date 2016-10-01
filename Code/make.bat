@@ -6,5 +6,5 @@ g++ -std=c++11 parser/*.cpp *.cpp utilities/*.cpp compile_time/*.cpp %*
 :: /Y supresses prompting to confirm you want to overwrite an existing destination file (seems to not do anything)
 :: /Q : Suppresses the display of xcopy messages.
 :: /R : Copies read-only files.
-xcopy /B /Q /Y "a.exe" "C:/PATH/jm.exe"
-:: xcopy /B /Q /Y "a.exe" "D:/PATH/jm.exe"
+xcopy /B /Q /Y "a.exe" "C:/PATH/cube.exe"
+:: xcopy /B /Q /Y "a.exe" "D:/PATH/cube.exe"
