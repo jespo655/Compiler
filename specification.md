@@ -330,10 +330,10 @@ Sharing pointers and their base type can be used in exactly the same way, and ca
     sharing_1.data; // implicitly dereferences the pointer
     owning_1.data; // implicitly dereferences the pointer
 
-    object_2 = object_1; // assigning to object from object -> creates a copy
-    sharing_2 = object_1; // assigning to pointer from object -> the pointer now points to the object
-    object_2 = sharing_1; // assigning to object from pointer -> creates a copy of the object that the pointer is pointing to
-    sharing_2 = sharing_1; // assigning to pointer from pointer -> both pointers now points at the same object
+    object_2 = object_1; // copies the object
+    sharing_2 = object_1; // copies the address of the object
+    object_2 = sharing_1; // copies the object that the pointer is pointing to (implicit dereference)
+    sharing_2 = sharing_1; // copies the address
 
     object_2 = owning_1; // copies the object
     sharing_2 = owning_1; // copes the adress
