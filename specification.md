@@ -316,34 +316,30 @@ Returning an owning pointer from a function does not move the allocated object. 
 
 Using an owning pointer as an argument to a function taking a owning pointer in parameter will mark the pointer as destroyed, without moving the actual object. The ownership is simply passed into the function scope instead, and the object is destroyed at the end of that scope.
 
-    op : *!T = alloc(t); // t is copied to the heap and that copy is now owned by op. // TODO: find better syntax for allocation
-    sp : *T = op; // sp now points to the object owned by op.
-    sp2 : *T = sp; // sp and sp2 now points to the same object.
-    op2 : *!T = op; // op2 grabs the object from op and is now the owner of the object. op is now null.
-    // op : *!T = sp; // illegal, sp doesn't own the object so op can't grab it
+Sharing pointers and their base type can be used in exactly the same way, and can be substituted for each other. Owning pointers behaves exactly like objects, but they are allocated on the heap instead of the stack.
 
-Sharing pointers are automatically casted to their base type.
+    T :: struct { data : int; };
+    object_1 : T;
+    object_2 : T;
+    sharing_1 : * T = object_1;
+    sharing_2 : * T = object_2;
+    owning_1 : *! T; // implicitly allocates memory on the heap
+    owning_1 : *! T = ---; // implicitly allocates memory on the heap, but doesn't initalize it
 
-    t1 : T;
-    sp1 : *T = t1; // sp1 now points to t1
-    t2 : T = sp1; // t2 is now a copy of t1
-    sp2 : *T = sp1; // sp2 now point to the same object as sp1 points 2
+    object_1.data;
+    sharing_1.data; // implicitly dereferences the pointer
+    owning_1.data; // implicitly dereferences the pointer
 
-    *sp1 = t2; // the value that sp1 points to is now a copy of t2
-    sp1 = t2; // sp1 now points to t2 (implicit "adress of")
+    object_2 = object_1; // assigning to object from object -> creates a copy
+    sharing_2 = object_1; // assigning to pointer from object -> the pointer now points to the object
+    object_2 = sharing_1; // assigning to object from pointer -> creates a copy of the object that the pointer is pointing to
+    sharing_2 = sharing_1; // assigning to pointer from pointer -> both pointers now points at the same object
 
-Owning pointers are automatically casted to their base type, but not for assignment.
-
-    op1 : *!T = alloc(T); // has to use alloc here to allocate on the heap
-    t2 : T = op1; // t is now a copy of the data that op1 points to (owns)
-    op2 : *!T = op1; // grabs the object from op and is now the owner of the object. op is now null.
-    sp : *T = op1; // sp now points at the object that op1 is pointing to.
-    spp : **T = op1; // spp now points to op1 (pointer to a pointer to a T)
-    spp : **!T = op1; // spp now points to op1 (poiter to a owning pointer of T)
-    // spp : *!*T = op1; // not allowed; spp can never own op1 (pointer that owns a pointer to a T)
-
-    *op1 = t2; // the value that op1 points to is now a copy of t2
-    // op1 = t2; // not allowed since op1 can never own t1
+    object_2 = owning_1; // copies the object
+    sharing_2 = owning_1; // copes the adress
+    owning_2 = object_1; // copies the object
+    owning_2 = sharing_1; // copies the object
+    owning_2 = owning_1; // copies the object
 
 
 
@@ -480,6 +476,10 @@ Example:
     a += 2;
 
 
+
+## Expressions
+
+Expressions
 
 
 
