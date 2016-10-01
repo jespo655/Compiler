@@ -399,6 +399,8 @@ After an infix operator is used, it can also be used for terse assignment togeth
 * The operator has to take exactly one preceding type argument
 * That preceding type has to be the same as the return type from the operator.
 
+Example:
+
     a : int;
     // Assuming operator(int)+(int) : fn(int, int)->int,
     //   these are all equivalent:
@@ -420,7 +422,10 @@ text between
 * dot
 *dot
 
-* * double dot
+**double dot nospace
+* *double dot 1 space a
+** double dot 1 space b
+* * double dot 2 space
 
 
 
