@@ -318,14 +318,13 @@ When calling and operator that has more than one preceding or succeeding types, 
 
 
 
-
-
+<!--
     operator (int)+(float) :: fn(i: int, f: float)->float { return float(i)+f; };
     a : float = 1 + 1.0; // uses the operator defined above
 
     operator !(int) :: fn(i: int)->bool { return !(i==0); };
 
-
+ -->
 
 
 
@@ -401,7 +400,6 @@ After an infix operator is used, it can also be used for terse assignment togeth
 * That preceding type has to be the same as the return type from the operator.
 
     a : int;
-
     // Assuming operator(int)+(int) : fn(int, int)->int,
     //   these are all equivalent:
     a = a + 2;
