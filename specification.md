@@ -431,6 +431,14 @@ text between
 
 * * double dot 2 space
 
+Reading a new expression, operators are examined as follows.
+
+1. Check if the first token is a prefix operator. If so, read a new expression and build a prefix operator node.
+2. If not, read non-operator expression (literal or identifier)
+3. Check if the next token is a suffix operator. If so, build a suffix operator node.
+4. If not, check if the next token is an infix operator. If so, read a new expression and build an infix operator node.
+
+
 
 
 <!--
