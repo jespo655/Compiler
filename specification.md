@@ -406,8 +406,21 @@ After an infix operator is used, it can also be used for terse assignment togeth
     a + = 2;
     a += 2;
 
+testing with text on a new line after
 
+* dot
 
+* dot
+
+text between
+
+    indented
+    intendet
+
+* dot
+*dot
+
+* * double dot
 
 
 
