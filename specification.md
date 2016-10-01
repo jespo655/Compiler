@@ -14,11 +14,17 @@ Cube allows for compile time execution of arbitrary code.
 
 Cube has no built in exception handling system, but strives to give well defined behaviour for many edge cases which makes exceptions redundant. Some run time performance is sacrificed in order to accomplish this.
 
+
+
+
 ## Comments
 
 Single line comments are started with "//". These end at the next end of line.
 Block comments are contained with "/*" and "*/". Block comments can be nested.
 Comments cannot start inside a string literal.
+
+
+
 
 ## Integer literals
 
@@ -26,11 +32,17 @@ An integer literal is a sequence of digits representing an integer constant. All
 
 An integer literal can be implicitly casted to any singed or unsigned integer or floating point type, or to the 'flag' type.
 
+
+
+
 ## Floaing-point literals
 
 A floating-point literal is a decimal representation of a floating-point constant. It has an integer part, a decimal point, and a fractional part.
 
 A floating point literal can be implicitly casted to any floating point type.
+
+
+
 
 ## String literals
 
@@ -55,6 +67,9 @@ Some examples of valid strings are the following.
         All newlines and other formatting will be included in the string literal.
     HERE
 
+
+
+
 ## Identifiers
 
 An identifier is a name for some variable in the program. Identifiers must follow the following format:
@@ -74,6 +89,9 @@ Example of invalid identifiers:
     _starts_with_underscore
     contains?symbol
 
+
+
+
 ## Keywords
 
 The following keywords are reserved and may not be used as identifiers.
@@ -91,6 +109,9 @@ The following keywords are reserved and may not be used as identifiers.
     by
     operator
 
+
+
+
 ## Variables
 
 A variable is a storage location for holding a value. The set of permissible values is determined by the variable's type.
@@ -102,6 +123,9 @@ A variable is declared with the following syntax:
     x := 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x := foo();     // x is assigned the return value of the function foo(), computed at run time.
 
+
+
+
 ## Constants
 
 A constant acts much like a variable but can never change. The value of constants are always computed compile time and takes no storage space in the final run time program.
@@ -110,15 +134,24 @@ A constant acts much like a variable but can never change. The value of constant
     x :: 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x :: foo();     // x is assigned the return value of the function foo(), computed at compile time.
 
+
+
+
 # Types
 
 A type determines the set of values and operations specific to values of that type. Named instances of the boolean, numeric, and string types are predeclared. Composite types - array, struct, pointer, and function types - may be constructed during compile time.
+
+
+
 
 ### Booleans
 
 A boolean type represents the set of Boolean truth values denoted by the predeclared constants true and false. The predeclared boolean type is bool.
 
     b : bool = true;
+
+
+
 
 ### Numeric Types
 
@@ -144,11 +177,17 @@ A numeric type represents sets of integer or floating-point values. The predecla
 
 The value of an n-bit integer is n bits wide and represented using two's complement arithmetic.
 
+
+
+
 ### Strings
 
 A string type represents the set of string values. A string value is a (possibly empty) sequence of bytes.
 
     s : string = "foo";
+
+
+
 
 ### Static sequences
 
@@ -159,6 +198,9 @@ A static sequence is an fixed size set of elements of a single type. The size is
 
 Static sequences can be accessed with the [] operator. If the index is negative or larger than the size of the sequence, a temporary default intialized value of the corresponding type is returned.
 
+
+
+
 ### Dynamic sequences
 
 A dynamic sequence consists of a header containing the current length, capacity and location of the actual data. The actual data is stored on the heap, and it may be relocated if the size of the sequence changes. Dynamic sequence types are marked by that the [] contains the symbol "..".
@@ -168,12 +210,18 @@ A dynamic sequence consists of a header containing the current length, capacity 
 
 Dynamic sequences works very similarly to static sequences. They can be accessed with the [] operator. If the index is negative, a temporary default intialized value of the corresponding type is returned. If the index is larger than the current size, the sequence will insert default initialized values until the necessary size is reached, then the requested value is returned.
 
+
+
+
 ### Maps
 
 A map is a set of objects which is indexed with a specific key type. Map types are marked by that the [] contains the type identifier defining the key type.
 
     s : [int] int = [1->1, 2->2];
     s : [string] int = ["a"->1, "b"->2];
+
+
+
 
 ### Structs
 
@@ -190,6 +238,9 @@ Struct instances can then be created just like for any type.
 
     s1 : S1;                        // s1 is a default initialized struct of type S1.
     s2 : S2 = make_S2();            // s2 is a S2 returned by the function make_S2.
+
+
+
 
 ### Functions
 
@@ -224,6 +275,9 @@ The default value of a function is an empty code block.
 
 Values are by default passed to the function by constant references, and thus all in parameters are treated as constants.
 
+
+
+
 ### Generic functions
 
 Constant declared functions can also be generic. Generic types are determined at compile time and new versions of the function is automatically generated each time the function is called with a new type. Generic types are marked with '$'.
@@ -243,6 +297,9 @@ Even if the generic type is used serveral times in the function declaration, the
     i : int; f : float;
     // foo(i, f); // gives error: "Type mismatch, expected int but found float for argument 2 in foo(...)";
     // foo(f, i); // gives error: "Type mismatch, expected float but found int for argument 2 in foo(...)";
+
+
+
 
 ### Pointers
 
@@ -288,6 +345,9 @@ Owning pointers are automatically casted to their base type, but not for assignm
     *op1 = t2; // the value that op1 points to is now a copy of t2
     // op1 = t2; // not allowed since op1 can never own t1
 
+
+
+
 ## Operators
 
 Operators is a terse way of writing function calls. An operator is defined by it preceding type(s), name, and succeeding type(s). Operators can be declared only as constants. The syntax for an operator identifier is the following.
@@ -314,17 +374,6 @@ When calling and operator that has more than one preceding or succeeding types, 
 
     operator sum(int,int) :: fn(a: int, b: int)->int { return a+b; };
     total3 := sum(1, sum(2, 3));
-
-
-
-
-<!--
-    operator (int)+(float) :: fn(i: int, f: float)->float { return float(i)+f; };
-    a : float = 1 + 1.0; // uses the operator defined above
-
-    operator !(int) :: fn(i: int)->bool { return !(i==0); };
-
- -->
 
 
 
@@ -356,8 +405,9 @@ The following symbols are recogniced as valid operators. They are listed with th
 
     symbol          priority        note
     '[]' (infix)    1000            indexing operator / gets a value - defined as infix but used as suffix (NOTE: see problem below)
-    '[]=' (infix)    1000           indexing operator / sets a value - defined as infix but used as suffix (NOTE: see problem below)
-    '.' (suffix)    1000            reserved; only listed here to give priority context
+    '[]=' (infix)   1000            indexing operator / sets a value - defined as infix but used as suffix (NOTE: see problem below)
+    '()' (reserved) 1000            reserved; only listed here to give priority context. Function operator.
+    '.' (reserved)  1000            reserved; only listed here to give priority context. Getter operator.
     '++' (suffix)   1000            increment
     '--' (suffix)   1000            decrement
 
@@ -367,20 +417,31 @@ The following symbols are recogniced as valid operators. They are listed with th
     '!' (prefix)    900             logical NOT
     '++' (prefix)   900             increment
     '--' (prefix)   900             decrement
+    '@' (prefix)    900
+    '&' (prefix)    900
+    '~' (prefix)    900
 
     '^' (infix)     800             to the power of
 
     '*' (infix)     700             multiplication
     '/' (infix)     700             division
     '%' (infix)     700             modulo (remainder)
+    '/%' (infix)    700
 
     '+' (infix)     600             addition
     '-' (infix)     600             subtraction
+
+    '<<' (infix)    550
+    '>>' (infix)    550
+    '<<<' (infix)   550
+    '>>>' (infix)   550
 
     '<' (infix)     500             less than
     '>' (infix)     500             greater than
     '<=' (infix)    500             less than or equal to
     '>=' (infix)    500             greater than or equal to
+    '>~' (infix)    500
+    '<~' (infix)    500
 
     '==' (infix)    400             equal to
     '!=' (infix)    400             not equal to
@@ -392,6 +453,15 @@ In addition, all operators defined with an identifier as operator name have the 
     id (prefix)     850             operator using identifier (not a symbol)
     id (infix)      0               operator using identifier (not a symbol)
 
+Reading a new expression, operators are examined as follows.
+
+    1. Check if the first token is a prefix operator. If so, read a new expression and build a prefix operator node.
+    2. If not, read non-operator expression (literal or identifier)
+    3. Check if the next token is a suffix operator. If so, build a suffix operator node.
+    4. If not, check if the next token is an infix operator. If so, read a new expression and build an infix operator node.
+
+
+
 
 ### Assignment operators
 
@@ -399,7 +469,10 @@ After an infix operator is used, it can also be used for terse assignment togeth
 * The operator has to take exactly one preceding type argument
 * That preceding type has to be the same as the return type from the operator.
 
+Example:
+
     a : int;
+
     // Assuming operator(int)+(int) : fn(int, int)->int,
     //   these are all equivalent:
     a = a + 2;
