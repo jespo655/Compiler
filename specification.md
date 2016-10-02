@@ -324,22 +324,43 @@ Sharing pointers and their base type can be used in exactly the same way, and ca
     sharing_1 : * T = object_1;
     sharing_2 : * T = object_2;
     owning_1 : *! T; // implicitly allocates memory on the heap
-    owning_1 : *! T = ---; // implicitly allocates memory on the heap, but doesn't initalize it
+    owning_2 : *! T = ---; // implicitly allocates memory on the heap, but doesn't initalize it
 
     object_1.data;
     sharing_1.data; // implicitly dereferences the pointer
     owning_1.data; // implicitly dereferences the pointer
 
-    object_2 = object_1; // copies the object
-    sharing_2 = object_1; // copies the address of the object
-    object_2 = sharing_1; // copies the object that the pointer is pointing to (implicit dereference)
-    sharing_2 = sharing_1; // copies the address
+    // These copies an object
+    object_2 = object_1;
+    object_2 = sharing_1; // implicit dereference
+    object_2 = *sharing_1;
+    object_2 = owning_1; // implicit dereference
+    object_2 = *owning_1;
 
-    object_2 = owning_1; // copies the object
-    sharing_2 = owning_1; // copes the adress
-    owning_2 = object_1; // copies the object
-    owning_2 = sharing_1; // copies the object
-    owning_2 = owning_1; // copies the object
+    *sharing_2 = object_1;
+    *sharing_2 = sharing_1; // implicit dereference
+    *sharing_2 = *sharing_1;
+    *sharing_2 = owning_1; // implicit dereference
+    *sharing_2 = *owning_1;
+
+    owning_2 = object_1; // implicit dereference of owning_2
+    owning_2 = sharing_1; // implicit dereference of both pointers
+    owning_2 = *sharing_1;
+    owning_2 = owning_1; // implicit dereference of both pointers
+    owning_2 = *owning_1;
+
+    *owning_2 = object_1;
+    *owning_2 = sharing_1; // implicit dereference of sharing_1
+    *owning_2 = *sharing_1;
+    *owning_2 = owning_1; // implicit dereference of owning_1
+    *owning_2 = *owning_1;
+
+    // These copies an adress
+    sharing_2 = object_1; // implicit "address_of"
+    sharing_2 = sharing_1;
+    sharing_2 = *sharing_1; // implicit "address_of" the referenced object
+    sharing_2 = owning_1;
+    sharing_2 = *owning_1; // implicit "address_of" the referenced object
 
 
 
@@ -371,7 +392,7 @@ When calling and operator that has more than one preceding or succeeding types, 
     operator sum(int,int) :: fn(a: int, b: int)->int { return a+b; };
     total3 := sum(1, sum(2, 3));
 
-
+    operator (Int_array)[int] :: fn(arr: Int_array, index: int) -> int { return arr.underlying[index]; }
 
 
 ## Symbols
@@ -400,8 +421,8 @@ The following symbols are reserved and cannot be used as operators.
 The following symbols are recogniced as valid operators. They are listed with their respective priority. Higher priority always goes before lower priority. If two operators have the same priority, they are evaluated from left to right. Multiple prefix operators are evaluated from right to left.
 
     symbol          priority        note
-    '[]' (infix)    1000            indexing operator / gets a value - defined as infix but used as suffix (NOTE: see problem below)
-    '[]=' (infix)   1000            indexing operator / sets a value - defined as infix but used as suffix (NOTE: see problem below)
+    '[T]' (suffix)  1000            subscript / gets a value (NOTE: see problem below)
+    '[T]=' (suffix) 1000            subscript / sets a value (NOTE: see problem below)
     '()' (reserved) 1000            reserved; only listed here to give priority context. Function operator.
     '.' (reserved)  1000            reserved; only listed here to give priority context. Getter operator.
     '++' (suffix)   1000            increment
@@ -487,20 +508,48 @@ Expressions
 <!--
 # TODO
 
-    <<
-    >>
-    <<<
-    >>>
+
+
+## File handling
+
+How to read from and write to file?
+
+
+
+## OpenGL
+
+Some interface is needed. Direct C port?
+
+
+
+## C ported code
+
+Syntax?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     &
     |
     &&
     ||
-    ^
-    ~
-    >~
-    <~
-    /%
-    @
 
 
 
@@ -530,6 +579,8 @@ i := seq[3]; // i should be the int 0
 
 TODO: decide if this is allowed
     // '()'                        function operator
+
+
 
 
 
