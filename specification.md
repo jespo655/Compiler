@@ -3,6 +3,78 @@
 
 ## Table of contents
 
+<!--
+
+0 numbers: #
+1 number: ##
+2 numbers: ###
+
+ -->
+
+1. Table of contents
+2. Introduction
+
+Comments
+Identifiers
+Keywords
+Variables
+Constants
+Types
+    Booleans
+    Numeric types
+        Integer literals
+        Floating-point literals
+    Strings
+        String literals
+            * Regular strings with escaped characters
+            * Here-strings (https://en.wikipedia.org/wiki/Here_document)
+    Static sequences
+        Sequence literals
+    Dynamic sequences
+        // Uses the same literal as static sequences
+    Maps
+        Map literals
+    Structs
+        // There are no struct (instance) literals
+    Function
+        Function literal
+    Functions with meta data
+        Named arguments
+        Default values
+        Generic types
+        Varargs
+    Pointers
+    Enums
+Operators
+    Assignment operators
+Symbols
+Expressions
+    Value_expressions
+        * Variable_expression
+        * Literal (bool, int, string, float, seq, map, struct type, function type, function)
+        * Function call / operator
+    Variable_expressions
+        * Identifier
+        * Getter
+Statements
+    Assignment
+    Declaration
+    If
+    For
+    While
+    Defer
+    Return
+    Using
+    Scope declaration (Anonymous or Named, maybe with keyword modifiers such as Async)
+    Pure value_expression (operators or function call with side effects)
+    #run
+
+
+
+<!--
+TODO: Threads
+-->
+
 
 ## Introduction
 
@@ -405,6 +477,7 @@ The following symbols are reserved and cannot be used as operators.
     '[' and ']'
     '{' and '}'
     '->'
+    '=>'
     ','
     '.'
     '#'
@@ -421,8 +494,8 @@ The following symbols are reserved and cannot be used as operators.
 The following symbols are recogniced as valid operators. They are listed with their respective priority. Higher priority always goes before lower priority. If two operators have the same priority, they are evaluated from left to right. Multiple prefix operators are evaluated from right to left.
 
     symbol          priority        note
-    '[T]' (suffix)  1000            subscript / gets a value (NOTE: see problem below)
-    '[T]=' (suffix) 1000            subscript / sets a value (NOTE: see problem below)
+    '[T]' (suffix)  1000            subscript / gets a value. T is one or more type names. (NOTE: see problem below)
+    '[T]=' (suffix) 1000            subscript / sets a value. T is one or more type names. (NOTE: see problem below)
     '()' (reserved) 1000            reserved; only listed here to give priority context. Function operator.
     '.' (reserved)  1000            reserved; only listed here to give priority context. Getter operator.
     '++' (suffix)   1000            increment
@@ -532,13 +605,49 @@ Syntax?
 
 
 
+// Generic function example:
+
+get_name :: fn(x: $T) -> type_of(x.name) {
+    return x.name;
+}
+
+// possible abbreviation:
+
+get_name :: x => x.name;
+
+
+// several in and out parameters:
+
+(a, b) => (b, a+b)
+
+/*
+https://www.youtube.com/watch?v=Mo6_tJFeNMM 34:09
+
+    We just do an iterative solve to find  the parameters.
+
+    arr : []int;
+    map(arr, x => x+1);
+    map :: fn(array: [] $T,    f: fn(T)  -> $R)           -> []R  { /*...*/ };
+                     [] int,      fn($X) -> type_of(x+1)
+
+    First pass: T = int
+    Second pass: X = int
+    Third pass: R = int
+
+messy test case: ~39
+
+*/
+
+
+Function parameters: prefix $ for ANYTHING that is known at compile time. Only needed once
 
 
 
+Q till JB: hur bestäms priority av operators?
 
 
-
-
+problem att tänka på med operatorer:
+    operators som tar andra operators (funktioner) som argument. Borde ej tillåtas, men specialfall kan krävas.
 
 
 
