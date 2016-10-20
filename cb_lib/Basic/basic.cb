@@ -1,0 +1,113 @@
+
+
+
+// pre defined operators (in basic):
+// println($s : string, args : any...) // generic number of arguments -> args is of type []any. s is forced to be known compile time, and will be modified compile time every time the function is called.
+// typeof :: fn($T) -> type { return T; }; // with special case for type any
+// c_print_format :: fn(t : type)->string { /*...*/ }; // returns format modifiers like "%d", "lld". Special case for function and struct types is needed.
+// error : fn(string); // tar calling context, special case för #modify blocks
+
+
+
+
+
+/** input/output functions **/
+
+print :: fn($s : string, args : any...)
+#modify {
+    // this code block will be executed every time the function is called
+    // context = calling context
+    // here we can generate compile errors for types or invalid arguments
+    // arguments marked with $ can be accessed here (they are forced to be known at compile time)
+    // they can also be changed at compile time
+    // s = "2"; // this would be ok, and would force the function to always receive "2" as the first parameter
+
+    modified_s : string;
+    arg_index : int = 0;
+    for (byte in s) {
+        if (byte != "%") {
+            modified_s += s; // slow string concat. I need a proper version of a string_builder
+        } else {
+            if (arg_index >= args.length) {
+                error("Too many % in format string"); // this will stop the caller from resolve the println call
+            }
+            // TODO: special case for struct and function types
+            modified_s += c_print_format(typeof(args[arg_index]));
+            arg_index += 1;
+        }
+    }
+    if (arg_index < args.length) { error "Too few % in format string"); } // this will stop the caller from resolve the println call
+    s = modified_s;
+}
+{
+    // function body
+    c_printf(s, args...); // direct call to c equivalent
+}
+
+
+
+println :: fn($s : string, args : any...) {
+    inline print(s, args...);
+    print("\n");
+}
+
+
+sprint :: fn($s : string, args : any...) -> modified_s : string {
+    arg_index : int = 0;
+    for (byte in s) {
+        if (byte != "%") {
+            modified_s += s; // slow string concat. I need a proper version of a string_builder
+        } else {
+            if (arg_index >= args.length) {
+                error("Too many % in format string"); // this will stop the caller from resolve the println call
+            }
+            // TODO: special case for struct and function types
+            modified_s += c_print_format(typeof(args[arg_index]));
+            arg_index += 1;
+        }
+    }
+    if (arg_index < args.length) { error "Too few % in format string"); } // this will stop the caller from resolve the println call
+}
+
+sprintln :: fn($s : string, args : any...) -> modified_s : string {
+    inline sprint(s, args...);
+    modified_s += "\n";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** sequence modifying functions **/
+
+reserve_array :: fn(arr : *[..]$T, count : int) {
+    arr[count-1]; // "function call" with side effects. Nice hack :)
+}
+
+// TODO: add support for removing elements from a dyamic sequence / dynamic re-allocation to a smaller size
+
+
+
+
+
+
+
+
+
+
+
+
+
