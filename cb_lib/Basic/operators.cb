@@ -1,15 +1,15 @@
-
+#package Basic;
 
 /*
 
 Syntax for C imported functions:
-fn_name : fn_type = #C c_name;
+fn_name : fn_type = #C "c_name";
 
 A fn with that name and corresponding C signature has to be defined in an included C file.
 
 
 
-The literal #C c_name is of a non-finalized function type which accepts any function type it is assigned to.
+The literal #C "c_name" is of a non-finalized function type which accepts any function type it is assigned to.
 NOTE: special case for this has to be made in typechecking.
 
 */
@@ -20,66 +20,66 @@ NOTE: special case for this has to be made in typechecking.
 // i8, i16, i32, i64 does not implicitly cast into int.
 // If specialized operators for those types are needed they will have to be defined elsewhere.
 
-operator(float)*(float) : fn(float, float) -> float = #C mult_float_float;
-operator(float)*(int) : fn(float, int) -> float = #C mult_float_int;
-operator(float)*(uint) : fn(float, uint) -> float = #C mult_float_uint;
-operator(int)*(int) : fn(int, int) -> int = #C mult_int_int;
-operator(int)*(uint) : fn(int, uint) -> int = #C mult_int_uint;
+operator(float)*(float) : fn(float, float) -> float = #C "mult_float_float";
+operator(float)*(int) : fn(float, int) -> float = #C "mult_float_int";
+operator(float)*(uint) : fn(float, uint) -> float = #C "mult_float_uint";
+operator(int)*(int) : fn(int, int) -> int = #C "mult_int_int";
+operator(int)*(uint) : fn(int, uint) -> int = #C "mult_int_uint";
 
-operator(float)+(float) : fn(float, float) -> float = #C plus_float_float;
-operator(float)+(int) : fn(float, int) -> float = #C plus_float_int;
-operator(float)+(uint) : fn(float, uint) -> float = #C plus_float_uint;
-operator(int)+(int) : fn(int, int) -> int = #C plus_int_int;
-operator(int)+(uint) : fn(int, uint) -> int = #C plus_int_uint;
+operator(float)+(float) : fn(float, float) -> float = #C "plus_float_float";
+operator(float)+(int) : fn(float, int) -> float = #C "plus_float_int";
+operator(float)+(uint) : fn(float, uint) -> float = #C "plus_float_uint";
+operator(int)+(int) : fn(int, int) -> int = #C "plus_int_int";
+operator(int)+(uint) : fn(int, uint) -> int = #C "plus_int_uint";
 
 // noexcept - division returns INF if b is 0
-operator(float)/(float) : fn(float, float) -> float = #C divide_float_float;
-operator(float)/(int) : fn(float, int) -> float = #C divide_float_int;
-operator(float)/(uint) : fn(float, uint) -> float = #C divide_float_uint;
-operator(int)/(int) : fn(int, int) -> int = #C divide_int_int;
-operator(int)/(uint) : fn(int, uint) -> int = #C divide_int_uint;
+operator(float)/(float) : fn(float, float) -> float = #C "divide_float_float";
+operator(float)/(int) : fn(float, int) -> float = #C "divide_float_int";
+operator(float)/(uint) : fn(float, uint) -> float = #C "divide_float_uint";
+operator(int)/(int) : fn(int, int) -> int = #C "divide_int_int";
+operator(int)/(uint) : fn(int, uint) -> int = #C "divide_int_uint";
 
-operator(float)-(float) : fn(float, float) -> float = #C minus_float_float;
-operator(float)-(int) : fn(float, int) -> float = #C minus_float_int;
-operator(float)-(uint) : fn(float, uint) -> float = #C minus_float_uint;
-operator(int)-(int) : fn(int, int) -> int = #C minus_int_int;
-operator(int)-(uint) : fn(int, uint) -> int = #C minus_int_uint;
+operator(float)-(float) : fn(float, float) -> float = #C "minus_float_float";
+operator(float)-(int) : fn(float, int) -> float = #C "minus_float_int";
+operator(float)-(uint) : fn(float, uint) -> float = #C "minus_float_uint";
+operator(int)-(int) : fn(int, int) -> int = #C "minus_int_int";
+operator(int)-(uint) : fn(int, uint) -> int = #C "minus_int_uint";
 
-operator(float)%(float) : fn(float, float) -> float = #C mod_float_float;
-operator(float)%(int) : fn(float, int) -> float = #C mod_float_int;
-operator(float)%(uint) : fn(float, uint) -> float = #C mod_float_uint;
-operator(int)%(int) : fn(int, int) -> int = #C mod_int_int;
-operator(int)%(uint) : fn(int, uint) -> int = #C mod_int_uint;
+operator(float)%(float) : fn(float, float) -> float = #C "mod_float_float";
+operator(float)%(int) : fn(float, int) -> float = #C "mod_float_int";
+operator(float)%(uint) : fn(float, uint) -> float = #C "mod_float_uint";
+operator(int)%(int) : fn(int, int) -> int = #C "mod_int_int";
+operator(int)%(uint) : fn(int, uint) -> int = #C "mod_int_uint";
 
 /** Logical operators **/
 
 // if operator < is defined, the >, >= and <= are also defined.
 // inline -> check the callers namespace for overridden versions of the < operator
-inline operator($T1)>($T2) :: fn(a: $T1, b: $T2)->bool { return b<a; };
-inline operator($T1)>=($T2) :: fn(a: $T1, b: $T2)->bool { return !(a<b); };
-inline operator($T1)<=($T2) :: fn(a: $T1, b: $T2)->bool { return !(b<a); };
+operator($T1)>($T2) :: inline fn(a: $T1, b: $T2)->bool { return b<a; };
+operator($T1)>=($T2) :: inline fn(a: $T1, b: $T2)->bool { return !(a<b); };
+operator($T1)<=($T2) :: inline fn(a: $T1, b: $T2)->bool { return !(b<a); };
 
 // if operator == is defined, the != is also defined.
-inline operator($T1)!=($T2) :: fn(a: $T1, b: $T2)->bool { return !(b==a); };
+operator($T1)!=($T2) :: inline fn(a: $T1, b: $T2)->bool { return !(b==a); };
 
-operator(float)<(float) : fn(float, float) -> bool = #C lt_float_float;
-operator(float)<(int) : fn(float, int) -> bool = #C lt_float_int;
-operator(float)<(uint) : fn(float, uint) -> bool = #C lt_float_uint;
-operator(int)<(int) : fn(int, int) -> bool = #C lt_int_int;
-operator(int)<(uint) : fn(int, uint) -> bool = #C lt_int_uint;
+operator(float)<(float) : fn(float, float) -> bool = #C "lt_float_float";
+operator(float)<(int) : fn(float, int) -> bool = #C "lt_float_int";
+operator(float)<(uint) : fn(float, uint) -> bool = #C "lt_float_uint";
+operator(int)<(int) : fn(int, int) -> bool = #C "lt_int_int";
+operator(int)<(uint) : fn(int, uint) -> bool = #C "lt_int_uint";
 
-operator(float)==(float) : fn(float, float) -> bool = #C eq_float_float;
-operator(float)==(int) : fn(float, int) -> bool = #C eq_float_int;
-operator(float)==(uint) : fn(float, uint) -> bool = #C eq_float_uint;
-operator(int)==(int) : fn(int, int) -> bool = #C eq_int_int;
-operator(int)==(uint) : fn(int, uint) -> bool = #C eq_int_uint;
-operator(bool)==(bool) : fn(bool, bool) -> #C eq_bool_bool;
+operator(float)==(float) : fn(float, float) -> bool = #C "eq_float_float";
+operator(float)==(int) : fn(float, int) -> bool = #C "eq_float_int";
+operator(float)==(uint) : fn(float, uint) -> bool = #C "eq_float_uint";
+operator(int)==(int) : fn(int, int) -> bool = #C "eq_int_int";
+operator(int)==(uint) : fn(int, uint) -> bool = #C "eq_int_uint";
+operator(bool)==(bool) : fn(bool, bool) -> #C "eq_bool_bool";
 
-operator !(bool) : fn(bool) -> bool = #C not_bool;
+operator !(bool) : fn(bool) -> bool = #C "not_bool";
 
-operator(bool)and(bool) : fn(bool, bool) -> bool = #C and_bool_bool;
-operator(bool)or(bool) : fn(bool, bool) -> bool = #C or_bool_bool;
-operator(bool)xor(bool) : fn(bool, bool) -> bool = #C xor_bool_bool;
+operator(bool)and(bool) : fn(bool, bool) -> bool = #C "and_bool_bool";
+operator(bool)or(bool) : fn(bool, bool) -> bool = #C "or_bool_bool";
+operator(bool)xor(bool) : fn(bool, bool) -> bool = #C "xor_bool_bool";
 
 operator(bool)nand(bool) :: fn(a : bool, b : bool) -> bool { return !(a and b); };
 operator(bool)nor(bool) :: fn(a : bool, b : bool) -> bool { return !(a or b); };
@@ -91,9 +91,9 @@ operator(bool)xnor(bool) :: fn(a : bool, b : bool) -> bool { return (a == b); };
 
 // C equivalent to []$T: Seq*, u64 data_size
 
-operator([]$T)[uint] : fn([]$T, uint)->*T = #C static_seq_index;
-operator([..]$T)[uint] : fn([]$T, uint)->*T = #C dynamic_seq_index;
-// operator([$K]$T)[K] : fn([$K]$T, K)->*T = #C dynamic_map_index; // TODO
+operator([]$T)[uint] : fn([]$T, uint)->*T = #C "static_seq_index";
+operator([..]$T)[uint] : fn([]$T, uint)->*T = #C "dynamic_seq_index";
+// operator([$K]$T)[K] : fn([$K]$T, K)->*T = #C "dynamic_map_index"; // TODO
 
 
 
@@ -101,9 +101,9 @@ operator([..]$T)[uint] : fn([]$T, uint)->*T = #C dynamic_seq_index;
 
 // C equivalent to string: String (alias to char*)
 
-operator(string)+(string) : fn(string, string)->string = #C string_concat;
-operator(string)<(string) : fn(string, string)->bool = #C lt_string_string;
-operator(string)==(string) : fn(string, string)->bool = #C eq_string_string;
+operator(string)+(string) : fn(string, string)->string = #C "string_concat";
+operator(string)<(string) : fn(string, string)->bool = #C "lt_string_string";
+operator(string)==(string) : fn(string, string)->bool = #C "eq_string_string";
 
 
 

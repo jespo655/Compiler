@@ -3,37 +3,74 @@
 
 // Types
 
-typedef char i8;
-typedef short i16;
-typedef int i32;
-typedef long long i64;
+typedef char cb_i8;
+typedef short cb_i16;
+typedef int cb_i32;
+typedef long long cb_i64;
 
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
-typedef unsigned long long u64;
+typedef unsigned char cb_u8;
+typedef unsigned short cb_u16;
+typedef unsigned int cb_u32;
+typedef unsigned long long cb_u64;
 
-typedef float f32;
-typedef double f64;
+typedef float cb_f32;
+typedef double cb_f64;
 
-typedef i64 cb_int;
-typedef u64 cb_uint;
-typedef f64 cb_float;
+typedef cb_i64 cb_int;
+typedef cb_u64 cb_uint;
+typedef cb_f64 cb_float;
+typedef cb_u64 cb_type;
 
-typedef u8 byte;
-typedef byte cb_bool;
-#define true 1
-#define false 0
+typedef cb_u8 cb_byte;
+typedef cb_byte cb_bool;
+const cb_bool true = 1;
+const cb_bool false = 0;
 
 typedef struct {
-    u64 length;
-    byte* data;
+    cb_u64 length;
+    cb_byte* data;
 } Seq;
-
 
 typedef char* String; // \0-terminated sequence of UTF-8 characters
 
+typedef struct {
+    cb_f64 start;
+    cb_f64 end;
+} Range;
+
+typedef struct {
+    cb_type type;
+    void* value;
+} Any;
+
 // struct Map {}; // TODO
+
+// This list should be extended in the compiled program with all used special types
+#define TYPE_i8 0
+#define TYPE_i16 1
+#define TYPE_i32 2
+#define TYPE_i64 3
+#define TYPE_u8 4
+#define TYPE_u16 5
+#define TYPE_u32 6
+#define TYPE_u64 7
+#define TYPE_f32 8
+#define TYPE_f64 9
+#define TYPE_string 10
+#define TYPE_Range 11
+#define TYPE_Any 12
+
+// TYPE_Seq
+// TYPE_Ptr
+
+
+
+
+
+
+
+
+
 
 
 
@@ -94,7 +131,7 @@ void xor_bool_bool(cb_bool a, cb_bool b, cb_bool* __retval) { *__retval = a ^ b;
 
 /** Sequences **/
 
-u64 closest_higher_power_of_2(u64 v)
+cb_u64 closest_higher_power_of_2(cb_u64 v)
 {
     v--;
     v |= v >> 1;
@@ -107,46 +144,46 @@ u64 closest_higher_power_of_2(u64 v)
     return v;
 }
 
-u64 dynamic_seq_capacity(Seq* seq)
+cb_u64 dynamic_seq_capacity(Seq* seq)
 {
-    u64 v = seq->length<16?16:seq->length;
+    cb_u64 v = seq->length<16?16:seq->length;
     return closest_higher_power_of_2(v);
 }
 
-void resize_seq(Seq* seq, u64 data_size, u64 length) {
+void resize_seq(Seq* seq, cb_u64 data_size, cb_u64 length) {
     if (length < seq->length) {
         // TODO - requires proper deletion of structs (with owning pointers and that kind of stuff)
     } else if (length > dynamic_seq_capacity(seq)) {
-        u64 new_capacity = closest_higher_power_of_2(length);
+        cb_u64 new_capacity = closest_higher_power_of_2(length);
         void* new_data = malloc(new_capacity);
         memcpy(new_data, seq->data, seq->length);
         memset(new_data+seq->length*data_size, 0, (new_capacity-seq->length)*data_size); // this should be default constructors for that type
         free(seq->data);
-        seq->data = (byte*)new_data;
+        seq->data = (cb_byte*)new_data;
         seq->length = length;
     }
 }
 
-void static_seq_index(Seq* seq, u64 data_size, cb_uint index, byte** __retval) {
+void static_seq_index(Seq* seq, cb_u64 data_size, cb_uint index, cb_byte** __retval) {
     // assert(index < length);
     *__retval = seq->data + index*data_size;
 }
 
-void dynamic_seq_index(Seq* seq, u64 data_size, cb_uint index, byte** __retval) {
+void dynamic_seq_index(Seq* seq, cb_u64 data_size, cb_uint index, cb_byte** __retval) {
     if (seq->data == NULL) {
-        u64 new_capacity = closest_higher_power_of_2(index+1);
-        seq->data = (byte*)malloc(new_capacity);
+        cb_u64 new_capacity = closest_higher_power_of_2(index+1);
+        seq->data = (cb_byte*)malloc(new_capacity);
         // assert(seq->data != NULL);
         seq->length = index+1;
         memset(seq->data, 0, new_capacity*data_size); // this should be default constructors for that type
     } else if (index >= seq->length && index >= dynamic_seq_capacity(seq)) {
-        u64 new_capacity = closest_higher_power_of_2(index+1);
+        cb_u64 new_capacity = closest_higher_power_of_2(index+1);
         void* new_data = malloc(new_capacity);
         // assert(new_data != NULL);
         memcpy(new_data, seq->data, seq->length);
         memset(new_data+seq->length*data_size, 0, (new_capacity-seq->length)*data_size); // this should be default constructors for that type
         free(seq->data);
-        seq->data = (byte*)new_data;
+        seq->data = (cb_byte*)new_data;
         seq->length = index+1;
     }
     *__retval = seq->data + index * data_size;
@@ -159,13 +196,13 @@ void dynamic_seq_index(Seq* seq, u64 data_size, cb_uint index, byte** __retval) 
 /** Strings **/
 
 void string_concat(String a, String b, String* __retval) {
-    u64 a_len = strlen(a);
-    u64 b_len = strlen(b);
-    free(__retval);
-    __retval = malloc(a_len+b_len+1);
-    memcpy(__retval, a, a_len);
-    memcpy(__retval+a_len, b, b_len);
-    __retval[a_len+b_len] = '\0';
+    cb_u64 a_len = strlen(a);
+    cb_u64 b_len = strlen(b);
+    free(*__retval);
+    *__retval = (String)malloc(a_len+b_len+1);
+    memcpy(*__retval, a, a_len);
+    memcpy((*__retval)+a_len, b, b_len);
+    (*__retval)[a_len+b_len] = '\0';
 }
 
 void lt_string_string(String a, String b, cb_bool* __retval) { *__retval = strcmp(a, b) < 0; }
@@ -174,8 +211,59 @@ void eq_string_string(String a, String b, cb_bool* __retval) { *__retval = strcm
 
 
 
+/** Memory allocation **/
 
-// int main() {}
+void alloc(cb_u64 size, void** ptr) {
+    free(*ptr);
+    ptr = malloc(size);
+    memset(ptr, 0, size);
+}
+
+
+
+
+typedef void(*Destructor)(void*);
+
+void destroy_string(void* ptr) {
+    // all strings are heap allocated
+    free(*(String*)ptr);
+}
+
+void destroy_sharing_ptr(void* ptr) {
+    // do nothing
+}
+
+void destroy_owning_ptr(void* ptr) {
+    // free the object
+    free(*(void**)ptr);
+}
+
+void destroy_seq(Seq* seq, Destructor destr) {
+    int i;
+    for (i = 0; i < seq->length; ++i) {
+        destr(&seq->data[i]);
+    }
+}
+void destroy_dynamic_seq(Seq* seq, Destructor destr) {
+    destroy_seq(seq, destr);
+    free(seq->data);
+}
+
+
+
+void destroy_any(Any* any) {
+    switch(any->type) {
+        case TYPE_string: {
+            destroy_seq(((Seq*)any->value), destroy_string);
+        }
+    }
+}
+
+
+
+
+
+int main() {}
 
 
 
