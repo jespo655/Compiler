@@ -1,0 +1,13 @@
+
+// This file contains sample code, for parsing testing purposes.
+
+typeof :: inline fn(t : $T) -> type
+#modify
+{
+    while (T == any) {
+        T = T.type;
+    }
+}
+{
+    return T;
+};

@@ -127,7 +127,7 @@ struct Token
 
     bool is_eof() const { return ::is_eof(type); }
 
-    std::string toS() {
+    std::string toS() const {
         std::ostringstream oss;
         oss << token;
         oss << " (" << ::toS(type) << ")";
