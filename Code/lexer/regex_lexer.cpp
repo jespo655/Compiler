@@ -61,6 +61,8 @@ std::regex compiler_rx(R"(^(\#[a-zA-Z]\w*[\?\!]*)\s*)"); // same as identifier b
 std::regex symbol_rx(R"(^(\*|\/|\+|\%|==|<=|>=|<|>|!=|=|:|\_|\(|\)|\[|\]|\{|\}|\;|\,|\.\.\.|\.\.|\.|\->|\-|\$|\?|\!|\&|\#)\s*)"); // Pseudo-sorted, long symbols should be first in the rx (e.g. '..' must be before '.')
 std::regex keyword_rx(R"(^(for|in|by|if|elsif|else|then|while|fn|return|cast|struct|defer|inline|operator)\b\s*)");
 
+// Additional possible keywords: implicit_cast, const
+
 std::regex bool_rx(R"("^(true|false)\b\s*)");
 std::regex string_rx(R"(^\"(([^\\]*?(\\.)*?)*?)\"\s*)");
 
