@@ -1,3 +1,4 @@
+#include "lexer.h"
 #include <regex>
 #include "../parser/token.h"
 #include <sstream> // ostringstream
@@ -37,18 +38,11 @@ Approach:
     For HERE-string regex R"((\w+\b)(.*?)\b\1\b)" several lines need to be concatenated. Read one more line and concat until a match is found.
 
 
-
-TODO: All token contexts are wrong - it doesn't take whitespace into condsideration
-
-Ex: current context positions:
-    ^token token     token$
-     ^    ^     ^
-Proper positions:
-    ^token token     token$
-     ^     ^         ^
-Solution: include whitespace in regexes AFTER matched token instead of before
-          ignore leading whitespace explicitly at the beginning of each line
-
+Naming:
+    A scanner reads files but doesn't process the text.
+    A tokenizer splits the text into tokens.
+    A lexer splits the text into tokens and adds additional information, such as token type and context.
+Conclusion: This is a lexer.
 
 */
 
@@ -98,7 +92,7 @@ bool next_line(std::string& buffer, std::istream& input, Token_context& context)
 
 
 
-// retrns number of characters consumed
+// returns number of characters consumed
 bool try_match(std::string& str, Token& token, std::vector<Token>& tokens, const std::regex& rx, const Token_type& type, int capture_group = 1) {
     std::smatch match;
     if (regex_search(str, match, rx)) {
@@ -113,12 +107,10 @@ bool try_match(std::string& str, Token& token, std::vector<Token>& tokens, const
 }
 
 
-std::vector<Token> read_tokens(std::istream& input, const std::string& file_name)
+std::vector<Token> read_tokens(std::istream& input, Token_context initial_context)
 {
     Token t;
-    t.context.line = 0;
-    t.context.position = 0;
-    t.context.file = file_name;
+    t.context = initial_context;
 
     std::string current_line = "";
     std::vector<Token> tokens;
@@ -132,6 +124,11 @@ std::vector<Token> read_tokens(std::istream& input, const std::string& file_name
 
         if (regex_match(current_line, match, only_whitespace_rx)) {
             if (!next_line(current_line, input, t.context)) return tokens;
+            if (initial_context.line != 0 || initial_context.position != 0) {
+                t.context = initial_context;
+                initial_context.line = 0;
+                initial_context.position = 0;
+            }
             continue;
         }
 
@@ -251,12 +248,20 @@ void add_eof_token(std::vector<Token>& tokens, const std::string& file_name)
 }
 
 
-std::vector<Token> get_tokens_from_string(const std::string& source, const std::string& string_name)
+
+std::vector<Token> get_tokens_from_string(const std::string& source, const Token_context& initial_context)
 {
     std::istringstream iss{source};
-    std::vector<Token> tokens = read_tokens(iss, string_name);
-    add_eof_token(tokens, string_name);
+    std::vector<Token> tokens = read_tokens(iss, initial_context);
+    add_eof_token(tokens, initial_context.file);
     return tokens;
+}
+
+std::vector<Token> get_tokens_from_string(const std::string& source, const std::string& string_name)
+{
+    Token_context initial_context;
+    initial_context.file = string_name;
+    return get_tokens_from_string(source, initial_context);
 }
 
 std::vector<Token> get_tokens_from_file(const std::string& source_file)
@@ -265,7 +270,9 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
     file.open(source_file);
     std::vector<Token> tokens;
     if (file.is_open()) {
-        tokens = read_tokens(file, source_file);
+        Token_context initial_context;
+        initial_context.file = source_file;
+        tokens = read_tokens(file, initial_context);
     } else {
         std::cout << "Unable to open file \"" << source_file << "\"" << std::endl;
     }
@@ -382,7 +389,7 @@ void print_tokens(const std::vector<Token>& tokens) {
     }
     std::cout << "-- List of tokens: --\n";
     for (int i = 0; i < tokens.size(); ++i) {
-        std::cout << tokens[i].context.toS() << tokens[i].toS() << std::endl;
+        std::cout << tokens[i].context.toS() << " " << tokens[i].toS() << std::endl;
     }
     std::cout << std::endl;
 }
@@ -402,7 +409,12 @@ int main(int argc, char** argv) {
 
 
 // THIS PERFECTLY REPRESENTS WHY HERE STRINGS IS A GOOD IDEA
-    std::vector<Token> tokens = get_tokens_from_string("\n\
+    Token_context tc;
+    tc.file = __FILE__;
+    tc.line = 417;
+    tc.position = 57;
+
+    std::vector<Token> tokens = get_tokens_from_string("asd\n\
 typeof :: inline fn(t : $T) -> type\n\
 #modify\n\
 {\n\
@@ -413,7 +425,7 @@ typeof :: inline fn(t : $T) -> type\n\
 {\n\
     return /* COMMENT! */ T;\n\
 };",
-"random string");
+tc);
     print_tokens(tokens);
 }
 
