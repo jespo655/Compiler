@@ -24,17 +24,7 @@ Drawbacks:
     * Harder to implement proper UTF-8 compliance (maybe, needs more research).
 
 
-Approach 1:
-    Read one line at the time from the file
-    Use single-token regex, one token at the time
-    Ensure that the match prefix is empty
-    Pick out the token with match[0]
-    Do some additional analysis to determine the type of token.
-
-    Tokens that cannot be read will be collected in the match prefix.
-
-
-Approach 2:
+Approach:
     Read one line at the time from the file
     Use several single-token regexes of different token types
     Use start of line anchor and check for whitespace, then capture group around the wanted token.
@@ -46,75 +36,42 @@ Approach 2:
     NOTE:
     For HERE-string regex R"((\w+\b)(.*?)\b\1\b)" several lines need to be concatenated. Read one more line and concat until a match is found.
 
+
+
+TODO: All token contexts are wrong - it doesn't take whitespace into condsideration
+
+Ex: current context positions:
+    ^token token     token$
+     ^    ^     ^
+Proper positions:
+    ^token token     token$
+     ^     ^         ^
+Solution: include whitespace in regexes AFTER matched token instead of before
+          ignore leading whitespace explicitly at the beginning of each line
+
+
 */
 
 
 // \w <=> [a-zA-z0-9_]
 
+std::regex only_whitespace_rx(R"(^\s*$)");
+std::regex whitespace_rx(R"(^\s+)");
 
-std::regex identifier_rx(R"(^\s*([a-zA-Z]\w*[\?\!]*))");
-std::regex int_rx(R"(^\s*(\d+))"); // 1237
-std::regex float_rx(R"(^\s*(\d+\.\d+))"); // 123.55324, might be expanded with exponent and other standard things
-std::regex here_string_rx(R"(^\s*\b(\w+)\b(.*?)\b\1\b)"); // should use capture group 2
-std::regex compiler_rx(R"(^\s*(\#[a-zA-Z]\w*[\?\!]*))"); // same as identifier but with leading '#'
+std::regex identifier_rx(R"(^([a-zA-Z]\w*[\?\!]*)\s*)");
+std::regex int_rx(R"(^(\d+)\s*)"); // 1237
+std::regex float_rx(R"(^(\d+\.\d+)\s*)"); // 123.55324, might be expanded with exponent and other standard things
+std::regex here_string_rx(R"(^\b(\w+)\b(.*?)\b\1\b\s*)"); // should use capture group 2
+std::regex compiler_rx(R"(^(\#[a-zA-Z]\w*[\?\!]*)\s*)"); // same as identifier but with leading '#'
 
-/*
-    // Symbols
+std::regex symbol_rx(R"(^(\*|\/|\+|\%|==|<=|>=|<|>|!=|=|:|\_|\(|\)|\[|\]|\{|\}|\;|\,|\.\.\.|\.\.|\.|\->|\-|\$|\?|\!|\&|\#)\s*)"); // Pseudo-sorted, long symbols should be first in the rx (e.g. '..' must be before '.')
+std::regex keyword_rx(R"(^(for|in|by|if|elsif|else|then|while|fn|return|cast|struct|defer|inline|operator)\b\s*)");
 
-    // infix
-    |\*|\/|\+|\-|\%
+std::regex bool_rx(R"("^(true|false)\b\s*)");
+std::regex string_rx(R"(^\"(([^\\]*?(\\.)*?)*?)\"\s*)");
 
-    // comparison
-    |==|<|>|<=|>=|!=
-
-    // assignment
-    // can be prefixed with an infix operator for direct assignment (like +=)
-    |=
-
-    // declaration
-    |:
-
-    // comments
-    |\/\/
-    |\/\*
-    |\*\/
-
-    // cast operator
-    |_
-
-    // scope stuff
-    |\(|\)|\[|\]|\{|\}
-
-    // other
-    |;|,|\.|\.\.|->|$
-
-    // reserved for future use
-    |?|!|&|#
-*/
-std::regex symbol_rx(R"(^\s*(\*|\/|\+|\%|==|<=|>=|<|>|!=|=|:|\_|\(|\)|\[|\]|\{|\}|\;|\,|\.\.\.|\.\.|\.|\->|\-|\$|\?|\!|\&|\#))"); // Pseudo-sorted, long symbols should be first in the rx (e.g. '..' must be before '.')
-
-/*
-    // Keywords
-
-    |for|in|by
-    |if|elsif|else|then
-    |while
-
-    |fn|return
-    |cast
-    |struct
-
-    |defer
-    |operator
-*/
-std::regex keyword_rx(R"(^\s*(for|in|by|if|elsif|else|then|while|fn|return|cast|struct|defer|inline|operator)\b)");
-
-std::regex bool_rx(R"("^\s*(true|false)\b)");
-std::regex string_rx(R"(^\s*\"(([^\\]*?(\\.)*?)*?)\")");
-
-std::regex whitespace_rx(R"(^\s*$)");
-
-std::regex comment_rx(R"(^\s*(\/\/|\/\*|\*\/))");
+std::regex comment_start_rx(R"(^\s*(\/\/|\/\*|\*\/)\s*)");
+std::regex comment_end_rx(R"(^.*?(\/\/|\/\*|\*\/)\s*)");
 
 
 
@@ -123,10 +80,17 @@ std::regex comment_rx(R"(^\s*(\/\/|\/\*|\*\/))");
 
 // returns true if a line could be read.
 // false = error.
-bool next_line(std::string& buffer, std::istream& input)
+bool next_line(std::string& buffer, std::istream& input, Token_context& context)
 {
     if (input.eof()) return false;
     std::getline(input, buffer);
+    context.line++;
+    context.position=1;
+    std::smatch match;
+    if (regex_search(buffer, match, whitespace_rx)) {
+        context.position += match.length();
+        buffer = match.suffix();
+    }
     return true;
 }
 
@@ -159,21 +123,62 @@ std::vector<Token> read_tokens(std::istream& input, const std::string& file_name
     std::string current_line = "";
     std::vector<Token> tokens;
 
-    // check the different regexes
     std::smatch match;
     bool matched;
 
     while(1)  {
 
-        if (regex_match(current_line, match, whitespace_rx)) {
-            t.context.line++;
-            t.context.position=1;
-            if (!next_line(current_line, input)) return tokens;
+        matched = false;
+
+        if (regex_match(current_line, match, only_whitespace_rx)) {
+            if (!next_line(current_line, input, t.context)) return tokens;
             continue;
         }
 
+        if (regex_search(current_line, match, comment_start_rx)) { // before symbol
+            if (match[1] == "//") {
+                current_line = "";
+                continue;
+            }
+            if (match[1] == "*/") {
+                log_error("Unmatched '*/'", t.context);
+                current_line = match.suffix();
+            }
+            if (match[1] == "/*") { // nested block comments
+                Token_context comment_start = t.context;
+
+                int comment_depth = 1;
+                bool comment_error = false;
+                current_line = match.suffix();
+                while (comment_depth > 0) {
+                    if (regex_search(current_line, match, comment_end_rx)) {
+                        t.context.position += match.length();
+                        if (match[1] == "//") {
+                            if (!next_line(current_line, input, t.context)) comment_error = true;
+                        }
+                        else if (match[1] == "/*") {
+                            comment_depth++;
+                            current_line = match.suffix();
+                        }
+                        else if (match[1] == "*/") {
+                            comment_depth--;
+                            current_line = match.suffix();
+                        }
+                    } else {
+                        if (!next_line(current_line, input, t.context)) comment_error = true;
+                    }
+                    if (comment_error) {
+                        log_error("Unmatched '/*' at end of file", t.context);
+                        add_note("Comment started here", comment_start);
+                        return tokens;
+                    }
+                }
+            }
+            matched = true;
+        }
+
         if (try_match(current_line, t, tokens, compiler_rx, Token_type::COMPILER_COMMAND)) { // before symbol
-            if (t.token == "#string") {
+            if (t.token == "#string") { // Here-string
                 // if a match cannot be found on the current line, read a new line, concat (including newline), try again
                 if(!try_match(current_line, t, tokens, here_string_rx, Token_type::STRING)) {
 
@@ -187,22 +192,20 @@ std::vector<Token> read_tokens(std::istream& input, const std::string& file_name
                     std::regex delimiter_rx("^(.*?)\\b"+delimiter+"\\b"); // build delimiter regex
                     std::ostringstream sb(match.suffix()); // start building the resulting here string
 
-                    int added_lines = 0;
+                    Token_context new_context = t.context; // save the old context for later
+
                     while(1) {
-                        added_lines++;
-                        if (!next_line(current_line, input)) {
-                            t.context.line += added_lines;
-                            t.context.position = 1;
-                            log_error("Unexpected end of file, expected here-string delimiter '"+delimiter+"'", t.context);
+                        if (!next_line(current_line, input, new_context)) {
+                            log_error("Unexpected end of file, expected here-string delimiter '"+delimiter+"'", new_context);
                             return tokens;
                         }
 
                         if(regex_search(current_line, match, delimiter_rx)) {
                             sb << std::endl << match[1];
                             t.token = sb.str();
-                            tokens.push_back(t);
-                            t.context.line += added_lines;
-                            t.context.position = 1 + match.length();
+                            tokens.push_back(t); // this still has the old context
+                            new_context.position = 1 + match.length();
+                            t.context = new_context; // update to the new context
                             break;
                         }
 
@@ -214,41 +217,7 @@ std::vector<Token> read_tokens(std::istream& input, const std::string& file_name
         }
 
         matched |= try_match(current_line, t, tokens, string_rx, Token_type::STRING);
-
-        if(try_match(current_line, t, tokens, symbol_rx, Token_type::SYMBOL)) {
-            if (t.token == "//") {
-                current_line = "";
-                continue;
-            }
-            if (t.token == "*/") {
-                log_error("Unmatched '*/'", t.context);
-            }
-            if (t.token == "/*") {
-                int comment_depth = 1;
-                bool comment_error = false;
-                while (comment_depth > 0) {
-                    if (regex_search(current_line, match, comment_rx)) {
-                        t.context.position += match.length();
-                        if (t.token == "//") {
-                            t.context.line++;
-                            t.context.position=1;
-                            if (!next_line(current_line, input)) comment_error = true;
-                        }
-                        else if (t.token == "/*") comment_depth++;
-                        else if (t.token == "*/") comment_depth--;
-                    } else {
-                        t.context.line++;
-                        t.context.position=1;
-                        if (!next_line(current_line, input)) comment_error = true;
-                    }
-                    if (comment_error) {
-                        log_error("Unmatched '/*' at end of file", t.context);
-                        return tokens;
-                    }
-                }
-            }
-            matched = true;
-        }
+        matched |= try_match(current_line, t, tokens, symbol_rx, Token_type::SYMBOL);
 
         matched |= try_match(current_line, t, tokens, bool_rx, Token_type::BOOL); // before identifier
         matched |= try_match(current_line, t, tokens, keyword_rx, Token_type::KEYWORD); // before identifier
@@ -258,7 +227,8 @@ std::vector<Token> read_tokens(std::istream& input, const std::string& file_name
         matched |= try_match(current_line, t, tokens, identifier_rx, Token_type::IDENTIFIER);
 
         if (!matched) {
-            // TODO: @log_error
+            log_error("Could not match token; ignoring until end of line",t.context);
+            current_line = "";
         }
 
     }
@@ -269,20 +239,14 @@ std::vector<Token> read_tokens(std::istream& input, const std::string& file_name
 
 
 
-
-
-
-
-
-
-void add_eof_token(std::vector<Token>& tokens)
+void add_eof_token(std::vector<Token>& tokens, const std::string& file_name)
 {
     Token t;
     t.token = "eof";
     t.type = Token_type::EOF; // this is what everything should break on in the parser
+    t.context.file = file_name;
     t.context.position = 1;
-    if (!tokens.empty())
-        t.context.line = tokens.back().context.line + 1;
+    t.context.line = !tokens.empty() ? tokens.back().context.line + 1 : 1;
     tokens.push_back(t);
 }
 
@@ -291,7 +255,7 @@ std::vector<Token> get_tokens_from_string(const std::string& source, const std::
 {
     std::istringstream iss{source};
     std::vector<Token> tokens = read_tokens(iss, string_name);
-    add_eof_token(tokens);
+    add_eof_token(tokens, string_name);
     return tokens;
 }
 
@@ -306,7 +270,7 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
         std::cout << "Unable to open file \"" << source_file << "\"" << std::endl;
     }
     file.close();
-    add_eof_token(tokens);
+    add_eof_token(tokens, source_file);
     return tokens;
 }
 
@@ -417,9 +381,8 @@ void print_tokens(const std::vector<Token>& tokens) {
         return;
     }
     std::cout << "-- List of tokens: --\n";
-    std::cout << tokens[0].toS();
-    for (int i = 1; i < tokens.size(); ++i) {
-        std::cout << ", " << tokens[0].toS();
+    for (int i = 0; i < tokens.size(); ++i) {
+        std::cout << tokens[i].context.toS() << tokens[i].toS() << std::endl;
     }
     std::cout << std::endl;
 }
@@ -434,9 +397,29 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    std::vector<Token> tokens = get_tokens_from_file(argv[1]);
+    // std::vector<Token> tokens = get_tokens_from_file(argv[1]);
+    // print_tokens(tokens);
+
+
+// THIS PERFECTLY REPRESENTS WHY HERE STRINGS IS A GOOD IDEA
+    std::vector<Token> tokens = get_tokens_from_string("\n\
+typeof :: inline fn(t : $T) -> type\n\
+#modify\n\
+{\n\
+    while (T == any) {\n\
+        T = T.type; /* COMMENT! // */\n\
+    */ }\n\
+}\n\
+{\n\
+    return /* COMMENT! */ T;\n\
+};",
+"random string");
     print_tokens(tokens);
 }
+
+
+
+
 
 #endif
 

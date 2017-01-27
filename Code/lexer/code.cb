@@ -1,13 +1,30 @@
 
 // This file contains sample code, for parsing testing purposes.
 
+/* block comment */
+    // indented comment
+    /*
+        several
+        line
+        comment
+
+        /* */
+    */
+
+
 typeof :: inline fn(t : $T) -> type
 #modify
 {
     while (T == any) {
-        T = T.type;
-    }
+        T = T.type; /* COMMENT! // */
+    */ }
 }
 {
-    return T;
+    return /* COMMENT! */ T;
 };
+
+identifier_?
+test ¤ test
+
+
+
