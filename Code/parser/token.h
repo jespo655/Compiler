@@ -9,7 +9,7 @@
 
 struct Token_context
 {
-    int line = 1;
+    int line = 0;
     int position = 0;
     std::string file{};
 
@@ -129,7 +129,7 @@ struct Token
 
     std::string toS() const {
         std::ostringstream oss;
-        oss << token;
+        oss << "'" << token << "'";
         oss << " (" << ::toS(type) << ")";
         return oss.str();
     }
