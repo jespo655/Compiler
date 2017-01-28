@@ -34,12 +34,12 @@ struct Token_context
 
     std::string toS() const {
         std::ostringstream oss;
+
         if (!file.empty()) {
-            oss << "(In " << file << ", ";
-        } else {
-            oss << "(At ";
+            oss << file << ':';
         }
-        oss << "line " << line << ", position " << position << ")";
+        oss << line << ':' << position;
+
         return oss.str();
     }
 
