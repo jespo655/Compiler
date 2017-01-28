@@ -123,7 +123,7 @@ print :: fn($s : string, args : any...)
         if (escape = true) {
             modified_s += byte; // slow string concat. I need a proper version of a string_builder
             escape = false;
-        } elsif (byte == "\") {
+        } elsif (byte == "\\") {
             modified_s += byte; // slow string concat. I need a proper version of a string_builder
             escape = true;
         } elif (byte == "%") {
@@ -165,11 +165,9 @@ print :: fn($s : string, args : any...)
         }
 
 
-
     }
 
-
-            if (arg_index >= args.length) {
+    // if (arg_index >= args.length) {
     //
     //         }
     //         // TODO: special case for struct and function types
