@@ -3,11 +3,11 @@
 #include "../parser/token.h"
 #include <sstream> // ostringstream
 #include <fstream> // reading from files
+#include "../utilities/error_handler.h"
 
 #include <string> // test suite
 #include <vector> // test suite
 #include "../utilities/assert.h" // test suite
-#include "../utilities/error_handler.h"
 #include <iostream> // debugging
 
 #define RX_TEST
@@ -15,6 +15,7 @@
 #ifdef EOF
 #undef EOF
 #endif
+
 /*
 
 An attempt on a more robust and clean lexer, easier to maintain and extend: Do all parsing with regex.
@@ -24,7 +25,6 @@ Drawbacks:
     * Probably worse efficiency for most code (might not be significant).
     * Harder to implement proper UTF-8 compliance (maybe, needs more research).
 
-
 Approach:
     Read one line at the time from the file
     Use several single-token regexes of different token types
@@ -33,10 +33,8 @@ Approach:
 
     Tokens that cannot be read will not match any of these alternatives.
 
-
     NOTE:
     For HERE-string regex R"((\w+\b)(.*?)\b\1\b)" several lines need to be concatenated. Read one more line and concat until a match is found.
-
 
 Naming:
     A scanner reads files but doesn't process the text.
@@ -44,8 +42,9 @@ Naming:
     A lexer splits the text into tokens and adds additional information, such as token type and context.
 Conclusion: This is a lexer.
 
-*/
+TODO: Error messages for incomplete strings
 
+*/
 
 // \w <=> [a-zA-z0-9_]
 
@@ -55,23 +54,21 @@ std::regex whitespace_rx(R"(^\s+)");
 std::regex identifier_rx(R"(^([a-zA-Z]\w*[\?\!]*)\s*)");
 std::regex int_rx(R"(^(\d+)\s*)"); // 1237
 std::regex float_rx(R"(^(\d+\.\d+)\s*)"); // 123.55324, might be expanded with exponent and other standard things
-std::regex here_string_rx(R"(^\b(\w+)\b(.*?)\b\1\b\s*)"); // should use capture group 2
 std::regex compiler_rx(R"(^(\#[a-zA-Z]\w*[\?\!]*)\s*)"); // same as identifier but with leading '#'
-
-std::regex symbol_rx(R"(^(\*|\/|\+|\%|==|<=|>=|<|>|!=|=|:|\_|\(|\)|\[|\]|\{|\}|\;|\,|\.\.\.|\.\.|\.|\->|\-|\$|\?|\!|\&|\#)\s*)"); // Pseudo-sorted, long symbols should be first in the rx (e.g. '..' must be before '.')
-std::regex keyword_rx(R"(^(for|in|by|if|elsif|else|then|while|fn|return|cast|struct|defer|inline|operator)\b\s*)");
-
-// Additional possible keywords: implicit_cast, const
-
-std::regex bool_rx(R"("^(true|false)\b\s*)");
-std::regex string_rx(R"(^\"(([^\\]*?(\\.)*?)*?)\"\s*)");
 
 std::regex comment_start_rx(R"(^\s*(\/\/|\/\*|\*\/)\s*)");
 std::regex comment_end_rx(R"(^.*?(\/\/|\/\*|\*\/)\s*)");
 
+std::regex symbol_rx(R"(^(\*|\/|\+|\%|==|<=|>=|<|>|!=|=|:|\_|\(|\)|\[|\]|\{|\}|\;|\,|\.\.\.|\.\.|\.|\->|\-|\$|\?|\!|\&|\#|\')\s*)"); // Pseudo-sorted, long symbols should be first in the rx (e.g. '..' must be before '.')
 
+// booleans and keywords are subsets of identifiers.
+std::regex bool_rx(R"(^(true|false)$)");
+std::regex keyword_rx(R"(^(for|in|by|if|elsif|else|then|while|fn|return|cast|struct|defer|inline|operator)$)");
+// Additional possible keywords: implicit_cast, const
 
-
+std::regex string_start_rx(R"(^\")");
+std::regex string_rx(R"(^\"([^\\\"]*(\\.[^\\\"]*)*)\"\s*)"); // currently has to be on a single line only
+std::regex here_string_rx(R"(^\b([a-zA-Z]\w*[\?\!]*)\b(.*?)\b\1\b\s*)"); // Delimiter is a regular identifier. Should use capture group 2 to capture the string
 
 
 // returns true if a line could be read.
@@ -90,11 +87,7 @@ bool next_line(std::string& buffer, std::istream& input, Token_context& context)
     return true;
 }
 
-
-
-
-
-// returns number of characters consumed
+// returns true if matched
 bool try_match(std::string& str, Token& token, std::vector<Token>& tokens, const std::regex& rx, const Token_type& type, int capture_group = 1) {
     std::smatch match;
     if (regex_search(str, match, rx)) {
@@ -144,8 +137,7 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
                 current_line = match.suffix();
             }
             if (match[1] == "/*") { // nested block comments
-                Token_context comment_start = t.context;
-
+                Token_context comment_start = t.context; // remember in case of error
                 int comment_depth = 1;
                 bool comment_error = false;
                 current_line = match.suffix();
@@ -173,10 +165,11 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
                     }
                 }
             }
-            matched = true;
+            continue;
         }
 
         if (try_match(current_line, t, tokens, compiler_rx, Token_type::COMPILER_COMMAND)) { // before symbol
+
             if (t.token == "#string") { // Here-string
                 // if a match cannot be found on the current line, read a new line, concat (including newline), try again
                 if(!try_match(current_line, t, tokens, here_string_rx, Token_type::STRING)) {
@@ -212,31 +205,43 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
                     }
                 }
             }
-            matched = true;
+            continue;
         }
 
-        matched |= try_match(current_line, t, tokens, string_rx, Token_type::STRING);
-        matched |= try_match(current_line, t, tokens, symbol_rx, Token_type::SYMBOL);
-
-        matched |= try_match(current_line, t, tokens, bool_rx, Token_type::BOOL); // before identifier
-        matched |= try_match(current_line, t, tokens, keyword_rx, Token_type::KEYWORD); // before identifier
-
-        matched |= try_match(current_line, t, tokens, int_rx, Token_type::INTEGER);
-        matched |= try_match(current_line, t, tokens, float_rx, Token_type::FLOAT);
-        matched |= try_match(current_line, t, tokens, identifier_rx, Token_type::IDENTIFIER);
-
-        if (!matched) {
-            log_error("Could not match token; ignoring until end of line",t.context);
-            current_line = "";
+        if (regex_search(current_line, string_start_rx)) {
+            if (!try_match(current_line, t, tokens, string_rx, Token_type::STRING)) {
+                log_error("Missing '\"' at end of string", t.context);
+                add_note("Strings must be terminated before end of line.");
+                current_line = "";
+            }
+            continue;
         }
 
+        if(try_match(current_line, t, tokens, symbol_rx, Token_type::SYMBOL)) continue;
+        if(try_match(current_line, t, tokens, float_rx, Token_type::FLOAT)) continue;
+        if(try_match(current_line, t, tokens, int_rx, Token_type::INTEGER)) continue;
+
+        if (regex_search(current_line, match, identifier_rx)) {
+            t.token = match[1];
+            if (regex_match(t.token, keyword_rx)) {
+                t.type = Token_type::KEYWORD;
+            } else if (regex_match(t.token, bool_rx)) {
+                t.type = Token_type::BOOL;
+            } else {
+                t.type = Token_type::IDENTIFIER;
+            }
+            tokens.push_back(t);
+            t.context.position += match.length();
+            current_line = match.suffix();
+            continue;
+        }
+
+        // We didn't match anything -> error.
+        log_error("Could not match token; ignoring until end of line.",t.context);
+        add_note("Ignored characters: "+current_line);
+        current_line = "";
     }
 }
-
-
-
-
-
 
 void add_eof_token(std::vector<Token>& tokens, const std::string& file_name)
 {
@@ -248,8 +253,6 @@ void add_eof_token(std::vector<Token>& tokens, const std::string& file_name)
     t.context.line = !tokens.empty() ? tokens.back().context.line + 1 : 1;
     tokens.push_back(t);
 }
-
-
 
 std::vector<Token> get_tokens_from_string(const std::string& source, const Token_context& initial_context)
 {
@@ -282,6 +285,7 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
     add_eof_token(tokens, source_file);
     return tokens;
 }
+
 
 
 
@@ -369,8 +373,6 @@ void rx_test_suite()
         {"#if", "#include", "#string"},
         "compiler test");
 
-    // print_first_match(string_rx, "\"this is an escaped string \\\" string\" with some extra \"");
-
     rx_test(string_rx,
         "\"this is a string\" with some extra \"",
         {"this is a string"},
@@ -406,34 +408,31 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    // std::vector<Token> tokens = get_tokens_from_file(argv[1]);
+    std::vector<Token> tokens = get_tokens_from_file(argv[1]);
     // print_tokens(tokens);
+    std::cout << "Parsed " << tokens.size() << " tokens." << std::endl;
 
+// // THIS PERFECTLY REPRESENTS WHY HERE STRINGS IS A GOOD IDEA
+//     Token_context tc;
+//     // tc.file = __FILE__;
+//     tc.line = 417;
+//     tc.position = 57;
 
-// THIS PERFECTLY REPRESENTS WHY HERE STRINGS IS A GOOD IDEA
-    Token_context tc;
-    tc.file = __FILE__;
-    tc.line = 417;
-    tc.position = 57;
+//     std::vector<Token> tokens = get_tokens_from_string("asd\n\
+// typeof :: inline fn(t : $T) -> type\n\
+// #modify\n\
+// {\n\
+//     while (T == any) {\n\
+//         T = T.type; /* COMMENT! // */\n\
+//     */ }\n\
+// }\n\
+// {\n\
+//     return /* COMMENT! */ T;\n\
+// };",
+//     tc);
+//     print_tokens(tokens);
 
-    std::vector<Token> tokens = get_tokens_from_string("asd\n\
-typeof :: inline fn(t : $T) -> type\n\
-#modify\n\
-{\n\
-    while (T == any) {\n\
-        T = T.type; /* COMMENT! // */\n\
-    */ }\n\
-}\n\
-{\n\
-    return /* COMMENT! */ T;\n\
-};",
-tc);
-    print_tokens(tokens);
 }
-
-
-
-
 
 #endif
 
