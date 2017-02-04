@@ -1,0 +1,57 @@
+
+
+
+Function implementation:
+
+
+
+
+
+* function type: fn(int,int)->int
+    realiseras i runtime som en egen typ, beroende på argumenttyper (in och ut)
+    (en typ realiseras som en u64 med unique identifier)
+    funktionstyper är globala, oberoende av scope. De måste kunna hittas från var som helst, och samma argumenttyper ska alltid ge samma funktionstyp.
+    Hashmap type.toS() -> id?
+        -> vad händer om man har samma typnamn för flera typer i olika scopes?
+        -> det kan vara bättre att använda typeid för hashning
+
+* function object f:=fn(a:int, b:int)->c:int{ return a+b; }
+    realiseras i runtime som funktionspekare med en speciell funktionstyp
+    Lever i local scope
+        bonus (compile time constant fn): Har speciell data för default values fn(a:int, b:int=0){}
+
+* function call f(1,2);
+        bonus (compile time constant fn): f(b=1,2);
+        bonus (compile time constant fn): f(1); // b=0 default value
+
+
+
+
+* Det är skillnad på funktionspekare och compile time constant functions.
+    funktionspekare har endast typinformation (endast en funktionstyp).
+    compile time constant functions har även tillgång till metainformation om själva funktionsobjektet:
+        variabelnamn
+        default values
+        body (list of statements)
+
+    log_error("Unable to access metadata about function % - the function is not a compile time constant ('::'-declared)", context);
+    add_note("% declared here: ", fn.context)
+
+
+
+bonus:
+* generisk funktion
+    abstract function object
+    Varje gång funktionen anropas skapas en specifik implementation av funktionen
+        - rätt typer sätts in, och funktionen typecheckas igen
+        - då skapas ett function object som i princip är en typecheckad kopia av den generiska funktionen
+
+
+
+* operator overloading
+    samma operatornamn kan ha flera funktionspekare
+    De särskiljs m.h.a. input types
+    Lever i local scope
+
+
+
