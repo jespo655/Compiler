@@ -1,16 +1,13 @@
 #include "lexer.h"
-#include <regex>
 #include "../parser/token.h"
-#include <sstream> // ostringstream
-#include <fstream> // reading from files
 #include "../utilities/error_handler.h"
-
-#include <string> // test suite
-#include <vector> // test suite
-#include "../utilities/assert.h" // test suite
-#include <iostream> // debugging
-
-#define RX_TEST
+#include "../utilities/assert.h"
+#include <regex>
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <iostream> // debugging, error message for unable to open file
 
 #ifdef EOF
 #undef EOF
@@ -298,6 +295,7 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
 
 
 
+#define RX_TEST
 #ifdef RX_TEST
 
 // Test suite
@@ -401,7 +399,8 @@ void print_tokens(const std::vector<Token>& tokens) {
 
 
 int main(int argc, char** argv) {
-    // rx_test_suite();
+    rx_test_suite();
+    return 0;
 
     if (argc != 2) {
         printf("Invalid amount of arguments (%d). Supply a single filename.\n", argc-1);
