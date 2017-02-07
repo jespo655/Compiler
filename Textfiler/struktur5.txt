@@ -27,6 +27,9 @@ Function implementation:
 
 
 
+
+
+
 * Det är skillnad på funktionspekare och compile time constant functions.
     funktionspekare har endast typinformation (endast en funktionstyp).
     compile time constant functions har även tillgång till metainformation om själva funktionsobjektet:
@@ -52,6 +55,54 @@ bonus:
     samma operatornamn kan ha flera funktionspekare
     De särskiljs m.h.a. input types
     Lever i local scope
+
+
+
+
+
+
+
+
+
+
+
+Function metadata hör till function declaration object.
+Det finns alltid där, men går endast att nå genom compile time constant fns (ej genom funktionspekare).
+Om metadata-fn-calls görs på funktionspekare ges varning.
+
+
+
+
+Intressant övning:
+Implementera en VM som kan köra CB-program.
+
+Imitera windows x64 så gott det går
+Skriv logik för register, stack push/pop, subrutin-hopp etc.
+
+Detta kan göra det lättare att översätta till bytecode senare (om det görs rätt)
+
+
+
+
+
+
+
+
+
+
+
+f :: fn(a:int, b:int){};
+f(b=1,a=2);
+
+f :: fn(a:$T=2){};
+f();
+
+f :: fn()
+#modify {
+    print("HW");
+} {};
+
+
 
 
 
