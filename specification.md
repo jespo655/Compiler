@@ -105,6 +105,9 @@ An integer literal is a sequence of digits representing an integer constant. All
 An integer literal can be implicitly casted to any singed or unsigned integer or floating point type, or to the 'flag' type.
 
 
+    <integer> ::= <digit>|<digit><integer>
+    <digit>   ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
 
 
 ## Floaing-point literals
@@ -113,6 +116,7 @@ A floating-point literal is a decimal representation of a floating-point constan
 
 A floating point literal can be implicitly casted to any floating point type.
 
+    <float> ::= <integer> "." <integer>
 
 
 
@@ -126,20 +130,28 @@ Raw string literals are a sequence of characters between double quotes, as in "f
     '\"'    literal double quote
     '\n'    newline
 
+    <string> ::= '"' <text> '"' | '"' <text> "\" <string>
+    <text> ::= <str-character><text> | <str-character>
+    <str-character> := [any UTF-8 code point except '"', "\" and "\n"]
+
 Here-strings are begun with the compiler instruction # string along with a delimiter token followed by whitespace. Any following characters are treated as part of the string until the next delimiter token after whitespace.
 
 Some examples of valid strings are the following.
 
     "This is a raw string literal."
-    # string HERE This is a here-string literal. HERE
+    #string HERE This is a here-string literal. HERE
 
-    # string HERE
+    #string HERE
         Here strings can span several lines.
         Also contain the delimiter token (HERE) if not preceeded by whitespace.
         All newlines and other formatting will be included in the string literal.
     HERE
 
+    <string> ::= "#string " <identifier> <whitespace> <multiline-text> <whitespace> <identifier>
+    <whitespace> ::= " " | "\n" | "\t"
+    <multiline-text> ::= <text> | <text> "\n"
 
+    Note: both identifiers has to be identical, so this is not true CFG.
 
 
 ## Identifiers
@@ -161,7 +173,12 @@ Example of invalid identifiers:
     _starts_with_underscore
     contains?symbol
 
-
+    <identifier> ::= <letter> | <letter><identifier-middle> | <letter><identifier-end>
+    <identifier-middle> ::= <middle-character> | <middle-character><identifier-middle> | <middle-character><identifier-end>
+    <identifier-end> ::= <end-character> | <end-character><identifier-end>
+    <letter> ::= [a-zA-Z]
+    <middle-character> ::= [a-zA-Z0-9_]
+    <end-character> ::= "?" | "!"
 
 
 ## Keywords
@@ -195,7 +212,23 @@ A variable is declared with the following syntax:
     x := 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x := foo();     // x is assigned the return value of the function foo(), computed at run time.
 
+    <decl-expr> ::= <identifier> ":" <type-identifier>
+                 | <identifier> ":" <opt-type-identifier> "=" <value-expr>
+                 | <identifier> "," <decl-expr>
 
+    <value-expr> ::= <variable-expr> | <literal> |
+                  | <value-expr> "," <value-expr>
+                  | <value-expr> <infix-op> <value-expr>
+                  | <value-expr> <suffix-op>
+                  | <prefix-op> <value-expr>
+
+    <variable-expr> ::= <identifier>
+                      | <variable-expr> <variable-infix-op> <variable-expr>
+                      | <variable-expr> <variable-suffix-op>
+                      | <variable-prefix-op> <variable-expr>
+
+    <opt-type-identifier> ::= <type-identifier> | ""
+    <type-identifier> ::= <identifier> | <type-literal>
 
 
 ## Constants
@@ -206,6 +239,11 @@ A constant acts much like a variable but can never change. The value of constant
     x :: 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x :: foo();     // x is assigned the return value of the function foo(), computed at compile time.
 
+    <decl-expr> ::= <identifier> ":" <opt-const-type-identifier> ":" <const-expr>
+    <opt-const-type-identifier> ::= <const-type-identifier> | ""
+    <const-type-identifier> ::= <const-identifier> | <const-type-literal>
+
+    <const-expr> ::= <const-variable-expr> | <literal> | <const-expr> "," <const-expr>
 
 
 
@@ -270,7 +308,8 @@ A static sequence is an fixed size set of elements of a single type. The size is
 
 Static sequences can be accessed with the [] operator. If the index is negative or larger than the size of the sequence, a temporary default intialized value of the corresponding type is returned.
 
-
+    <type-literal> ::= "[" <integer> "]" | <type-literal>
+    <const-type-literal> ::= "[" <integer> "]" | <const-type-literal>
 
 
 ### Dynamic sequences
