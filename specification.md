@@ -239,10 +239,7 @@ A constant acts much like a variable but can never change. The value of constant
     x :: 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x :: foo();     // x is assigned the return value of the function foo(), computed at compile time.
 
-    <decl-expr> ::= <identifier> ":" <opt-const-type-identifier> ":" <const-expr>
-    <opt-const-type-identifier> ::= <const-type-identifier> | ""
-    <const-type-identifier> ::= <const-identifier> | <const-type-literal>
-
+    <decl-expr> ::= <identifier> ":" <opt-type-identifier> ":" <const-expr>
     <const-expr> ::= <const-variable-expr> | <literal> | <const-expr> "," <const-expr>
 
 
@@ -308,9 +305,14 @@ A static sequence is an fixed size set of elements of a single type. The size is
 
 Static sequences can be accessed with the [] operator. If the index is negative or larger than the size of the sequence, a temporary default intialized value of the corresponding type is returned.
 
-    <type-literal> ::= "[" <integer> "]" | <type-literal>
-    <const-type-literal> ::= "[" <integer> "]" | <const-type-literal>
+    <type-literal> ::= "[" <const-expr> "]" | <type-literal>
+    // the const-expr has to evaluate to one integer value
 
+    <seq-literal> ::= "[" <opt-seq-info> <seq-data> "]"
+    <opt-seq-info> ::= <seq-size-info> "," <seq-type-info> ":" | <seq-size-info> ":" | <seq-type-info> ":"
+    <seq-size-info> ::= "size" "=" <const-expr>
+    <seq-type-info> ::= <type-identifier>
+    <seq-data> ::= <value-expr> | "..."
 
 ### Dynamic sequences
 
@@ -318,6 +320,8 @@ A dynamic sequence consists of a header containing the current length, capacity 
 
     s : [..] int = [1, 2, 3, 4, 5];
     s : [..] int = [size=10, int: ...];
+
+    <type-literal> ::= "[" ".." "]" <type-literal>
 
 Dynamic sequences works very similarly to static sequences. They can be accessed with the [] operator. If the index is negative, a temporary default intialized value of the corresponding type is returned. If the index is larger than the current size, the sequence will insert default initialized values until the necessary size is reached, then the requested value is returned.
 
@@ -331,7 +335,11 @@ A map is a set of objects which is indexed with a specific key type. Map types a
     s : [int] int = [1->1, 2->2];
     s : [string] int = ["a"->1, "b"->2];
 
-
+    <type-literal> ::= "[" <type-identifier> "]" <type-identifier>
+    <map-literal> ::= "[" <opt-map-info> <map-data> "]
+    <opt-map-info> ::= <map-type-info> ":" | ""
+    <map-type-info> ::= <type-identifier> "->" <type-identifier>
+    <map-data> ::= <value-expr> "->" <value-expr> | <value-expr> "->" <value-expr> "," <map-data>
 
 
 ### Structs
@@ -343,7 +351,11 @@ A struct type is a sequence of named elements, called fields, each of which has 
         a : int;
         b : float;
         c : string = "Hello";
-    }
+    };
+
+    <type-literal> ::= <struct-literal>
+    <struct-literal> ::= "struct" "{" <struct-data> "}"
+    <struct-data> ::= "" | <decl-expr> ";" <struct-data>
 
 Struct instances can then be created just like for any type.
 
@@ -361,11 +373,35 @@ A function type is defined as a set of in (argument) and out (return) types. A f
     fn(in_type_1, in_type_2, ...) -> out_type_1                         // A function type with a set of in types and one out type
     fn(in_type_1, in_type_2, ...)                                       // A function type with a set of in types but no out type
 
+    <type-literal> ::= <fn-type-literal>
+    <fn-type-literal> ::= "fn" <fn-in-info> <opt-fn-out-info>
+    <fn-in-info> ::= "(" <opt-fn-type-info> ")"
+    <opt-fn-type-info> ::= "" | <fn-type-info>
+    <opt-fn-out-info> ::= "" | "->" <fn-out-info>
+    <fn-out-info> ::= <type-identifier> | "(" <fn-type-info> ")"
+    <fn-type-info> ::= "..." | <type-identifier> | <type-identifier> "," <fn-type-info>
+
+
 A function literal is defined as a block of code that begins with instantiations of the in and out types. All in parameters has to be named. Out parameters can be either named or anonymous. Named parameters can have explicit default values, evaluated compile time when the function literal is created. Some examples of valid function literals are the following:
 
     fn(a: int, b:int)-> c:int { /* function code, using variables a, b and c */ }
     fn(a: int, b:int)-> int { /* ... */ }
     fn(a: int = 1, b:int = 2)-> c:int = 3 { /* ... */ }
+
+    <literal> ::= <fn-literal>
+    <fn-literal> ::= "fn" <fn-literal-in-info> <opt-fn-literal-out-info> <scope>
+
+
+    <fn-literal-in-info> ::= "(" <opt-fn-literal-type-info> ")"
+    <opt-fn-literal-out-info> ::= "" | "->" <fn-literal-out-info>
+    <opt-fn-literal-type-info> ::= "" | <fn-literal-type-info>
+    <fn-literal-type-info> ::= <arg-decl-expr> | <arg-decl-expr> "," <fn-literal-type-info>
+    <arg-decl-expr> ::= <identifier> ":" <opt-type-identifier> | <identifier> ":" <opt-type-identifier> "=" <const-expr>
+    <fn-literal-out-info> ::= <arg-decl-expr> | "(" <fn-literal-type-info> ")"
+    <scope> ::= "{" <statements> "}"
+    <statements> ::= "" | <statement> ";" <statements>
+    <statement> ::= <decl-expr> | <assignment-expr> | <value-expr>
+
 
 Function names are treated just like any other variable or constant. A function variable has the size of a pointer.
 
@@ -373,6 +409,11 @@ Functions can be called using the () operator.
 
     f1 := fn(a:int, b:int)->int { return a+2*b; }; // declared as a variable / function pointer, its value can change at run time
     f1(1, 2); // returns 5
+
+    <fn-call-expr> ::= <identifier> "(" <opt-args> ")"
+    <opt-args> ::= "" | <args>
+    <args> ::= <value-expr> | <value-expr> "," <args>
+
 
 If a function is declared as a constant, additional metadata from the initial function literal can also be used in the function call.
 
@@ -383,6 +424,8 @@ If a function is declared as a constant, additional metadata from the initial fu
     f2(b=0); // a has the explicit default value 3, so this returns 3.
 
 The default value of a function is an empty code block.
+
+    <args> ::= <identifier> "=" <value-expr> | <identifier> "=" <value-expr> "," <args>
 
 Values are by default passed to the function by constant references, and thus all in parameters are treated as constants.
 
@@ -401,6 +444,11 @@ Constant declared functions can also be generic. Generic types are determined at
     f2 :: fn($T : type) -> T { /*...*/ }; // the type $T is determined by a type given as input parameter.
     f2(int); // T is int
     f2(float); // T is float
+
+    <generic-identifier> ::= "$" <identifier>
+    <arg-decl-expr> ::= <generic-identifier> ":" <opt-type-identifier> | <generic-identifier> ":" <opt-type-identifier> "=" <const-expr>
+                     | <identifier> ":" <generic-identifier> | <identifier> ":" <generic-identifier> "=" <const-expr>
+
 
 Even if the generic type is used serveral times in the function declaration, the '$' marker should only be written once. The input parameter marked with the '$' is the one that is responsible for the type inference.
 
@@ -422,6 +470,9 @@ A sharing pointer is pointing to an already existing object, managed by somethin
 
     p1 : *! int = alloc(2);     // p1 is an owning pointer
     p2 : * int = p1;            // p2 is a sharing pointer which points to the object owning by p1
+
+    <type-identifier> ::= "*" <type-identifier> | "*!" <type-identifier>
+
 
 Returning an owning pointer from a function does not move the allocated object. If the returned variable is assigned to a shared pointer, a temporary anonymous owning pointer is created in that scope instead.
 
