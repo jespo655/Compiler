@@ -27,12 +27,11 @@ std::string create_src(std::vector<std::string> includes, std::vector<std::strin
 bool free_dll(dll_handle dll);
 
 // returns nullptr if fn failed to load
+void* load_fn_ptr(dll_handle dll, std::string fn_name);
+
 // the function signature has to be correct for the function to work properly.
 template<typename fn_t = void(*)()>
-fn_t load_fn(dll_handle dll, std::string fn_name);
-
-// returns nullptr if fn failed to load
-void* load_fn_ptr(dll_handle dll, std::string fn_name);
+fn_t load_fn(dll_handle dll, std::string fn_name) { return (fn_t)dll::load_fn_ptr(dll, fn_name); }
 
 // removes temp files. Dlls that is currently will not be removed.
 void remove_temp_files();

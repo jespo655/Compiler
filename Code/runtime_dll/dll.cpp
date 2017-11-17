@@ -44,11 +44,6 @@ std::string del_cmd = "rm -rf";
 
 
 
-template<typename fn_t>
-inline fn_t dll::load_fn(dll_handle dll, std::string fn_name)
-{
-    return (fn_t)dll::load_fn_ptr(dll, fn_name);
-}
 
 int dll_counter = 0;
 dll_handle dll::compile_dll(std::vector<std::string> src_files)
