@@ -9,7 +9,7 @@
 
 struct Token_context
 {
-    int line = 1;
+    int line = 0;
     int position = 0;
     std::string file{};
 
@@ -34,12 +34,12 @@ struct Token_context
 
     std::string toS() const {
         std::ostringstream oss;
+
         if (!file.empty()) {
-            oss << "(In " << file << ", ";
-        } else {
-            oss << "(At ";
+            oss << file << ':';
         }
-        oss << "line " << line << ", position " << position << ")";
+        oss << line << ':' << position;
+
         return oss.str();
     }
 
@@ -127,9 +127,9 @@ struct Token
 
     bool is_eof() const { return ::is_eof(type); }
 
-    std::string toS() {
+    std::string toS() const {
         std::ostringstream oss;
-        oss << token;
+        oss << "'" << token << "'";
         oss << " (" << ::toS(type) << ")";
         return oss.str();
     }

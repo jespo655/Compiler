@@ -1,10 +1,82 @@
-#Cube specification v0.4
+# Cube specification v0.4
 
 
-##Table of contents
+## Table of contents
+
+<!--
+
+0 numbers: #
+1 number: ##
+2 numbers: ###
+
+ -->
+
+1. Table of contents
+2. Introduction
+
+Comments
+Identifiers
+Keywords
+Variables
+Constants
+Types
+    Booleans
+    Numeric types
+        Integer literals
+        Floating-point literals
+    Strings
+        String literals
+            * Regular strings with escaped characters
+            * Here-strings (https://en.wikipedia.org/wiki/Here_document)
+    Static sequences
+        Sequence literals
+    Dynamic sequences
+        // Uses the same literal as static sequences
+    Maps
+        Map literals
+    Structs
+        // There are no struct (instance) literals
+    Function
+        Function literal
+    Functions with meta data
+        Named arguments
+        Default values
+        Generic types
+        Varargs
+    Pointers
+    Enums
+Operators
+    Assignment operators
+Symbols
+Expressions
+    Value_expressions
+        * Variable_expression
+        * Literal (bool, int, string, float, seq, map, struct type, function type, function)
+        * Function call / operator
+    Variable_expressions
+        * Identifier
+        * Getter
+Statements
+    Assignment
+    Declaration
+    If
+    For
+    While
+    Defer
+    Return
+    Using
+    Scope declaration (Anonymous or Named, maybe with keyword modifiers such as Async)
+    Pure value_expression (operators or function call with side effects)
+    #run
 
 
-##Introduction
+
+<!--
+TODO: Threads
+-->
+
+
+## Introduction
 
 This is a reference manual for the Cube programming language.
 
@@ -14,25 +86,41 @@ Cube allows for compile time execution of arbitrary code.
 
 Cube has no built in exception handling system, but strives to give well defined behaviour for many edge cases which makes exceptions redundant. Some run time performance is sacrificed in order to accomplish this.
 
-##Comments
+
+
+
+## Comments
 
 Single line comments are started with "//". These end at the next end of line.
 Block comments are contained with "/*" and "*/". Block comments can be nested.
 Comments cannot start inside a string literal.
 
-##Integer literals
+
+
+
+## Integer literals
 
 An integer literal is a sequence of digits representing an integer constant. All integer constants must be in the decimal format.
 
 An integer literal can be implicitly casted to any singed or unsigned integer or floating point type, or to the 'flag' type.
 
-##Floaing-point literals
+
+    <integer> ::= <digit>|<digit><integer>
+    <digit>   ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+
+
+## Floaing-point literals
 
 A floating-point literal is a decimal representation of a floating-point constant. It has an integer part, a decimal point, and a fractional part.
 
 A floating point literal can be implicitly casted to any floating point type.
 
-##String literals
+    <float> ::= <integer> "." <integer>
+
+
+
+## String literals
 
 A string literal represents a string constant obtained from concatenating a sequence of characters. There are two forms: raw string literals and here-strings.
 
@@ -42,7 +130,11 @@ Raw string literals are a sequence of characters between double quotes, as in "f
     '\"'    literal double quote
     '\n'    newline
 
-Here-strings are begun with the compiler instruction #string along with a delimiter token followed by whitespace. Any following characters are treated as part of the string until the next delimiter token after whitespace.
+    <string> ::= '"' <text> '"' | '"' <text> "\" <string>
+    <text> ::= <str-character><text> | <str-character>
+    <str-character> := [any UTF-8 code point except '"', "\" and "\n"]
+
+Here-strings are begun with the compiler instruction # string along with a delimiter token followed by whitespace. Any following characters are treated as part of the string until the next delimiter token after whitespace.
 
 Some examples of valid strings are the following.
 
@@ -55,7 +147,14 @@ Some examples of valid strings are the following.
         All newlines and other formatting will be included in the string literal.
     HERE
 
-##Identifiers
+    <string> ::= "#string " <identifier> <whitespace> <multiline-text> <whitespace> <identifier>
+    <whitespace> ::= " " | "\n" | "\t"
+    <multiline-text> ::= <text> | <text> "\n"
+
+    Note: both identifiers has to be identical, so this is not true CFG.
+
+
+## Identifiers
 
 An identifier is a name for some variable in the program. Identifiers must follow the following format:
 It must start with a letter in [a-z, A-Z].
@@ -74,7 +173,15 @@ Example of invalid identifiers:
     _starts_with_underscore
     contains?symbol
 
-##Keywords
+    <identifier> ::= <letter> | <letter><identifier-middle> | <letter><identifier-end>
+    <identifier-middle> ::= <middle-character> | <middle-character><identifier-middle> | <middle-character><identifier-end>
+    <identifier-end> ::= <end-character> | <end-character><identifier-end>
+    <letter> ::= [a-zA-Z]
+    <middle-character> ::= [a-zA-Z0-9_]
+    <end-character> ::= "?" | "!"
+
+
+## Keywords
 
 The following keywords are reserved and may not be used as identifiers.
 
@@ -89,8 +196,12 @@ The following keywords are reserved and may not be used as identifiers.
     struct
     in
     by
+    operator
 
-##Variables
+
+
+
+## Variables
 
 A variable is a storage location for holding a value. The set of permissible values is determined by the variable's type.
 
@@ -101,7 +212,26 @@ A variable is declared with the following syntax:
     x := 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x := foo();     // x is assigned the return value of the function foo(), computed at run time.
 
-##Constants
+    <decl-expr> ::= <identifier> ":" <type-identifier>
+                 | <identifier> ":" <opt-type-identifier> "=" <value-expr>
+                 | <identifier> "," <decl-expr>
+
+    <value-expr> ::= <variable-expr> | <literal> |
+                  | <value-expr> "," <value-expr>
+                  | <value-expr> <infix-op> <value-expr>
+                  | <value-expr> <suffix-op>
+                  | <prefix-op> <value-expr>
+
+    <variable-expr> ::= <identifier>
+                      | <variable-expr> <variable-infix-op> <variable-expr>
+                      | <variable-expr> <variable-suffix-op>
+                      | <variable-prefix-op> <variable-expr>
+
+    <opt-type-identifier> ::= <type-identifier> | ""
+    <type-identifier> ::= <identifier> | <type-literal>
+
+
+## Constants
 
 A constant acts much like a variable but can never change. The value of constants are always computed compile time and takes no storage space in the final run time program.
 
@@ -109,17 +239,28 @@ A constant acts much like a variable but can never change. The value of constant
     x :: 2;         // x is assigned the value 2, and the type is implicitly inferred as int, since 2 is a int literal.
     x :: foo();     // x is assigned the return value of the function foo(), computed at compile time.
 
-##Types
+    <decl-expr> ::= <identifier> ":" <opt-type-identifier> ":" <const-expr>
+    <const-expr> ::= <const-variable-expr> | <literal> | <const-expr> "," <const-expr>
+
+
+
+# Types
 
 A type determines the set of values and operations specific to values of that type. Named instances of the boolean, numeric, and string types are predeclared. Composite types - array, struct, pointer, and function types - may be constructed during compile time.
 
-###Booleans
+
+
+
+### Booleans
 
 A boolean type represents the set of Boolean truth values denoted by the predeclared constants true and false. The predeclared boolean type is bool.
 
     b : bool = true;
 
-###Numeric Types
+
+
+
+### Numeric Types
 
 A numeric type represents sets of integer or floating-point values. The predeclared architecture-independent numeric types are:
 
@@ -143,13 +284,19 @@ A numeric type represents sets of integer or floating-point values. The predecla
 
 The value of an n-bit integer is n bits wide and represented using two's complement arithmetic.
 
-###Strings
+
+
+
+### Strings
 
 A string type represents the set of string values. A string value is a (possibly empty) sequence of bytes.
 
     s : string = "foo";
 
-###Static sequences
+
+
+
+### Static sequences
 
 A static sequence is an fixed size set of elements of a single type. The size is a part of the type and is determined at compile time.
 
@@ -158,16 +305,44 @@ A static sequence is an fixed size set of elements of a single type. The size is
 
 Static sequences can be accessed with the [] operator. If the index is negative or larger than the size of the sequence, a temporary default intialized value of the corresponding type is returned.
 
-###Dynamic sequences
+    <type-literal> ::= "[" <const-expr> "]" | <type-literal>
+    // the const-expr has to evaluate to one integer value
 
-A dynamic sequence consists of a header containing the current length, capacity and location of the actual data. The actual data is stored on the heap, and it may be relocated if the size of the sequence changes.
+    <seq-literal> ::= "[" <opt-seq-info> <seq-data> "]"
+    <opt-seq-info> ::= <seq-size-info> "," <seq-type-info> ":" | <seq-size-info> ":" | <seq-type-info> ":"
+    <seq-size-info> ::= "size" "=" <const-expr>
+    <seq-type-info> ::= <type-identifier>
+    <seq-data> ::= <value-expr> | "..."
+
+### Dynamic sequences
+
+A dynamic sequence consists of a header containing the current length, capacity and location of the actual data. The actual data is stored on the heap, and it may be relocated if the size of the sequence changes. Dynamic sequence types are marked by that the [] contains the symbol "..".
 
     s : [..] int = [1, 2, 3, 4, 5];
     s : [..] int = [size=10, int: ...];
 
+    <type-literal> ::= "[" ".." "]" <type-literal>
+
 Dynamic sequences works very similarly to static sequences. They can be accessed with the [] operator. If the index is negative, a temporary default intialized value of the corresponding type is returned. If the index is larger than the current size, the sequence will insert default initialized values until the necessary size is reached, then the requested value is returned.
 
-###Structs
+
+
+
+### Maps
+
+A map is a set of objects which is indexed with a specific key type. Map types are marked by that the [] contains the type identifier defining the key type.
+
+    s : [int] int = [1->1, 2->2];
+    s : [string] int = ["a"->1, "b"->2];
+
+    <type-literal> ::= "[" <type-identifier> "]" <type-identifier>
+    <map-literal> ::= "[" <opt-map-info> <map-data> "]
+    <opt-map-info> ::= <map-type-info> ":" | ""
+    <map-type-info> ::= <type-identifier> "->" <type-identifier>
+    <map-data> ::= <value-expr> "->" <value-expr> | <value-expr> "->" <value-expr> "," <map-data>
+
+
+### Structs
 
 A struct type is a sequence of named elements, called fields, each of which has a name and a type and possibly a default value. Each struct type, identified by the "struct" keyword, is unique.
 
@@ -176,14 +351,21 @@ A struct type is a sequence of named elements, called fields, each of which has 
         a : int;
         b : float;
         c : string = "Hello";
-    }
+    };
+
+    <type-literal> ::= <struct-literal>
+    <struct-literal> ::= "struct" "{" <struct-data> "}"
+    <struct-data> ::= "" | <decl-expr> ";" <struct-data>
 
 Struct instances can then be created just like for any type.
 
     s1 : S1;                        // s1 is a default initialized struct of type S1.
     s2 : S2 = make_S2();            // s2 is a S2 returned by the function make_S2.
 
-###Functions
+
+
+
+### Functions
 
 A function type is defined as a set of in (argument) and out (return) types. A function variable are essentially a pointer to the code to be executed. The syntax is the following.
 
@@ -191,11 +373,35 @@ A function type is defined as a set of in (argument) and out (return) types. A f
     fn(in_type_1, in_type_2, ...) -> out_type_1                         // A function type with a set of in types and one out type
     fn(in_type_1, in_type_2, ...)                                       // A function type with a set of in types but no out type
 
+    <type-literal> ::= <fn-type-literal>
+    <fn-type-literal> ::= "fn" <fn-in-info> <opt-fn-out-info>
+    <fn-in-info> ::= "(" <opt-fn-type-info> ")"
+    <opt-fn-type-info> ::= "" | <fn-type-info>
+    <opt-fn-out-info> ::= "" | "->" <fn-out-info>
+    <fn-out-info> ::= <type-identifier> | "(" <fn-type-info> ")"
+    <fn-type-info> ::= "..." | <type-identifier> | <type-identifier> "," <fn-type-info>
+
+
 A function literal is defined as a block of code that begins with instantiations of the in and out types. All in parameters has to be named. Out parameters can be either named or anonymous. Named parameters can have explicit default values, evaluated compile time when the function literal is created. Some examples of valid function literals are the following:
 
     fn(a: int, b:int)-> c:int { /* function code, using variables a, b and c */ }
     fn(a: int, b:int)-> int { /* ... */ }
     fn(a: int = 1, b:int = 2)-> c:int = 3 { /* ... */ }
+
+    <literal> ::= <fn-literal>
+    <fn-literal> ::= "fn" <fn-literal-in-info> <opt-fn-literal-out-info> <scope>
+
+
+    <fn-literal-in-info> ::= "(" <opt-fn-literal-type-info> ")"
+    <opt-fn-literal-out-info> ::= "" | "->" <fn-literal-out-info>
+    <opt-fn-literal-type-info> ::= "" | <fn-literal-type-info>
+    <fn-literal-type-info> ::= <arg-decl-expr> | <arg-decl-expr> "," <fn-literal-type-info>
+    <arg-decl-expr> ::= <identifier> ":" <opt-type-identifier> | <identifier> ":" <opt-type-identifier> "=" <const-expr>
+    <fn-literal-out-info> ::= <arg-decl-expr> | "(" <fn-literal-type-info> ")"
+    <scope> ::= "{" <statements> "}"
+    <statements> ::= "" | <statement> ";" <statements>
+    <statement> ::= <decl-expr> | <assignment-expr> | <value-expr>
+
 
 Function names are treated just like any other variable or constant. A function variable has the size of a pointer.
 
@@ -204,7 +410,12 @@ Functions can be called using the () operator.
     f1 := fn(a:int, b:int)->int { return a+2*b; }; // declared as a variable / function pointer, its value can change at run time
     f1(1, 2); // returns 5
 
-If the function are declared as a constant, additional metadata from the initial function literal can also be used in the function call.
+    <fn-call-expr> ::= <identifier> "(" <opt-args> ")"
+    <opt-args> ::= "" | <args>
+    <args> ::= <value-expr> | <value-expr> "," <args>
+
+
+If a function is declared as a constant, additional metadata from the initial function literal can also be used in the function call.
 
     f2 :: fn(a:int=3, b:int=4)->int { return a+2*b; }; // declared as a constant, evaluated compile time
     f2(1, 2); // returns 5.
@@ -214,15 +425,42 @@ If the function are declared as a constant, additional metadata from the initial
 
 The default value of a function is an empty code block.
 
+    <args> ::= <identifier> "=" <value-expr> | <identifier> "=" <value-expr> "," <args>
+
 Values are by default passed to the function by constant references, and thus all in parameters are treated as constants.
 
-###Generic functions
 
-*** TODO
 
-*** Uses function literal meta data, so only possible for constant functions
 
-###Pointers
+### Generic functions
+
+Constant declared functions can also be generic. Generic types are determined at compile time and new versions of the function is automatically generated each time the function is called with a new type. Generic types are marked with '$'.
+
+    f1 :: fn(t : $T) -> T { /*...*/ }; // the type $T is determined by the type of the given input.
+    i : int; f : float;
+    f1(i); // T is int
+    f1(f); // T is float
+
+    f2 :: fn($T : type) -> T { /*...*/ }; // the type $T is determined by a type given as input parameter.
+    f2(int); // T is int
+    f2(float); // T is float
+
+    <generic-identifier> ::= "$" <identifier>
+    <arg-decl-expr> ::= <generic-identifier> ":" <opt-type-identifier> | <generic-identifier> ":" <opt-type-identifier> "=" <const-expr>
+                     | <identifier> ":" <generic-identifier> | <identifier> ":" <generic-identifier> "=" <const-expr>
+
+
+Even if the generic type is used serveral times in the function declaration, the '$' marker should only be written once. The input parameter marked with the '$' is the one that is responsible for the type inference.
+
+    foo :: fn(t1 : $T, t2 : T) {};
+    i : int; f : float;
+    // foo(i, f); // gives error: "Type mismatch, expected int but found float for argument 2 in foo(...)";
+    // foo(f, i); // gives error: "Type mismatch, expected float but found int for argument 2 in foo(...)";
+
+
+
+
+### Pointers
 
 A pointer type denotes the set of all pointers to variables of a given type, called the base type of the pointer. There are two kinds of pointers: owning and sharing pointers. The default value for both pointer types are null. If a null pointer would be dereferenced, a default initialized temporary value of the base type is returned.
 
@@ -233,11 +471,319 @@ A sharing pointer is pointing to an already existing object, managed by somethin
     p1 : *! int = alloc(2);     // p1 is an owning pointer
     p2 : * int = p1;            // p2 is a sharing pointer which points to the object owning by p1
 
+    <type-identifier> ::= "*" <type-identifier> | "*!" <type-identifier>
+
+
 Returning an owning pointer from a function does not move the allocated object. If the returned variable is assigned to a shared pointer, a temporary anonymous owning pointer is created in that scope instead.
 
 Using an owning pointer as an argument to a function taking a owning pointer in parameter will mark the pointer as destroyed, without moving the actual object. The ownership is simply passed into the function scope instead, and the object is destroyed at the end of that scope.
 
-## Threads
+Sharing pointers and their base type can be used in exactly the same way, and can be substituted for each other. Owning pointers behaves exactly like objects, but they are allocated on the heap instead of the stack.
+
+    T :: struct { data : int; };
+    object_1 : T;
+    object_2 : T;
+    sharing_1 : * T = object_1;
+    sharing_2 : * T = object_2;
+    owning_1 : *! T; // implicitly allocates memory on the heap
+    owning_2 : *! T = ---; // implicitly allocates memory on the heap, but doesn't initalize it
+
+    object_1.data;
+    sharing_1.data; // implicitly dereferences the pointer
+    owning_1.data; // implicitly dereferences the pointer
+
+    // These copies an object
+    object_2 = object_1;
+    object_2 = sharing_1; // implicit dereference
+    object_2 = *sharing_1;
+    object_2 = owning_1; // implicit dereference
+    object_2 = *owning_1;
+
+    *sharing_2 = object_1;
+    *sharing_2 = sharing_1; // implicit dereference
+    *sharing_2 = *sharing_1;
+    *sharing_2 = owning_1; // implicit dereference
+    *sharing_2 = *owning_1;
+
+    owning_2 = object_1; // implicit dereference of owning_2
+    owning_2 = sharing_1; // implicit dereference of both pointers
+    owning_2 = *sharing_1;
+    owning_2 = owning_1; // implicit dereference of both pointers
+    owning_2 = *owning_1;
+
+    *owning_2 = object_1;
+    *owning_2 = sharing_1; // implicit dereference of sharing_1
+    *owning_2 = *sharing_1;
+    *owning_2 = owning_1; // implicit dereference of owning_1
+    *owning_2 = *owning_1;
+
+    // These copies an adress
+    sharing_2 = object_1; // implicit "address_of"
+    sharing_2 = sharing_1;
+    sharing_2 = *sharing_1; // implicit "address_of" the referenced object
+    sharing_2 = owning_1;
+    sharing_2 = *owning_1; // implicit "address_of" the referenced object
+
+
+
+
+## Operators
+
+Operators is a terse way of writing function calls. An operator is defined by it preceding type(s), name, and succeeding type(s). Operators can be declared only as constants. The syntax for an operator identifier is the following.
+
+    operator (pre_type1, pre_type2, ...) operator_name (suc_type1, suc_type2, ...)
+
+Either the preceeding type list or the succeeding type list might be empty. An operator with no preceding types is defined as a suffix operator. An operator with no succeeding types is defined as a prefix operator. An operator with both preceding and succeeding types is defined as an infix operator.
+
+Any recogniced non-reserved symbol can be used as operator name. However, they must match the defined format for that specific operator. E.g. '==' is only recognized as an infix operator, and therefore, trying to overload it as a prefix operator will result in a compile error.
+
+Additionally, any identifier can be used as the operator name. This allows for great flexibility.
+
+    operator (int)++             // suffix operator (increment)
+    operator !(bool)            // prefix operator (logical NOT)
+    operator (bool)and(bool)    // infix operator (logical and)
+
+When calling and operator that has more than one preceding or succeeding types, comma separated parenthesis must be used. If the operator only has one preceding/succeeding type, the paranthesis is optional.
+
+    operator (int)sum(int) :: fn(a: int, b: int)->int { return a+b; };
+    total1 := 1 sum 2 sum 3;
+
+    operator (int,int)sum :: fn(a: int, b: int)->int { return a+b; };
+    total2 := ((1, 2)sum, 3)sum;
+
+    operator sum(int,int) :: fn(a: int, b: int)->int { return a+b; };
+    total3 := sum(1, sum(2, 3));
+
+    operator (Int_array)[int] :: fn(arr: Int_array, index: int) -> int { return arr.underlying[index]; }
+
+
+## Symbols
+
+System defined symbols are the only exclusions of valid variable name characters (excluding the starting character). A symbol can consist of one or more UTF-8 characters. Any non-reserved symbol can be overloaded as an operator.
+
+The following symbols are reserved and cannot be used as operators.
+
+    '(' and ')'
+    '[' and ']'
+    '{' and '}'
+    '->'
+    '=>'
+    ','
+    '.'
+    '#'
+    ':'
+    '='
+    '$'
+    '---'
+    ';'
+    '?'
+    '''
+    '"'
+    '`'
+
+The following symbols are recogniced as valid operators. They are listed with their respective priority. Higher priority always goes before lower priority. If two operators have the same priority, they are evaluated from left to right. Multiple prefix operators are evaluated from right to left.
+
+    symbol          priority        note
+    '[T]' (suffix)  1000            subscript / gets a value. T is one or more type names. (NOTE: see problem below)
+    '[T]=' (suffix) 1000            subscript / sets a value. T is one or more type names. (NOTE: see problem below)
+    '()' (reserved) 1000            reserved; only listed here to give priority context. Function operator.
+    '.' (reserved)  1000            reserved; only listed here to give priority context. Getter operator.
+    '++' (suffix)   1000            increment
+    '--' (suffix)   1000            decrement
+
+    '+' (prefix)    900             unary plus
+    '-' (prefix)    900             unary minus
+    '*' (prefix)    900             pointer dereference
+    '!' (prefix)    900             logical NOT
+    '++' (prefix)   900             increment
+    '--' (prefix)   900             decrement
+    '@' (prefix)    900
+    '&' (prefix)    900
+    '~' (prefix)    900
+
+    '^' (infix)     800             to the power of
+
+    '*' (infix)     700             multiplication
+    '/' (infix)     700             division
+    '%' (infix)     700             modulo (remainder)
+    '/%' (infix)    700
+
+    '+' (infix)     600             addition
+    '-' (infix)     600             subtraction
+
+    '<<' (infix)    550
+    '>>' (infix)    550
+    '<<<' (infix)   550
+    '>>>' (infix)   550
+
+    '<' (infix)     500             less than
+    '>' (infix)     500             greater than
+    '<=' (infix)    500             less than or equal to
+    '>=' (infix)    500             greater than or equal to
+    '>~' (infix)    500
+    '<~' (infix)    500
+
+    '==' (infix)    400             equal to
+    '!=' (infix)    400             not equal to
+
+In addition, all operators defined with an identifier as operator name have the following priority:
+
+    symbol          priority        note
+    id (suffix)     950             operator using identifier (not a symbol)
+    id (prefix)     850             operator using identifier (not a symbol)
+    id (infix)      0               operator using identifier (not a symbol)
+
+Reading a new expression, operators are examined as follows.
+
+1. Check if the first token is a prefix operator. If so, read a new expression and build a prefix operator node.
+2. If not, read non-operator expression (literal or identifier)
+3. Check if the next token is a suffix operator. If so, build a suffix operator node.
+4. If not, check if the next token is an infix operator. If so, read a new expression and build an infix operator node.
+
+
+
+
+### Assignment operators
+
+After an infix operator is used, it can also be used for terse assignment together with the '=' symbol. The requirements for this is the following.
+* The operator has to take exactly one preceding type argument
+* That preceding type has to be the same as the return type from the operator.
+
+Example:
+
+    a : int;
+
+    // Assuming operator(int)+(int) : fn(int, int)->int,
+    //   these are all equivalent:
+    a = a + 2;
+    a + = 2;
+    a += 2;
+
+
+
+## Expressions
+
+Expressions
+
+
+
+
+<!--
+# TODO
+
+
+
+## File handling
+
+How to read from and write to file?
+
+
+
+## OpenGL
+
+Some interface is needed. Direct C port?
+
+
+
+## C ported code
+
+Syntax?
+
+
+
+
+
+
+
+// Generic function example:
+
+get_name :: fn(x: $T) -> type_of(x.name) {
+    return x.name;
+}
+
+// possible abbreviation:
+
+get_name :: x => x.name;
+
+
+// several in and out parameters:
+
+(a, b) => (b, a+b)
+
+/*
+https://www.youtube.com/watch?v=Mo6_tJFeNMM 34:09
+
+    We just do an iterative solve to find  the parameters.
+
+    arr : []int;
+    map(arr, x => x+1);
+    map :: fn(array: [] $T,    f: fn(T)  -> $R)           -> []R  { /*...*/ };
+                     [] int,      fn($X) -> type_of(x+1)
+
+    First pass: T = int
+    Second pass: X = int
+    Third pass: R = int
+
+messy test case: ~39
+
+*/
+
+
+Function parameters: prefix $ for ANYTHING that is known at compile time. Only needed once
+
+
+
+Q till JB: hur bestäms priority av operators?
+
+
+problem att tänka på med operatorer:
+    operators som tar andra operators (funktioner) som argument. Borde ej tillåtas, men specialfall kan krävas.
+
+
+
+
+
+
+
+    &
+    |
+    &&
+    ||
+
+
+
+PROBLEM WITH [] overloading / pointer syntax:
+
+seq : [4]int;
+seq[2] = 2; // the position 2 should now have the value 2
+i := seq[3]; // i should be the int 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TODO: decide if this is allowed
+    // '()'                        function operator
+
+
+
+
+
+## Threads(TODO)
 
 Functions may be called asynchronously using the keyword "async".
 
@@ -369,3 +915,5 @@ Non-blocking operations with select default:
         case msg2 := <-channel2: foo2()                 // if msg2 has a message, do foo2()
         default: foo3();                                // if none of them have a message waiting, do foo3()
     }
+
+-->

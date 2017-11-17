@@ -1,0 +1,51 @@
+
+// This file contains sample code, for parsing testing purposes.
+
+/* block comment */
+    // indented comment
+    /*
+        several
+        line
+        comment
+
+        /* */
+    */
+
+
+typeof :: inline fn(t : $T) -> type
+#modify
+{
+    while (T == any) {
+        T = T.type; /* COMMENT! // */
+    */ }
+}
+{
+    return /* COMMENT! */ T;
+};
+
+"incomplete\"asdasd"
+
+
+
+test ¤ test
+
+/*
+identifier_?
+true
+false
+true?
+false?
+a_true_?
+true_
+_true
+if?
+if_
+_if!
+1123456.456543
+13456
+*/
+
+
+
+
+

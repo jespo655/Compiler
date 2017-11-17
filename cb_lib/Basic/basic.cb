@@ -1,0 +1,377 @@
+#package Basic {
+    // "basic.cb" // this file is automatically included
+    "operators.cb" // relative path to this file; has to have #package Basic; in it
+}
+
+
+// pre defined operators (in basic):
+// println($s : string, args : any...) // generic number of arguments -> args is of type []any. s is forced to be known compile time, and will be modified compile time every time the function is called.
+// c_print_format :: fn(t : type)->string { /*...*/ }; // returns format modifiers like "%d", "lld". Special case for function and struct types is needed.
+// error : fn(string); // tar calling context, special case för #modify blocks
+
+
+
+#c_include "basic.c";
+
+/** Type definitions **/
+// Naming convention:
+// Primitive types starts with lowercase letter
+// Composite types starts with uppercase letter
+
+
+int : type : #C "cb_int";
+i8 : type : #C "i8";
+i16 : type : #C "i16";
+i32 : type : #C "i32";
+i64 : type : #C "i64";
+
+uint : type : #C "cb_uint";
+u8 : type : #C "u8";
+u16 : type : #C "u16";
+u32 : type : #C "u32";
+u64 : type : #C "u64";
+
+float : type : #C "cb_float";
+f32 : type : #C "f32";
+f64 : type : #C "f64";
+
+bool : type : #C "cb_bool";
+
+byte : type : u8;
+string : type : #C "String"; // char*
+
+Range : type : #C "Range"; // 2 floats
+Any : type : #C "Any"; // a type identifier and a value pointer
+
+// Built in complex types:
+
+// []$T : type : #C "Seq"; // static sequence of T
+// [..]$T : type : #C "Seq"; // dynamic sequence of T - allocated on the heap
+// [$K]$V : type : #C "Map"; // dynamic map from K to V (TODO)
+// *$T : type : #C "Sharing_ptr"; // sharing pointer - just like raw pointer in C
+// *!$T : type : #C "Owning_ptr"; // owning pointer - automatically frees its object when destroyed
+
+typeof :: inline fn(t : $T) -> type
+#modify
+{
+    while (T == any) {
+        T = T.type;
+    }
+}
+{
+    return T;
+};
+
+
+
+
+/** input/output functions **/
+
+print :: fn($s : string, args : any...)
+#modify {
+    // this code block will be executed every time the function is called
+    // context = calling context
+    // here we can generate compile errors for types or invalid arguments
+    // arguments marked with $ can be accessed here (they are forced to be known at compile time)
+    // they can also be changed at compile time
+    // s = "2"; // this would be ok, and would force the function to always receive "2" as the first parameter
+
+    // modification of format string: check the number of %s to the number of arguments
+
+    argc : int = 0;
+    escape : bool = false;
+    for (byte in s) {
+        if (byte == "\\") {
+            escape = true;
+        } elsif (escape == false and byte == "%") {
+            escape = false;
+            argc += 1;
+        } else {
+            escape = false;
+        }
+    }
+    if (argc != args.length) {
+        error(sprint("Wrong amount of \% in format string. Found % \%s but % arguments.", argc, args.length);
+    }
+}
+{
+    // function body
+
+    // modify the format string and argument list to fit c style printf
+    // primitive and named struct types -> replaced by "%s", typename [string]
+    // anonymous struct type -> replaced by "struct{%s, %s}", membertype1, membertype2 [strings] (recursive)
+    // anonymous type in general -> replaced by "type(%d)", typeid [u64]
+    // function values -> replaced by "fn(%p)", fn_ptr [void*]
+    // pointer value -> replaced by "ptr(%p)", ptr [void*]
+    // struct value -> replaced by "%s(%?, %?)", struct_typename, membervalue1, membervalue2 [whatever type they are] (recursive)
+    // seq value -> replaced by "[%s, size=%d: %?, %?, %?, ...]", typename, seq.length, member1, member2, member3 (max X members, after that "...") (recursive)
+
+    modified_s : string;
+    modified_args : [..]Any;
+    arg_index : int = 0;
+
+
+// c equiv:
+
+// "\n" -> "\n"
+// "%" -> "%d"
+// "\%" -> "%%"
+
+
+    escape : bool = false;
+    for (byte in s) {
+        if (escape = true) {
+            modified_s += byte; // slow string concat. I need a proper version of a string_builder
+            escape = false;
+        } elsif (byte == "\\") {
+            modified_s += byte; // slow string concat. I need a proper version of a string_builder
+            escape = true;
+        } elif (byte == "%") {
+            if (arg_index >= args.length) {
+                error("Too many % in format string"); // this will stop the caller from resolve the println call
+                return;
+            } else {
+                if (function_type?(args[argc].type)) {
+                    modified_s += "fn(%p)";
+                    modified_args[modified_args.length] = args[arg_index];
+                } elsif (int_type?(args[argc].type)) {
+                    if (args[argc].type == i64) {
+                        modified_s += "%d";
+                    } else {
+                        modified_s += "%lld";
+                    }
+                    modified_args[modified_args.length] = args[arg_index];
+                } elsif (uint_type?(args[argc].type)) {
+                    if (args[argc].type == i64) {
+                        modified_s += "%u";
+                    } else {
+                        modified_s += "%llu";
+                    }
+                    modified_args[modified_args.length] = args[arg_index];
+                } elsif (float_type?(args[argc].type)) {
+                    modified_s += "%f";
+                    modified_args[modified_args.length] = args[arg_index];
+                } elsif (struct_type?(args[argc].type)) {
+                    v : Any = args[argc];
+                    modified_s += "%s{";
+                    modified_args[modified_args.length] = to_string(v.type);
+                    for (member_type in members(v.type)) {
+                        // recursive
+                    }
+
+                }
+            }
+            argc += 1;
+        }
+
+
+    }
+
+    // if (arg_index >= args.length) {
+    //
+    //         }
+    //         // TODO: special case for struct and function types
+    //         modified_s += c_print_format(typeof(args[arg_index]));
+    //         arg_index += 1;
+    //     }
+    // }
+    // if (arg_index < args.length) { error "Too few % in format string"); } // this will stop the caller from resolve the println call
+    // s = modified_s;
+
+    c_printf(s, args...); // direct call to c equivalent
+}
+
+
+
+println :: fn($s : string, args : any...) {
+    inline print(s, args...);
+    print("\n");
+}
+
+
+sprint :: fn($s : string, args : any...) -> modified_s : string {
+    arg_index : int = 0;
+    for (byte in s) {
+        if (byte != "%") {
+            modified_s += s; // slow string concat. I need a proper version of a string_builder
+        } else {
+            if (arg_index >= args.length) {
+                error("Too many % in format string"); // this will stop the caller from resolve the println call
+            }
+            // TODO: special case for struct and function types
+            modified_s += c_print_format(typeof(args[arg_index]));
+            arg_index += 1;
+        }
+    }
+    if (arg_index < args.length) { error "Too few % in format string"); } // this will stop the caller from resolve the println call
+}
+
+sprintln :: fn($s : string, args : any...) -> modified_s : string {
+    inline sprint(s, args...);
+    modified_s += "\n";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** sequence modifying functions **/
+
+reserve_array :: fn(arr : *[..]$T, count : int) {
+    arr[count-1]; // "function call" with side effects. Nice hack :)
+}
+
+// TODO: add support for removing elements from a dyamic sequence / dynamic re-allocation to a smaller size
+
+
+
+
+
+
+/** Memory allocation **/
+
+alloc :: inline fn($t : type) -> *!T {
+    return #C "alloc" (size_of(t));
+};
+
+free : fn($*!T) = #C "free";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** Destruction of objects **/
+
+// Referenced functions:
+// function_with_name : fn(string); compile time function
+// free : fn($*T);
+
+destroy :: inline fn(t : $_T) {
+    destructor(_T)(t);
+}
+
+destructor :: inline fn($_T : type) -> inline fn(_T)
+{
+    if (_T == *!$T) { return op_destructor(_T); } // owning pointer
+    if (_T == [..]$T) { return heap_seq_destructor(_T); } // dynamic sequence / on the heap
+    if (_T == []$T) { return stack_seq_destructor(_T); } // static sequence / on the stack
+    if (_T == [$K]$T) { return map_destructor(_T); } // dynamic map
+    if (_T == string) { return C# "destroy_string"; } // string
+    if (struct_type?(_T)) { return function_with_name("destroy_"+_T); } // struct
+    assert(primitive_type?(_T) or _T == *$T or function_type?(_T)); // these are the only cases where we shouldn't do anything
+    return inline fn(_T) {};
+};
+
+// Owning pointer: Destroy the object, then free the memory
+op_destructor :: inline fn(*$_T : type) -> inline fn(*_T)
+{
+    base_destructor : fn(_T) : destructor(_T);
+    return inline fn(ptr:*_T) {
+        if (ptr != null) {
+            base_destructor(*ptr);
+        }
+        free(ptr);
+    };
+};
+
+// Sequence on the stack: Just destroy the objects. The memory will be returned with the stack pop.
+stack_seq_destructor :: inline fn([]$_T : type) -> inline fn([]_T)
+{
+    base_destructor : inline fn(_T) : destructor(_T);
+    return inline fn(seq : []_T) {
+        for (index : 0..seq.length-1) {
+            base_destructor(seq[index]);
+        }
+    };
+};
+
+// Sequence on the heap: Destroy the objects, then free the memory.
+heap_seq_destructor :: inline fn([..]$_T : type) -> inline fn([..]_T)
+{
+    base_destructor : inline fn(_T) : destructor(_T);
+    return inline fn(seq : [..]_T) {
+        for (index : 0..seq.length-1) {
+            base_destructor(seq[index]);
+        }
+        free(seq.data);
+    };
+};
+
+// Map: TODO
+map_destructor :: inline fn([]$_T : type) -> inline fn([]_T)
+# modify {
+    error("map NYI");
+} {};
+
+
+
+
+/*
+
+When an object is created: a deferred destructor is called
+When a struct is created: a destructor function is implicitly created
+
+T :: struct { next: *!T; data : *!Data; }; // linked list (self referencing)
+
+// the struct literal has an unique id UID
+// destroy_UID is created together with the struct literal
+destroy_UID :: inline fn(t: $T) {
+    destroy(t.next);
+    destroy(t.data);
+};
+
+// destroy_T is created together with the assignment
+destroy_T :: inline fn(t : T) {
+    destroy_UID(t);
+};
+
+*/
+
+
+
+
+// T :: struct { next: *!T; data : *!Data; }; // linked list (self referencing)
+
+// Pass 1: T is known to be an identifier for something (partially pased)
+// Pass 2: T is used somewhere else
+//      RHS is resolving. It is a struct of T (partially parsed identifier) and Data (fully parsed identifier).
+//      Type inferrence: The type of T is inferred from RHS. It is a struct of some kind (points to the same type info struct as the struct literal)
+//      Type checking: type_of(Data) == type. type_of(T) == type because T is a struct of something.
+//      Size checking: Size of T is 8+8 (8=size_of(*!$T)) (this might need more resolving of some types)
+//      Resolving: T is marked as fully resolved. A destructor for T is created.
+
+
+

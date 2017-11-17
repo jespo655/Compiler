@@ -12,11 +12,45 @@ An owning pointer owns an object on the heap, and will delete it when itself is 
 A sharing pointer points to an object owned by something else, and will never delete it.
 
 Syntax:
-op : T*! = alloc(t); // t is copied to the heap and that copy is now owned by op. // TODO: find better syntax for allocation
-sp : T* = op; // sp now points to the object owned by op.
-sp2 : T* = sp; // sp and sp2 now points to the same object.
-op2 : T*! = op; // op2 grabs the object from op and is now the owner of the object. op is now null.
-// op : T*! = sp; // illegal, sp doesn't own the object so op can't grab it
+op : *!T = alloc(t); // t is copied to the heap and that copy is now owned by op. // TODO: find better syntax for allocation
+sp : *T = op; // sp now points to the object owned by op.
+sp2 : *T = sp; // sp and sp2 now points to the same object.
+op2 : *!T = op; // op2 grabs the object from op and is now the owner of the object. op is now null.
+// op : *!T = sp; // illegal, sp doesn't own the object so op can't grab it
+
+// sharing pointers are automatically casted to their base type.
+t1 : T;
+sp1 : *T = t1; // sp1 now points to t1
+t2 : T = sp1; // t2 is now a copy of t1
+sp2 : *T = sp1; // sp2 now point to the same object as sp1 points 2
+
+*sp1 = t2; // the value that sp1 points to is now a copy of t2
+sp1 = t2; // sp1 now points to t2 (implicit "adress of")
+
+// owning pointers are automatically casted to their base type, but not for assignment
+op1 : *!T = alloc(T); // has to use alloc here to allocate on the heap
+t2 : T = op1; // t is now a copy of the data that op1 points to (owns)
+op2 : *!T = op1; // grabs the object from op and is now the owner of the object. op is now null.
+sp : *T = op1; // sp now points at the object that op1 is pointing to.
+spp : **T = op1; // spp now points to op1 (pointer to a pointer to a T)
+spp : **!T = op1; // spp now points to op1 (poiter to a owning pointer of T)
+// spp : *!*T = op1; // not allowed, spp can never own op1 (pointer that owns a pointer to a T)
+
+*op1 = t2; // the value that op1 points to is now a copy of t2
+// op1 = t2; // not allowed, since op1 can never own t1
+
+
+adress_of($T t) -> *T {
+    tp : *T = t;
+    return tp;
+}
+
+alloc($T : type)-> *!T {
+    ptr : *!T;
+    // predefined allocation of a t
+    return ptr;
+}
+
 */
 
 

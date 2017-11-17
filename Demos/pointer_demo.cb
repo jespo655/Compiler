@@ -1,0 +1,108 @@
+
+/*
+
+Function behaviour: every parameter is sent as const reference (pointer)
+Return values are allocated by the caller and pointers to their locations is sent to the function
+
+Disclaimer: This won't compile.
+    * The identifiers 'foo' and 'ptr' are defined several times
+    * Non-declaration statements in global scope
+*/
+
+
+
+// Sending an owning pointer to a function:
+// Previously attempted behaviour: Ownership is taken over by the function scope. When the function returns, the owned object is deallocated.
+foo :: fn(ptr : *!T) {};
+ptr : *!T;
+foo(ptr);
+
+/*
+Generated C code:
+
+void foo(T* ptr) {
+    free(ptr); // ptr goes out of scope and since it's an owning pointer it is freed.
+}
+
+T* ptr = malloc(sizeof(T)); memset(ptr, 0, sizeof(T));
+foo(ptr); // is freed, but not set to null. I guess that's ok.
+*/
+
+
+
+
+
+
+
+// Returning an owned pointer from a function:
+// Previously attempted behaviour: The owned pointer does not deallocate at the end of the function. Ownership is taken over by the calling scope. At most a pointer copy is done.
+foo :: fn() -> *!T {
+    ptr : *!T;
+    return ptr;
+};
+ptr := foo();
+
+/*
+Generated C code:
+
+void foo(T** __retval_1) {
+    if (*__retval_1 == NULL) { *__retval_1 = malloc(T); memset(__retval_1, 0, sizeof(T)); } // fn init: safety initialization of all return values
+    T* ptr = malloc(T); memset(__retval_1, 0, sizeof(T));
+    **__retval_1 = *ptr; // return statement // assignment between owning pointers copies the object
+    free(ptr); // ptr goes out of scope and since it's an owning pointer it is freed.
+}
+T* ptr = NULL; foo(&ptr); // caller allocates memory on the stack and sets the pointer to NULL (no heap allocation)
+
+// result: 1 extra memory allocation, 1 extra object copy. This can probably be optimized away, but that's a later problem.
+*/
+
+foo :: fn() -> *!T {};
+ptr := foo();
+
+/*
+Generated C code:
+
+void foo(T** __retval_1) {
+    if (*__retval_1 == NULL) { *__retval_1 = malloc(T); memset(__retval_1, 0, sizeof(T)); } // fn init: safety initialization of all return values
+}
+T* ptr = NULL; foo(&ptr); // caller allocates memory on the stack and sets the pointer to NULL (no heap allocation)
+
+// result: perfect performance, no overhead. Unintuitive cube code.
+*/
+
+
+foo :: fn() -> ptr : *!T {
+    return ptr;
+};
+ptr := foo();
+
+/*
+Generated C code:
+
+void foo(T** ptr) {
+    if (*ptr == NULL) { *ptr = malloc(T); memset(ptr, 0, sizeof(T)); } // fn init: safety initialization of all return values
+    *ptr = *ptr; // return statement -> assignment of return values. This can be optimized and will probably be by the C compiler anyway.
+}
+T* ptr = NULL; foo(&ptr); // caller allocates memory on the stack and sets the pointer to NULL (no heap allocation)
+
+// result: (probably) perfect performance, no overhead (after optimization). Cube code is understandable.
+*/
+
+
+
+foo :: fn() -> *!T {};
+ptr : *!T;
+ptr = foo();
+
+/*
+Generated C code:
+
+void foo(T** __retval_1) {
+    if (*__retval_1 == NULL) { *__retval_1 = malloc(T); memset(__retval_1, 0, sizeof(T)); } // fn init: safety initialization of all return values
+}
+T* ptr = malloc(sizeof(T)); memset(ptr, 0, sizeof(T));
+foo(&ptr); // this time, the memory is already initialized.
+
+// result: previously allocated memory is leaked
+*/
+
