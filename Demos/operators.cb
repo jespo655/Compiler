@@ -1,0 +1,13 @@
+
+
+
+// All operators defaults to an empty function.
+// They also have their type built in from the start.
+// -> operators can never be declared using := or ::
+// Empty operators give warnings when used.
+
+operator (int)>(int) = fn(a:int, b:int)->bool { /* predefined */ }
+
+
+check := operator (int)>(int);
+
