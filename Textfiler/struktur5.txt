@@ -106,3 +106,51 @@ f :: fn()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+Möjligt: begränsa compile time code execution till native CUBE (dvs. ingen importerad C)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Från en dröm: dataorienterat programspråk -> kanske fler funktioner runt variabler?
+    * Ex: specificera en funktion som körs varje gång en variabel tillsätts ett värde
+    * Stöd för events? Mycket går att tänka på som events. Går det att göra events till en central del av språket?
+(antagligen båda dåliga ideer men...)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
