@@ -18,8 +18,9 @@ sum : fn(int, int)->int;            // only one return value -> don't need the p
 bar : fn();                         // no return value -> don't need the arrow
 */
 
-struct Function_type : CB_Type
+struct CB_Function_type : CB_Type
 {
+    static CB_Type type; // self reference / CB_Type
     CB_Dynamic_seq<CB_Sharing_pointer<CB_Type>> in_types;
     CB_Dynamic_seq<CB_Sharing_pointer<CB_Type>> out_types;
 
@@ -46,8 +47,8 @@ struct Function_type : CB_Type
         return oss.str();
     }
 
-    bool operator==(const Function_type& o) const { return o.in_types == in_types && o.out_types == out_types; }
-    bool operator!=(const Function_type& o) const { return !(*this==o); }
+    bool operator==(const CB_Function_type& o) const { return o.in_types == in_types && o.out_types == out_types; }
+    bool operator!=(const CB_Function_type& o) const { return !(*this==o); }
     bool operator==(const CB_Type& o) const { toS() == o.toS(); }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
 
@@ -56,12 +57,241 @@ struct Function_type : CB_Type
 
 
 
+/*
+CB_Function_type har:
+
+* namm
+* intyper
+* uttyper
+
+CB_Function har:
+
+* type
+* in-variabler som matchar typens intyper
+* ut-variabler som matchar typens uttyper
+* function scope med statements
+
+fn_scope ska kunna se alla in- och uttyper, plus alla saker i parent scope:
+
+parent {
+    // alla möjliga saker
+
+    fn {
+        // in-variabler
+        // ut-variabler (referenser)
+        // statements: automatgenererad initiering av variabler
+        // * bas -> declaration statement med ev. default value (specat i fnen, annars default value för typen)
+        // ??: hur ska värdena på argumenten stoppas in i funktionen?
+        // * using -> using statements
+        // * generic -> det är här den typen ändras
+
+        fn_scope {
+            // statements
+        }
+    }
+}
+
+
+
+
+//CB:
+foo :: fn (a:int, b:int=2)->using c:$T {
+    c = a+b;
+}
+
+// ska bli C:
+void foo(int a, int b=2, T* c)
+{
+    *c = add_int_int(a,b); // funktionen add_int_int är automatgenererad från operator(int)+(int)->T
+}
+
+// CB-representation:
+fn {
+    // deklarationer används endast för typechecking
+
+    // statements 0..n-1: (n = antalet in+utparametrar)
+    a:int;
+    b:int=2;
+    c:*CB_Generic_type;
+
+    // statements n..inf: using satements
+    using c;
+
+    fn_scope {
+        // det scope som definierades i funktionsdefinitionen ovan
+        // (fn_scope.parent = fn)
+        c = a+b;
+    }
+}
+
+// resolve order:
+// 1) current scope
+// 2) using scope
+// 3) parent scope
+
+
+
+Function_call_statement:
+
+c = foo(a,b); // a,b,c kollas i ordning mot identifiers i statements 0..n-1
+              // (senare tillägg): Ev. generiska typer resolvas och skapar därmed en kopia av funktionen med den nya typen klar
+              // Alla inparametrar som inte har default values måste ha fått värden, annars error
+
+
+// Default: const reference på alla icke-primitiva in-variabler, reference på alla ut-variabler
 
 
 
 
 
+// specialfall där samma variabel används som både in-och utvariabel:
+a = foo(a, a);
+// -> måste skapa temporära kopior av a, för att använda som invariabler
 
+
+*/
+
+
+
+
+struct CB_Function {
+
+    static CB_Type type;
+    CB_Sharing_pointer<CB_Function_type> function_type;
+
+    void (*v)() = nullptr; // function pointer
+
+    std::string toS() const {
+        return "function"; // FIXME: better toS()
+    }
+
+    template<typename... Types>
+    void operator()(Types... args)
+    {
+        ASSERT(v != nullptr);
+        // ASSERT(metadata != nullptr);
+        // assert_types<Types...>();
+        auto fn_ptr = (void (*)(Types...))v;
+        (*fn_ptr)(args...);
+    }
+
+    CB_Function() {}
+    ~CB_Function() {}
+
+    CB_Function& operator=(const CB_Function& fn) {
+        v = fn.v;
+        function_type = fn.function_type;
+        // metadata = alloc<Function_metadata>(*fn.metadata);
+        return *this;
+    }
+    CB_Function(const CB_Function& fn) { *this = fn; }
+
+    // move assignment operator not necessary when we only use shared pointers
+    // CB_Function& operator=(CB_Function&& fn) {
+    //     v = fn.v;
+    //     function_type = std::move(fn.function_type);
+    //     // metadata = std::move(fn.metadata);
+    //     return *this;
+    // }
+    // CB_Function(CB_Function&& fn) { *this = fn; }
+
+    // CB_Function& operator=(void (*fn)(In_types... ins, Out_types&... outs)) {
+    //     v = fn;
+    //     metadata = ???; // no way to separate in and out types
+    //     return *this;
+    // }
+    // CB_Function(void (*fn)(In_types... ins, Out_types&... outs)) { *this = fn; }
+
+    CB_Function& operator=(nullptr_t np) {
+        ASSERT(np == nullptr);
+        v = nullptr;
+        function_type = CB_Function_type::type.default_value().get_shared<CB_Function_type>();
+        // metadata = alloc(Function_metadata());
+        return *this;
+    }
+    CB_Function(const nullptr_t& fn) { *this = fn; }
+
+    // template<typename... Types>
+    // void set_in_args() {
+    //     ASSERT(metadata != nullptr);
+    //     metadata->in_args.clear();
+    //     add_in_args<Types...>();
+    // }
+
+    // template<typename... Types>
+    // void set_out_args() {
+    //     metadata->out_args.clear();
+    //     add_out_args<Types...>();
+    // }
+
+private:
+
+    // template<typename T, typename... Rest>
+    // void add_in_args() {
+    //     Function_arg arg;
+    //     arg.id = "_arg_" + metadata->in_args.size;
+    //     arg.type = T::type;
+    //     metadata->in_args.add(arg);
+    //     add_in_args<Rest...>();
+    // }
+    // template<int i=0> add_in_args() {}
+
+    // template<typename T, typename... Rest>
+    // void add_out_args() {
+    //     Function_arg arg;
+    //     arg.id = "_retval_" + metadata->out_args.size;
+    //     arg.type = T::type;
+    //     metadata->out_args.add(arg);
+    //     add_out_args<Rest...>();
+    // }
+    // template<int i=0> add_out_args() {}
+
+    // template<int index>
+    // void assert_out_types() {
+    //     ASSERT(index == metadata->out_args.size, "The number of out arguments doesn't match the function metadata.");
+    // }
+
+    // template<int index, typename T, typename... Rest>
+    // void assert_out_types() {
+    //     ASSERT(metadata != nullptr);
+    //     ASSERT(index < metadata->out_args.size, "The number of out arguments doesn't match the function metadata.");
+    //     const CB_Type& T1 = metadata->out_args[index].type;
+    //     const CB_Type& T2 = get_type(T());
+    //     ASSERT(T1 == T2, "Type mismatch at out type "+std::to_string(index)+", "+T1.toS()+" and "+T2.toS());
+    //     assert_out_types<index+1, Rest...>();
+    // }
+
+    // template<int index>
+    // void assert_in_types() {
+    //     ASSERT(index == metadata->in_args.size, "The number of in arguments doesn't match the function metadata.");
+    //     ASSERT(0 == metadata->out_args.size);
+    // }
+
+    // template<int index, typename T, typename... Rest>
+    // void assert_in_types() {
+    //     ASSERT(metadata != nullptr);
+    //     if (index == metadata->in_args.size) {
+    //         return assert_out_types<0, T, Rest...>();
+    //     }
+    //     ASSERT(index < metadata->in_args.size, "The number of in arguments doesn't match the function metadata.");
+    //     const CB_Type& T1 = metadata->in_args[index].type;
+    //     const CB_Type& T2 = get_type(T());
+    //     ASSERT(T1 == T2, "Type mismatch at in type "+std::to_string(index)+", "+T1.toS()+" and "+T2.toS());
+    //     assert_in_types<index+1, Rest...>();
+    // }
+
+    // template<typename... Types>
+    // void assert_types() {
+    //     if (sizeof...(Types) == 0) return;
+    //     return assert_in_types<0, Types...>();
+    // }
+
+    // template<typename T, typename Type=CB_Type*, Type=&T::type>
+    // const CB_Type& get_type(const T& object) { return T::type; }
+
+    // template<typename T, typename Type=CB_Type*, Type=&T::type>
+    // const CB_Type& get_type(const T* pointer) { return T::type; }
+};
 
 
 

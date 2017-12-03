@@ -1,6 +1,7 @@
 #pragma once
 
 #include "type.h"
+#include "pointers.h"
 
 /*
 The type Any can be assigned a value of any type. The type information is then stored alongside the object,
@@ -39,6 +40,13 @@ struct CB_Any {
         ASSERT(v_ptr != nullptr);
         ASSERT(T::type == v_type);
         return *(T*)v_ptr;
+    }
+
+    template<typename T, typename Type=CB_Type const*, Type=&T::type>
+    CB_Sharing_pointer<T> get_shared() {
+        ASSERT(v_ptr != nullptr);
+        ASSERT(T::type == v_type);
+        return CB_Sharing_pointer<T>((T*)v_ptr);
     }
 
     bool has_value(const CB_Type& t) const {

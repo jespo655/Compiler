@@ -67,6 +67,10 @@ CB_Type CB_Flag::type = CB_Type("flag");
 CB_Type Struct_instance::type = CB_Type("Struct_instance");
 Struct_instance Struct_type::operator()() { return Struct_instance(*this); }
 
+#include "function.h"
+CB_Type CB_Function_type::type = CB_Type("function_type", CB_Function_type()); // if we want a default value, this line has to be after the default_values initialization line
+CB_Type CB_Function::type = CB_Type("fn", CB_Function());
+
 #include "../abstx/statements/scope.h"
 CB_Type CB_Scope::type = CB_Type("scope", CB_Scope());
 

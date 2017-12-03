@@ -206,7 +206,7 @@ void range_test()
 
 void print_types()
 {
-    cout << CB_Type::type.toS() << ": CB_Type, size = " << sizeof(CB_Type) << endl; //", default value = " << CB_Type::type.default_value().toS() << endl;
+    cout << CB_Type::type.toS() << ": CB_Type, size = " << sizeof(CB_Type) << ", default value = " << CB_Type::type.default_value().toS() << endl;
     cout << CB_String::type.toS() << ": CB_String, size = " << sizeof(CB_String) << ", default value = " << CB_String::type.default_value().toS() << endl;
     cout << CB_Bool::type.toS() << ": CB_Bool, size = " << sizeof(CB_Bool) << ", default value = " << CB_Bool::type.default_value().toS() << endl;
 
@@ -230,7 +230,13 @@ void print_types()
     cout << CB_Any::type.toS() << ": CB_Any, size = " << sizeof(CB_Any) << endl; // ", default value = " << CB_Any::type.default_value().toS() << endl;
 
     cout << CB_Range::type.toS() << ": CB_Range, size = " << sizeof(CB_Range) << ", default value = " << CB_Range::type.default_value().toS() << endl;
-    // cout << CB_Function::type.toS() << ": CB_Function, size = " << sizeof(CB_Function) << endl; // ", default value = " << CB_Function::type.default_value().toS() << endl;
+    cout << CB_Function_type::type.toS() << ": CB_Function_type, size = " << sizeof(CB_Function_type) << ", default value = " << CB_Function_type::type.default_value().toS() << endl;
+    cout << CB_Function::type.toS() << ": CB_Function, size = " << sizeof(CB_Function) << ", default value = " << CB_Function::type.default_value().toS() << endl;
+    CB_Function fn = CB_Function::type.default_value().value<CB_Function>();
+    cout << "CB_Function default value: " << fn.toS() << endl;
+    fn = nullptr;
+    cout << "CB_Function after nullptr assignment: " << fn.toS() << endl;
+    cout << CB_Function::type.toS() << ": CB_Function, size = " << sizeof(CB_Function) << ", default value = " << CB_Function::type.default_value().toS() << endl;
     // cout << CB_Generic_function::type.toS() << ": CB_Generic_function, size = " << sizeof(CB_Generic_function) << endl; // ", default value = " << CB_Generic_function::type.default_value().toS() << endl;
     // cout << CB_Operator::type.toS() << ": CB_Operator, size = " << sizeof(CB_Operator) << ", default value = " << endl; //CB_Operator::type.default_value().toS() << endl;
 
@@ -690,7 +696,7 @@ void struct_test() {
 
 int main()
 {
-    // print_types();
+    print_types();
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
@@ -708,7 +714,7 @@ int main()
     // any_test();
     // flag_test();
     // jocke_test();
-    struct_test();
+    // struct_test();
 }
 
 
