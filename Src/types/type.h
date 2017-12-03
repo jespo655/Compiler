@@ -5,15 +5,72 @@
 #include <map>
 #include <string>
 
+/*
+Cube is a statically typed language.
+This means that all types has to be known at compile time.
+Generic types are allowed as long as the actual type can be determined at compiletime.
+
+Types can also be stored and used for runtime type checking.
+In this case they are represented as a 32 bit unsigned integer.
+
+Type names in c++ are prefixed with CB_, to make it easy to see what is a type and what is not.
+They can be instanciated and used like any c++ struct.
+
+Each type has a static member CB_Type type, which holds the type identifier for that type.
+Each type has a static default value, which can be accessed as CB_Any with CB_T::type.default_value().
+Each type has a static flag that specifies if it is primitive or not.
+
+The built-in types in this language are:
+
+primitives:
+* CB_Type - a type
+* CB_Function_type - a subclass of CB_Type; The value of an CB_Function_type is determined by its in and out parameters.
+* CB_Struct_type - a subclass of CB_Type; each struct definition creates its own struct type.
+
+* CB_Owning_pointer - holds a pointer to a value and deletes it when the destructor is called
+* CB_Sharing_pointer - holds a pointer to a value but does not delete it
+* CB_Flag - integer type that holds exactly one bit in a bit field
+
+* CB_bool - a boolean value (8 bit)
+
+* CB_i8 - a 8 bit signed integer
+* CB_i16 - a 16 bit signed integer
+* CB_i32 - a 32 bit signed integer
+* CB_i64 - a 64 bit signed integer
+* CB_int - a signed integer of unspecified size (target specific)
+
+* CB_u8 - a 8 bit unsigned integer
+* CB_u16 - a 16 bit unsigned integer
+* CB_u32 - a 32 bit unsigned integer
+* CB_u64 - a 64 bit unsigned integer
+* CB_uint - an usigned integer of unspecified size (target specific)
+
+* CB_f32 - a 32 bit floating point value (single precision)
+* CB_f64 - a 64 bit floating point value (double precision)
+* CB_float - a floating point value of unspecified size (target specific)
+
+
+non-primitives:
+* CB_Dynamic_seq - holds a dynamicly sized array of CB values - similar to std::vector
+* CB_Static_seq - holds a statically sized array of CB values - similar to std::array
+* CB_Any - holds a pointer to any value in a type safe manner
+* CB_Function - holds a function pointer
+* CB_Range - holds a start and an end value (both f64) for a range
+* CB_String - holds a null-terminated UTF-8 string and its length - similar to std::string
+* CB_Struct - TODO: test
+
+*/
+
 struct CB_Any; // used for default values
 
 struct CB_Type
 {
     static CB_Type type; // self reference / CB_Type
+    static const bool primitive = true;
     static std::map<int, std::string> typenames; // mapped from uid to name. Only compile time.
     static std::map<int, CB_Any> default_values; // mapped from uid to value. Only compile time.
 
-    int uid = get_unique_type_id();
+    uint32_t uid = get_unique_type_id();
 
     CB_Type() {}
     CB_Type(const std::string& name) { typenames[uid] = name; }

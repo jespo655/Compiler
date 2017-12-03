@@ -7,6 +7,7 @@
 struct CB_Flag
 {
     static CB_Type type;
+    static const bool primitive = true;
     uint8_t v;
     CB_Flag() {}
     CB_Flag(const uint8_t& v) { this->v = v; }

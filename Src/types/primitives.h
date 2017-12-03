@@ -5,6 +5,7 @@
 
 struct CB_Bool {
     static CB_Type type;
+    static const bool primitive = true;
     bool v = false;
     CB_Bool() {}
     CB_Bool(bool b) { this->v = b; }
@@ -33,6 +34,7 @@ CB_t& operator--() { --v; return *this; }                       \
 #define CB_NUMBER_TYPE(T, CPP_t)                             \
 struct CB_##T {                                              \
     static CB_Type type;                                     \
+    static const bool primitive = true;                      \
     static const CB_##T MIN_VALUE;                           \
     static const CB_##T MAX_VALUE;                           \
     CPP_t v = 0; /* default value */                         \
@@ -59,6 +61,7 @@ CB_NUMBER_TYPE(f64, double);
 // generic int - stored as i64 but can be implicitly casted to any integer type
 struct CB_Int {
     static CB_Type type;
+    static const bool primitive = true;
     static const CB_Int MIN_VALUE;
     static const CB_Int MAX_VALUE;
     int64_t v = 0;
@@ -80,6 +83,7 @@ struct CB_Int {
 // generic unsigned int - stored as u64 but can be implicitly casted to any integer type
 struct CB_Uint {
     static CB_Type type;
+    static const bool primitive = true;
     static const CB_Uint MIN_VALUE;
     static const CB_Uint MAX_VALUE;
     uint64_t v = 0;
@@ -101,6 +105,7 @@ struct CB_Uint {
 // generic float - stored as f64 but can be implicitly casted to any floating point type
 struct CB_Float {
     static CB_Type type;
+    static const bool primitive = true;
     static const CB_Float MIN_VALUE;
     static const CB_Float MAX_VALUE;
     double v = 0.0;

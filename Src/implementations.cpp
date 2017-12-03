@@ -22,9 +22,9 @@
 
 // problem: cannot be declared static in a header file - that
 // will make separate instances of "id" in different files
-int get_unique_id() {
-    static int id=0;
-    ASSERT(id >= 0); // if id is negative then the int has looped around. More than INT_MAX unique identifiers should never be needed.
+uint32_t get_unique_id() {
+    static uint32_t id=1;
+    ASSERT(id >= 0); // if id is 0 then the int has looped around. More than INT_MAX unique identifiers should never be needed.
     return id++;
 }
 

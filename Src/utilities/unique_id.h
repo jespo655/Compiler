@@ -1,3 +1,5 @@
 #pragma once
 
-int get_unique_id();
+#include <stdint.h>
+
+uint32_t get_unique_id();

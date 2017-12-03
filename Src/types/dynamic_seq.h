@@ -20,6 +20,7 @@ const int DEFAULT_CAPACITY = 16; // arbitrary power of 2
 template<typename T> // T is a CB type
 struct CB_Dynamic_seq {
     static CB_Type type;
+    static const bool primitive = false;
     constexpr static CB_Type& member_type = T::type;
     uint32_t size = 0;
     uint32_t capacity = DEFAULT_CAPACITY;

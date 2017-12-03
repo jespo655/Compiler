@@ -75,6 +75,7 @@ template<typename T, bool> struct deep_copy;
 template<typename T> // T is a CB type
 struct CB_Owning_pointer {
     static CB_Type type;
+    static const bool primitive = true;
     T* v = nullptr;
 
     std::string toS() const {
@@ -167,6 +168,7 @@ template<typename T> struct deep_copy<T,false> { // non-copy constructible - dee
 template<typename T> // T is a CB type
 struct CB_Sharing_pointer {
     static CB_Type type;
+    static const bool primitive = true;
     T* v = nullptr;
 
     std::string toS() const {

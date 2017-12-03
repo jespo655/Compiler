@@ -17,6 +17,7 @@ static void assign_void_callback(CB_Any& obj, const CB_Any& any);
 
 struct CB_Any {
     static CB_Type type; // type any
+    static const bool primitive = false;
     CB_Type v_type; // the type of v
     void* v_ptr = nullptr;
 

@@ -19,6 +19,7 @@ a : T[N] = [t1, t2, t3]; // T and N inferred
 template<typename T, uint32_t c_size> // T is a CB type
 struct CB_Static_seq {
     static CB_Type type;
+    static const bool primitive = false;
     constexpr static CB_Type& member_type = T::type;
     constexpr static uint32_t size = c_size;
     constexpr static uint32_t capacity = c_size;

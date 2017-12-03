@@ -25,6 +25,52 @@ void hw(char* s) {
 int i = 0;
 
 
+
+struct S {
+    int a;
+    int b;
+    int c;
+    int d;
+};
+
+std::vector<std::string> struct_lines = {
+    "typedef struct S {",
+    "uint8_t a;",
+    "uint64_t b;",
+    "uint16_t c;",
+    "int d;",
+    "} S;",
+    "void sum_s(S* s) { printf(\"a=%u, b=%u, c=%u, d=%u, size=%u\\n\", (uint8_t)s->a, (uint8_t)s->b, (uint8_t)s->c, (uint8_t)s->d, sizeof(S));",
+    // "printf(\"pos: a=%u, b=%u, c=%u, d=%u\\n\", (uint8_t)((uint8_t*)&s->a-(uint8_t*)s), (uint8_t)((uint8_t*)&s->b-(uint8_t*)s), (uint8_t)((uint8_t*)&s->c-(uint8_t*)s), (uint8_t)((uint8_t*)&s->d-(uint8_t*)s), sizeof(S));",
+    "}",
+};
+
+
+void struct_test() {
+    auto dll = compile_dll({create_src({"stdint.h", "stdio.h"}, struct_lines)});
+    std::string fn_name = "sum_s";
+    auto fn = load_fn(dll, fn_name);
+    uint8_t s_a[32];
+    for (int i = 0; i < sizeof(s_a); ++i) s_a[i] = i;
+    int i = 0;
+    call_fn((void*)fn, &s_a, &i);
+
+    printf("i is %d\n", i);
+};
+
+
+
+// slutsatser C alignment:
+// u8 är inte alignade
+// u16 är alignade till 16bit
+// u32 är alignade till 32bit
+// u64 är alignade till 64bit
+
+
+
+
+
+
 std::vector<std::string> lines = {
     "void fn(char* s, int i) { printf(\"hello from dll: %s %d\\n\", s, i); }",
     // "void fn(char* s, int i) { printf(\"hello from dll: %s %d\\n\", s, i); }",
@@ -35,6 +81,10 @@ std::vector<std::string> lines = {
 
 int main()
 {
+    struct_test();
+    return 0;
+
+
     // DCCallVM* vm = create_vm();
     auto dll = compile_dll({create_src({"stdio.h"}, lines)});
     std::string fn_name = "fn";

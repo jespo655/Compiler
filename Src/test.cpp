@@ -700,7 +700,7 @@ void struct_test() {
 
 int main()
 {
-    // print_types();
+    print_types();
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
@@ -713,7 +713,7 @@ int main()
     // cb_types_test();
     // owning_test();
     // template_test();
-    cb_fn_test();
+    // cb_fn_test();
     // range_test();
     // any_test();
     // flag_test();

@@ -15,6 +15,7 @@ a : Range = 0..2;
 
 struct CB_Range {
     static CB_Type type;
+    static const bool primitive = false;
     CB_f64 r_start;
     CB_f64 r_end; // has to have r_ prefix to not collide with end() for range-based cpp loops. In CB, call this just "end"
 
