@@ -1,4 +1,45 @@
 
+
+
+Status:
+
+Färdiga delar:
+* lexer/lexer.h
+
+* runtime_dll/dll.h
+
+* utilities/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Fully resolve Assignment:
 Om '=' prefixas av infix operator, används den på följande sätt:
 

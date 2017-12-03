@@ -87,6 +87,16 @@ struct CB_Dynamic_seq {
     }
     T operator[](uint32_t index) const { return get(index); }
 
+
+    template<typename T2> operator==(const CB_Dynamic_seq<T2>& seq) const { return false; }
+    bool operator==(const CB_Dynamic_seq<T>& seq) const {
+        if (size != seq.size) return false;
+        for (int i = 0; i < size; ++i) {
+            if (v_ptr[i] != seq.v_ptr[i]) return false;
+        }
+        return true;
+    }
+
     T get(uint32_t index) const {
         if (index >= size) return T();
         return v_ptr[index];

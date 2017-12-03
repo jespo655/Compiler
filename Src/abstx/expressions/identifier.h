@@ -24,7 +24,7 @@ struct Identifier : Variable_expression {
     virtual seq<owned<Value_expression>> eval()
     {
         seq<owned<Value_expression>> s;
-        s.add(alloc(*this));
+        s.add(owning_pointer_cast<Value_expression>(alloc<Identifier>(*this)));
         return s;
     }
 

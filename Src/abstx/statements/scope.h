@@ -141,7 +141,6 @@ struct CB_Scope : Abstx_node
     }
 
 };
-CB_Type CB_Scope::type = CB_Type("scope", CB_Scope());
 
 
 

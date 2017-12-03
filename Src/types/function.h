@@ -37,12 +37,12 @@ struct Function_type : CB_Type
         if (out_types.size == 0) return oss.str();
 
         oss << "->";
-        if (out_types.size > 1) oss "(";
+        if (out_types.size > 1) oss << "(";
         for (int i = 0; i < out_types.size; ++i) {
             if (i > 0) oss << ", ";
             oss << out_types[i].toS();
         }
-        if (out_types.size > 1) oss ")";
+        if (out_types.size > 1) oss << ")";
         return oss.str();
     }
 
@@ -51,7 +51,10 @@ struct Function_type : CB_Type
     bool operator==(const CB_Type& o) const { toS() == o.toS(); }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
 
-}
+};
+
+
+
 
 
 
@@ -76,9 +79,6 @@ struct Function_type : CB_Type
 
 
 /*
-
-
-
 
 
 struct Function_arg {

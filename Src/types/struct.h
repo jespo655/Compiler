@@ -102,7 +102,7 @@ struct Struct_type : CB_Type {
         return oss.str();
     }
 
-    bool operator==(const Struct_type& o) const { return *this == (CB_Type)o; } // different struct types are all different
+    bool operator==(const Struct_type& o) const { return (CB_Type)*this == (CB_Type)o; } // different struct types are all different
     bool operator!=(const Struct_type& o) const { return !(*this==o); }
 };
 
@@ -132,7 +132,7 @@ struct Struct_instance {
 
         if (any.v_type == Struct_instance::type) {
             // the value is a struct, so we should compare struct types
-            return any.value<Struct_instance>().struct_type == type;
+            return (CB_Type)any.value<Struct_instance>().struct_type == type;
         }
         else return any.v_type == type;
     }
@@ -216,8 +216,6 @@ struct Struct_instance {
         return false;
     }
 };
-CB_Type Struct_instance::type = CB_Type("Struct_instance");
 
-Struct_instance Struct_type::operator()() { return Struct_instance(*this); }
 
 

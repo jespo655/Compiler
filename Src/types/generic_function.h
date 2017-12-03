@@ -27,8 +27,8 @@ foo : fn(int, $T); // generic and non-generic types can be mixed
 typedef std::map<CB_Int, CB_Type> Type_map; // from generic index to inferred type
 
 // FIXME: move these to parser
-struct Abstx_Generic_function {};
-CB_Function recompile(CB_Sharing_pointer<Abstx_Generic_function> abstx, const Type_map& inferred_map) {} // FIXME: move to parser files
+// struct Abstx_Generic_function {};
+// CB_Function recompile(CB_Sharing_pointer<Abstx_Generic_function> abstx, const Type_map& inferred_map) {} // FIXME: move to parser files
 
 
 
@@ -37,7 +37,7 @@ CB_Function recompile(CB_Sharing_pointer<Abstx_Generic_function> abstx, const Ty
 
 
 
-
+/*
 // inherits id, type and has_default_value from Function_arg
 struct Generic_arg : Function_arg {
     CB_Int generic_index = -1; // -1: not generic
@@ -106,3 +106,4 @@ struct CB_Generic_function
 };
 CB_Type CB_Generic_function::type = CB_Type("generic_fn");
 
+*/

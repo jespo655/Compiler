@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../abstx/scope.h"
-#include "../abstx/function.h"
+#include "../abstx/statements/scope.h"
+#include "../abstx/statements/function_statement.h"
 #include "token.h"
 #include "token_iterator.h"
 

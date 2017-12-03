@@ -230,9 +230,9 @@ void print_types()
     cout << CB_Any::type.toS() << ": CB_Any, size = " << sizeof(CB_Any) << endl; // ", default value = " << CB_Any::type.default_value().toS() << endl;
 
     cout << CB_Range::type.toS() << ": CB_Range, size = " << sizeof(CB_Range) << ", default value = " << CB_Range::type.default_value().toS() << endl;
-    cout << CB_Function::type.toS() << ": CB_Function, size = " << sizeof(CB_Function) << endl; // ", default value = " << CB_Function::type.default_value().toS() << endl;
-    cout << CB_Generic_function::type.toS() << ": CB_Generic_function, size = " << sizeof(CB_Generic_function) << endl; // ", default value = " << CB_Generic_function::type.default_value().toS() << endl;
-    cout << CB_Operator::type.toS() << ": CB_Operator, size = " << sizeof(CB_Operator) << ", default value = " << endl; //CB_Operator::type.default_value().toS() << endl;
+    // cout << CB_Function::type.toS() << ": CB_Function, size = " << sizeof(CB_Function) << endl; // ", default value = " << CB_Function::type.default_value().toS() << endl;
+    // cout << CB_Generic_function::type.toS() << ": CB_Generic_function, size = " << sizeof(CB_Generic_function) << endl; // ", default value = " << CB_Generic_function::type.default_value().toS() << endl;
+    // cout << CB_Operator::type.toS() << ": CB_Operator, size = " << sizeof(CB_Operator) << ", default value = " << endl; //CB_Operator::type.default_value().toS() << endl;
 
     cout << CB_Dynamic_seq<CB_Int>::type.toS() << ": CB_Dynamic_seq<CB_Int>, size = " << sizeof(CB_Dynamic_seq<CB_Int>) << ", default value = " << CB_Dynamic_seq<CB_Int>::type.default_value().toS() << endl;
     cout << CB_Static_seq<CB_Int, 5>::type.toS() << ": CB_Static_seq<CB_Int, 5>, size = " << sizeof(CB_Static_seq<CB_Int, 5>) << ", default value = " << CB_Static_seq<CB_Int, 5>::type.default_value().toS() << endl;
@@ -247,6 +247,7 @@ void print_types()
 
 
 
+/*
 void cb_fn_test()
 {
     CB_Function fn;
@@ -260,7 +261,7 @@ void cb_fn_test()
     fn(a8,b8,&c8);
     cout << dec << a8.toS() << " + " << b8.toS() << " = " << c8.toS() << endl;
 }
-
+*/
 
 
 void cb_types_test()
@@ -305,10 +306,10 @@ void cb_types_test()
     CB_Bool b = true;
 
 
-    CB_Function fn;
+    // CB_Function fn;
     // CB_Function<Args<CB_i8, CB_i8>, Args<CB_i8>> fn;
-    cout << "fn size: " << sizeof(CB_Function) << endl;
-    cout << "fn type: " << fn.type.toS() << endl;
+    // cout << "fn size: " << sizeof(CB_Function) << endl;
+    // cout << "fn type: " << fn.type.toS() << endl;
 
     // fn.v = (void (*)())plus_i8;
     // CB_i8 a8 = 2;
@@ -317,14 +318,14 @@ void cb_types_test()
     // fn(a8,b8,c8);
 
 
-    fn.v = (void (*)())plus_ints;
-    fn.set_in_args<CB_i8, CB_i16>();
-    fn.set_out_args<CB_i32>();
+    // fn.v = (void (*)())plus_ints;
+    // fn.set_in_args<CB_i8, CB_i16>();
+    // fn.set_out_args<CB_i32>();
 
     CB_i8 a8 = 2;
     CB_i16 b8 = 5;
     CB_i32 c8;
-    fn(a8,b8,&c8);
+    // fn(a8,b8,&c8);
     cout << dec << a8.toS() << " + " << b8.toS() << " = " << c8.toS() << endl;
 
 

@@ -35,8 +35,6 @@ struct CB_Range {
     };
 
 };
-CB_Type CB_Range::type = CB_Type("range", CB_Range());
-
 
 static CB_Range::iterator begin(const CB_Range& r) { return CB_Range::iterator(r, r.r_start); }
 static CB_Range::iterator end(const CB_Range& r) { return CB_Range::iterator(r, r.r_end + 1); }

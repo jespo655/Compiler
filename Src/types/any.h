@@ -9,6 +9,11 @@ and when the Any is destroyed, the actual object will also be destroyed properly
 In c++, this is done through templated callbacks, so the struct is a bit bigger than it should be in Cube.
 */
 
+struct CB_Any;
+static std::string toS_void_callback(const CB_Any& any);
+static void destroy_void_callback(CB_Any& any);
+static void assign_void_callback(CB_Any& obj, const CB_Any& any);
+
 struct CB_Any {
     static CB_Type type; // type any
     CB_Type v_type; // the type of v
@@ -22,7 +27,7 @@ struct CB_Any {
         /*std::cout << "dstr ";*/ set_default_callbacks();
     }
 
-    template<typename T, typename Type=CB_Type*, Type=&T::type>
+    template<typename T, typename Type=CB_Type const*, Type=&T::type>
     const T& value() const {
         ASSERT(v_ptr != nullptr);
         ASSERT(T::type == v_type);
@@ -87,10 +92,10 @@ struct CB_Any {
             new (v_ptr) T(std::move(t));
         }
     }
-    template<typename T, typename Type=CB_Type*, Type=&T::type>
+    template<typename T, typename Type=CB_Type const*, Type=&T::type>
     CB_Any(T&& t) { /*std::cout << "move " << T::type.toS() << " cstr ";*/ set_default_callbacks(); *this = std::move(t); }
 
-    template<typename T, typename Type=CB_Type*, Type=&T::type>
+    template<typename T, typename Type=CB_Type const*, Type=&T::type>
     void allocate(bool init=true) {
         this->~CB_Any();
         v_type = T::type;
@@ -106,10 +111,18 @@ private:
     void (*assign_callback)(CB_Any&, const CB_Any&); // only compile time
 
     template<typename T> void set_callbacks();
-    void set_default_callbacks();
+    void set_default_callbacks() {
+        // std::cout << "setting default callbacks" << std::endl;
+        destructor_callback = destroy_void_callback;
+        toS_callback = toS_void_callback;
+        assign_callback = assign_void_callback;
+    }
 };
-CB_Type CB_Any::type = CB_Type("any");
 
+
+static std::string toS_void_callback(const CB_Any& any) { ASSERT(any.v_ptr == nullptr); return "any(void)"; }
+static void destroy_void_callback(CB_Any& any) { ASSERT(any.v_ptr == nullptr); }
+static void assign_void_callback(CB_Any& obj, const CB_Any& any) { ASSERT(any.v_ptr == nullptr); obj.~CB_Any(); }
 
 template<typename T>
 std::string toS_any_callback(const CB_Any& any) {
@@ -134,10 +147,6 @@ void assign_any_callback(CB_Any& obj, const CB_Any& any)
     obj = any.value<T>();
 }
 
-static std::string toS_void_callback(const CB_Any& any) { ASSERT(any.v_ptr == nullptr); return "any(void)"; }
-static void destroy_void_callback(CB_Any& any) { ASSERT(any.v_ptr == nullptr); }
-static void assign_void_callback(CB_Any& obj, const CB_Any& any) { ASSERT(any.v_ptr == nullptr); obj.~CB_Any(); }
-
 template<typename T>
 void CB_Any::set_callbacks() {
     // std::cout << "setting callbacks for type " << T::type.toS() << std::endl;
@@ -146,11 +155,3 @@ void CB_Any::set_callbacks() {
     assign_callback = assign_any_callback<T>;
     // assign_callback = assign_any_callback<T, std::is_copy_constructible<T>::value>::f;
 }
-
-void CB_Any::set_default_callbacks() {
-    // std::cout << "setting default callbacks" << std::endl;
-    destructor_callback = destroy_void_callback;
-    toS_callback = toS_void_callback;
-    assign_callback = assign_void_callback;
-}
-

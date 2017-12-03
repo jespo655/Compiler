@@ -10,7 +10,7 @@ Syntax:
     i add 2; // add is an infix operator which modifies i
 */
 
-struct Function_statement : Statement
+struct Function_call_statement : Statement
 {
     owned<Value_expression> expr;
 

@@ -12,6 +12,7 @@ All specializations of an operator must be known at compile time.
 No generics are allowed. (for now)
 */
 
+/* // Commented as long as functions still is WIP
 struct Operator_metadata {
     CB_String symbol;
     CB_Int prefix_prio;
@@ -101,3 +102,4 @@ struct CB_Operator
 CB_Type CB_Operator::type = CB_Type("operator");
 
 
+*/

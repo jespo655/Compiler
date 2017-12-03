@@ -17,7 +17,7 @@ struct CB_Type
 
     CB_Type() {}
     CB_Type(const std::string& name) { typenames[uid] = name; }
-    template<typename T, typename Type=CB_Type*, Type=&T::type>
+    template<typename T, typename Type=CB_Type const*, Type=&T::type>
     CB_Type(const std::string& name, T&& default_value);
     virtual ~CB_Type() {}
 
@@ -39,24 +39,16 @@ struct CB_Type
     }
 
 };
-std::map<int, std::string> CB_Type::typenames{};
 // CB_Type CB_Type::type = CB_Type("type"); // no default value
 
 
 
-#include "any.h"
-std::map<int, CB_Any> CB_Type::default_values{};
-CB_Type CB_Type::type = CB_Type("type", CB_Type("void")); // if we want a default value, this line has to be after the default_values initialization line
+#include "any.h" // any requires complete definition of CB_Type, so we have to include this here
 
+// Templated functions has to be in the header
 template<typename T, typename Type, Type>
 CB_Type::CB_Type(const std::string& name, T&& default_value)
 {
     typenames[uid] = name;
     default_values[uid] = std::move(CB_Any(default_value));
-}
-
-CB_Any CB_Type::default_value() const {
-    CB_Any& any = default_values[uid];
-    ASSERT(any.v_type == *this, "Type '"+toS()+"' has no default value!");
-    return default_values[uid];
 }

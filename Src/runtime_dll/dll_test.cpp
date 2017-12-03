@@ -1,3 +1,7 @@
+// #define DLL_TEST
+#ifdef DLL_TEST
+
+
 // #include "dyncall/include/dyncall.h"
 #include "dll.h"
 
@@ -64,3 +68,5 @@ int main()
     printf("success!\n");
 }
 
+
+#endif

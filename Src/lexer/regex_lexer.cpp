@@ -295,7 +295,7 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
 
 
 
-#define RX_TEST
+// #define RX_TEST
 #ifdef RX_TEST
 
 // Test suite

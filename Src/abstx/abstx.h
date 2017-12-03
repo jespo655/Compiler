@@ -52,37 +52,15 @@ struct Abstx_node
         owner = abstx_p;
     }
 
-    // Virtual destructor needd for polymorphism
+    // Virtual destructor needed for polymorphism
     virtual ~Abstx_node() {}
 
     // Return a pointer to the closest parent scope in the tree
     virtual shared<CB_Scope> parent_scope() const;
 
     // Return a pointer to the root parent scope in the tree
-    virtual shared<CB_Scope> global_scope() ;
+    virtual shared<CB_Scope> global_scope();
 };
-
-#include "statements/scope.h"
-// Go up in the Abstx tree until a parent scope is found.
-// If no scope is found, return nullptr
-shared<CB_Scope> Abstx_node::parent_scope() const
-{
-    shared<Abstx_node> abstx = owner;
-    while (abstx != nullptr) {
-        shared<CB_Scope> scope = dynamic_pointer_cast<CB_Scope>(abstx);
-        if (scope != nullptr) return scope;
-        else abstx = abstx->owner;
-    }
-    return nullptr;
-}
-
-shared<CB_Scope> Abstx_node::global_scope()
-{
-    auto parent = parent_scope();
-    if (parent == nullptr) return dynamic_pointer_cast<CB_Scope>(shared<Abstx_node>(this));
-    if (parent->owner == nullptr) return parent;
-    else return parent->global_scope();
-}
 
 
 

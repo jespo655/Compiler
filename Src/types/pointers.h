@@ -6,6 +6,8 @@
 #include <sstream>
 #include <type_traits>
 
+using std::nullptr_t;
+
 /*
 There are two types of pointers: owning and sharing.
 An owning pointer owns an object on the heap, and will delete it when itself is deleted.
@@ -231,4 +233,12 @@ template<typename T, typename T2>
 CB_Sharing_pointer<T> dynamic_pointer_cast(const CB_Sharing_pointer<T2>& ptr) {
     return CB_Sharing_pointer<T>(dynamic_cast<T*>(ptr.v));
 }
+
+template<typename T, typename T2>
+CB_Owning_pointer<T> owning_pointer_cast(CB_Owning_pointer<T2>&& ptr) {
+    auto p = CB_Owning_pointer<T>(dynamic_cast<T*>(ptr.v));
+    if (p.v != nullptr) ptr.v = nullptr;
+    return p;
+}
+
 

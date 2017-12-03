@@ -95,5 +95,4 @@ struct CB_String {
         v_ptr = new_ptr;
     }
 };
-CB_Type CB_String::type = CB_Type("string", CB_String(""));
 
