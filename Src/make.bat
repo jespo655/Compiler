@@ -1,8 +1,16 @@
 @echo off
-:: g++ -std=c++11 *.cpp abstx/*.cpp utilities/*.cpp compile_time/*.cpp %*
-:: g++ -std=gnu++11 parser/*.cpp *.cpp utilities/*.cpp compile_time/*.cpp %* -o cube.exe
+
+if "%PROCESSOR_ARCHITECTURE%"=="AMD64" goto 64BIT
+
+:32BIT
 g++ -std=gnu++11 *.cpp lexer/*.cpp utilities/*.cpp types/*.cpp runtime_dll/*.cpp runtime_dll/dyncall/lib32/libdyncall_s.lib -o cube.exe
+goto END
+
+:64BIT
+g++ -std=gnu++11 *.cpp lexer/*.cpp utilities/*.cpp types/*.cpp runtime_dll/*.cpp runtime_dll/dyncall/lib64/libdyncall_s.lib -o cube.exe
 :: parser/*.cpp
+
+:END
 
 
 :: /B indicates a binary file
