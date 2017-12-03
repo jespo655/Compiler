@@ -253,13 +253,17 @@ void print_types()
 
 
 
-/*
+
 void cb_fn_test()
 {
     CB_Function fn;
     fn.v = (void (*)())plus_ints;
-    fn.set_in_args<CB_i8, CB_i16>();
-    fn.set_out_args<CB_i32>();
+
+    CB_Function_type fn_type;
+    fn_type.set_in_args<CB_i8, CB_i16>();
+    fn_type.set_out_args<CB_i32>();
+
+    fn.fn_type = &fn_type;
 
     CB_i8 a8 = 2;
     CB_i16 b8 = 5;
@@ -267,7 +271,7 @@ void cb_fn_test()
     fn(a8,b8,&c8);
     cout << dec << a8.toS() << " + " << b8.toS() << " = " << c8.toS() << endl;
 }
-*/
+
 
 
 void cb_types_test()
@@ -696,7 +700,7 @@ void struct_test() {
 
 int main()
 {
-    print_types();
+    // print_types();
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
@@ -709,7 +713,7 @@ int main()
     // cb_types_test();
     // owning_test();
     // template_test();
-    // cb_fn_test();
+    cb_fn_test();
     // range_test();
     // any_test();
     // flag_test();
