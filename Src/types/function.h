@@ -33,9 +33,17 @@ CB_Function_type har:
 CB_Function har:
 
 * type
-* in-variabler som matchar typens intyper
-* ut-variabler som matchar typens uttyper
+* funktionspekare
+
+
+Abstx Function har:
+* CB_Function
+* "osynliga" declaration statements med:
+    in-variabler som matchar typens intyper
+    ut-variabler som matchar typens uttyper
 * function scope med statements
+
+
 
 fn_scope ska kunna se alla in- och uttyper, plus alla saker i parent scope:
 

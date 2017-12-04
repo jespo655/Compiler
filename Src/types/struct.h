@@ -37,6 +37,81 @@ d : Legnth;
 */
 
 
+
+
+/*
+
+CB_Struct_type har:
+
+* en lista på identifiers (namn+typ), inkl default values / uninitialized, using modifier
+
+
+
+CB_Struct har:
+
+* type
+* byte array där all data sparas
+
+
+Datastrukturen följer C standard:
+8 bit är inte alignad
+16 bit är alignad till 16 bit
+32 bit är alignad till 32 bit
+64 bit är alignad till 64 bit (endast på 64 bit OS?)
+
+ordning och alignment bestäms dynamiskt av typen och storleken på alla identifiers
+
+
+// CB:
+S :: struct {
+    a : i8;
+    b : i8;
+    c : i16;
+};
+s : S;
+foo(s.a, s.b, s.c);
+
+// Blir C:
+uint8_t sa[4];
+foo(*((uint8_t*)(sa+0)), *((uint8_t*)(sa+1)), *((uint16_t*)(sa+2)));
+// A_INDEX = 0, B_INDEX = 1, C_INDEX = 2
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
     FIXME: at assignment, assert that the struct_types are the same
     Also make special case for this when using higher order structures such as CB_Any
