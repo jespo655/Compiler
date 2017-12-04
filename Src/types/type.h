@@ -57,7 +57,7 @@ non-primitives:
 * CB_Function - holds a function pointer
 * CB_Range - holds a start and an end value (both f64) for a range
 * CB_String - holds a null-terminated UTF-8 string and its length - similar to std::string
-* CB_Struct - TODO: test
+* CB_Struct - holds a byte array containing data members
 
 */
 

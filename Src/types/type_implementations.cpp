@@ -64,8 +64,9 @@ CB_Type CB_String::type = CB_Type("string", CB_String(""));
 CB_Type CB_Flag::type = CB_Type("flag");
 
 #include "struct.h"
-CB_Type Struct_instance::type = CB_Type("Struct_instance");
-Struct_instance Struct_type::operator()() { return Struct_instance(*this); }
+CB_Type CB_Struct_type::type = CB_Type("struct_type");
+CB_Type CB_Struct::type = CB_Type("struct");
+// CB_Struct CB_Struct_type::operator()() { return CB_Struct(*this); }
 
 #include "function.h"
 CB_Type CB_Function_type::type = CB_Type("function_type", CB_Function_type()); // if we want a default value, this line has to be after the default_values initialization line

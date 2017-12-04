@@ -159,6 +159,7 @@ struct CB_Function_type : CB_Type
     bool operator!=(const CB_Function_type& o) const { return !(*this==o); }
     bool operator==(const CB_Type& o) const { toS() == o.toS(); }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
+    operator CB_Type() { return *this; }
 
 
 // Below: only useful for static tests, not for actual compiling
@@ -213,7 +214,7 @@ struct CB_Function {
         (*fn_ptr)(args...);
     }
 
-    CB_Function() {}
+    CB_Function() : CB_Type{} {}
     ~CB_Function() {}
 
     CB_Function& operator=(const CB_Function& fn) {

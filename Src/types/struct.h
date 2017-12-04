@@ -83,15 +83,65 @@ foo(*((uint8_t*)(sa+0)), *((uint8_t*)(sa+1)), *((uint16_t*)(sa+2)));
 
 
 
+struct CB_Struct_type : CB_Type
+{
+    static CB_Type type; // self reference / CB_Type
+
+    struct Struct_member {
+        CB_String id;
+        CB_Type type;
+        CB_Any default_value;
+        CB_Bool is_using = false; // allowes implicit cast to that member
+        CB_Bool explicit_uninitialized = false;
+
+        Struct_member() {};
+        Struct_member(const CB_String& id, const CB_Type& type, const CB_Any& default_value, bool is_using=false)
+            : id{id}, type{type}, default_value{default_value}, is_using{is_using} {};
+
+        std::string toS() const { return std::string("Struct_member(") + (is_using?"using ":"") + id.toS() + ":" + type.toS() + "=" + (explicit_uninitialized?"---":default_value.toS()) + ")"; }
+    };
+
+    CB_Dynamic_seq<Struct_member> members;
+
+    CB_Struct_type() : CB_Type{} {}
+    ~CB_Struct_type() {}
+
+    // Constructors has to be speficied, otherwise the default move constructor is used when we want to copy
+    CB_Struct_type() {};
+    CB_Struct_type(const CB_Struct_type& sm) { *this = sm; }
+    CB_Struct_type(CB_Struct_type&& sm) { *this = std::move(sm); }
+    CB_Struct_type& operator=(const CB_Struct_type& sm) { members = sm.members; }
+    CB_Struct_type& operator=(CB_Struct_type&& sm) { members = std::move(sm.members); }
+    ~CB_Struct_type() {}
+
+    std::string toS() const {
+        std::ostringstream oss;
+        oss << "struct { ";
+        for (int i = 0; i < members.size; ++i) {
+            if (i > 0) oss << "; ";
+            oss << members[i].toS();
+        }
+        oss << " }";
+        return oss.str();
+    }
+
+    bool operator==(const Struct_type& o) const { return (CB_Type)*this == (CB_Type)o; } // different struct types are all different
+    bool operator!=(const Struct_type& o) const { return !(*this==o); }
+    bool operator==(const CB_Type& o) const { toS() == o.toS(); }
+    bool operator!=(const CB_Type& o) const { return !(*this==o); }
+    operator CB_Type() { return *this; }
+
+    // Struct_instance operator()(); // "constructor operator", creates an instance of this struct_type
+};
 
 
+struct CB_Struct {
+    static CB_Type type;
+    CB_Sharing_pointer<CB_Struct_type> struct_type;
 
+    uint8_t* data; // c++ special case: everything is stored on the heap in an array of bytes
 
-
-
-
-
-
+};
 
 
 
@@ -117,6 +167,7 @@ foo(*((uint8_t*)(sa+0)), *((uint8_t*)(sa+1)), *((uint16_t*)(sa+2)));
     Also make special case for this when using higher order structures such as CB_Any
 */
 
+/*
 struct Struct_member {
     CB_String id;
     CB_Type type;
@@ -292,5 +343,5 @@ struct Struct_instance {
     }
 };
 
-
+*/
 

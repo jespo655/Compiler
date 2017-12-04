@@ -630,7 +630,7 @@ void generic_type_test(const T& t) {
     cout << "type: " << t.type.toS() << endl;
 }
 
-
+/*
 void struct_test() {
 
     cout << endl << " ------------------ TEST BEGIN ------------------ " << endl;
@@ -695,7 +695,7 @@ void struct_test() {
     cout << " ------------------ TEST END ------------------ " << endl << endl;
 
 }
-
+*/
 
 
 int main()
