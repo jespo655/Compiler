@@ -132,8 +132,6 @@ struct CB_Function_type : CB_Type
     CB_Dynamic_seq<CB_Sharing_pointer<CB_Type>> in_types;
     CB_Dynamic_seq<CB_Sharing_pointer<CB_Type>> out_types;
 
-    operator CB_Type() { return *this; }
-
     std::string toS() const override {
         std::ostringstream oss;
 
@@ -214,7 +212,7 @@ struct CB_Function {
         (*fn_ptr)(args...);
     }
 
-    CB_Function() : CB_Type{} {}
+    CB_Function() {}
     ~CB_Function() {}
 
     CB_Function& operator=(const CB_Function& fn) {

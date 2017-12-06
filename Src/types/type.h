@@ -69,13 +69,14 @@ struct CB_Type
     static const bool primitive = true;
     static std::map<int, std::string> typenames; // mapped from uid to name. Only compile time.
     static std::map<int, CB_Any> default_values; // mapped from uid to value. Only compile time.
+    static std::map<int, size_t> byte_sizes; // mapped from uid to size. Only compile time.
 
     uint32_t uid = get_unique_type_id();
 
     CB_Type() {}
-    CB_Type(const std::string& name) { typenames[uid] = name; }
+    CB_Type(const std::string& name, size_t size) { typenames[uid] = name; byte_sizes[uid] = size; }
     template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    CB_Type(const std::string& name, T&& default_value);
+    CB_Type(const std::string& name, size_t size, T&& default_value);
     virtual ~CB_Type() {}
 
     virtual std::string toS() const {
@@ -85,6 +86,7 @@ struct CB_Type
     }
 
     CB_Any default_value() const;
+    virtual size_t byte_size() const { return byte_sizes[uid]; }
 
     bool operator==(const CB_Type& o) const { return uid == o.uid; }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
@@ -104,8 +106,9 @@ struct CB_Type
 
 // Templated functions has to be in the header
 template<typename T, typename Type, Type>
-CB_Type::CB_Type(const std::string& name, T&& default_value)
+CB_Type::CB_Type(const std::string& name, size_t size, T&& default_value)
 {
     typenames[uid] = name;
+    byte_sizes[uid] = size;
     default_values[uid] = std::move(CB_Any(default_value));
 }

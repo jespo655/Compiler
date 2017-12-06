@@ -78,10 +78,7 @@ foo(*((uint8_t*)(sa+0)), *((uint8_t*)(sa+1)), *((uint16_t*)(sa+2)));
 
 */
 
-
-
-
-
+typedef uint8_t byte;
 
 struct CB_Struct_type : CB_Type
 {
@@ -103,15 +100,13 @@ struct CB_Struct_type : CB_Type
 
     CB_Dynamic_seq<Struct_member> members;
 
-    CB_Struct_type() : CB_Type{} {}
-    ~CB_Struct_type() {}
 
     // Constructors has to be speficied, otherwise the default move constructor is used when we want to copy
-    CB_Struct_type() {};
+    CB_Struct_type() : CB_Type{} {}
     CB_Struct_type(const CB_Struct_type& sm) { *this = sm; }
     CB_Struct_type(CB_Struct_type&& sm) { *this = std::move(sm); }
-    CB_Struct_type& operator=(const CB_Struct_type& sm) { members = sm.members; }
-    CB_Struct_type& operator=(CB_Struct_type&& sm) { members = std::move(sm.members); }
+    CB_Struct_type& operator=(const CB_Struct_type& sm) { uid=sm.uid; members = sm.members; }
+    CB_Struct_type& operator=(CB_Struct_type&& sm) { uid=sm.uid; members = std::move(sm.members); }
     ~CB_Struct_type() {}
 
     std::string toS() const {
@@ -125,25 +120,52 @@ struct CB_Struct_type : CB_Type
         return oss.str();
     }
 
-    bool operator==(const Struct_type& o) const { return (CB_Type)*this == (CB_Type)o; } // different struct types are all different
-    bool operator!=(const Struct_type& o) const { return !(*this==o); }
+    bool operator==(const CB_Struct_type& o) const { return (CB_Type)*this == (CB_Type)o; } // different struct types are all different
+    bool operator!=(const CB_Struct_type& o) const { return !(*this==o); }
     bool operator==(const CB_Type& o) const { toS() == o.toS(); }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
     operator CB_Type() { return *this; }
 
-    // Struct_instance operator()(); // "constructor operator", creates an instance of this struct_type
+    // CB_Struct_pointer operator()(); // "constructor operator", creates an instance of this struct_type
+
+    size_t byte_size();
+    void set_default_values(byte* data);
+    size_t get_member_index(const std::string& member); // returns the index of the specified member, or -1 if the member doesn't exist
+    CB_Sharing_pointer<CB_Type> get_member_type(const std::string& member); // returns the index of the specified member, or -1 if the member doesn't exist
+
 };
 
 
-struct CB_Struct {
+
+
+
+// holds a pointer to the actual struct
+// can be used to access the struct members
+struct CB_Struct_pointer {
     static CB_Type type;
     CB_Sharing_pointer<CB_Struct_type> struct_type;
 
-    typedef uint8_t byte;
-    byte* data; // c++ special case: everything is stored on the heap in an array of bytes (it will be on the stack in C)
+    bool owning;
+    byte* data;
 
-    CB_Struct() {}
-    ~CB_Struct() { free(data); }
+    CB_Struct_pointer() {}
+    ~CB_Struct_pointer() { if (owning) free(data); }
+    CB_Struct_pointer(void* data) : data{(byte*)data}, owning{false} {}
+    CB_Struct_pointer(const CB_Sharing_pointer<CB_Struct_type>& s_type, bool explicit_uninitialized = false) : owning{false}, struct_type{s_type}
+    {
+        data = (byte*)malloc(struct_type->byte_size());
+        if (!explicit_uninitialized) struct_type->set_default_values(data);
+    }
+
+    // returns null if member doesn't exist
+    byte* get_member_pointer(const std::string& member) {
+        size_t index = struct_type->get_member_index(member);
+        if (index == (size_t)-1) return nullptr;
+        return data+index;
+    }
+
+
+
 };
 
 

@@ -91,5 +91,5 @@ struct CB_Static_seq {
 };
 
 template<typename T, uint32_t size>
-CB_Type CB_Static_seq<T, size>::type = CB_Type("["+std::to_string(size)+"]"+T::type.toS(), CB_Static_seq<T,size>());
+CB_Type CB_Static_seq<T, size>::type = CB_Type("["+std::to_string(size)+"]"+T::type.toS(), sizeof(CB_Static_seq<T, size>), CB_Static_seq<T,size>());
 

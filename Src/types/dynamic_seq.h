@@ -179,7 +179,7 @@ struct CB_Dynamic_seq {
 };
 
 template<typename T>
-CB_Type CB_Dynamic_seq<T>::type = CB_Type("[]"+T::type.toS(), CB_Dynamic_seq<T>());
+CB_Type CB_Dynamic_seq<T>::type = CB_Type("[]"+T::type.toS(), sizeof(CB_Dynamic_seq<T>), CB_Dynamic_seq<T>());
 
 
 
