@@ -49,7 +49,6 @@ primitives:
 * CB_f64 - a 64 bit floating point value (double precision)
 * CB_float - a floating point value of unspecified size (target specific)
 
-
 non-primitives:
 * CB_Dynamic_seq - holds a dynamicly sized array of CB values - similar to std::vector
 * CB_Static_seq - holds a statically sized array of CB values - similar to std::array
@@ -58,6 +57,13 @@ non-primitives:
 * CB_Range - holds a start and an end value (both f64) for a range
 * CB_String - holds a null-terminated UTF-8 string and its length - similar to std::string
 * CB_Struct - holds a byte array containing data members
+
+C++ representations of types are important in this language because of the #run directive:
+
+a :: #run foo();
+
+The function gets compiled and executed, and the result has to be stored in a c++ representation of the data.
+Then that same data has to be able to be outputted as a C style literal.
 
 */
 
