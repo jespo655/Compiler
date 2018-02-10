@@ -1,0 +1,64 @@
+
+
+Mål: kunna kompilera och köra ett litet program skrivet i cube
+
+Tänk över allt när det gäller code generation
+Skriv code generation för allt
+C-include stöd inbyggt från början
+    * #include "x.h" (header)
+    * med i gcc-anropet (source)
+
+
+ #c_include "x.h"
+ #c_include_src "x.c"
+
+ #include "other.cb"
+
+
+
+
+Code generation är en egen modul som tar en pekare till en main-funktion som finns i ett abstx-träd
+
+-> Abstx-funktioner måste vara färdigimplenterade:
+-> Scopes och annat Abstx-relaterat måste vara färdigimplementerat
+
+Code gen alg:
+
+pre) (i parsing) varje cb-fil har #include-dependencies (c_src, c_header).
+    Denna lista går att nå genom funktioner.
+    Alla filer som kompileras sparas i en lista i workspace
+
+
+1) Öppna output file
+// extern c behövs ej -> det kompileras alltid som ett C-program ändå
+2) Skriv alla #includes som behövs
+    gå igenom listan i workspace och plocka ut alla includes
+    spara dem i en temporär lista (en för headers och en för src)
+    sortera efter namn och plocka bort duplicates
+    skriv ut alla headers som #include
+3) Gå igenom main-funktionen, hitta den första funktionen eller globala värdet som används
+    Osv. rekursivt tills man hittar en compile unit utan dependencies
+3b) (med multithreading compilation) vänta tills den compile uniten är färdigkompilerad
+4) Gör code gen för den compile uniten och skriv direkt till fil
+5) Fortsätt från 3) ända tills main() är färdig att genereras
+6) Döp om funktionen till "main()" och skriv ut
+7) Skriv gcc-anropet, inkl. include srcs files
+
+
+
+
+# Saker som skulle underlätta:
+* Varje abstx-node har en lista av dependencies
+* Varje funktion har en lista av statements
+* Varje statement har en code-gen-funktion som kan skriva sin eget sak till fil (måste fungera rekursivt)
+* (efter arbitrary compile time execution) Temporära filer från DLL-generering #includas så att samma abstx inte behöver gode-gennas flera gånger
+
+
+
+
+
+
+
+
+
+
