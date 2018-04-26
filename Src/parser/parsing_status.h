@@ -6,6 +6,7 @@ enum struct Parsing_status
     NOT_PARSED,             // not parsed at all.
     PARTIALLY_PARSED,       // parsed to the point that it's apparent what type of expression it is.
     FULLY_RESOLVED,         // the expression and all sub-expressions are fully parsed without errors.
+    CODE_GENERATED,         // the expression has been fully parsed and code has been outputted to file
 
     DEPENDENCIES_NEEDED,    // the expression cannot yet be fully parsed because it's waiting for other things to parse first
 
@@ -26,6 +27,7 @@ static is_error(Parsing_status p) {
     if (p == Parsing_status::NOT_PARSED
         || p == Parsing_status::PARTIALLY_PARSED
         || p == Parsing_status::FULLY_RESOLVED
+        || p == Parsing_status::CODE_GENERATED
         || p == Parsing_status::DEPENDENCIES_NEEDED)
         return false;
     return true;

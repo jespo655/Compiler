@@ -13,7 +13,15 @@
       "shell": "true",
       "working_dir": "${project_path}/src",
       "file_regex": "^[.\\\\/]*([a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
-      "variants": [],
+      "variants": [
+        {
+          "name": "Run",
+          "cmd": ["cube.exe"],
+          "shell": "true",
+          "working_dir": "${project_path}/src",
+          "file_regex": "^[.\\\\/]*([a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
+        }
+      ],
     },
     {
       "name": "Test Module",

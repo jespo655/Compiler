@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-
+typedef CB_Scope Scope;
 
 struct Global_scope : Scope
 {

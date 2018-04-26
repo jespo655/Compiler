@@ -62,3 +62,22 @@ pre) (i parsing) varje cb-fil har #include-dependencies (c_src, c_header).
 
 
 
+
+# Code gen v2:
+
+Inbyggt i parser
+så fort en fil compile unit är färdigparsad så skrivs kod ut till fil
+.c + .h
+när en #run behöver köras görs den filen färdig, kompileras till .dll och länkas in dynamiskt
+.o sparas i build folder
+namn på outputfil sparas på compile uniten
+om den behövs som dependency och filename != curr_filename, #include .h-fil körs istället
+
+
+
+Todo:
+    Bygg delar av parser
+    När en del är färdig - gör code generation direkt
+    Början: scopes
+
+

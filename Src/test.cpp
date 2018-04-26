@@ -13,6 +13,8 @@
 #include "abstx/all_abstx.h"
 #include "types/cb_types.h"
 #include "utilities/assert.h"
+// #include "parser/parser.h"
+#include "lexer/lexer.h"
 
 
 #include <string>
@@ -698,9 +700,29 @@ void struct_test() {
 */
 
 
+void compile_test()
+{
+    // std::shared_ptr<Global_scope> gs = parse_file("../Demos/helloworld.cb");
+    std::vector<Token> hw_tokens = get_tokens_from_file("../Demos/helloworld.cb");
+    std::cout << "../Demos/helloworld.cb tokens: " << endl;
+    for (const Token& token : hw_tokens) {
+        std::cout << token.token << " ";
+    }
+    std::cout << endl;
+
+
+    std::vector<Token> code_tokens = get_tokens_from_file("lexer/code.cb");
+    std::cout << "lexer/code.cb tokens: " << endl;
+    for (const Token& token : code_tokens) {
+        std::cout << token.token << " ";
+    }
+    std::cout << endl;
+
+}
+
 int main()
 {
-    print_types();
+    // print_types();
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
@@ -719,6 +741,8 @@ int main()
     // flag_test();
     // jocke_test();
     // struct_test();
+
+    compile_test();
 }
 
 

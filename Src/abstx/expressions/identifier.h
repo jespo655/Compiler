@@ -28,4 +28,9 @@ struct Identifier : Variable_expression {
         return s;
     }
 
+    void generate_code(std::ostream& target) override
+    {
+        target << "/* " << toS() << " */"; // @todo: output c-code for any CB data type. (That should probably be a property of CB_Any)
+    }
+
 };

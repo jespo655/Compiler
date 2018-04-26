@@ -6,6 +6,7 @@
 #include "../parser/parsing_status.h"
 
 #include <string>
+#include <ostream>
 #include <iostream> // for debug purposes
 
 #include "../types/cb_types.h"
@@ -43,6 +44,12 @@ struct Abstx_node
     // well into other text.
     // This method should always be implemented in all non-abstract classes.
     virtual std::string toS() const = 0;
+
+    // generate_code(): generate code and output it to to target.
+    // This is done recursively to ensure that all dependencies are outputted first.
+    virtual void generate_code(std::ostream& target) {
+        target << "/* " << toS() << " */";
+    };
 
     // Set owner in a type safe way
     template<typename T> void set_owner(const shared<T>& p)

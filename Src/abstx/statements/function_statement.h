@@ -15,4 +15,4 @@ struct Function_call_statement : Statement
     owned<Value_expression> expr;
 
     std::string toS() const override { return "function call statement"; }
-}
+};

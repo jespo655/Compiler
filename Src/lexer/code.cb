@@ -23,11 +23,11 @@ typeof :: inline fn(t : $T) -> type
     return /* COMMENT! */ T;
 };
 
-"incomplete\"asdasd"
+// "incomplete\"asdasd"
 
 
 
-test ¤ test
+// test ¤ test
 
 /*
 identifier_?
