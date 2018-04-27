@@ -6,6 +6,7 @@
 #ifdef DEBUG
 #include <stdexcept>
 #include <sstream>
+#include <iostream>
 #endif
 
 #ifdef DEBUG
@@ -20,7 +21,8 @@
 #	define ASSERT1(b) if (!(b))                                                         \
     {                                                                                   \
         std::ostringstream oss;                                                         \
-        oss << "Assert failed in file " << __FILE__ << ", line " << __LINE__;           \
+        oss << __FILE__ << ":" << __LINE__ << ": Assert failed: (" << #b << ")";        \
+        std::cerr << oss.str();                                                         \
         throw std::runtime_error(oss.str());                                            \
     }
 #else
@@ -32,8 +34,9 @@
 #	define ASSERT2(b, msg) if (!(b))                                                    \
     {                                                                                   \
         std::ostringstream oss;                                                         \
-        oss << "Assert failed in file " << __FILE__ << ", line " << __LINE__;           \
+        oss << __FILE__ << ":" << __LINE__ << ": Assert failed: (" << #b << ")";        \
         oss << ": " << msg;                                                             \
+        std::cerr << oss.str();                                                         \
         throw std::runtime_error(oss.str());                                            \
     }
 #else
