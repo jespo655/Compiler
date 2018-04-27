@@ -73,16 +73,18 @@ template<typename T, bool> struct deep_copy;
 
 // owning pointer - owns the object and deallocates it when done.
 template<typename T> // T is a CB type
-struct CB_Owning_pointer {
+struct CB_Owning_pointer : CB_Object {
     static CB_Type type;
     static const bool primitive = true;
     T* v = nullptr;
 
-    std::string toS() const {
+    std::string toS() const override {
         std::ostringstream oss;
         oss << "pointer!(" << std::hex << v << ")";
         return oss.str();
     }
+
+    CB_Object* heap_copy() const override { CB_Owning_pointer* tp = new CB_Owning_pointer(); *tp = *this; return tp; }
 
     // default constructor
     CB_Owning_pointer() {}
@@ -166,16 +168,18 @@ template<typename T> struct deep_copy<T,false> { // non-copy constructible - dee
 // shares happily with other sharing pointers
 // can not be created from an object, only from other pointers
 template<typename T> // T is a CB type
-struct CB_Sharing_pointer {
+struct CB_Sharing_pointer : CB_Object {
     static CB_Type type;
     static const bool primitive = true;
     T* v = nullptr;
 
-    std::string toS() const {
+    std::string toS() const override {
         std::ostringstream oss;
         oss << "pointer(" << std::hex << v << ")";
         return oss.str();
     }
+
+    CB_Object* heap_copy() const override { CB_Sharing_pointer* tp = new CB_Sharing_pointer(); *tp = *this; return tp; }
 
     // default constructor
     CB_Sharing_pointer() {}

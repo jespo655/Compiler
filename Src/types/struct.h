@@ -7,7 +7,7 @@
 #include "primitives.h"
 #include "dynamic_seq.h"
 #include <string>
-
+#include <vector>
 
 /*
 
@@ -98,7 +98,8 @@ struct CB_Struct_type : CB_Type
         std::string toS() const { return std::string("Struct_member(") + (is_using?"using ":"") + id.toS() + ":" + type.toS() + "=" + (explicit_uninitialized?"---":default_value.toS()) + ")"; }
     };
 
-    CB_Dynamic_seq<Struct_member> members;
+    // CB_Dynamic_seq<Struct_member> members;
+    std::vector<Struct_member> members;
 
 
     // Constructors has to be speficied, otherwise the default move constructor is used when we want to copy
@@ -109,16 +110,17 @@ struct CB_Struct_type : CB_Type
     CB_Struct_type& operator=(CB_Struct_type&& sm) { uid=sm.uid; members = std::move(sm.members); }
     ~CB_Struct_type() {}
 
-    std::string toS() const {
+    std::string toS() const override {
         std::ostringstream oss;
         oss << "struct { ";
-        for (int i = 0; i < members.size; ++i) {
+        for (int i = 0; i < members.size(); ++i) {
             if (i > 0) oss << "; ";
             oss << members[i].toS();
         }
         oss << " }";
         return oss.str();
     }
+    CB_Object* heap_copy() const override { CB_Struct_type* tp = new CB_Struct_type(); *tp = *this; return tp; }
 
     bool operator==(const CB_Struct_type& o) const { return (CB_Type)*this == (CB_Type)o; } // different struct types are all different
     bool operator!=(const CB_Struct_type& o) const { return !(*this==o); }

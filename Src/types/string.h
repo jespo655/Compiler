@@ -15,16 +15,18 @@ Syntax:
 a : String = "text";
 */
 
-struct CB_String {
+struct CB_String : CB_Object {
     static CB_Type type;
     uint32_t size = 0; // size in bytes, not in UTF-8 characters
     uint32_t capacity = 0;
     char* v_ptr = nullptr;
 
-    std::string toS() const {
+    std::string toS() const override {
         ASSERT(v_ptr != nullptr);
         return std::string(v_ptr);
     }
+
+    CB_Object* heap_copy() const override { CB_String* tp = new CB_String(); *tp = *this; return tp; }
 
     // default constructor
     CB_String() {

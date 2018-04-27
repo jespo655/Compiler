@@ -148,6 +148,8 @@ struct CB_Function_type : CB_Type
         return oss.str();
     }
 
+    CB_Object* heap_copy() const override { return nullptr; } // @TODO
+
     bool operator==(const CB_Function_type& o) const { return o.in_types == in_types && o.out_types == out_types; }
     bool operator!=(const CB_Function_type& o) const { return !(*this==o); }
     bool operator==(const CB_Type& o) const { return toS() == o.toS(); }
@@ -185,29 +187,40 @@ private:
 
 
 
-struct CB_Function {
+struct CB_Function : CB_Object {
 
     static CB_Type type;
     CB_Sharing_pointer<CB_Function_type> fn_type;
 
     void (*v)() = nullptr; // function pointer
 
-    std::string toS() const {
+    std::string toS() const override {
         return "function"; // FIXME: better toS()
     }
 
-    /*
-    // TODO: operator() variant that is usable at compile time (so, no static typechecking)
-    CB_Owning_pointer<CB_Dynamic_seq<CB_Any>> call(CB_Sharing_pointer<CB_Dynamic_seq<CB_Any>> args)
-    {
-        // verify types
+    CB_Object* heap_copy() const override { return nullptr; } // @TODO
 
-        // push to stack
 
-        // call function
-        v();
-    }
-    */
+    // // TODO: operator() variant that is usable at compile time (so, no static typechecking)
+    // CB_Dynamic_seq<CB_Any>> call(CB_Dynamic_seq<CB_Any>& args)
+    // {
+    //     ASSERT(v != nullptr);
+    //     ASSERT(fn_type != nullptr);
+    //     // verify argument types
+    //     ASSERT(args.size == fn_type->in_types.size); // TODO: this should not be ASSERT, but compile error when it happens from a compile time constext
+    //     for (int i = 0; i < args.size; ++i) {
+    //         ASSERT(args[i].v_type == *fn_type->in_types[i]);
+    //     }
+    //     // create return value objects
+    //     CB_Dynamic_seq<CB_Any> retval;
+    //     for (auto&)
+
+    //     // push to stack using dyncall library
+
+    //     // call function
+    //     v();
+    // }
+
 
 
     // operator(): only useful for static tests, not for actual compiling

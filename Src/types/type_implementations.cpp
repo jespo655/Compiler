@@ -18,7 +18,7 @@ CB_Type CB_Any::type = CB_Type("any", 0);
 CB_Any CB_Type::default_value() const {
     CB_Any& any = default_values[uid];
     ASSERT(any.v_type == *this, "Type '"+toS()+"' has no default value!");
-    return default_values[uid];
+    return any;
 }
 
 #include "primitives.h"
@@ -73,8 +73,8 @@ CB_Type CB_Struct_pointer::type = CB_Type("struct", 0);
 CB_Type CB_Function_type::type = CB_Type("function_type", sizeof(CB_Function_type), CB_Function_type()); // if we want a default value, this line has to be after the default_values initialization line
 CB_Type CB_Function::type = CB_Type("fn", sizeof(CB_Function), CB_Function());
 
-#include "../abstx/statements/scope.h"
-CB_Type CB_Scope::type = CB_Type("scope", 0, CB_Scope());
+// #include "../abstx/statements/scope.h"
+// CB_Type CB_Scope::type = CB_Type("scope", 0, CB_Scope());
 
 
 

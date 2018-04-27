@@ -785,13 +785,13 @@ int main()
     // template_test();
     // cb_fn_test();
     // range_test();
-    // any_test();
+    any_test();
     // flag_test();
     // jocke_test();
     // struct_test();
     // compile_test();
 
-    function_test();
+    // function_test();
     // code_gen_test();
 }
 

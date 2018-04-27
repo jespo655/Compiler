@@ -13,15 +13,17 @@ Syntax:
 a : Range = 0..2;
 */
 
-struct CB_Range {
+struct CB_Range : CB_Object {
     static CB_Type type;
     static const bool primitive = false;
     CB_f64 r_start;
     CB_f64 r_end; // has to have r_ prefix to not collide with end() for range-based cpp loops. In CB, call this just "end"
 
-    std::string toS() const {
+    std::string toS() const override {
         return r_start.toS() + ".." + r_end.toS();
     }
+
+    CB_Object* heap_copy() const override { CB_Range* tp = new CB_Range(); *tp = *this; return tp; }
 
     struct iterator {
         CB_f64 current;

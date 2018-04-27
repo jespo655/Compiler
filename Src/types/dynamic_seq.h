@@ -18,7 +18,7 @@ a : T[] = [t1, t2, t3]; // T and N inferred
 const int DEFAULT_CAPACITY = 16; // arbitrary power of 2
 
 template<typename T> // T is a CB type
-struct CB_Dynamic_seq {
+struct CB_Dynamic_seq : CB_Object {
     static CB_Type type;
     static const bool primitive = false;
     constexpr static CB_Type& member_type = T::type;
@@ -26,7 +26,7 @@ struct CB_Dynamic_seq {
     uint32_t capacity = DEFAULT_CAPACITY;
     T* v_ptr = nullptr;
 
-    std::string toS() const {
+    std::string toS() const override {
         std::ostringstream oss;
         oss << "[" << member_type.toS() << ", dynamic: ";
         for (uint32_t i = 0; i < size; ++i) {
@@ -36,6 +36,8 @@ struct CB_Dynamic_seq {
         oss << "]";
         return oss.str();
     }
+
+    CB_Object* heap_copy() const override { CB_Dynamic_seq* tp = new CB_Dynamic_seq(); *tp = *this; return tp; }
 
     CB_Dynamic_seq() {
         size = 0;

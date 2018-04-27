@@ -17,7 +17,7 @@ a : T[N] = [t1, t2, t3]; // T and N inferred
 */
 
 template<typename T, uint32_t c_size> // T is a CB type
-struct CB_Static_seq {
+struct CB_Static_seq : CB_Object {
     static CB_Type type;
     static const bool primitive = false;
     constexpr static CB_Type& member_type = T::type;
@@ -25,7 +25,7 @@ struct CB_Static_seq {
     constexpr static uint32_t capacity = c_size;
     T v[c_size];
 
-    std::string toS() const {
+    std::string toS() const override {
         std::ostringstream oss;
         oss << "[" << member_type.toS() << ", size=" << size << ": ";
         for (uint32_t i = 0; i < size; ++i) {
@@ -35,6 +35,8 @@ struct CB_Static_seq {
         oss << "]";
         return oss.str();
     }
+
+    CB_Object* heap_copy() const override { CB_Static_seq* tp = new CB_Static_seq(); *tp = *this; return tp; }
 
     CB_Static_seq(bool init=true) {
         if (init) {

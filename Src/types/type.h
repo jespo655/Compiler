@@ -20,6 +20,9 @@ Each type has a static member CB_Type type, which holds the type identifier for 
 Each type has a static default value, which can be accessed as CB_Any with CB_T::type.default_value().
 Each type has a static flag that specifies if it is primitive or not.
 
+All types CB_-instances of types have to be a subclass of CB_Object, and implement its basic functionality.
+
+
 The built-in types in this language are:
 
 primitives:
@@ -67,9 +70,16 @@ Then that same data has to be able to be outputted as a C style literal.
 
 */
 
+
+struct CB_Object {
+    virtual ~CB_Object() {} // destructor
+    virtual std::string toS() const = 0; // to string
+    virtual CB_Object* heap_copy() const = 0; // deep copy placed on the heap witn c++ new(). The returned pointer has to be deleted afterwards!
+};
+
 struct CB_Any; // used for default values
 
-struct CB_Type
+struct CB_Type : CB_Object
 {
     static CB_Type type; // self reference / CB_Type
     static const bool primitive = true;
@@ -83,13 +93,15 @@ struct CB_Type
     CB_Type(const std::string& name, size_t size) { typenames[uid] = name; byte_sizes[uid] = size; }
     template<typename T, typename Type=CB_Type const*, Type=&T::type>
     CB_Type(const std::string& name, size_t size, T&& default_value);
-    virtual ~CB_Type() {}
+    virtual ~CB_Type() override {}
 
-    virtual std::string toS() const {
+    virtual std::string toS() const override {
         const std::string& name = typenames[uid];
         if (name == "") return "anonymous type("+std::to_string(uid)+")";
         return name; // +"("+std::to_string(uid)+")";
     }
+
+    virtual CB_Object* heap_copy() const override { CB_Type* tp = new CB_Type(); *tp = *this; return tp; }
 
     CB_Any default_value() const;
     virtual size_t byte_size() const { return byte_sizes[uid]; }
@@ -104,8 +116,6 @@ struct CB_Type
     }
 
 };
-// CB_Type CB_Type::type = CB_Type("type"); // no default value
-
 
 
 #include "any.h" // any requires complete definition of CB_Type, so we have to include this here

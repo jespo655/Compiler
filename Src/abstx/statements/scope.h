@@ -27,9 +27,9 @@ const CB_Flag SCOPE_ASYNC = 1;
 const CB_Flag SCOPE_DYNAMIC = 2;
 const CB_Flag SCOPE_SELF_CONTAINED = 3; // should be set if the scope never references identifiers outside itself.
 
-struct CB_Scope : Abstx_node
+struct CB_Scope : Abstx_node //, CB_Object
 {
-    static CB_Type type;
+    // static CB_Type type;
     seq<owned<Statement>> statements;
 
     std::map<CB_String, shared<Identifier>> identifiers; // id name -> id. Identifiers are owned by their declaration statements.
@@ -56,6 +56,7 @@ struct CB_Scope : Abstx_node
         os << "}" << std::endl;
     }
     std::string toS() const override { return dynamic()? "scope(d)" : "scope(s)"; }
+    // CB_Object* heap_copy() const override { CB_Scope* tp = new CB_Scope(); *tp = *this; return tp; }
 
     shared<Identifier> get_identifier(const CB_String& id, bool recursive=true)
     {
@@ -85,13 +86,13 @@ struct CB_Scope : Abstx_node
         return p;
     }
 
-    shared<CB_Scope> get_scope(const CB_String& id, bool recursive=true)
-    {
-        auto p = get_identifier(id, recursive);
-        if (p == nullptr || *(p->type) != CB_Scope::type) return nullptr;
-        return &(p->value.value<CB_Scope>());
-        return nullptr;
-    }
+    // shared<CB_Scope> get_scope(const CB_String& id, bool recursive=true)
+    // {
+    //     auto p = get_identifier(id, recursive);
+    //     if (p == nullptr || *(p->type) != CB_Scope::type) return nullptr;
+    //     return &(p->value.value<CB_Scope>());
+    //     return nullptr;
+    // }
 
     void resolve_imports()
     {
@@ -111,10 +112,10 @@ struct CB_Scope : Abstx_node
                         if (scope.type == CB_String::type) {
                             ASSERT(false, "FIXME: string import");
                             // compile file, import its global scope
-                        } else if (scope.type == CB_Scope::type) {
-                            // import the scope directly
-                            ASSERT(false, "FIXME: scope import");
-                            // imported_scopes.add(scope.value<CB_Scope>());
+                        // } else if (scope.type == CB_Scope::type) {
+                        //     // import the scope directly
+                        //     ASSERT(false, "FIXME: scope import");
+                        //     // imported_scopes.add(scope.value<CB_Scope>());
                         } else {
                             log_error("Invalid type in using statement: expected string or scope, but found "+scope.type.toS(), us->context);
                             // if nullptr, eval should already have logged error

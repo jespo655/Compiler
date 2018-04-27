@@ -3,14 +3,15 @@
 #include "type.h"
 #include <limits>
 
-struct CB_Bool {
+struct CB_Bool : CB_Object {
     static CB_Type type;
     static const bool primitive = true;
     bool v = false;
     CB_Bool() {}
     CB_Bool(bool b) { this->v = b; }
     operator bool() const { return v; } // necessary for compact if() statements
-    std::string toS() const { return v? "true" : "false"; }
+    std::string toS() const override { return v? "true" : "false"; }
+    CB_Object* heap_copy() const override { CB_Bool* tp = new CB_Bool(); *tp = *this; return tp; }
 };
 
 
@@ -26,13 +27,13 @@ CB_t operator+(const CB_t& o) const { return CB_t(v + o.v); } \
 CB_t operator-(const CB_t& o) const { return CB_t(v - o.v); } \
 CB_t operator*(const CB_t& o) const { return CB_t(v * o.v); } \
 CB_t operator/(const CB_t& o) const { if (o == 0) return CB_t::MAX_VALUE;  return CB_t(v / o.v); } \
-CB_t& operator++() { ++v; return *this; }                       \
-CB_t& operator--() { --v; return *this; }                       \
+CB_t& operator++() { ++v; return *this; }                     \
+CB_t& operator--() { --v; return *this; }                     \
 
 
 
 #define CB_NUMBER_TYPE(T, CPP_t)                             \
-struct CB_##T {                                              \
+struct CB_##T : CB_Object {                                  \
     static CB_Type type;                                     \
     static const bool primitive = true;                      \
     static const CB_##T MIN_VALUE;                           \
@@ -40,7 +41,8 @@ struct CB_##T {                                              \
     CPP_t v = 0; /* default value */                         \
     CB_##T() {}                                              \
     CB_##T(const CPP_t& v) { this->v = v; }                  \
-    std::string toS() const { return std::to_string(v); }    \
+    std::string toS() const override { return std::to_string(v); } \
+    CB_Object* heap_copy() const override { CB_##T* tp = new CB_##T(); *tp = *this; return tp; } \
     GENERATE_PRIMITIVE_OPERATORS(CB_##T);                    \
 };                                                           \
 
@@ -59,7 +61,7 @@ CB_NUMBER_TYPE(f32, float);
 CB_NUMBER_TYPE(f64, double);
 
 // generic int - stored as i64 but can be implicitly casted to any integer type
-struct CB_Int {
+struct CB_Int : CB_Object {
     static CB_Type type;
     static const bool primitive = true;
     static const CB_Int MIN_VALUE;
@@ -67,7 +69,8 @@ struct CB_Int {
     int64_t v = 0;
     CB_Int() {}
     CB_Int(const int64_t& v) { this->v = v; }
-    std::string toS() const { return std::to_string(v); }
+    std::string toS() const override { return std::to_string(v); }
+    CB_Object* heap_copy() const override { CB_Int* tp = new CB_Int(); *tp = *this; return tp; }
     operator CB_i8() const { CB_i8 i; i.v = v; return i; }
     operator CB_i16() const { CB_i16 i; i.v = v; return i; }
     operator CB_i32() const { CB_i32 i; i.v = v; return i; }
@@ -81,7 +84,7 @@ struct CB_Int {
 };
 
 // generic unsigned int - stored as u64 but can be implicitly casted to any integer type
-struct CB_Uint {
+struct CB_Uint : CB_Object {
     static CB_Type type;
     static const bool primitive = true;
     static const CB_Uint MIN_VALUE;
@@ -89,7 +92,8 @@ struct CB_Uint {
     uint64_t v = 0;
     CB_Uint() {}
     CB_Uint(const uint64_t& v) { this->v = v; }
-    std::string toS() const { return std::to_string(v); }
+    std::string toS() const override { return std::to_string(v); }
+    CB_Object* heap_copy() const override { CB_Uint* tp = new CB_Uint(); *tp = *this; return tp; }
     operator CB_i8() const { CB_i8 i; i.v = v; return i; }
     operator CB_i16() const { CB_i16 i; i.v = v; return i; }
     operator CB_i32() const { CB_i32 i; i.v = v; return i; }
@@ -103,7 +107,7 @@ struct CB_Uint {
 };
 
 // generic float - stored as f64 but can be implicitly casted to any floating point type
-struct CB_Float {
+struct CB_Float : CB_Object {
     static CB_Type type;
     static const bool primitive = true;
     static const CB_Float MIN_VALUE;
@@ -111,7 +115,8 @@ struct CB_Float {
     double v = 0.0;
     CB_Float() {}
     CB_Float(const double& v) { this->v = v; }
-    std::string toS() const { return std::to_string(v); }
+    std::string toS() const override { return std::to_string(v); }
+    CB_Object* heap_copy() const override { CB_Float* tp = new CB_Float(); *tp = *this; return tp; }
     operator CB_f32() const { CB_f32 i; i.v = v; return i; }
     operator CB_f64() const { CB_f64 i; i.v = v; return i; }
     GENERATE_PRIMITIVE_OPERATORS(CB_Float);
