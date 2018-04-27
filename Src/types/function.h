@@ -9,9 +9,6 @@
 #include <string>
 
 /*
-Range - a compact data structure with a start and an end.
-Can be iterated over
-
 Syntax:
 foo : fn(int, int)->(int, int);
 sum : fn(int, int)->int;            // only one return value -> don't need the paren
@@ -25,13 +22,11 @@ bar : fn();                         // no return value -> don't need the arrow
 
 /*
 CB_Function_type har:
-
 * namm
 * intyper
 * uttyper
 
 CB_Function har:
-
 * type
 * funktionspekare
 
@@ -138,7 +133,7 @@ struct CB_Function_type : CB_Type
         oss << "fn(";
         for (int i = 0; i < in_types.size; ++i) {
             if (i > 0) oss << ", ";
-            oss << in_types[i].toS();
+            oss << in_types[i]->toS();
         }
         oss << ")";
         if (out_types.size == 0) return oss.str();
@@ -147,7 +142,7 @@ struct CB_Function_type : CB_Type
         if (out_types.size > 1) oss << "(";
         for (int i = 0; i < out_types.size; ++i) {
             if (i > 0) oss << ", ";
-            oss << out_types[i].toS();
+            oss << out_types[i]->toS();
         }
         if (out_types.size > 1) oss << ")";
         return oss.str();
@@ -155,7 +150,7 @@ struct CB_Function_type : CB_Type
 
     bool operator==(const CB_Function_type& o) const { return o.in_types == in_types && o.out_types == out_types; }
     bool operator!=(const CB_Function_type& o) const { return !(*this==o); }
-    bool operator==(const CB_Type& o) const { toS() == o.toS(); }
+    bool operator==(const CB_Type& o) const { return toS() == o.toS(); }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
     operator CB_Type() { return *this; }
 
@@ -200,6 +195,20 @@ struct CB_Function {
     std::string toS() const {
         return "function"; // FIXME: better toS()
     }
+
+    /*
+    // TODO: operator() variant that is usable at compile time (so, no static typechecking)
+    CB_Owning_pointer<CB_Dynamic_seq<CB_Any>> call(CB_Sharing_pointer<CB_Dynamic_seq<CB_Any>> args)
+    {
+        // verify types
+
+        // push to stack
+
+        // call function
+        v();
+    }
+    */
+
 
     // operator(): only useful for static tests, not for actual compiling
     template<typename... Types>

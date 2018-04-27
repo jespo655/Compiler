@@ -5,9 +5,6 @@
 #include "../types/function.h"
 
 /*
-Range - a compact data structure with a start and an end.
-Can be iterated over
-
 Syntax:
 foo : fn(int, int)->(int, int) = fn(a: int, b: int)->(c: int, d: int) { return a, b; };
 sum : fn(int, int)->int = fn(a: int, b: int)->int { return a+b; }; // only one return value -> don't need the paren
@@ -82,7 +79,6 @@ struct Function_arg
 
 struct Function : Value_expression
 {
-    static CB_Type type; // Type "Function_pointer" - only here to conform to standard for a CB value. Special cases are needed elsewhere, to use function_type instead for type checking.
     shared<Function_type> function_type;
     CB_Dynamic_seq<CB_Owning_pointer<Function_arg>> in_args;
     CB_Dynamic_seq<CB_Owning_pointer<Function_arg>> out_args;

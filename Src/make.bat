@@ -1,8 +1,8 @@
-rem @echo off
+@echo off
 
 set INCLUDE_PATHS=
 set SRC_FILES=*.cpp lexer/*.cpp utilities/*.cpp types/*.cpp runtime_dll/*.cpp
-:: parser/*.cpp
+:: parser/*.cpp code_gen/*.cpp
 set LIBS32=runtime_dll/dyncall/lib32/libdyncall_s.lib
 set LIBS64=runtime_dll/dyncall/lib64/libdyncall_s.lib
 set OUTPUT_NAME=cube.exe

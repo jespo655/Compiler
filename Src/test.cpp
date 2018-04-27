@@ -16,7 +16,6 @@
 // #include "parser/parser.h"
 #include "lexer/lexer.h"
 
-
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -720,6 +719,55 @@ void compile_test()
 
 }
 
+void code_gen_test()
+{
+    // first: get tokens from file
+    std::vector<Token> hw_tokens = get_tokens_from_file("../Demos/helloworld.cb");
+    std::cout << "../Demos/helloworld.cb tokens: " << endl;
+    for (const Token& token : hw_tokens) {
+        std::cout << token.token << " ";
+    }
+    std::cout << endl;
+
+    // compile into abstx tree
+    // TODO
+
+    // get entry point
+    // Function entry_point;
+    // std::set<std::string> c_sources;
+    // generate_code(std::cout, &fn, c_sources);
+}
+
+void function_test()
+{
+    std::cout << "test start" << std::endl;
+    CB_Function_type fn_t;
+    std::cout << "adding arg types" << std::endl;
+    fn_t.in_types.add(CB_Sharing_pointer<CB_Type>(&CB_Int::type));
+    fn_t.in_types.add(CB_Sharing_pointer<CB_Type>(&CB_Int::type));
+    fn_t.out_types.add(CB_Sharing_pointer<CB_Type>(&CB_Int::type));
+    std::cout << "fn type: " << fn_t.toS() << std::endl;
+
+    ASSERT(fn_t != CB_Int::type, "fn type is not the same as int!");
+    ASSERT(CB_Int::type != fn_t, "fn type is not the same as int!");
+    ASSERT(fn_t == fn_t);
+
+    CB_Function_type fn_t2;
+    fn_t2.in_types.add(CB_Sharing_pointer<CB_Type>(&CB_i8::type));
+    fn_t2.in_types.add(CB_Sharing_pointer<CB_Type>(&CB_Int::type));
+    fn_t2.out_types.add(CB_Sharing_pointer<CB_Type>(&CB_Int::type));
+
+    ASSERT(fn_t != fn_t2);
+
+    CB_Function_type fn_t3;
+    fn_t3.in_types.add(CB_Sharing_pointer<CB_Type>(&CB_Int::type));
+    fn_t3.in_types.add(CB_Sharing_pointer<CB_Type>(&CB_Int::type));
+    fn_t3.out_types.add(CB_Sharing_pointer<CB_Type>(&CB_Int::type));
+
+    ASSERT(fn_t == fn_t3);
+}
+
+
 int main()
 {
     // print_types();
@@ -741,8 +789,10 @@ int main()
     // flag_test();
     // jocke_test();
     // struct_test();
+    // compile_test();
 
-    compile_test();
+    function_test();
+    // code_gen_test();
 }
 
 

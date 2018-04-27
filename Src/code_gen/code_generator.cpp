@@ -16,7 +16,7 @@ void recursive_code_generation(std::ostream& target, Function* abstx_node) {
 
 
 
-void generate_code(std::ostream& target, Function* entry_point, std::set<std::string>* c_sources)
+void generate_code(std::ostream& target, Function const* entry_point, const std::set<std::string>& c_sources)
 {
     // 1) find all c include and source files
     std::set<std::string> c_includes;
@@ -59,7 +59,7 @@ int main()
 {
     Function fn;
     std::set<std::string> c_sources;
-    generate_code(std::cout, &fn, &c_sources);
+    generate_code(std::cout, &fn, c_sources);
 }
 
 #endif
