@@ -2,4 +2,4 @@
 
 #include <stdint.h>
 
-uint32_t get_unique_id();
+uint64_t get_unique_id();

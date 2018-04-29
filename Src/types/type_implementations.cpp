@@ -2,8 +2,6 @@
 /*
 All static members has to have a place in memory.
 That is, they have to be defined in a .cpp-file.
-
-This file also contains
 */
 
 #include "type.h"
@@ -79,4 +77,11 @@ CB_Type CB_Function::type = CB_Type("fn", sizeof(CB_Function), CB_Function());
 
 
 
+#ifdef TEST
 
+int main()
+{
+    std::cout << "hw" << std::endl;
+}
+
+#endif

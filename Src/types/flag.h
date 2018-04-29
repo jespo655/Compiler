@@ -4,7 +4,7 @@
 #include <string>
 
 
-struct CB_Flag : CB_Object
+struct CB_Flag : CB_Type
 {
     static CB_Type type;
     static const bool primitive = true;
@@ -13,7 +13,17 @@ struct CB_Flag : CB_Object
     CB_Flag(const uint8_t& v) { this->v = v; }
     explicit operator CB_Uint() const { return 1ULL<<(v-1); }
     std::string toS() const override { return "flag("+std::to_string(v)+")"; }
-    CB_Object* heap_copy() const override { CB_Flag* tp = new CB_Flag(); *tp = *this; return tp; }
+
+    // code generation functions
+    virtual ostream& generate_typedef(ostream& os) const override {
+        os << "typedef uint8_t ";
+        return generate_type(os);
+    }
+    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
+        ASSERT(raw_data);
+        return os << *(uint8_t*)raw_data;
+    }
+
 };
 
 

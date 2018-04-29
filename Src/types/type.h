@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../utilities/assert.h"
+#include "assert.h"
+#include "unique_id.h"
 
 #include <map>
 #include <string>
@@ -18,9 +19,13 @@ They can be instanciated and used like any c++ struct.
 
 Each type has a static member CB_Type type, which holds the type identifier for that type.
 Each type has a static default value, which can be accessed as CB_Any with CB_T::type.default_value().
-Each type has a static flag that specifies if it is primitive or not.
 
-All types CB_-instances of types have to be a subclass of CB_Object, and implement its basic functionality.
+Data received from compile-time executed CB-code is received as void pointers. That data might then
+    be used as a literal in the next compile step. Therefore, each type needs to know how to parse
+    raw data and write it as a literal.
+
+
+
 
 
 The built-in types in this language are:
@@ -71,52 +76,57 @@ Then that same data has to be able to be outputted as a C style literal.
 */
 
 
-struct CB_Object {
-    virtual ~CB_Object() {} // destructor
-    virtual std::string toS() const = 0; // to string
-    virtual CB_Object* heap_copy() const = 0; // deep copy placed on the heap witn c++ new(). The returned pointer has to be deleted afterwards!
-};
-
 struct CB_Any; // used for default values
 
-struct CB_Type : CB_Object
+struct CB_Type
 {
     static CB_Type type; // self reference / CB_Type
-    static const bool primitive = true;
     static std::map<int, std::string> typenames; // mapped from uid to name. Only compile time.
     static std::map<int, CB_Any> default_values; // mapped from uid to value. Only compile time.
-    static std::map<int, size_t> byte_sizes; // mapped from uid to size. Only compile time.
+    static std::map<int, size_t> cb_sizes; // mapped from uid to size. Only compile time.
 
     uint32_t uid = get_unique_type_id();
 
     CB_Type() {}
-    CB_Type(const std::string& name, size_t size) { typenames[uid] = name; byte_sizes[uid] = size; }
+    CB_Type(const std::string& name, size_t size) { typenames[uid] = name; byte_sizes[uid] = size; } // @todo this should have a default value too
     template<typename T, typename Type=CB_Type const*, Type=&T::type>
     CB_Type(const std::string& name, size_t size, T&& default_value);
-    virtual ~CB_Type() override {}
+    virtual ~CB_Type() {}
 
-    virtual std::string toS() const override {
+    virtual std::string toS() const {
         const std::string& name = typenames[uid];
-        if (name == "") return "anonymous type("+std::to_string(uid)+")";
+        if (name == "") return "type_"+std::to_string(uid);
         return name; // +"("+std::to_string(uid)+")";
     }
 
-    virtual CB_Object* heap_copy() const override { CB_Type* tp = new CB_Type(); *tp = *this; return tp; }
-
     CB_Any default_value() const;
-    virtual size_t byte_size() const { return byte_sizes[uid]; }
+    size_t cb_sizeof() const { return cb_sizes[uid]; }
 
     bool operator==(const CB_Type& o) const { return uid == o.uid; }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
 
     static int get_unique_type_id() {
         static int id=0; // -1 is uninitialized
-        ASSERT(id >= 0); // if id is negative then the int has looped around. More than INT_MAX unique identifiers should never be needed.
+        ASSERT(id >= 0); // if id is negative then the int has looped around. More than INT_MAX unique types should never be needed.
         return id++;
     }
 
-};
+    // code generation functions
+    virtual ostream& generate_type(ostream& os) const { return os << "_type_" << uid; }
+    virtual ostream& generate_typedef(ostream& os) const {
+        os << "typedef uint32_t ";
+        return generate_type(os);
+    }
+    virtual ostream& generate_literal(ostream& os, void const* raw_data) const { ASSERT(raw_data); return os << *(uint32_t*)raw_data << "UL"; }
+    virtual ostream& generate_destructor(ostream& os) const { return os; };
+    virtual ostream& generate_assignment(ostream& os, const std::string& lvalue, const std::string& rvalue, bool move=false) const {
+        return os << lvalue << " = " << rvalue << ";";
+    }
+    // constructor:
+    // type name = literal(default_value); // default
+    // type name; // explicit uninitialized
 
+};
 
 #include "any.h" // any requires complete definition of CB_Type, so we have to include this here
 
@@ -128,3 +138,4 @@ CB_Type::CB_Type(const std::string& name, size_t size, T&& default_value)
     byte_sizes[uid] = size;
     default_values[uid] = std::move(CB_Any(default_value));
 }
+

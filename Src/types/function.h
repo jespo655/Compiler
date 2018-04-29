@@ -1,9 +1,8 @@
 #pragma once
 
 #include "type.h"
-#include "primitives.h"
-#include "string.h"
-#include "dynamic_seq.h"
+
+#include "sequence.h"
 #include "pointers.h"
 
 #include <string>
@@ -121,11 +120,32 @@ a = foo(a, a);
 */
 
 
+
+/*
+@todo
+WORK IN PROGRESS:
+skriva om alla typer så att:
+* de inte hanterar CB-data (all sådan hanteras av CB_Any)
+* är subklasser av CB_Type och implementerar alla codegen-funktioner
+
+varje instans av CB_Type/subklass av CB_Type är en egen typ
+för typer som är statiska (int) - skapa "static CB_Type type" i klassen
+för typer som kan vara olika (fn, struct) - skapa ett fält "CB_Type type"
+
+alla typer måste ha ett defaultvärde
+för funktion: titta om samma funktion redan är definierad som en typ i CB_Type::maps
+    om inte - skapa en type med riktig constructor
+
+
+ */
+
+
+
 struct CB_Function_type : CB_Type
 {
-    static CB_Type type; // self reference / CB_Type
-    CB_Dynamic_seq<CB_Sharing_pointer<CB_Type>> in_types;
-    CB_Dynamic_seq<CB_Sharing_pointer<CB_Type>> out_types;
+    CB_Type type;
+    seq<shared<CB_Type>> in_types;
+    seq<shared<CB_Type>> out_types;
 
     std::string toS() const override {
         std::ostringstream oss;
@@ -148,16 +168,24 @@ struct CB_Function_type : CB_Type
         return oss.str();
     }
 
-    CB_Object* heap_copy() const override { return nullptr; } // @TODO
-
     bool operator==(const CB_Function_type& o) const { return o.in_types == in_types && o.out_types == out_types; }
     bool operator!=(const CB_Function_type& o) const { return !(*this==o); }
     bool operator==(const CB_Type& o) const { return toS() == o.toS(); }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
-    operator CB_Type() { return *this; }
+    explicit operator CB_Type() { return *this; }
+
+    // code generation functions
+    virtual ostream& generate_typedef(ostream& os) const {
+        os << "typedef void(";
+        generate_type(os);
+        os << "*)(";
+        // TODO: output arg types
+        os << ");";
+    }
+    virtual ostream& generate_literal(ostream& os, void const* raw_data) const { ASSERT(false); return os << "null"; } // function literals cannot be generated from raw data
 
 
-// Below: only useful for static tests, not for actual compiling
+    // Below: only useful for static tests, not for actual compiling
     template<typename... Types>
     void set_in_args() {
         in_types.clear();
@@ -172,14 +200,14 @@ struct CB_Function_type : CB_Type
 private:
     template<typename T, typename... Rest>
     void add_in_args() {
-        in_types.add(CB_Sharing_pointer<CB_Type>(&T::type));
+        in_types.add(shared<CB_Type>(&T::type));
         add_in_args<Rest...>();
     }
     template<int i=0> add_in_args() {}
 
     template<typename T, typename... Rest>
     void add_out_args() {
-        out_types.add(CB_Sharing_pointer<CB_Type>(&T::type));
+        out_types.add(shared<CB_Type>(&T::type));
         add_out_args<Rest...>();
     }
     template<int i=0> add_out_args() {}
@@ -190,7 +218,7 @@ private:
 struct CB_Function : CB_Object {
 
     static CB_Type type;
-    CB_Sharing_pointer<CB_Function_type> fn_type;
+    shared<CB_Function_type> fn_type;
 
     void (*v)() = nullptr; // function pointer
 
@@ -202,7 +230,7 @@ struct CB_Function : CB_Object {
 
 
     // // TODO: operator() variant that is usable at compile time (so, no static typechecking)
-    // CB_Dynamic_seq<CB_Any>> call(CB_Dynamic_seq<CB_Any>& args)
+    // seq<CB_Any>> call(seq<CB_Any>& args)
     // {
     //     ASSERT(v != nullptr);
     //     ASSERT(fn_type != nullptr);
@@ -212,7 +240,7 @@ struct CB_Function : CB_Object {
     //         ASSERT(args[i].v_type == *fn_type->in_types[i]);
     //     }
     //     // create return value objects
-    //     CB_Dynamic_seq<CB_Any> retval;
+    //     seq<CB_Any> retval;
     //     for (auto&)
 
     //     // push to stack using dyncall library

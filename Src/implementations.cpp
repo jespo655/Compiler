@@ -2,8 +2,8 @@
 // #include "abstx/abstx.h"
 // #include "abstx/function.h"
 // #include "abstx/identifier.h"
-#include "utilities/assert.h"
-#include "utilities/unique_id.h"
+#include "assert.h"
+#include "unique_id.h"
 #include <string>
 
 /*
@@ -22,9 +22,9 @@
 
 // problem: cannot be declared static in a header file - that
 // will make separate instances of "id" in different files
-uint32_t get_unique_id() {
-    static uint32_t id=1;
-    ASSERT(id >= 0); // if id is 0 then the int has looped around. More than INT_MAX unique identifiers should never be needed.
+uint64_t get_unique_id() {
+    static uint64_t id=1;
+    ASSERT(id != 0); // if id is 0 then the int has looped around. More than INT_MAX unique identifiers should never be needed.
     return id++;
 }
 
