@@ -2,6 +2,7 @@
 
 #include "../utilities/assert.h"
 #include "../utilities/unique_id.h"
+#include "../utilities/pointers.h"
 
 #include <map>
 #include <string>
@@ -83,15 +84,16 @@ struct any; // used for default values
 
 struct CB_Type
 {
-    static CB_Type type; // self reference / CB_Type
+    static const shared<const CB_Type> type; // self reference / CB_Type
     static const bool primitive = true;
+    static constexpr uint32_t _default_value = 0;
     static std::map<int, std::string> typenames; // mapped from uid to name. Only compile time.
     static std::map<int, any> default_values; // mapped from uid to value. Only compile time.
     static std::map<int, size_t> cb_sizes; // mapped from uid to size. Only compile time.
 
     uint32_t uid;
 
-    CB_Type() { uid = type.uid; } // default value for the type
+    CB_Type() { uid = type->uid; } // default value for the type
     CB_Type(const std::string& name, size_t size, void const* default_value) {
         register_type(name, size, default_value); // new type
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cb_type.h"
+#include "../utilities/pointers.h"
 
 #include <cstring> // memcpy
 #include <iomanip> // hex
@@ -16,16 +17,18 @@ Usages:
 */
 
 struct CB_Any : CB_Type {
-    static CB_Type type; // type any
+    static const shared<const CB_Type> type; // type any
     static const bool primitive = false;
+    static constexpr void* _default_value = nullptr;
 
-    CB_Any() { uid = type.uid; }
+    CB_Any() { uid = type->uid; }
+    CB_Any(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     std::string toS() const override { return "any"; }
 
     // code generation functions
     virtual ostream& generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
-        CB_Type::type.generate_type(os);
+        CB_Type::type->generate_type(os);
         os << "type; void* v_ptr; } ";
         generate_type(os);
         return os << ";";
@@ -35,9 +38,9 @@ struct CB_Any : CB_Type {
         os << "(";
         generate_type(os);
         os << "){";
-        CB_Type::type.generate_literal(os, raw_data);
+        CB_Type::type->generate_literal(os, raw_data);
         uint8_t const* raw_it = (uint8_t const*)raw_data;
-        raw_it += CB_Type::type.cb_sizeof();
+        raw_it += CB_Type::type->cb_sizeof();
         os << ", " << std::hex << (void**)raw_it << "}";
     }
 
@@ -47,16 +50,16 @@ struct CB_Any : CB_Type {
 // Below: utilities version of any that can be used in c++
 
 struct any {
-    CB_Type v_type; // the type of v
+    shared<const CB_Type> v_type; // the type of v
     void const* v_ptr = nullptr;
 
     any() {} // default value
-    any(const CB_Type& type, void const* ptr) : v_type{type}, v_ptr{ptr} {} // default value
+    any(shared<const CB_Type> type, void const* ptr) : v_type{type}, v_ptr{ptr} {} // default value
 
     std::string toS() const {
         if (v_ptr) {
             std::ostringstream oss;
-            v_type.generate_literal(oss, v_ptr);
+            v_type->generate_literal(oss, v_ptr);
             return oss.str();
         }
         else return "---";
@@ -76,7 +79,7 @@ struct any {
     any(any&& any) { *this = std::move(any); }
 
     bool has_value(const CB_Type& t) const {
-        return t == v_type && v_ptr != nullptr;
+        return t == *v_type && v_ptr != nullptr;
     }
 };
 

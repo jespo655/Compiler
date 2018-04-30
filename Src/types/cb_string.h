@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cb_type.h"
+#include "../utilities/pointers.h"
 
 #include <string>
 #include <cstring> // strlen, strcmp
@@ -16,10 +17,12 @@ a : String = "text";
 */
 
 struct CB_String : CB_Type {
-    static CB_Type type;
+    static const shared<const CB_Type> type;
     static const bool primitive = false;
+    static constexpr char _default_value[] = "";
 
-    CB_String() { uid = type.uid; }
+    CB_String() { uid = type->uid; }
+    CB_String(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     std::string toS() const override { return "string"; }
 
     virtual ostream& generate_typedef(ostream& os) const override {

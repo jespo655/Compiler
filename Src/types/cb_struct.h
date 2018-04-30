@@ -79,14 +79,14 @@ struct CB_Struct : CB_Type
 {
     struct Struct_member {
         std::string id;
-        shared<CB_Type> type;
+        shared<const CB_Type> type;
         any default_value;
         bool is_using = false; // allowes implicit cast to that member
         bool explicit_uninitialized = false;
         size_t byte_position;
 
         Struct_member() {};
-        Struct_member(const std::string& id, const shared<CB_Type>& type, const any& default_value, bool is_using=false)
+        Struct_member(const std::string& id, const shared<const CB_Type>& type, const any& default_value, bool is_using=false)
             : id{id}, type{type}, default_value{default_value}, is_using{is_using} {};
 
         std::string toS() const {
@@ -99,17 +99,27 @@ struct CB_Struct : CB_Type
         }
     };
 
+    static const bool primitive = false;
     seq<Struct_member> members;
-    void* default_value = nullptr;
+    void* _default_value = nullptr;
     size_t max_alignment = 0;
 
     // Constructors has to be speficied, otherwise the default move constructor is used when we want to copy
     CB_Struct() {}
     CB_Struct(const CB_Struct& sm) { *this = sm; }
     CB_Struct(CB_Struct&& sm) { *this = std::move(sm); }
-    CB_Struct& operator=(const CB_Struct& sm) { uid=sm.uid; members = sm.members; }
-    CB_Struct& operator=(CB_Struct&& sm) { uid=sm.uid; members = std::move(sm.members); }
-    ~CB_Struct() { free(default_value); }
+    CB_Struct& operator=(const CB_Struct& sm) {
+        uid=sm.uid; members = sm.members; max_alignment=sm.max_alignment;
+        _default_value = malloc(sm.cb_sizeof());
+        memcpy(_default_value, sm._default_value, sm.cb_sizeof());
+    }
+    CB_Struct& operator=(CB_Struct&& sm) {
+        uid=sm.uid; members = std::move(sm.members); max_alignment=sm.max_alignment;
+        _default_value = sm._default_value;
+        sm._default_value = nullptr;
+        sm.uid = 0;
+    }
+    ~CB_Struct() { free(_default_value); }
 
     std::string toS() const override {
         std::ostringstream oss;
@@ -122,7 +132,7 @@ struct CB_Struct : CB_Type
         return oss.str();
     }
 
-    void add_member(const std::string& id, const shared<CB_Type>& type) {
+    void add_member(const std::string& id, const shared<const CB_Type>& type) {
         members.add(Struct_member(id, type, type->default_value()));
     }
 
@@ -139,11 +149,11 @@ struct CB_Struct : CB_Type
             if (alignment > max_alignment) max_alignment = alignment;
         }
         // copy default value
-        default_value = malloc(total_size);
+        _default_value = malloc(total_size);
         for (auto& member : members) {
-            memcpy((uint8_t*)default_value+member.byte_position, member.default_value.v_ptr, member.type->cb_sizeof());
+            memcpy((uint8_t*)_default_value+member.byte_position, member.default_value.v_ptr, member.type->cb_sizeof());
         }
-        register_type(toS(), total_size, default_value); // no default value
+        register_type(toS(), total_size, _default_value); // no default value
     }
 
     operator CB_Type() { return *this; }

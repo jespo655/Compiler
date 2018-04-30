@@ -146,8 +146,9 @@ för funktion: titta om samma funktion redan är definierad som en typ i CB_Type
 struct CB_Function : CB_Type
 {
     static const bool primitive = true;
-    seq<shared<CB_Type>> in_types;
-    seq<shared<CB_Type>> out_types;
+    static constexpr void(*_default_value)() = nullptr;
+    seq<shared<const CB_Type>> in_types;
+    seq<shared<const CB_Type>> out_types;
 
     std::string toS() const override {
         std::ostringstream oss;
@@ -180,7 +181,7 @@ struct CB_Function : CB_Type
             }
         }
         // no matching signature found -> register new type
-        register_type(tos, sizeof(void(*)()), nullptr); // no default value
+        register_type(tos, sizeof(_default_value), &_default_value);
     }
 
     operator CB_Type() { return *this; }

@@ -178,6 +178,8 @@ struct shared {
     T* operator->() const { ASSERT(v != nullptr); return v; }
     T& operator*() const { ASSERT(v != nullptr); return *v; }
 
+    explicit operator T*() const { return v; }
+
     // copy
     shared& operator=(const shared& ptr) { v = ptr.v; return *this; }
     shared(const shared& ptr) { *this = ptr; }

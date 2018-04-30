@@ -3,19 +3,19 @@
 #include "unique_id.h"
 #include "pointers.h"
 #include "sequence.h"
-#include "../types/type.h"
-#include "../types/function.h"
+// #include "../types/type.h"
+// #include "../types/function.h"
 #include <iostream>
 
 
 struct S {
     int i = 2;
-    std::string toS() { return "S";}
+    virtual std::string toS() { return "S";}
 };
 
 struct S2 : S {
     int stat = 2;
-    std::string toS() { return "S2";}
+    std::string toS() override { return "S2";}
 };
 
 struct Q { int j; };
@@ -30,6 +30,20 @@ struct TS
 
 int main()
 {
+    S s;
+    S2 s2;
+
+    shared<S> sp = &s;
+    shared<S> sp2 = &s2;
+
+    shared<S> sp3 = sp2;
+
+    std::cout << sp->toS() << std::endl;
+    std::cout << sp2->toS() << std::endl;
+    std::cout << sp3->toS() << std::endl;
+
+
+
     // TS<S> t;
     // TS<S2> t2;
 
@@ -61,11 +75,11 @@ int main()
 
     // std::cout << "bt: " << bt << ", bf: " << bf << std::endl;
 
-    CB_Function f1, f2;
-    std::cout << "1: " << f1.toS() << ", " << f1.uid << "; " << f2.toS() << ", " << f2.uid << std::endl;
-    f1.finalize();
-    f2.finalize();
-    std::cout << "1: " << f1.toS() << ", " << f1.uid << "; " << f2.toS() << ", " << f2.uid << std::endl;
+    // CB_Function f1, f2;
+    // std::cout << "1: " << f1.toS() << ", " << f1.uid << "; " << f2.toS() << ", " << f2.uid << std::endl;
+    // f1.finalize();
+    // f2.finalize();
+    // std::cout << "1: " << f1.toS() << ", " << f1.uid << "; " << f2.toS() << ", " << f2.uid << std::endl;
 
 }
 

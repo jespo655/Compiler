@@ -15,19 +15,21 @@ a : Range = 0..2;
 */
 
 struct CB_Range : CB_Type {
-    static CB_Type type;
+    static const shared<const CB_Type> type;
     static const bool primitive = false;
+    static constexpr double _default_value[2] = {0, 0};
 
-    CB_Range() { uid = type.uid; }
+    CB_Range() { uid = type->uid; }
+    CB_Range(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     std::string toS() const override { return "range"; }
 
-    virtual size_t alignment() const override { return CB_f64::type.alignment(); }
+    virtual size_t alignment() const override { return CB_f64::type->alignment(); }
 
     virtual ostream& generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
-        CB_f64::type.generate_type(os);
+        CB_f64::type->generate_type(os);
         os << " r_start; ";
-        CB_f64::type.generate_type(os);
+        CB_f64::type->generate_type(os);
         " r_end; } ";
         generate_type(os);
         return os << ";";
@@ -38,9 +40,9 @@ struct CB_Range : CB_Type {
         generate_type(os);
         os << "){";
         double const* raw_it = (double const*)raw_data;
-        CB_f64::type.generate_literal(os, raw_it);
+        CB_f64::type->generate_literal(os, raw_it);
         os << ", ";
-        CB_f64::type.generate_literal(os, raw_it+1);
+        CB_f64::type->generate_literal(os, raw_it+1);
         os << "}";
     }
 };
