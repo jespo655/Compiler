@@ -4,85 +4,73 @@ All static members has to have a place in memory.
 That is, they have to be defined in a .cpp-file.
 */
 
-#include "type.h"
-#include "any.h"
+#include "cb_type.h"
+#include "cb_any.h"
+
+static const uint64_t ZERO_BYTES[] = {0, 0};
+#define NULL_VALUE ZERO_BYTES[0]
+#define ZERO_VALUE ZERO_BYTES[0]
 
 std::map<int, std::string> CB_Type::typenames{};
 std::map<int, any> CB_Type::default_values{};
-std::map<int, size_t> CB_Type::byte_sizes{};
-CB_Type CB_Type::type = CB_Type("type", sizeof(CB_Type), CB_Type("void", 0)); // if we want a default value, this line has to be after the default_values initialization line
-CB_Type CB_Any::type = CB_Type("any", 0);
+std::map<int, size_t> CB_Type::cb_sizes{};
+CB_Type CB_Type::type = CB_Type("type", sizeof(uint32_t), &NULL_VALUE); // if we want a default value, this line has to be after the default_values initialization line
+CB_Type CB_Any::type = CB_Type("any", 0, &NULL_VALUE);
 
-const CB_Any& CB_Type::default_value() const
+const any& CB_Type::default_value() const
 {
-    any a = default_values[uid];
+    const any& a = default_values[uid];
     ASSERT(a.v_type == *this, "Type '"+toS()+"' has no default value!");
     return a;
 }
 
-void CB_Type::register_type(const std::string& name, size_t size, void* default_value) const
+void CB_Type::register_type(const std::string& name, size_t size, void const* default_value)
 {
     uid = get_unique_type_id();
     ASSERT(typenames[uid] == ""); // can't register double value (this should never happen if uid works correctly)
     typenames[uid] = name;
-    byte_sizes[uid] = size;
+    cb_sizes[uid] = size;
     default_values[uid] = std::move(any(*this, default_value));
 }
 
 
+// Below: static type instances for types that never change
+
+#include "cb_primitives.h"
+
+CB_Type CB_Bool::type = CB_Type("bool", sizeof(bool), &ZERO_VALUE);
+
+CB_Type CB_i8::type = CB_Type("i8", sizeof(int8_t), &ZERO_VALUE);
+CB_Type CB_i16::type = CB_Type("i16", sizeof(int16_t), &ZERO_VALUE);
+CB_Type CB_i32::type = CB_Type("i32", sizeof(int32_t), &ZERO_VALUE);
+CB_Type CB_i64::type = CB_Type("i64", sizeof(int64_t), &ZERO_VALUE);
+
+CB_Type CB_u8::type = CB_Type("u8", sizeof(uint8_t), &ZERO_VALUE);
+CB_Type CB_u16::type = CB_Type("u16", sizeof(uint16_t), &ZERO_VALUE);
+CB_Type CB_u32::type = CB_Type("u32", sizeof(uint32_t), &ZERO_VALUE);
+CB_Type CB_u64::type = CB_Type("u64", sizeof(uint64_t), &ZERO_VALUE);
+
+CB_Type CB_f32::type = CB_Type("f32", sizeof(float), &ZERO_VALUE);
+CB_Type CB_f64::type = CB_Type("f64", sizeof(double), &ZERO_VALUE);
+
+CB_Type CB_Int::type = CB_Type("int", sizeof(int64_t), &ZERO_VALUE);
+CB_Type CB_Uint::type = CB_Type("uint", sizeof(uint64_t), &ZERO_VALUE);
+CB_Type CB_Float::type = CB_Type("float", sizeof(double), &ZERO_VALUE);
+
+CB_Type CB_Flag::type = CB_Type("flag", sizeof(uint8_t), &ZERO_VALUE);
+
+#include "cb_range.h"
+CB_Type CB_Range::type = CB_Type("range", 2*sizeof(uint64_t), &ZERO_VALUE);
+
+#include "cb_string.h"
+CB_Type CB_String::type = CB_Type("string", sizeof(char*), &NULL_VALUE);
+
+// not included: CB_Struct, CB_Function
 
 
-#include "primitives.h"
 
-CB_Type CB_Bool::type = CB_Type("bool", sizeof(CB_Bool), CB_Bool());
-
-#define CB_NUMBER_TYPE_STATIC_MEMBERS(T, CPP_t)              \
-CB_Type CB_##T::type = CB_Type(#T, sizeof(CB_##T), CB_##T());                \
-const CB_##T CB_##T::MIN_VALUE = std::numeric_limits<CPP_t>::min();\
-const CB_##T CB_##T::MAX_VALUE = std::numeric_limits<CPP_t>::max();\
-
-CB_NUMBER_TYPE_STATIC_MEMBERS(i8, int8_t);
-CB_NUMBER_TYPE_STATIC_MEMBERS(i16, int16_t);
-CB_NUMBER_TYPE_STATIC_MEMBERS(i32, int32_t);
-CB_NUMBER_TYPE_STATIC_MEMBERS(i64, int64_t);
-
-CB_NUMBER_TYPE_STATIC_MEMBERS(u8, uint8_t);
-CB_NUMBER_TYPE_STATIC_MEMBERS(u16, uint16_t);
-CB_NUMBER_TYPE_STATIC_MEMBERS(u32, uint32_t);
-CB_NUMBER_TYPE_STATIC_MEMBERS(u64, uint64_t);
-
-CB_NUMBER_TYPE_STATIC_MEMBERS(f32, float);
-CB_NUMBER_TYPE_STATIC_MEMBERS(f64, double);
-
-CB_Type CB_Int::type = CB_Type("int", sizeof(CB_Int), CB_Int());
-const CB_Int CB_Int::MIN_VALUE = std::numeric_limits<int64_t>::min();
-const CB_Int CB_Int::MAX_VALUE = std::numeric_limits<int64_t>::max();
-
-CB_Type CB_Uint::type = CB_Type("uint", sizeof(CB_Uint), CB_Uint());
-const CB_Uint CB_Uint::MIN_VALUE = std::numeric_limits<uint64_t>::min();
-const CB_Uint CB_Uint::MAX_VALUE = std::numeric_limits<uint64_t>::max();
-
-CB_Type CB_Float::type = CB_Type("float", sizeof(CB_Float), CB_Float());
-const CB_Float CB_Float::MIN_VALUE = std::numeric_limits<double>::min();
-const CB_Float CB_Float::MAX_VALUE = std::numeric_limits<double>::max();
-
-#include "range.h"
-CB_Type CB_Range::type = CB_Type("range", sizeof(CB_Range), CB_Range());
-
-#include "string.h"
-CB_Type CB_String::type = CB_Type("string", sizeof(CB_String), CB_String(""));
-
-#include "flag.h"
-CB_Type CB_Flag::type = CB_Type("flag", sizeof(CB_Flag), CB_Flag());
-
-#include "struct.h"
-CB_Type CB_Struct_type::type = CB_Type("struct_type", sizeof(CB_Struct_type));
-CB_Type CB_Struct_pointer::type = CB_Type("struct", 0);
-// CB_Struct_pointer CB_Struct_type::operator()() { return CB_Struct_pointer(*this); }
-
-#include "function.h"
-CB_Type CB_Function_type::type = CB_Type("function_type", sizeof(CB_Function_type), CB_Function_type()); // if we want a default value, this line has to be after the default_values initialization line
-CB_Type CB_Function::type = CB_Type("fn", sizeof(CB_Function), CB_Function());
+// #include "cb_struct.h" // @debug @todo (nyi)
+#include "cb_function.h" // @debug
 
 // #include "../abstx/statements/scope.h"
 // CB_Type CB_Scope::type = CB_Type("scope", 0, CB_Scope());
@@ -92,9 +80,47 @@ CB_Type CB_Function::type = CB_Type("fn", sizeof(CB_Function), CB_Function());
 
 #ifdef TEST
 
+void test_type(const CB_Type& type)
+{
+    std::cout << type.toS() << ": ";
+    type.generate_type(std::cout);
+    std::cout << ", size: " << type.cb_sizeof() << std::endl;
+}
+
 int main()
 {
-    std::cout << "hw" << std::endl;
+    test_type(CB_Type::type);
+    test_type(CB_i8::type);
+    test_type(CB_i16::type);
+    test_type(CB_i32::type);
+    test_type(CB_i64::type);
+    test_type(CB_Int::type);
+    test_type(CB_u8::type);
+    test_type(CB_u16::type);
+    test_type(CB_u32::type);
+    test_type(CB_u64::type);
+    test_type(CB_Uint::type);
+    test_type(CB_f32::type);
+    test_type(CB_f64::type);
+    test_type(CB_Float::type);
+    test_type(CB_Bool::type);
+    test_type(CB_Flag::type);
+    test_type(CB_Range::type);
+    test_type(CB_String::type);
+
+    { CB_String type; test_type(type); }
+    { CB_u8 type; test_type(type); }
+    { CB_Range type; test_type(type); }
+    { CB_Flag type; test_type(type); }
+    { CB_Flag type; test_type(type); }
+
+    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
+    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
+    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
+    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
+    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
+    { CB_Function type; type.in_types.add(&CB_Bool::type); type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
+
 }
 
 #endif

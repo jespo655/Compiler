@@ -1,9 +1,10 @@
 #pragma once
 
-#include "type.h"
-#include "primitives.h"
+#include "cb_type.h"
+#include "cb_primitives.h"
 
 #include <string>
+#include <sstream>
 
 /*
 Range - a compact data structure with a start and an end.
@@ -23,7 +24,7 @@ struct CB_Range : CB_Type {
     virtual ostream& generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
         CB_f64::type.generate_type(os);
-        os << " r_start; "
+        os << " r_start; ";
         CB_f64::type.generate_type(os);
         " r_end; } ";
         generate_type(os);
@@ -34,13 +35,13 @@ struct CB_Range : CB_Type {
         os << "(";
         generate_type(os);
         os << "){";
-        double* raw_it = raw_data;
+        double const* raw_it = (double const*)raw_data;
         CB_f64::type.generate_literal(os, raw_it);
         os << ", ";
         CB_f64::type.generate_literal(os, raw_it+1);
         os << "}";
     }
-}
+};
 
 
 // Below: utilities version of any that can be used in c++
@@ -49,8 +50,10 @@ struct range {
     double r_start;
     double r_end; // has to have r_ prefix to not collide with end() for range-based cpp loops. In CB, call this just "end"
 
-    std::string toS() const override {
-        return r_start.toS() + ".." + r_end.toS();
+    std::string toS() const {
+        std::ostringstream oss;
+        oss << r_start << ".." << r_end;
+        return oss.str();
     }
 
     struct iterator {

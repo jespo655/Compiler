@@ -1,10 +1,12 @@
 #pragma once
 
-#include "assert.h"
-#include "unique_id.h"
+#include "../utilities/assert.h"
+#include "../utilities/unique_id.h"
 
 #include <map>
 #include <string>
+#include <ostream>
+using std::ostream;
 
 /*
 Cube is a statically typed language.
@@ -90,11 +92,11 @@ struct CB_Type
     uint32_t uid;
 
     CB_Type() { uid = type.uid; } // default value for the type
-    CB_Type(const std::string& name, size_t size, void* default_value) {
+    CB_Type(const std::string& name, size_t size, void const* default_value) {
         register_type(name, size, default_value); // new type
     }
     virtual ~CB_Type() {}
-    void register_type(const std::string& name, size_t size, void* default_value) const;
+    void register_type(const std::string& name, size_t size, void const* default_value);
 
     virtual std::string toS() const {
         const std::string& name = typenames[uid];
@@ -102,7 +104,7 @@ struct CB_Type
         return name;
     }
 
-    const CB_Any& default_value() const;
+    const any& default_value() const;
     size_t cb_sizeof() const { return cb_sizes[uid]; }
 
     bool operator==(const CB_Type& o) const { return uid == o.uid; }

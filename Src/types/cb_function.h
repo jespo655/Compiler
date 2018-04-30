@@ -1,9 +1,9 @@
 #pragma once
 
-#include "type.h"
+#include "cb_type.h"
 
-#include "sequence.h"
-#include "pointers.h"
+#include "../utilities/sequence.h"
+#include "../utilities/pointers.h"
 
 #include <string>
 

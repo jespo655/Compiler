@@ -1,6 +1,6 @@
 #pragma once
 
-#include "type.h"
+#include "cb_type.h"
 
 #include <string>
 #include <cstring> // strlen, strcmp
@@ -19,32 +19,36 @@ struct CB_String : CB_Type {
     static CB_Type type;
     static const bool primitive = false;
 
-    CB_Range() { uid = type.uid; }
+    CB_String() { uid = type.uid; }
     std::string toS() const override { return "string"; }
 
     virtual ostream& generate_typedef(ostream& os) const override {
-        // @TODO
-        // os << "typedef struct { ";
-        // CB_f64::type.generate_type(os);
-        // os << " r_start; "
-        // CB_f64::type.generate_type(os);
-        // " r_end; } ";
-        // generate_type(os);
-        // return os << ";";
+        // for now, just use regular null-terminated char*
+        os << "typedef char* ";
+        generate_type(os);
+        return os << ";";
     }
     virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
         ASSERT(raw_data);
-        // @TODO
-        // os << "(";
-        // generate_type(os);
-        // os << "){";
-        // double* raw_it = raw_data;
-        // CB_f64::type.generate_literal(os, raw_it);
-        // os << ", ";
-        // CB_f64::type.generate_literal(os, raw_it+1);
-        // os << "}";
+        char const* raw_it = (char const*)raw_data;
+        os << "\"";
+        while (*raw_it)  {
+            switch(*raw_it) {
+                case '\n': os << "\\n"; break;
+                case '\r': os << "\\r"; break;
+                case '\"': os << "\\\""; break;
+                case '\\': os << "\\\\"; break;
+                default: os << *(char*)raw_it;
+            }
+        }
+        return os << "\"";
     }
-}
+
+    std::string parse_raw_data(void* raw_data) {
+        return std::string((char*)raw_data);
+    }
+
+};
 
 
 
@@ -63,12 +67,10 @@ struct _string {
     uint32_t capacity = 0;
     char* v_ptr = nullptr;
 
-    std::string toS() const override {
+    std::string toS() const {
         ASSERT(v_ptr != nullptr);
         return std::string(v_ptr);
     }
-
-    CB_Object* heap_copy() const override { _string* tp = new _string(); *tp = *this; return tp; }
 
     // default constructor
     _string() {

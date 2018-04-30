@@ -1,7 +1,10 @@
 #pragma once
 
-#include "type.h"
+#include "cb_type.h"
+
 #include <cstring> // memcpy
+#include <iomanip> // hex
+#include <sstream> // ostringstream
 
 /*
 The type Any can be assigned a value of any type. The type information is then stored alongside the object.
@@ -33,28 +36,28 @@ struct CB_Any : CB_Type {
         generate_type(os);
         os << "){";
         CB_Type::type.generate_literal(os, raw_data);
-        uint8_t* raw_it = raw_data;
+        uint8_t const* raw_it = (uint8_t const*)raw_data;
         raw_it += CB_Type::type.cb_sizeof();
-        os << ", " << hex << (void**)raw_it << "}";
+        os << ", " << std::hex << (void**)raw_it << "}";
     }
 
-}
+};
 
 
 // Below: utilities version of any that can be used in c++
 
 struct any {
     CB_Type v_type; // the type of v
-    void* v_ptr = nullptr;
+    void const* v_ptr = nullptr;
 
     any() {} // default value
-    any(const CB_Type& type, void* ptr) : v_type{type}, v_ptr{ptr} {} // default value
+    any(const CB_Type& type, void const* ptr) : v_type{type}, v_ptr{ptr} {} // default value
 
     std::string toS() const {
         if (v_ptr) {
-            ostringstream oss;
+            std::ostringstream oss;
             oss << "any(";
-            v_type.generate_literal(v_ptr);
+            v_type.generate_literal(oss, v_ptr);
             oss << ")";
             return oss.str();
         }
@@ -64,7 +67,6 @@ struct any {
     any& operator=(const any& any) {
         v_ptr = any.v_ptr;
         v_type = any.v_type;
-        memcpy(v_ptr, any.v_ptr, v_type.byte_size()); // @warning this might not be safe
     }
     any(const any& any) { *this = any; }
 
