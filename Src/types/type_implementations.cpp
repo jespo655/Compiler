@@ -8,16 +8,29 @@ That is, they have to be defined in a .cpp-file.
 #include "any.h"
 
 std::map<int, std::string> CB_Type::typenames{};
-std::map<int, CB_Any> CB_Type::default_values{};
+std::map<int, any> CB_Type::default_values{};
 std::map<int, size_t> CB_Type::byte_sizes{};
 CB_Type CB_Type::type = CB_Type("type", sizeof(CB_Type), CB_Type("void", 0)); // if we want a default value, this line has to be after the default_values initialization line
 CB_Type CB_Any::type = CB_Type("any", 0);
 
-CB_Any CB_Type::default_value() const {
-    CB_Any& any = default_values[uid];
-    ASSERT(any.v_type == *this, "Type '"+toS()+"' has no default value!");
-    return any;
+const CB_Any& CB_Type::default_value() const
+{
+    any a = default_values[uid];
+    ASSERT(a.v_type == *this, "Type '"+toS()+"' has no default value!");
+    return a;
 }
+
+void CB_Type::register_type(const std::string& name, size_t size, void* default_value) const
+{
+    uid = get_unique_type_id();
+    ASSERT(typenames[uid] == ""); // can't register double value (this should never happen if uid works correctly)
+    typenames[uid] = name;
+    byte_sizes[uid] = size;
+    default_values[uid] = std::move(any(*this, default_value));
+}
+
+
+
 
 #include "primitives.h"
 

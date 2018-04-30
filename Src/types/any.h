@@ -1,115 +1,83 @@
 #pragma once
 
 #include "type.h"
-#include "pointers.h"
 #include <cstring> // memcpy
 
 /*
-The type Any can be assigned a value of any type. The type information is then stored alongside the object,
-and when the Any is destroyed, the actual object will also be destroyed properly.
+The type Any can be assigned a value of any type. The type information is then stored alongside the object.
+The value is expected to come from and be handled by a CB context, so no destructor is called when the CB_Any is destroyed.
 
-Only classes which implement CB_Object can be used with CB_Any.
+Usages:
+    default values for types
+    container for inputdata from cb functions
 */
 
-struct CB_Any : CB_Object {
+struct CB_Any : CB_Type {
     static CB_Type type; // type any
     static const bool primitive = false;
-    CB_Type v_type; // the type of v
-    CB_Object* v_ptr = nullptr;
 
-    CB_Any() {}
-    ~CB_Any() { delete(v_ptr); v_ptr = nullptr; }
+    CB_Any() { uid = type.uid; }
+    std::string toS() const override { return "any"; }
 
-    bool has_value(const CB_Type& t) const {
-        return t == v_type && v_ptr != nullptr;
+    // code generation functions
+    virtual ostream& generate_typedef(ostream& os) const override {
+        os << "typedef struct { ";
+        CB_Type::type.generate_type(os);
+        os << "type; void* v_ptr; } ";
+        generate_type(os);
+        return os << ";";
+    }
+    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
+        ASSERT(raw_data);
+        os << "(";
+        generate_type(os);
+        os << "){";
+        CB_Type::type.generate_literal(os, raw_data);
+        uint8_t* raw_it = raw_data;
+        raw_it += CB_Type::type.cb_sizeof();
+        os << ", " << hex << (void**)raw_it << "}";
     }
 
-    std::string toS() const override {
-        if (v_ptr) return v_ptr->toS();
+}
+
+
+// Below: utilities version of any that can be used in c++
+
+struct any {
+    CB_Type v_type; // the type of v
+    void* v_ptr = nullptr;
+
+    any() {} // default value
+    any(const CB_Type& type, void* ptr) : v_type{type}, v_ptr{ptr} {} // default value
+
+    std::string toS() const {
+        if (v_ptr) {
+            ostringstream oss;
+            oss << "any(";
+            v_type.generate_literal(v_ptr);
+            oss << ")";
+            return oss.str();
+        }
         else return "any(void)";
     }
 
-    CB_Object* heap_copy() const override { CB_Any* tp = new CB_Any(); *tp = *this; return tp; }
-
-    CB_Any& operator=(const CB_Any& any) {
-        v_ptr = any.v_ptr->heap_copy();
+    any& operator=(const any& any) {
+        v_ptr = any.v_ptr;
         v_type = any.v_type;
         memcpy(v_ptr, any.v_ptr, v_type.byte_size()); // @warning this might not be safe
     }
-    CB_Any(const CB_Any& any) { *this = any; }
+    any(const any& any) { *this = any; }
 
-    CB_Any& operator=(CB_Any&& any) {
-        this->~CB_Any();
+    any& operator=(any&& any) {
         v_type = any.v_type;
         v_ptr = any.v_ptr;
         any.v_ptr = nullptr;
     }
-    CB_Any(CB_Any&& any) { *this = std::move(any); }
+    any(any&& any) { *this = std::move(any); }
 
-
-
-    // static context only
-    template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    const T& value() const {
-        ASSERT(v_ptr != nullptr);
-        ASSERT(T::type == v_type);
-        return *(T const *)v_ptr;
+    bool has_value(const CB_Type& t) const {
+        return t == v_type && v_ptr != nullptr;
     }
-
-    template<typename T, typename Type=CB_Type*, Type=&T::type>
-    T& value() {
-        ASSERT(v_ptr != nullptr);
-        ASSERT(T::type == v_type);
-        return *(T*)v_ptr;
-    }
-
-    template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    CB_Sharing_pointer<T> get_shared() {
-        ASSERT(v_ptr != nullptr);
-        ASSERT(T::type == v_type);
-        return CB_Sharing_pointer<T>((T*)v_ptr);
-    }
-
-    template<typename T, typename Type=CB_Type*, Type=&T::type>
-    CB_Any& operator=(const T& t) {
-        ASSERT(T::type != CB_Any::type);
-        ASSERT(T::type == t.type);
-        if (T::type == v_type && v_ptr != nullptr) {
-            *(T*)v_ptr = T(t);
-        } else {
-            allocate<T>(false);
-            ASSERT(v_ptr == nullptr);
-            v_ptr = new T(t);
-        }
-    }
-    template<typename T, typename Type=CB_Type*, Type=&T::type>
-    CB_Any(const T& t) { *this = t; }
-
-    template<typename T, typename Type=CB_Type*, Type=&T::type>
-    CB_Any& operator=(T&& t) {
-        ASSERT(T::type != CB_Any::type);
-        ASSERT(T::type == t.type);
-        if (T::type == v_type && v_ptr != nullptr) {
-            *(T*)v_ptr = std::move(t);
-        } else {
-            allocate<T>(false);
-            ASSERT(v_ptr == nullptr);
-            v_ptr = new T(std::move(t));
-        }
-    }
-    template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    CB_Any(T&& t) { *this = std::move(t); }
-
-    template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    void allocate(bool init=true) {
-        this->~CB_Any();
-        v_type = T::type;
-        if (init) {
-            v_ptr = new T();
-            ASSERT(v_ptr != nullptr); // FIXME: better handling of bad alloc
-        }
-    }
-
 };
 
 

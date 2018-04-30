@@ -19,6 +19,7 @@ They can be instanciated and used like any c++ struct.
 
 Each type has a static member CB_Type type, which holds the type identifier for that type.
 Each type has a static default value, which can be accessed as CB_Any with CB_T::type.default_value().
+Each type has a static flag primitive, which determines if an instance of the class should be passed by value or const pointer to functions
 
 Data received from compile-time executed CB-code is received as void pointers. That data might then
     be used as a literal in the next compile step. Therefore, each type needs to know how to parse
@@ -76,30 +77,32 @@ Then that same data has to be able to be outputted as a C style literal.
 */
 
 
-struct CB_Any; // used for default values
+struct any; // used for default values
 
 struct CB_Type
 {
     static CB_Type type; // self reference / CB_Type
+    static const bool primitive = true;
     static std::map<int, std::string> typenames; // mapped from uid to name. Only compile time.
-    static std::map<int, CB_Any> default_values; // mapped from uid to value. Only compile time.
+    static std::map<int, any> default_values; // mapped from uid to value. Only compile time.
     static std::map<int, size_t> cb_sizes; // mapped from uid to size. Only compile time.
 
-    uint32_t uid = get_unique_type_id();
+    uint32_t uid;
 
-    CB_Type() {}
-    CB_Type(const std::string& name, size_t size) { typenames[uid] = name; byte_sizes[uid] = size; } // @todo this should have a default value too
-    template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    CB_Type(const std::string& name, size_t size, T&& default_value);
+    CB_Type() { uid = type.uid; } // default value for the type
+    CB_Type(const std::string& name, size_t size, void* default_value) {
+        register_type(name, size, default_value); // new type
+    }
     virtual ~CB_Type() {}
+    void register_type(const std::string& name, size_t size, void* default_value) const;
 
     virtual std::string toS() const {
         const std::string& name = typenames[uid];
         if (name == "") return "type_"+std::to_string(uid);
-        return name; // +"("+std::to_string(uid)+")";
+        return name;
     }
 
-    CB_Any default_value() const;
+    const CB_Any& default_value() const;
     size_t cb_sizeof() const { return cb_sizes[uid]; }
 
     bool operator==(const CB_Type& o) const { return uid == o.uid; }
@@ -112,10 +115,11 @@ struct CB_Type
     }
 
     // code generation functions
-    virtual ostream& generate_type(ostream& os) const { return os << "_type_" << uid; }
+    virtual ostream& generate_type(ostream& os) const { return os << "_cb_type_" << uid; }
     virtual ostream& generate_typedef(ostream& os) const {
         os << "typedef uint32_t ";
-        return generate_type(os);
+        generate_type(os);
+        return os << ";";
     }
     virtual ostream& generate_literal(ostream& os, void const* raw_data) const { ASSERT(raw_data); return os << *(uint32_t*)raw_data << "UL"; }
     virtual ostream& generate_destructor(ostream& os) const { return os; };
@@ -123,19 +127,10 @@ struct CB_Type
         return os << lvalue << " = " << rvalue << ";";
     }
     // constructor:
-    // type name = literal(default_value); // default
-    // type name; // explicit uninitialized
+    //   type name = literal(default_value); // default
+    //   type name; // explicit uninitialized
 
 };
 
-#include "any.h" // any requires complete definition of CB_Type, so we have to include this here
-
-// Templated functions has to be in the header
-template<typename T, typename Type, Type>
-CB_Type::CB_Type(const std::string& name, size_t size, T&& default_value)
-{
-    typenames[uid] = name;
-    byte_sizes[uid] = size;
-    default_values[uid] = std::move(CB_Any(default_value));
-}
+// #include "any.h" // any requires complete definition of CB_Type, so we have to include this here
 

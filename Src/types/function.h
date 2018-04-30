@@ -130,7 +130,9 @@ skriva om alla typer så att:
 
 varje instans av CB_Type/subklass av CB_Type är en egen typ
 för typer som är statiska (int) - skapa "static CB_Type type" i klassen
-för typer som kan vara olika (fn, struct) - skapa ett fält "CB_Type type"
+    i konstruktorn; sätt uid = static_type.uid
+för typer som kan vara olika (fn, struct) - gör ingenting; varje instans har ett eget uid
+    kom ihåg att registrera typen på riktigt sen bara
 
 alla typer måste ha ett defaultvärde
 för funktion: titta om samma funktion redan är definierad som en typ i CB_Type::maps
@@ -141,9 +143,9 @@ för funktion: titta om samma funktion redan är definierad som en typ i CB_Type
 
 
 
-struct CB_Function_type : CB_Type
+struct CB_Function : CB_Type
 {
-    CB_Type type;
+    static const bool primitive = true;
     seq<shared<CB_Type>> in_types;
     seq<shared<CB_Type>> out_types;
 
@@ -168,11 +170,20 @@ struct CB_Function_type : CB_Type
         return oss.str();
     }
 
-    bool operator==(const CB_Function_type& o) const { return o.in_types == in_types && o.out_types == out_types; }
-    bool operator!=(const CB_Function_type& o) const { return !(*this==o); }
-    bool operator==(const CB_Type& o) const { return toS() == o.toS(); }
-    bool operator!=(const CB_Type& o) const { return !(*this==o); }
-    explicit operator CB_Type() { return *this; }
+    void finalize() {
+        std::string tos = toS();
+        for (const auto& tn_pair : typenames) {
+            if (tn_pair.second == tos) {
+                // found existing function type with the same signature -> grab its id
+                type.uid = tn_pair.first;
+                return;
+            }
+        }
+        // no matching signature found -> register new type
+        register_type(tos, sizeof(void(*)()), nullptr); // no default value
+    }
+
+    operator CB_Type() { return *this; }
 
     // code generation functions
     virtual ostream& generate_typedef(ostream& os) const {
@@ -182,155 +193,8 @@ struct CB_Function_type : CB_Type
         // TODO: output arg types
         os << ");";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const { ASSERT(false); return os << "null"; } // function literals cannot be generated from raw data
-
-
-    // Below: only useful for static tests, not for actual compiling
-    template<typename... Types>
-    void set_in_args() {
-        in_types.clear();
-        add_in_args<Types...>();
-    }
-
-    template<typename... Types>
-    void set_out_args() {
-        out_types.clear();
-        add_out_args<Types...>();
-    }
-private:
-    template<typename T, typename... Rest>
-    void add_in_args() {
-        in_types.add(shared<CB_Type>(&T::type));
-        add_in_args<Rest...>();
-    }
-    template<int i=0> add_in_args() {}
-
-    template<typename T, typename... Rest>
-    void add_out_args() {
-        out_types.add(shared<CB_Type>(&T::type));
-        add_out_args<Rest...>();
-    }
-    template<int i=0> add_out_args() {}
+    virtual ostream& generate_literal(ostream& os, void const* raw_data) const { ASSERT(raw_data == nullptr); return os << "null"; } // function literals cannot be generated from raw data; only null pointers
 };
-
-
-
-struct CB_Function : CB_Object {
-
-    static CB_Type type;
-    shared<CB_Function_type> fn_type;
-
-    void (*v)() = nullptr; // function pointer
-
-    std::string toS() const override {
-        return "function"; // FIXME: better toS()
-    }
-
-    CB_Object* heap_copy() const override { return nullptr; } // @TODO
-
-
-    // // TODO: operator() variant that is usable at compile time (so, no static typechecking)
-    // seq<CB_Any>> call(seq<CB_Any>& args)
-    // {
-    //     ASSERT(v != nullptr);
-    //     ASSERT(fn_type != nullptr);
-    //     // verify argument types
-    //     ASSERT(args.size == fn_type->in_types.size); // TODO: this should not be ASSERT, but compile error when it happens from a compile time constext
-    //     for (int i = 0; i < args.size; ++i) {
-    //         ASSERT(args[i].v_type == *fn_type->in_types[i]);
-    //     }
-    //     // create return value objects
-    //     seq<CB_Any> retval;
-    //     for (auto&)
-
-    //     // push to stack using dyncall library
-
-    //     // call function
-    //     v();
-    // }
-
-
-
-    // operator(): only useful for static tests, not for actual compiling
-    template<typename... Types>
-    void operator()(Types... args)
-    {
-        ASSERT(v != nullptr);
-        ASSERT(fn_type != nullptr);
-        assert_types<Types...>();
-        auto fn_ptr = (void (*)(Types...))v;
-        (*fn_ptr)(args...);
-    }
-
-    CB_Function() {}
-    ~CB_Function() {}
-
-    CB_Function& operator=(const CB_Function& fn) {
-        v = fn.v;
-        fn_type = fn.fn_type;
-        // fn_type = alloc<Function_metadata>(*fn.fn_type);
-        return *this;
-    }
-    CB_Function(const CB_Function& fn) { *this = fn; }
-
-    CB_Function& operator=(nullptr_t np) {
-        ASSERT(np == nullptr);
-        v = nullptr;
-        fn_type = CB_Function_type::type.default_value().get_shared<CB_Function_type>();
-        // fn_type = alloc(Function_metadata());
-        return *this;
-    }
-    CB_Function(const nullptr_t& fn) { *this = fn; }
-
-private:
-
-    template<int index>
-    void assert_out_types() {
-        ASSERT(index == fn_type->out_types.size, "The number of out arguments doesn't match the function type.");
-    }
-
-    template<int index, typename T, typename... Rest>
-    void assert_out_types() {
-        ASSERT(fn_type != nullptr);
-        ASSERT(index < fn_type->out_types.size, "The number of out arguments doesn't match the function type.");
-        const CB_Type& T1 = *fn_type->out_types[index];
-        const CB_Type& T2 = get_type(T());
-        ASSERT(T1 == T2, "Type mismatch at out type "+std::to_string(index)+", "+T1.toS()+" and "+T2.toS());
-        return assert_out_types<index+1, Rest...>();
-    }
-
-    template<int index>
-    void assert_in_types() {
-        ASSERT(index == fn_type->in_types.size, "The number of in arguments doesn't match the function type.");
-        ASSERT(0 == fn_type->out_types.size);
-    }
-
-    template<int index, typename T, typename... Rest>
-    void assert_in_types() {
-        ASSERT(fn_type != nullptr);
-        if (index == fn_type->in_types.size) {
-            return assert_out_types<0, T, Rest...>();
-        }
-        ASSERT(index < fn_type->in_types.size, "The number of in arguments doesn't match the function type.");
-        const CB_Type& T1 = *fn_type->in_types[index];
-        const CB_Type& T2 = get_type(T());
-        ASSERT(T1 == T2, "Type mismatch at in type "+std::to_string(index)+", "+T1.toS()+" and "+T2.toS());
-        return assert_in_types<index+1, Rest...>();
-    }
-
-    template<typename... Types>
-    void assert_types() {
-        if (sizeof...(Types) == 0) return;
-        return assert_in_types<0, Types...>();
-    }
-
-    template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    const CB_Type& get_type(const T& object) { return T::type; }
-
-    template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    const CB_Type& get_type(const T* pointer) { return T::type; }
-};
-
 
 
 
