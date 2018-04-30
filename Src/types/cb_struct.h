@@ -1,16 +1,10 @@
 #pragma once
 
 #include "cb_type.h"
-// #include "pointers.h"
-// #include "any.h"
-// #include "string.h"
-// #include "primitives.h"
-
-#include "sequence.h"
+#include "../utilities/sequence.h"
+#include "../utilities/pointers.h"
 
 #include <string>
-
-#error @TODO: not done yet
 
 /*
 
@@ -81,59 +75,111 @@ foo(*((uint8_t*)(sa+0)), *((uint8_t*)(sa+1)), *((uint16_t*)(sa+2)));
 
 */
 
-typedef uint8_t byte;
-
 struct CB_Struct : CB_Type
 {
     struct Struct_member {
-        CB_String id;
-        CB_Type type;
-        CB_Any default_value;
-        CB_Bool is_using = false; // allowes implicit cast to that member
-        CB_Bool explicit_uninitialized = false;
+        std::string id;
+        shared<CB_Type> type;
+        any default_value;
+        bool is_using = false; // allowes implicit cast to that member
+        bool explicit_uninitialized = false;
+        size_t byte_position;
 
         Struct_member() {};
-        Struct_member(const CB_String& id, const CB_Type& type, const CB_Any& default_value, bool is_using=false)
+        Struct_member(const std::string& id, const shared<CB_Type>& type, const any& default_value, bool is_using=false)
             : id{id}, type{type}, default_value{default_value}, is_using{is_using} {};
 
-        std::string toS() const { return std::string("Struct_member(") + (is_using?"using ":"") + id.toS() + ":" + type.toS() + "=" + (explicit_uninitialized?"---":default_value.toS()) + ")"; }
+        std::string toS() const {
+            std::ostringstream oss;
+            oss << (is_using?"using ":"")
+                << id << ":"
+                << type->toS() << "="
+                << (explicit_uninitialized?"---":default_value.toS());
+            return oss.str();
+        }
     };
 
     seq<Struct_member> members;
-
+    void* default_value = nullptr;
+    size_t max_alignment = 0;
 
     // Constructors has to be speficied, otherwise the default move constructor is used when we want to copy
-    CB_Struct_type() : CB_Type{} {}
-    CB_Struct_type(const CB_Struct_type& sm) { *this = sm; }
-    CB_Struct_type(CB_Struct_type&& sm) { *this = std::move(sm); }
-    CB_Struct_type& operator=(const CB_Struct_type& sm) { uid=sm.uid; members = sm.members; }
-    CB_Struct_type& operator=(CB_Struct_type&& sm) { uid=sm.uid; members = std::move(sm.members); }
-    ~CB_Struct_type() {}
+    CB_Struct() {}
+    CB_Struct(const CB_Struct& sm) { *this = sm; }
+    CB_Struct(CB_Struct&& sm) { *this = std::move(sm); }
+    CB_Struct& operator=(const CB_Struct& sm) { uid=sm.uid; members = sm.members; }
+    CB_Struct& operator=(CB_Struct&& sm) { uid=sm.uid; members = std::move(sm.members); }
+    ~CB_Struct() { free(default_value); }
 
     std::string toS() const override {
         std::ostringstream oss;
         oss << "struct { ";
-        for (int i = 0; i < members.size(); ++i) {
-            if (i > 0) oss << "; ";
+        for (int i = 0; i < members.size; ++i) {
             oss << members[i].toS();
+            oss << "; ";
         }
-        oss << " }";
+        oss << "}";
         return oss.str();
     }
-    CB_Object* heap_copy() const override { CB_Struct_type* tp = new CB_Struct_type(); *tp = *this; return tp; }
 
-    bool operator==(const CB_Struct_type& o) const { return (CB_Type)*this == (CB_Type)o; } // different struct types are all different
-    bool operator!=(const CB_Struct_type& o) const { return !(*this==o); }
-    bool operator==(const CB_Type& o) const { toS() == o.toS(); }
-    bool operator!=(const CB_Type& o) const { return !(*this==o); }
+    void add_member(const std::string& id, const shared<CB_Type>& type) {
+        members.add(Struct_member(id, type, type->default_value()));
+    }
+
+    void finalize() {
+        size_t total_size = 0;
+        // go through all members, assign them byte positions
+        // (TODO: rearrange the members if it would save space)
+        for (auto& member : members) {
+            // add memory alignment for 16 / 32 bit or bigger values (since this is done in C by default)
+            size_t alignment = member.type->alignment();
+            total_size += (alignment-total_size%alignment)%alignment;
+            member.byte_position = total_size;
+            total_size += member.type->cb_sizeof();
+            if (alignment > max_alignment) max_alignment = alignment;
+        }
+        // copy default value
+        default_value = malloc(total_size);
+        for (auto& member : members) {
+            memcpy((uint8_t*)default_value+member.byte_position, member.default_value.v_ptr, member.type->cb_sizeof());
+        }
+        register_type(toS(), total_size, default_value); // no default value
+    }
+
     operator CB_Type() { return *this; }
 
-    // CB_Struct_pointer operator()(); // "constructor operator", creates an instance of this struct_type
+    virtual size_t alignment() const override { return max_alignment; }
 
-    size_t byte_size();
-    void set_default_values(byte* data);
-    size_t get_member_index(const std::string& member); // returns the index of the specified member, or -1 if the member doesn't exist
-    CB_Sharing_pointer<CB_Type> get_member_type(const std::string& member); // returns the index of the specified member, or -1 if the member doesn't exist
+    // code generation functions
+    virtual ostream& generate_typedef(ostream& os) const override {
+        os << "typedef struct{ ";
+        for (const auto& member : members) {
+            // os << std::endl;
+            member.type->generate_type(os);
+            os << " " << member.id << "; ";
+        }
+        // if (member.size>0) os << std::endl;
+        os << "} ";
+        generate_type(os);
+        os << ";";
+    }
+    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
+        ASSERT(raw_data == nullptr);
+        os << "(";
+        generate_type(os);
+        os << "){";
+        for (int i = 0; i << members.size; ++i) {
+            if (i) os << ", ";
+            members[i].type->generate_literal(os, (uint8_t const*)raw_data+members[i].byte_position);
+        }
+        return os << "}";
+    }
+    virtual ostream& generate_destructor(ostream& os, const std::string& id) const override {
+        for (const auto& member : members) {
+            generate_destructor(os, id + "." + member.id);
+        }
+        return os;
+    };
 
 };
 

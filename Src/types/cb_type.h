@@ -104,6 +104,8 @@ struct CB_Type
         return name;
     }
 
+    virtual size_t alignment() const { return cb_sizeof(); }
+
     const any& default_value() const;
     size_t cb_sizeof() const { return cb_sizes[uid]; }
 
@@ -124,10 +126,7 @@ struct CB_Type
         return os << ";";
     }
     virtual ostream& generate_literal(ostream& os, void const* raw_data) const { ASSERT(raw_data); return os << *(uint32_t*)raw_data << "UL"; }
-    virtual ostream& generate_destructor(ostream& os) const { return os; };
-    virtual ostream& generate_assignment(ostream& os, const std::string& lvalue, const std::string& rvalue, bool move=false) const {
-        return os << lvalue << " = " << rvalue << ";";
-    }
+    virtual ostream& generate_destructor(ostream& os, const std::string& id) const { return os; };
     // constructor:
     //   type name = literal(default_value); // default
     //   type name; // explicit uninitialized

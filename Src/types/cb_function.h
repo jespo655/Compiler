@@ -175,7 +175,7 @@ struct CB_Function : CB_Type
         for (const auto& tn_pair : typenames) {
             if (tn_pair.second == tos) {
                 // found existing function type with the same signature -> grab its id
-                type.uid = tn_pair.first;
+                uid = tn_pair.first;
                 return;
             }
         }

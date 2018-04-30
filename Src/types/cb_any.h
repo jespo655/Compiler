@@ -56,12 +56,10 @@ struct any {
     std::string toS() const {
         if (v_ptr) {
             std::ostringstream oss;
-            oss << "any(";
             v_type.generate_literal(oss, v_ptr);
-            oss << ")";
             return oss.str();
         }
-        else return "any(void)";
+        else return "---";
     }
 
     any& operator=(const any& any) {

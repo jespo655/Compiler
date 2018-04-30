@@ -163,17 +163,31 @@ struct seq {
 
     struct iterator {
         uint32_t index = 0;
-        const seq& _seq;
-        iterator(const seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
-        const T& operator*() const { ASSERT(index < _seq.size); return _seq.v_ptr[index]; }
+        seq& _seq;
+        iterator(seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
+        T& operator*() const { ASSERT(index < _seq.size); return _seq.v_ptr[index]; }
         iterator& operator++() { ++index; return *this; }
         bool operator==(const iterator& o) const { return index == o.index; }
         bool operator!=(const iterator& o) const { return !(*this == o); }
         bool operator<(const iterator& o) const { return index < o.index; }
     };
 
-    iterator begin() const { return iterator(*this); }
-    iterator end() const { return iterator(*this, size); }
+    struct const_iterator {
+        uint32_t index = 0;
+        const seq& _seq;
+        const_iterator(const seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
+        const T& operator*() const { ASSERT(index < _seq.size); return _seq.v_ptr[index]; }
+        const_iterator& operator++() { ++index; return *this; }
+        bool operator==(const const_iterator& o) const { return index == o.index; }
+        bool operator!=(const const_iterator& o) const { return !(*this == o); }
+        bool operator<(const const_iterator& o) const { return index < o.index; }
+    };
+
+    iterator begin() { return iterator(*this); }
+    iterator end() { return iterator(*this, size); }
+
+    const_iterator begin() const { return const_iterator(*this); }
+    const_iterator end() const { return const_iterator(*this, size); }
 };
 
 

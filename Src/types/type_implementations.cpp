@@ -69,8 +69,6 @@ CB_Type CB_String::type = CB_Type("string", sizeof(char*), &NULL_VALUE);
 
 
 
-// #include "cb_struct.h" // @debug @todo (nyi)
-#include "cb_function.h" // @debug
 
 // #include "../abstx/statements/scope.h"
 // CB_Type CB_Scope::type = CB_Type("scope", 0, CB_Scope());
@@ -80,11 +78,14 @@ CB_Type CB_String::type = CB_Type("string", sizeof(char*), &NULL_VALUE);
 
 #ifdef TEST
 
+#include "cb_struct.h" // @todo
+#include "cb_function.h"
+
 void test_type(const CB_Type& type)
 {
     std::cout << type.toS() << ": ";
     type.generate_type(std::cout);
-    std::cout << ", size: " << type.cb_sizeof() << std::endl;
+    std::cout << ", uid: " << type.uid << ", size: " << type.cb_sizeof() << std::endl;
 }
 
 int main()
@@ -114,12 +115,14 @@ int main()
     { CB_Flag type; test_type(type); }
     { CB_Flag type; test_type(type); }
 
-    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
-    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
-    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
-    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
-    { CB_Function type; type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
-    { CB_Function type; type.in_types.add(&CB_Bool::type); type.finalize(); std::cout << type.toS() << ": "; test_type(type); }
+    { CB_Function type; type.finalize(); test_type(type); }
+    { CB_Function type; type.finalize(); test_type(type); }
+    { CB_Function type; type.in_types.add(&CB_Bool::type); type.finalize(); test_type(type); }
+    { CB_Function type; type.out_types.add(&CB_Bool::type); type.finalize(); test_type(type); }
+
+    { CB_Struct type; type.add_member("i", shared<CB_Type>(&CB_Int::type)); type.finalize(); test_type(type); }
+    { CB_Struct type; type.add_member("i", shared<CB_Type>(&CB_Int::type)); type.finalize(); test_type(type); }
+    { CB_Struct type; type.add_member("i", shared<CB_Type>(&CB_Int::type)); type.finalize(); test_type(type); }
 
 }
 
