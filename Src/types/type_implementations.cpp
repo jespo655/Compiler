@@ -24,6 +24,10 @@ const shared<const CB_Type> CB_Any::type = &static_cb_any;
 const any& CB_Type::default_value() const
 {
     const any& a = default_values[uid];
+    if (*a.v_type != *this) {
+        std::cerr << std::endl << "error: default value type doesn't match: dv.v_type.uid = "
+            << a.v_type->uid << "; *this.uid = " << this->uid << std::endl;
+    }
     ASSERT(*a.v_type == *this, "Type '"+toS()+"' has no default value!");
     return a;
 }
@@ -77,9 +81,15 @@ const shared<const CB_Type> CB_Range::type = &static_cb_range;
 
 #include "cb_string.h"
 const bool CB_String::primitive;
-constexpr char CB_String::_default_value[];
-static const CB_String static_cb_string("string", sizeof(CB_String::_default_value), &CB_String::_default_value);
+constexpr char CB_String::_default_str[];
+constexpr char const* CB_String::_default_value;
+static const CB_String static_cb_string("string", sizeof(&CB_String::_default_value), &CB_String::_default_value);
 const shared<const CB_Type> CB_String::type = &static_cb_string;
+
+#include "cb_pointer.h"
+const bool CB_Pointer::primitive;
+constexpr void* CB_Pointer::_default_value;
+// type is registered with CB_Pointer::finalize()
 
 #include "cb_function.h"
 const bool CB_Function ::primitive;
@@ -107,7 +117,10 @@ void test_type(shared<const CB_Type> type)
 {
     std::cout << type->toS() << ": ";
     type->generate_type(std::cout);
-    std::cout << ", uid: " << type->uid << ", size: " << type->cb_sizeof() << std::endl;
+    std::cout << ", uid: " << type->uid << ", size: " << type->cb_sizeof()
+        << ", defval: ";
+    type->generate_literal(std::cout, type->default_value().v_ptr);
+    std::cout << std::endl;
 }
 
 int main()
@@ -154,10 +167,45 @@ int main()
         test_type(&type2);
         CB_Struct type3 = std::move(type);
         test_type(&type3);
+        // test_type(&type);
+    }
+
+    {
+        CB_Struct type;
+        type.add_member("a", CB_i8::type);
+        type.add_member("b", CB_i16::type);
+        type.add_member("c", CB_i16::type);
+        type.add_member("d", CB_i16::type);
+        type.finalize();
         test_type(&type);
     }
 
-    CB_String::type->generate_literal(std::cout, CB_String::_default_value) << std::endl;
+    { CB_Pointer type; type.v_type = CB_Int::type; type.finalize(); test_type(&type); }
+    { CB_Pointer type; type.v_type = CB_String::type; type.finalize(); test_type(&type); }
+    { CB_Pointer type; type.v_type = CB_Range::type; type.finalize(); test_type(&type); }
+    {
+        CB_Pointer type; type.v_type = CB_Range::type; type.finalize(); test_type(&type);
+        CB_Pointer pt1; pt1.v_type = &type; pt1.owned=true; pt1.finalize(); test_type(&pt1);
+        CB_Pointer pt2; pt2.v_type = &pt1;  pt2.owned=false; pt2.finalize(); test_type(&pt2);
+        CB_Pointer pt3; pt3.v_type = &pt2;  pt3.owned=true; pt3.finalize(); test_type(&pt3);
+        CB_Pointer pt4; pt4.v_type = &pt3;  pt4.owned=true; pt4.finalize(); test_type(&pt4);
+        CB_Pointer pt5; pt5.v_type = &pt4;  pt5.owned=true; pt5.finalize(); test_type(&pt5);
+        pt5.generate_destructor(std::cout, "ptr");
+    }
+
+    {
+        CB_Struct type;
+        CB_Pointer pt1; pt1.v_type = CB_Int::type; pt1.owned=false; pt1.finalize();
+        CB_Pointer pt2; pt2.v_type = &pt1; pt2.owned=true; pt2.finalize();
+        type.add_member("sp", &pt1);
+        type.add_member("op", &pt2);
+        type.finalize();
+        test_type(&type);
+        type.generate_destructor(std::cout, "s");
+    }
+
+
+    CB_String::type->generate_literal(std::cout, CB_String::type->default_value().v_ptr) << std::endl;
 
 }
 

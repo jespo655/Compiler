@@ -6,6 +6,7 @@
 #include "../utilities/pointers.h"
 
 #include <string>
+#include <iomanip>
 
 /*
 Syntax:
@@ -184,8 +185,6 @@ struct CB_Function : CB_Type
         register_type(tos, sizeof(_default_value), &_default_value);
     }
 
-    operator CB_Type() { return *this; }
-
     // code generation functions
     virtual ostream& generate_typedef(ostream& os) const {
         os << "typedef void(";
@@ -194,7 +193,12 @@ struct CB_Function : CB_Type
         // TODO: output arg types
         os << ");";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const { ASSERT(raw_data == nullptr); return os << "null"; } // function literals cannot be generated from raw data; only null pointers
+    virtual ostream& generate_literal(ostream& os, void const* raw_data) const {
+        if (!raw_data) return os << "NULL";
+        if (!*(void**)raw_data) return os << "NULL";
+        ASSERT(false, "warning: pointers are not the same outside compile time");
+        return os << std::hex << *(void**)raw_data;
+    }
 };
 
 

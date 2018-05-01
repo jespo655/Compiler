@@ -114,10 +114,10 @@ struct CB_Struct : CB_Type
         memcpy(_default_value, sm._default_value, sm.cb_sizeof());
     }
     CB_Struct& operator=(CB_Struct&& sm) {
-        uid=sm.uid; members = std::move(sm.members); max_alignment=sm.max_alignment;
-        _default_value = sm._default_value;
-        sm._default_value = nullptr;
-        sm.uid = 0;
+        uid=sm.uid;
+        members = std::move(sm.members);
+        _default_value = sm._default_value; sm._default_value = nullptr;
+        max_alignment=sm.max_alignment;
     }
     ~CB_Struct() { free(_default_value); }
 
@@ -138,22 +138,30 @@ struct CB_Struct : CB_Type
 
     void finalize() {
         size_t total_size = 0;
-        // go through all members, assign them byte positions
-        // (TODO: rearrange the members if it would save space)
-        for (auto& member : members) {
-            // add memory alignment for 16 / 32 bit or bigger values (since this is done in C by default)
-            size_t alignment = member.type->alignment();
-            total_size += (alignment-total_size%alignment)%alignment;
-            member.byte_position = total_size;
-            total_size += member.type->cb_sizeof();
-            if (alignment > max_alignment) max_alignment = alignment;
+        if (members.empty()) {
+            total_size = 1;
+            _default_value = malloc(total_size);
+            // actual default value doesn't matter since it will never be used anyway
+        } else {
+            // go through all members, assign them byte positions
+            // (TODO: rearrange the members if it would save space)
+            for (auto& member : members) {
+                // add memory alignment for 16 / 32 bit or bigger values (since this is done in C by default)
+                size_t alignment = member.type->alignment();
+                total_size += (alignment-total_size%alignment)%alignment;
+                member.byte_position = total_size;
+                total_size += member.type->cb_sizeof();
+                if (alignment > max_alignment) max_alignment = alignment;
+            }
+            // fix final alignment so it works in sequences
+            total_size += (max_alignment-total_size%max_alignment)%max_alignment;
+            // copy default value
+            _default_value = malloc(total_size);
+            for (auto& member : members) {
+                memcpy((uint8_t*)_default_value+member.byte_position, member.default_value.v_ptr, member.type->cb_sizeof());
+            }
         }
-        // copy default value
-        _default_value = malloc(total_size);
-        for (auto& member : members) {
-            memcpy((uint8_t*)_default_value+member.byte_position, member.default_value.v_ptr, member.type->cb_sizeof());
-        }
-        register_type(toS(), total_size, _default_value); // no default value
+        register_type(toS(), total_size, _default_value);
     }
 
     operator CB_Type() { return *this; }
@@ -162,6 +170,7 @@ struct CB_Struct : CB_Type
 
     // code generation functions
     virtual ostream& generate_typedef(ostream& os) const override {
+        ASSERT(_default_value); // assert finalized
         os << "typedef struct{ ";
         for (const auto& member : members) {
             // os << std::endl;
@@ -174,11 +183,12 @@ struct CB_Struct : CB_Type
         os << ";";
     }
     virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
-        ASSERT(raw_data == nullptr);
+        ASSERT(_default_value, "struct must be finalized before it can be used"); // assert finalized
+        ASSERT(raw_data != nullptr);
         os << "(";
         generate_type(os);
         os << "){";
-        for (int i = 0; i << members.size; ++i) {
+        for (int i = 0; i < members.size; ++i) {
             if (i) os << ", ";
             members[i].type->generate_literal(os, (uint8_t const*)raw_data+members[i].byte_position);
         }
@@ -186,11 +196,15 @@ struct CB_Struct : CB_Type
     }
     virtual ostream& generate_destructor(ostream& os, const std::string& id) const override {
         for (const auto& member : members) {
-            generate_destructor(os, id + "." + member.id);
+            member.type->generate_destructor(os, id + "." + member.id);
         }
         return os;
     };
 
+private:
+    static void align(size_t* v, size_t alignment) {
+        *v += (alignment-*v%alignment)%alignment;
+    }
 };
 
 

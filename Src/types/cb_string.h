@@ -19,7 +19,8 @@ a : String = "text";
 struct CB_String : CB_Type {
     static const shared<const CB_Type> type;
     static const bool primitive = false;
-    static constexpr char _default_value[] = "";
+    static constexpr char _default_str[] = "";
+    static constexpr char const* _default_value = _default_str;
 
     CB_String() { uid = type->uid; }
     CB_String(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
@@ -33,7 +34,8 @@ struct CB_String : CB_Type {
     }
     virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
         ASSERT(raw_data);
-        char const* raw_it = (char const*)raw_data;
+        char const* raw_it = *(char const**)raw_data;
+        if (!raw_it) return os << "NULL";
         os << "\"";
         while (*raw_it)  {
             switch(*raw_it) {

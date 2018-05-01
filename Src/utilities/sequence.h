@@ -118,6 +118,10 @@ struct seq {
         }
     }
 
+    bool empty() const {
+        return size == 0;
+    }
+
     void add(const T& t) {
         set(size, t);
     }

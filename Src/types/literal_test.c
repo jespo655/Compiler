@@ -18,9 +18,14 @@ uint8_t cs[5];
 
 typedef struct
 {
-    uint8_t cs[5];
     uint16_t b;
+    uint8_t cs[5];
 } css;
+
+typedef struct
+{
+
+} empty;
 
 css csss[2];
 
@@ -39,6 +44,10 @@ int main() {
     printf("sizeof(5c): %d\n", sizeof(csss));
     css x;
     printf("b pos: %d\n", (char*)&x.b-(char*)&x);
+    printf("cs pos: %d\n", (char*)&x.cs[0]-(char*)&x);
+
+    printf("sizeof(empty): %d\n", sizeof(empty));
+
 }
 
 #ifdef __CPLUSPLUS
