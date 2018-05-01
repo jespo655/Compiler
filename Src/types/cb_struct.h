@@ -139,7 +139,6 @@ struct CB_Struct : CB_Type
     }
 
     void finalize() {
-        std::cout << "struct finalize" << std::endl;
         size_t total_size = 0;
         if (members.empty()) {
             total_size = 1;
@@ -167,7 +166,6 @@ struct CB_Struct : CB_Type
         }
         ASSERT(total_size > 0);
         ASSERT(_default_value != nullptr);
-        std::cout << "registering type..." << std::endl;
         register_type(toS(), total_size, _default_value);
     }
 
@@ -189,9 +187,10 @@ struct CB_Struct : CB_Type
         generate_type(os);
         os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
+    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(_default_value, "struct must be finalized before it can be used"); // assert finalized
         ASSERT(raw_data != nullptr);
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os << "void"; }
         os << "(";
         generate_type(os);
         os << "){";
@@ -201,9 +200,10 @@ struct CB_Struct : CB_Type
         }
         return os << "}";
     }
-    virtual ostream& generate_destructor(ostream& os, const std::string& id) const override {
+    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
         for (const auto& member : members) {
-            member.type->generate_destructor(os, id + "." + member.id);
+            member.type->generate_destructor(os, id + "." + member.id, depth+1);
         }
         return os;
     };

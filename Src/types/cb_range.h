@@ -34,15 +34,15 @@ struct CB_Range : CB_Type {
         generate_type(os);
         return os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
+    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
         os << "(";
         generate_type(os);
         os << "){";
         double const* raw_it = (double const*)raw_data;
-        CB_f64::type->generate_literal(os, raw_it);
+        CB_f64::type->generate_literal(os, raw_it, depth+1);
         os << ", ";
-        CB_f64::type->generate_literal(os, raw_it+1);
+        CB_f64::type->generate_literal(os, raw_it+1, depth+1);
         os << "}";
     }
 };

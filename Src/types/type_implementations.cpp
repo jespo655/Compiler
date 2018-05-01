@@ -89,6 +89,7 @@ const shared<const CB_Type> CB_String::type = &static_cb_string;
 #include "cb_pointer.h"
 const bool CB_Pointer::primitive;
 constexpr void* CB_Pointer::_default_value;
+static const CB_Pointer _unresolved_pointer = CB_Pointer(true);
 // type is registered with CB_Pointer::finalize()
 
 #include "cb_function.h"
@@ -205,6 +206,17 @@ int main()
         test_type(&type);
         test_type(&pt1);
         type.generate_destructor(std::cout, "s");
+    }
+
+    {
+        CB_Struct s1, s2, s3;
+        CB_Pointer pt1; pt1.finalize(); // forward declaration / finalize as unresolved_pointer
+        s1.add_member("s3op", &pt1); s1.finalize();
+        s2.add_member("s1", &s1); s2.finalize();
+        s3.add_member("s2", &s2); s3.finalize();
+        pt1.v_type = &s3; pt1.owned=true; pt1.finalize(); // final finalize now when type is finalized
+        // s1.generate_literal(std::cout, s1._default_value); std::cout << std::endl;
+        s2.generate_destructor(std::cout, "s"); std::cout << std::endl;
     }
 
     CB_String::type->generate_literal(std::cout, CB_String::type->default_value().v_ptr) << std::endl;

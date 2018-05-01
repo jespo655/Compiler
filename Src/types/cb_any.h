@@ -33,16 +33,22 @@ struct CB_Any : CB_Type {
         generate_type(os);
         return os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
+    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os << "void"; }
         ASSERT(raw_data);
         os << "(";
         generate_type(os);
         os << "){";
-        CB_Type::type->generate_literal(os, raw_data);
+        CB_Type::type->generate_literal(os, raw_data, depth+1);
         uint8_t const* raw_it = (uint8_t const*)raw_data;
         raw_it += CB_Type::type->cb_sizeof();
         os << ", " << std::hex << (void**)raw_it << "}";
     }
+    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
+        return os;
+    }
+
 
 };
 

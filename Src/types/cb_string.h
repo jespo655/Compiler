@@ -32,7 +32,7 @@ struct CB_String : CB_Type {
         generate_type(os);
         return os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
+    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
         char const* raw_it = *(char const**)raw_data;
         if (!raw_it) return os << "NULL";

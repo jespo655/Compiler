@@ -193,7 +193,7 @@ struct CB_Function : CB_Type
         // TODO: output arg types
         os << ");";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const {
+    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const {
         if (!raw_data) return os << "NULL";
         if (!*(void**)raw_data) return os << "NULL";
         ASSERT(false, "warning: pointers are not the same outside compile time");

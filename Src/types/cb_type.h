@@ -127,13 +127,22 @@ struct CB_Type
         generate_type(os);
         return os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const { ASSERT(raw_data); return os << *(uint32_t*)raw_data << "UL"; }
-    virtual ostream& generate_destructor(ostream& os, const std::string& id) const { return os; };
+    // literal & destructor has an additional argument depth, to safeguard against infinite loops
+    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const { ASSERT(raw_data); return os << *(uint32_t*)raw_data << "UL"; }
+    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const { return os; };
     // constructor:
     //   type name = literal(default_value); // default
     //   type name; // explicit uninitialized
 
-};
+    static const uint32_t MAX_ALLOWED_DEPTH = 1000;
+    void post_circular_reference_error() const {
+        // @todo: this should be a compile error, not an false assert
+        std::ostringstream oss;
+        oss << "Circular reference detected in type ";
+        generate_type(oss);
+        oss << " (" << toS() << ")";
+        ASSERT(false, oss.str());
+    }
 
-// #include "any.h" // any requires complete definition of CB_Type, so we have to include this here
+};
 

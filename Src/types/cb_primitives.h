@@ -16,7 +16,7 @@ struct cpp_type : CB_Type { \
         generate_type(os); \
         return os << ";"; \
     } \
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override { \
+    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override { \
         ASSERT(raw_data); \
         return os << *(c_type*)raw_data << literal_suffix;\
     } \

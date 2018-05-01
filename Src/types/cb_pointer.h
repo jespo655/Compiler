@@ -6,12 +6,12 @@
 
 struct CB_Pointer : CB_Type
 {
-    static const bool primitive = false;
+    static const bool primitive = true;
     static constexpr void* _default_value = nullptr;
     shared<const CB_Type> v_type = nullptr;
     bool owned = false;
 
-    CB_Pointer() { uid = type->uid; }
+    CB_Pointer(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }
     CB_Pointer(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
 
     std::string toS() const override {
@@ -43,15 +43,16 @@ struct CB_Pointer : CB_Type
         generate_type(os);
         return os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data) const override {
+    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
         if (!*(void**)raw_data) return os << "NULL";
         return os << std::hex << *(void**)raw_data;
     }
-    virtual ostream& generate_destructor(ostream& os, const std::string& id) const override {
+    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
         if (owned) {
-            v_type->generate_destructor(os, "*"+id);
-            os << "free " << id << ";" << std::endl;
+            v_type->generate_destructor(os, "*"+id, depth+1);
+            return os << "free " << id << ";" << std::endl;
         }
     }
 
