@@ -46,6 +46,11 @@ struct Abstx_node
         target << "/* " << toS() << " */";
     };
 
+    // finalize(): check that all dependencies are finalized and that there are no errors.
+    // This is done recursively. The parsing status is updated, then returned.
+    // This function should only be called when the abstx node has finished parsing, and is expected to be complete.
+    virtual Parsing_status finalize();
+
     // Set owner in a type safe way
     template<typename T> void set_owner(const shared<T>& p)
     {

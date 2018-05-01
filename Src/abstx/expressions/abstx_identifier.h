@@ -9,7 +9,7 @@
 struct Identifier : Variable_expression {
     shared<const CB_Type> cb_type = nullptr; // nullptr if not yet inferred
     std::string name = "";
-    any value; // For default value, use cb_type.default_value()
+    // any value; // For default value, use cb_type.default_value() (@todo should this even be here?)
 
     std::string toS() const override {
         ASSERT(name.length() > 0);
@@ -35,8 +35,11 @@ struct Identifier : Variable_expression {
 
     void generate_code(std::ostream& target) override
     {
-        // @todo: what should be outputted here?
-        // declaration with its value? just the identifier name?
+        // this should ouput the identifier used as a variable, since it's a subclass of Variable_expression
+        ASSERT(name != "");
+        ASSERT(is_codegen_ready(status));
+        target << name;
+        status = Parsing_status::CODE_GENERATED;
     }
 
 };

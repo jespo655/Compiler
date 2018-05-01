@@ -1,7 +1,7 @@
 #pragma once
 
-#include "statement.h"
-#include "../expressions/identifier.h"
+#include "abstx_statement.h"
+#include "../expressions/abstx_identifier.h"
 #include "../expressions/value_expression.h"
 
 #include <sstream>
@@ -59,6 +59,53 @@ struct Declaration_statement : Statement {
         oss << ";";
         return oss.str();
     }
+
+    Parsing_status finalize() override {
+        if (lhs.size != rhs.size) return status; // @todo: add support for value packs
+        for (const auto& id : identifiers) {
+            ASSERT(id != nullptr)
+            if (!is_codegen_ready(id->status)) {
+                status = Parsing_status::DEPENDENCIES_NEEDED; // @todo: save all dependencies in a list for later (maybe)
+                return status;
+            }
+        }
+        for (const auto& val_exp : rhs) {
+            ASSERT(val_exp != nullptr)
+            if (!is_codegen_ready(val_exp->status)) {
+                status = Parsing_status::DEPENDENCIES_NEEDED;
+                return status;
+            }
+        }
+        // we reached the end -> we are done
+        status = Parsing_status::FULLY_RESOLVED
+        return status;
+    }
+
+    void generate_code(std::ostream& target) override {
+        ASSERT(is_codegen_ready(status));
+        if (rhs.empty()) {
+            // explicit uninitialized
+            for (int i = 0; i < lhs.size; ++i) {
+                lhs[i]->cb_type->generate_type(target);
+                target << " ";
+                lhs[i]->generate_code(target); // this should be a variable name
+                target << ";" << std::endl;
+            }
+        } else {
+            ASSERT(identifiers.size == rhs.size); // this might not be the case, since some value_expressions might give several values (@TODO: add support for value packs)
+            for (int i = 0; i < lhs.size; ++i) {
+                lhs[i]->cb_type->generate_type(target);
+                target << " ";
+                lhs[i]->generate_code(target); // this should be a valid c style lvalue
+                target << " = ";
+                lhs[i]->generate_code(target); // this should be a valid c style lvalue
+                target << ";" << std::endl;
+            }
+        }
+        status = CODE_GENERATED;
+    };
+
+
 };
 
 

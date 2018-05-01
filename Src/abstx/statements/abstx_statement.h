@@ -6,7 +6,11 @@
 // This is also the smallest unit of compilation.
 struct Statement : Abstx_node
 {
-
+    // generate_code(): generate code and output it to to target.
+    // This should be a valid c code statement.
+    virtual void generate_code(std::ostream& target) override {
+        target << "/* " << toS() << " */";
+    };
 };
 
 

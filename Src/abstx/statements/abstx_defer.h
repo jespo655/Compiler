@@ -1,6 +1,6 @@
 #pragma once
 
-#include "statement.h"
+#include "abstx_statement.h"
 
 /*
 defer a = 2; // performs the following statement at the end of scope
@@ -15,6 +15,17 @@ struct Defer_statement : Statement {
     std::string toS() const override {
         ASSERT(statement != nullptr);
         return "defer " + statement->toS();
+    }
+
+    Parsing_status finalize() override {
+        if (!is_codegen_ready(statement->status)) status = Parsing_status::DEPENDENCIES_NEEDED;
+        else status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+
+    void generate_code(std::ostream& target) override {
+        ASSERT(is_codegen_ready(status));
+        statement->generate_code(target);
     }
 };
 
