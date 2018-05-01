@@ -201,16 +201,16 @@ void seq_generic_test(Seq_t& seq)
 
 void seq_test()
 {
-    // CB_Static_seq<Dummy, 50> s_seq;
-    // CB_Dynamic_seq<Dummy> d_seq;
+    // fixed_seq<Dummy, 50> s_seq;
+    // seq<Dummy> d_seq;
 
-    // // CB_Static_seq<int, 5> s_seq;
-    // // CB_Dynamic_seq<int> d_seq;
+    // // fixed_seq<int, 5> s_seq;
+    // // seq<int> d_seq;
 
     // seq_generic_test(s_seq);
     // seq_generic_test(d_seq);
 
-    // cout << "size = " << sizeof(CB_Static_seq<int, 0>);
+    // cout << "size = " << sizeof(fixed_seq<int, 0>);
 }
 
 
@@ -416,7 +416,6 @@ void code_gen_test()
 
 int main()
 {
-    // print_types();
     // Debug_os os{std::cout};
     // ptr_reference_test();
     // unique_id_test();
@@ -426,18 +425,14 @@ int main()
     // wchar_test();
     // str_test();
     // seq_test();
-    // cb_types_test();
     // owning_test();
     // template_test();
-    // cb_fn_test();
     // range_test();
-    // any_test();
     // flag_test();
-    // struct_test();
     // compile_test();
-
-    // function_test();
     // code_gen_test();
+
+    std::cout << "all test done!" << std::endl;
 }
 
 
