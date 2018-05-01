@@ -8,7 +8,10 @@ extern "C" {
 #include "stdbool.h"
 #include "stdio.h"
 
-typedef struct { uint32_t type; void* v_ptr; } any;
+typedef struct {
+    void* v_ptr;
+    uint32_t type;
+} any;
 bool bt = true;
 bool bf = false;
 bool b1 = 1;
@@ -32,7 +35,9 @@ css csss[2];
 
 int main() {
     any a;
-    a = (any){ 32, NULL };
+    a.v_ptr = NULL;
+    // a = (any){ NULL, 32 };
+    // a = (any){ 0, NULL };
     printf("hw\n");
     printf("a.type: = %u\n", a.type);
     printf("bools: %u %u %u %u\n", bt, bf, b1, b0);
