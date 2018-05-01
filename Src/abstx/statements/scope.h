@@ -3,6 +3,8 @@
 #include "statement.h"
 #include "using.h"
 #include "../expressions/identifier.h"
+#include "../../utilities/flag.h"
+#include "../../types/cb_string.h"
 
 #include <map>
 
@@ -23,27 +25,27 @@ Name := {...}; // Named scope
 Name := Async {...}; // Named scope with keywords
 */
 
-const CB_Flag SCOPE_ASYNC = 1;
-const CB_Flag SCOPE_DYNAMIC = 2;
-const CB_Flag SCOPE_SELF_CONTAINED = 3; // should be set if the scope never references identifiers outside itself.
+const flag SCOPE_ASYNC = 1;
+const flag SCOPE_DYNAMIC = 2;
+const flag SCOPE_SELF_CONTAINED = 3; // should be set if the scope never references identifiers outside itself.
 
 struct CB_Scope : Abstx_node //, CB_Object
 {
     // static CB_Type type;
     seq<owned<Statement>> statements;
 
-    std::map<CB_String, shared<Identifier>> identifiers; // id name -> id. Identifiers are owned by their declaration statements.
+    std::map<std::string, shared<Identifier>> identifiers; // id name -> id. Identifiers are owned by their declaration statements.
 
     seq<shared<CB_Scope>> imported_scopes;
     seq<shared<Using_statement>> using_statements; // Used in the parsing process. Owned by the list of statements above. Once a using statement has been resolved, it should be returned from this list.
                                                    // FIXME: add a safeguard for when several using-statements tries to import the same scope.
-    CB_u8 flags = 0;
+    uint8_t flags = 0;
     bool dynamic() const { return flags == SCOPE_DYNAMIC; }
     bool async() const { return flags == SCOPE_ASYNC; }
     bool self_contained() const { return flags == SCOPE_SELF_CONTAINED; }
 
     CB_Scope() {}
-    CB_Scope(CB_u8 flags) : flags{flags} {}
+    CB_Scope(uint8_t flags) : flags{flags} {}
 
     void debug_print(Debug_os& os, bool recursive=true) const override {
         os << "{ // " << toS() << std::endl;
@@ -58,7 +60,7 @@ struct CB_Scope : Abstx_node //, CB_Object
     std::string toS() const override { return dynamic()? "scope(d)" : "scope(s)"; }
     // CB_Object* heap_copy() const override { CB_Scope* tp = new CB_Scope(); *tp = *this; return tp; }
 
-    shared<Identifier> get_identifier(const CB_String& id, bool recursive=true)
+    shared<Identifier> get_identifier(const std::string& id, bool recursive=true)
     {
         auto p = identifiers[id];
         ASSERT(!self_contained() || p != nullptr)
@@ -86,7 +88,7 @@ struct CB_Scope : Abstx_node //, CB_Object
         return p;
     }
 
-    // shared<CB_Scope> get_scope(const CB_String& id, bool recursive=true)
+    // shared<CB_Scope> get_scope(const std::string& id, bool recursive=true)
     // {
     //     auto p = get_identifier(id, recursive);
     //     if (p == nullptr || *(p->type) != CB_Scope::type) return nullptr;

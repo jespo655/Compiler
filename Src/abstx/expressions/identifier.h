@@ -1,25 +1,30 @@
 #pragma once
 
 #include "variable_expression.h"
+#include "../../types/cb_any.h"
 
 #include <sstream>
 
 
 struct Identifier : Variable_expression {
-    shared<CB_Type> type = nullptr; // nullptr if not yet inferred
-    CB_String name = "";
-    CB_Any value; // For default value, use type.default_value()
+    shared<const CB_Type> cb_type = nullptr; // nullptr if not yet inferred
+    std::string name = "";
+    any value; // For default value, use cb_type.default_value()
 
     std::string toS() const override {
-        ASSERT(name.size > 0);
+        ASSERT(name.length() > 0);
         std::ostringstream oss;
-        oss << name.toS() << ":";
-        if (type == nullptr) oss << "???";
-        else oss << type->toS();
+        oss << name << ":";
+        if (cb_type == nullptr) oss << "???";
+        else oss << cb_type->toS();
         return oss.str();
     }
 
-    virtual shared<CB_Type> get_type() { return type; }
+    virtual seq<shared<const CB_Type>> get_type() override {
+        seq<shared<const CB_Type>> s;
+        s.add(cb_type);
+        return s;
+    }
 
     virtual seq<owned<Value_expression>> eval()
     {
@@ -30,7 +35,8 @@ struct Identifier : Variable_expression {
 
     void generate_code(std::ostream& target) override
     {
-        target << "/* " << toS() << " */"; // @todo: output c-code for any CB data type. (That should probably be a property of CB_Any)
+        // @todo: what should be outputted here?
+        // declaration with its value? just the identifier name?
     }
 
 };

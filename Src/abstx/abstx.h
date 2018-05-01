@@ -2,18 +2,13 @@
 
 #include "../utilities/debug.h"
 #include "../utilities/assert.h"
+#include "../utilities/pointers.h"
 #include "../parser/token.h"
 #include "../parser/parsing_status.h"
 
 #include <string>
 #include <ostream>
 #include <iostream> // for debug purposes
-
-#include "../types/cb_types.h"
-template<typename T> using shared = CB_Sharing_pointer<T>;
-template<typename T> using owned = CB_Owning_pointer<T>;
-template<typename T> using seq = CB_Dynamic_seq<T>;
-template<typename T, int i> using fixed_seq = CB_Static_seq<T,i>;
 
 struct CB_Scope;
 

@@ -2,19 +2,16 @@
 
 
 #include "../utilities/assert.h"
-#include "type.h"
-#include "dynamic_seq.h"
-#include "static_seq.h"
-#include "primitives.h"
-#include "string.h"
-#include "pointers.h"
-#include "range.h"
-#include "struct.h"
-#include "function.h"
-#include "generic_function.h"
-#include "operators.h"
-#include "any.h"
-#include "flag.h"
+#include "cb_any.h"
+#include "cb_function.h"
+#include "cb_pointer.h"
+#include "cb_primitives.h"
+#include "cb_range.h"
+#include "cb_seq.h"
+#include "cb_string.h"
+#include "cb_struct.h"
+#include "cb_type.h"
+
 
 /*
 This is a list of built in types

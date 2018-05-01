@@ -151,7 +151,7 @@ void range_test()
     r.r_end = 10.4;
     cout << "range: " << r.toS() << endl;
     for (auto f : r) {
-        cout << f.toS() << endl;
+        cout << f << endl;
     }
 }
 
@@ -431,7 +431,7 @@ int main()
     // template_test();
     // cb_fn_test();
     // range_test();
-    any_test();
+    // any_test();
     // flag_test();
     // struct_test();
     // compile_test();

@@ -28,20 +28,20 @@ struct Declaration_statement : Statement {
         bool all_typed = true;
         for (auto& id : identifiers) {
             ASSERT(id != nullptr);
-            ASSERT(id->name.size > 0);
+            ASSERT(id->name.length() > 0);
             if (!first) oss << ", ";
             oss << id->name;
             first = false;
-            if (id->type == nullptr) all_typed = false;
+            if (id->cb_type == nullptr) all_typed = false;
         }
         if (all_typed) {
             oss << " : ";
             first = true;
             for (auto& id : identifiers) {
                 ASSERT(id != nullptr);
-                ASSERT(id->type != nullptr);
+                ASSERT(id->cb_type != nullptr);
                 if (!first) oss << ", ";
-                oss << id->type->toS();
+                oss << id->cb_type->toS();
                 first = false;
             }
         } else {

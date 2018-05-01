@@ -2,8 +2,8 @@
 // #include "abstx/abstx.h"
 // #include "abstx/function.h"
 // #include "abstx/identifier.h"
-#include "assert.h"
-#include "unique_id.h"
+#include "utilities/assert.h"
+#include "utilities/unique_id.h"
 #include <string>
 
 /*
@@ -30,6 +30,11 @@ uint64_t get_unique_id() {
 
 std::string get_unique_id_str() {
     return std::to_string(get_unique_id());
+}
+
+void test()
+{
+    ASSERT(false);
 }
 
 

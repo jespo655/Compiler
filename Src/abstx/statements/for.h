@@ -13,10 +13,10 @@ for (n in range, reverse) {}
 
 struct For_statement : Statement {
 
-    CB_String index_name;
+    std::string index_name;
     owned<Value_expression> range; // range or sequence
-    CB_Bool reverse = false;
-    CB_Float step;
+    bool reverse = false;
+    double step;
 
     owned<CB_Scope> scope;
 

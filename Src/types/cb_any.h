@@ -48,8 +48,6 @@ struct CB_Any : CB_Type {
         if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
         return os;
     }
-
-
 };
 
 
