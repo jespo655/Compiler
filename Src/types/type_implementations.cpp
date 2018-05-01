@@ -89,6 +89,8 @@ const shared<const CB_Type> CB_String::type = &static_cb_string;
 #include "cb_pointer.h"
 const bool CB_Pointer::primitive;
 constexpr void* CB_Pointer::_default_value;
+// an explicit unresolved_pointer is needed just so that unresolved pointers can be used and thrown away without storing
+// otherwise, the next time an unresolved pointer is used, the reference will be a dangling pointer (which is bad)
 static const CB_Pointer _unresolved_pointer = CB_Pointer(true);
 // type is registered with CB_Pointer::finalize()
 
@@ -101,6 +103,21 @@ constexpr void(*CB_Function::_default_value)();
 const bool CB_Struct::primitive;
 // default value is different for each instance
 // type is registered with CB_Struct::finalize()
+
+#include "cb_seq.h"
+const bool CB_Seq::primitive;
+constexpr CB_Seq::c_representation CB_Seq::_default_value;
+// an explicit unresolved_sequence is needed just so that unresolved sequences can be used and thrown away without storing
+// otherwise, the next time an unresolved sequence is used, the reference will be a dangling pointer (which is bad)
+static const CB_Seq _unresolved_sequence = CB_Seq(true);
+// type is registered with CB_Seq::finalize()
+
+const bool CB_Fixed_seq::primitive;
+// an explicit unresolved_sequence is needed just so that unresolved sequences can be used and thrown away without storing
+// otherwise, the next time an unresolved sequence is used, the reference will be a dangling pointer (which is bad)
+static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
+// type is registered with CB_Fixed_seq::finalize()
+
 
 
 
@@ -186,23 +203,23 @@ int main()
     { CB_Pointer type; type.v_type = CB_Range::type; type.finalize(); test_type(&type); }
     {
         CB_Pointer type; type.v_type = CB_Range::type; type.finalize(); test_type(&type);
-        CB_Pointer pt1; pt1.v_type = &type; pt1.owned=true; pt1.finalize(); test_type(&pt1);
-        CB_Pointer pt2; pt2.v_type = &pt1;  pt2.owned=false; pt2.finalize(); test_type(&pt2);
-        CB_Pointer pt3; pt3.v_type = &pt2;  pt3.owned=true; pt3.finalize(); test_type(&pt3);
-        CB_Pointer pt4; pt4.v_type = &pt3;  pt4.owned=true; pt4.finalize(); test_type(&pt4);
-        CB_Pointer pt5; pt5.v_type = &pt4;  pt5.owned=true; pt5.finalize(); test_type(&pt5);
+        CB_Pointer pt1; pt1.v_type = &type; pt1.owning=true; pt1.finalize(); test_type(&pt1);
+        CB_Pointer pt2; pt2.v_type = &pt1;  pt2.owning=false; pt2.finalize(); test_type(&pt2);
+        CB_Pointer pt3; pt3.v_type = &pt2;  pt3.owning=true; pt3.finalize(); test_type(&pt3);
+        CB_Pointer pt4; pt4.v_type = &pt3;  pt4.owning=true; pt4.finalize(); test_type(&pt4);
+        CB_Pointer pt5; pt5.v_type = &pt4;  pt5.owning=true; pt5.finalize(); test_type(&pt5);
         pt5.generate_destructor(std::cout, "ptr");
     }
 
     {
         CB_Struct type;
         CB_Pointer pt1; pt1.finalize(); // forward declaration / finalize as unresolved_pointer
-        // CB_Pointer pt1; pt1.v_type = CB_Int::type; pt1.owned=false; pt1.finalize();
-        CB_Pointer pt2; pt2.v_type = &pt1; pt2.owned=true; pt2.finalize();
+        // CB_Pointer pt1; pt1.v_type = CB_Int::type; pt1.owning=false; pt1.finalize();
+        CB_Pointer pt2; pt2.v_type = &pt1; pt2.owning=true; pt2.finalize();
         type.add_member("sp", &pt1);
         type.add_member("op", &pt2);
         type.finalize();
-        pt1.v_type = &type; pt1.owned=false; pt1.finalize(); // final finalize now when type is finalized
+        pt1.v_type = &type; pt1.owning=false; pt1.finalize(); // final finalize now when type is finalized
         test_type(&type);
         test_type(&pt1);
         type.generate_destructor(std::cout, "s");
@@ -214,14 +231,18 @@ int main()
         s1.add_member("s3op", &pt1); s1.finalize();
         s2.add_member("s1", &s1); s2.finalize();
         s3.add_member("s2", &s2); s3.finalize();
-        pt1.v_type = &s3; pt1.owned=true; pt1.finalize(); // final finalize now when type is finalized
+        pt1.v_type = &s3; pt1.owning=true; pt1.finalize(); // final finalize now when type is finalized
         // s1.generate_literal(std::cout, s1._default_value); std::cout << std::endl;
-        s2.generate_destructor(std::cout, "s"); std::cout << std::endl;
+        // s2.generate_destructor(std::cout, "s"); std::cout << std::endl; // this should give cyclic reference error
     }
 
-    CB_String::type->generate_literal(std::cout, CB_String::type->default_value().v_ptr) << std::endl;
+    // @TODO: (CB_Set)
 
-// TODO: CB_Seq, (CB_Set)
+    { CB_Seq s; s.v_type = CB_Int::type; s.finalize(); test_type(&s); }
+    { CB_Fixed_seq s; s.v_type = CB_Int::type; s.size = 5; s.finalize(); test_type(&s); }
+    { CB_Fixed_seq s; s.v_type = CB_Int::type; s.size = 5; s.finalize(); test_type(&s); }
+    { CB_Fixed_seq s; s.v_type = CB_Int::type; s.size = 6; s.finalize(); test_type(&s); }
+    { CB_Fixed_seq s; s.v_type = CB_i64::type; s.size = 5; s.finalize(); test_type(&s); }
 
 }
 

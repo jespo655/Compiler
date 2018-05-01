@@ -9,17 +9,17 @@ struct CB_Pointer : CB_Type
     static const bool primitive = true;
     static constexpr void* _default_value = nullptr;
     shared<const CB_Type> v_type = nullptr;
-    bool owned = false;
+    bool owning = false;
 
     CB_Pointer(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }
     CB_Pointer(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
 
     std::string toS() const override {
-        if (v_type == nullptr) return "unresolved_pointer";
+        if (v_type == nullptr) return "_cb_unresolved_pointer";
         std::ostringstream oss;
         v_type->generate_type(oss);
         // oss << v_type->toS(); // this doesn't work for pointers to structs that contains pointers to itself
-        oss << (owned?"*!":"*");
+        oss << (owning?"*!":"*");
         return oss.str();
     }
 
@@ -50,7 +50,7 @@ struct CB_Pointer : CB_Type
     }
     virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
         if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
-        if (owned) {
+        if (owning) {
             v_type->generate_destructor(os, "*"+id, depth+1);
             return os << "free " << id << ";" << std::endl;
         }

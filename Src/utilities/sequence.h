@@ -6,15 +6,6 @@
 #include <sstream>
 #include <cstring>
 
-/*
-Dynamic sequence - stores the elements on the heap
-
-Syntax:
-a : T[] = [T, size=N: t1, t2, t3]; // T inferred from members, N evaluated compile time, must be a positive integer.
-a : T[] = [T: t1, t2, t3]; // N inferred by the number of arguments
-a : T[] = [size=N: t1, t2, t3]; // T inferred from the type of the members
-a : T[] = [t1, t2, t3]; // T and N inferred
-*/
 
 const int DEFAULT_CAPACITY = 16; // arbitrary power of 2
 
