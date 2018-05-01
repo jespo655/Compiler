@@ -195,17 +195,21 @@ int main()
 
     {
         CB_Struct type;
-        CB_Pointer pt1; pt1.v_type = CB_Int::type; pt1.owned=false; pt1.finalize();
+        CB_Pointer pt1; pt1.finalize(); // forward declaration / finalize as unresolved_pointer
+        // CB_Pointer pt1; pt1.v_type = CB_Int::type; pt1.owned=false; pt1.finalize();
         CB_Pointer pt2; pt2.v_type = &pt1; pt2.owned=true; pt2.finalize();
         type.add_member("sp", &pt1);
         type.add_member("op", &pt2);
         type.finalize();
+        pt1.v_type = &type; pt1.owned=false; pt1.finalize(); // final finalize now when type is finalized
         test_type(&type);
+        test_type(&pt1);
         type.generate_destructor(std::cout, "s");
     }
 
-
     CB_String::type->generate_literal(std::cout, CB_String::type->default_value().v_ptr) << std::endl;
+
+// TODO: CB_Seq, (CB_Set)
 
 }
 

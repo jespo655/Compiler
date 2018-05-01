@@ -5,6 +5,7 @@
 #include "../utilities/pointers.h"
 
 #include <string>
+#include <iomanip>
 
 /*
 
@@ -133,10 +134,12 @@ struct CB_Struct : CB_Type
     }
 
     void add_member(const std::string& id, const shared<const CB_Type>& type) {
+        ASSERT(type != nullptr);
         members.add(Struct_member(id, type, type->default_value()));
     }
 
     void finalize() {
+        std::cout << "struct finalize" << std::endl;
         size_t total_size = 0;
         if (members.empty()) {
             total_size = 1;
@@ -148,19 +151,23 @@ struct CB_Struct : CB_Type
             for (auto& member : members) {
                 // add memory alignment for 16 / 32 bit or bigger values (since this is done in C by default)
                 size_t alignment = member.type->alignment();
-                total_size += (alignment-total_size%alignment)%alignment;
+                align(&total_size, alignment);
                 member.byte_position = total_size;
                 total_size += member.type->cb_sizeof();
                 if (alignment > max_alignment) max_alignment = alignment;
             }
+
             // fix final alignment so it works in sequences
-            total_size += (max_alignment-total_size%max_alignment)%max_alignment;
+            align(&total_size, max_alignment);
             // copy default value
             _default_value = malloc(total_size);
             for (auto& member : members) {
                 memcpy((uint8_t*)_default_value+member.byte_position, member.default_value.v_ptr, member.type->cb_sizeof());
             }
         }
+        ASSERT(total_size > 0);
+        ASSERT(_default_value != nullptr);
+        std::cout << "registering type..." << std::endl;
         register_type(toS(), total_size, _default_value);
     }
 

@@ -8,15 +8,17 @@ struct CB_Pointer : CB_Type
 {
     static const bool primitive = false;
     static constexpr void* _default_value = nullptr;
-    shared<const CB_Type> v_type;
+    shared<const CB_Type> v_type = nullptr;
     bool owned = false;
 
     CB_Pointer() { uid = type->uid; }
     CB_Pointer(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
 
     std::string toS() const override {
+        if (v_type == nullptr) return "unresolved_pointer";
         std::ostringstream oss;
-        oss << v_type->toS();
+        v_type->generate_type(oss);
+        // oss << v_type->toS(); // this doesn't work for pointers to structs that contains pointers to itself
         oss << (owned?"*!":"*");
         return oss.str();
     }
