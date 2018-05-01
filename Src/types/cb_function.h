@@ -186,18 +186,18 @@ struct CB_Function : CB_Type
     }
 
     // code generation functions
-    virtual ostream& generate_typedef(ostream& os) const {
+    void generate_typedef(ostream& os) const override {
         os << "typedef void(";
         generate_type(os);
         os << "*)(";
         // TODO: output arg types
         os << ");";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const {
-        if (!raw_data) return os << "NULL";
-        if (!*(void**)raw_data) return os << "NULL";
+    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+        if (!raw_data) os << "NULL";
+        if (!*(void**)raw_data) os << "NULL";
         ASSERT(false, "warning: pointers are not the same outside compile time");
-        return os << std::hex << *(void**)raw_data;
+        os << std::hex << *(void**)raw_data;
     }
 };
 

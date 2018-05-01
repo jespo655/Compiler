@@ -47,7 +47,7 @@ struct CB_Seq : CB_Type
         register_type(tos, sizeof(_default_value), &_default_value);
     }
 
-    virtual ostream& generate_typedef(ostream& os) const override {
+    void generate_typedef(ostream& os) const override {
         ASSERT(v_type != nullptr);
         os << "typedef struct { ";
         CB_u32::type->generate_type(os);
@@ -57,9 +57,9 @@ struct CB_Seq : CB_Type
         v_type->generate_type(os);
         os << "* v_ptr; } ";
         generate_type(os);
-        return os << ";";
+        os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
         uint8_t const* raw_it = (uint8_t const*)raw_data;
         os << "(";
@@ -72,10 +72,10 @@ struct CB_Seq : CB_Type
         raw_it += CB_u32::type->cb_sizeof();
         os << ", ";
         CB_Pointer(true).generate_literal(os, raw_it, depth+1);
-        return os << "}";
+        os << "}";
     }
-    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
-        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
+    void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
         CB_u32::type->generate_destructor(os, id+".size");
         CB_u32::type->generate_destructor(os, id+".capacity");
         os << "if (" << id << ".v_ptr) for(";
@@ -83,7 +83,7 @@ struct CB_Seq : CB_Type
         os << " _it=0; _it<" << id << ".capacity; ++i) { ";
         v_type->generate_destructor(os, id+".v_ptr[_it]", depth+1);
         os << " }" << std::endl;
-        return os << "free " << id << ".v_ptr;" << std::endl;
+        os << "free " << id << ".v_ptr;" << std::endl;
     }
 
 };
@@ -141,7 +141,7 @@ struct CB_Fixed_seq : CB_Type
     }
 
 
-    virtual ostream& generate_typedef(ostream& os) const override {
+    void generate_typedef(ostream& os) const override {
         ASSERT(v_type != nullptr);
         os << "typedef ";
         v_type->generate_type(os);
@@ -149,9 +149,9 @@ struct CB_Fixed_seq : CB_Type
         CB_u32::type->generate_literal(os, &size);
         os << "] ";
         generate_type(os);
-        return os << ";";
+        os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data != nullptr);
         uint8_t const* raw_it = (uint8_t const*)raw_data;
         os << "{";
@@ -160,10 +160,10 @@ struct CB_Fixed_seq : CB_Type
             v_type->generate_literal(os, raw_it);
             raw_it += v_type->cb_sizeof();
         }
-        return os << "}";
+        os << "}";
     }
-    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
-        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
+    void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
         CB_u32::type->generate_destructor(os, id+".size");
         CB_u32::type->generate_destructor(os, id+".capacity");
         os << "if (" << id << ".v_ptr) for(";
@@ -171,7 +171,7 @@ struct CB_Fixed_seq : CB_Type
         os << " _it=0; _it<" << id << ".capacity; ++i) { ";
         v_type->generate_destructor(os, id+".v_ptr[_it]", depth+1);
         os << " }" << std::endl;
-        return os << "free " << id << ".v_ptr;" << std::endl;
+        os << "free " << id << ".v_ptr;" << std::endl;
     }
 };
 

@@ -11,14 +11,14 @@ struct cpp_type : CB_Type { \
     cpp_type(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {} \
     std::string toS() const override { return tos; } \
 \
-    virtual ostream& generate_typedef(ostream& os) const override { \
+    void generate_typedef(ostream& os) const override { \
         os << "typedef " << #c_type << " "; \
         generate_type(os); \
-        return os << ";"; \
+        os << ";"; \
     } \
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override { \
+    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override { \
         ASSERT(raw_data); \
-        return os << *(c_type*)raw_data << literal_suffix;\
+        os << *(c_type*)raw_data << literal_suffix;\
     } \
 }
 

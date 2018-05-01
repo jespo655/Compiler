@@ -25,16 +25,16 @@ struct CB_Range : CB_Type {
 
     virtual size_t alignment() const override { return CB_f64::type->alignment(); }
 
-    virtual ostream& generate_typedef(ostream& os) const override {
+    void generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
         CB_f64::type->generate_type(os);
         os << " r_start; ";
         CB_f64::type->generate_type(os);
         " r_end; } ";
         generate_type(os);
-        return os << ";";
+        os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
         os << "(";
         generate_type(os);

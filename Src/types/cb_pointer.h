@@ -36,23 +36,23 @@ struct CB_Pointer : CB_Type
         register_type(tos, sizeof(_default_value), &_default_value);
     }
 
-    virtual ostream& generate_typedef(ostream& os) const override {
+    void generate_typedef(ostream& os) const override {
         os << "typedef ";
         v_type->generate_type(os);
         os << "* ";
         generate_type(os);
-        return os << ";";
+        os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
-        if (!*(void**)raw_data) return os << "NULL";
-        return os << std::hex << *(void**)raw_data;
+        if (!*(void**)raw_data) os << "NULL";
+        os << std::hex << *(void**)raw_data;
     }
-    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
-        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
+    void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
         if (owning) {
             v_type->generate_destructor(os, "*"+id, depth+1);
-            return os << "free " << id << ";" << std::endl;
+            os << "free " << id << ";" << std::endl;
         }
     }
 

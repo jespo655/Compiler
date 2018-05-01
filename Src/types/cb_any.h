@@ -26,15 +26,15 @@ struct CB_Any : CB_Type {
     std::string toS() const override { return "any"; }
 
     // code generation functions
-    virtual ostream& generate_typedef(ostream& os) const override {
+    void generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
         CB_Type::type->generate_type(os);
         os << "type; void* v_ptr; } ";
         generate_type(os);
-        return os << ";";
+        os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
-        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os << "void"; }
+    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); os << "void"; return; }
         ASSERT(raw_data);
         os << "(";
         generate_type(os);
@@ -44,9 +44,8 @@ struct CB_Any : CB_Type {
         raw_it += CB_Type::type->cb_sizeof();
         os << ", " << std::hex << (void**)raw_it << "}";
     }
-    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
-        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return os; }
-        return os;
+    void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
     }
 };
 

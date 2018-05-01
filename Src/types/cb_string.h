@@ -26,16 +26,16 @@ struct CB_String : CB_Type {
     CB_String(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     std::string toS() const override { return "string"; }
 
-    virtual ostream& generate_typedef(ostream& os) const override {
+    void generate_typedef(ostream& os) const override {
         // for now, just use regular null-terminated char*
         os << "typedef char* ";
         generate_type(os);
-        return os << ";";
+        os << ";";
     }
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
         char const* raw_it = *(char const**)raw_data;
-        if (!raw_it) return os << "NULL";
+        if (!raw_it) os << "NULL";
         os << "\"";
         while (*raw_it)  {
             switch(*raw_it) {
@@ -46,7 +46,7 @@ struct CB_String : CB_Type {
                 default: os << *(char*)raw_it;
             }
         }
-        return os << "\"";
+        os << "\"";
     }
 
     std::string parse_raw_data(void* raw_data) {

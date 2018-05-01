@@ -121,15 +121,15 @@ struct CB_Type
     }
 
     // code generation functions
-    virtual ostream& generate_type(ostream& os) const { return os << "_cb_type_" << uid; }
-    virtual ostream& generate_typedef(ostream& os) const {
+    virtual void generate_type(ostream& os) const { os << "_cb_type_" << uid; }
+    virtual void generate_typedef(ostream& os) const {
         os << "typedef uint32_t ";
         generate_type(os);
-        return os << ";";
+        os << ";";
     }
     // literal & destructor has an additional argument depth, to safeguard against infinite loops
-    virtual ostream& generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const { ASSERT(raw_data); return os << *(uint32_t*)raw_data << "UL"; }
-    virtual ostream& generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const { return os; };
+    virtual void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const { ASSERT(raw_data); os << *(uint32_t*)raw_data << "UL"; }
+    virtual void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const { };
     // constructor:
     //   type name = literal(default_value); // default
     //   type name; // explicit uninitialized
