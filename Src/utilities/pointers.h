@@ -94,6 +94,8 @@ struct owned {
 
     T* operator->() const { ASSERT(v != nullptr); return v; }
     T& operator*() const { ASSERT(v != nullptr); return *v; }
+    operator bool() const { return v != nullptr; }
+    explicit operator T*() const { return v; }
 
     // copy - not allowed (makes a deep copy?). If passing a owned_ptr to a function, move constructor should be used. (In CB this will be done automatically)
     owned& operator=(const owned& ptr)
@@ -177,7 +179,7 @@ struct shared {
 
     T* operator->() const { ASSERT(v != nullptr); return v; }
     T& operator*() const { ASSERT(v != nullptr); return *v; }
-
+    operator bool() const { return v != nullptr; }
     explicit operator T*() const { return v; }
 
     // copy
