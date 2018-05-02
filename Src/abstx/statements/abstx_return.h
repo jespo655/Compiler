@@ -31,7 +31,7 @@ struct Return_statement : Statement {
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));
-        target << "return;";
+        target << "return;" << std::endl;
         status = Parsing_status::CODE_GENERATED;
     };
 };
