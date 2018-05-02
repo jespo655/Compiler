@@ -42,7 +42,7 @@ struct CB_Pointer : CB_Type
         v_type->generate_type(os);
         os << "* ";
         generate_type(os);
-        os << ";";
+        os << ";" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);

@@ -26,15 +26,15 @@ const flag SCOPE_ASYNC = 1;
 const flag SCOPE_DYNAMIC = 2;
 const flag SCOPE_SELF_CONTAINED = 3; // should be set if the scope never references identifiers outside itself.
 
-struct Abstx_scope : Abstx_node //, CB_Object
+struct Abstx_scope : Abstx_node
 {
     // static CB_Type type;
     Seq<Owned<Statement>> statements;
 
-    std::map<std::string, Shared<Identifier>> identifiers; // id name -> id. Identifiers are Owned by their declaration statements.
+    std::map<std::string, Shared<Abstx_identifier>> identifiers; // id name -> id. Identifiers are owned by their declaration statements.
 
     Seq<Shared<Abstx_scope>> imported_scopes;
-    Seq<Shared<Using_statement>> using_statements; // Used in the parsing process. Owned by the list of statements above. Once a using statement has been resolved, it should be returned from this list.
+    Seq<Shared<Abstx_using>> using_statements; // Used in the parsing process. Owned by the list of statements above. Once a using statement has been resolved, it should be returned from this list.
                                                    // FIXME: add a safeguard for when several using-statements tries to import the same scope.
     uint8_t flags = 0;
     bool dynamic() const { return flags == SCOPE_DYNAMIC; }
@@ -57,7 +57,7 @@ struct Abstx_scope : Abstx_node //, CB_Object
     std::string toS() const override { return dynamic()? "scope(d)" : "scope(s)"; }
     // CB_Object* heap_copy() const override { Abstx_scope* tp = new Abstx_scope(); *tp = *this; return tp; }
 
-    Shared<Identifier> get_identifier(const std::string& id, bool recursive=true)
+    virtual Shared<Abstx_identifier> get_identifier(const std::string& id, bool recursive=true)
     {
         auto p = identifiers[id];
         ASSERT(!self_contained() || p != nullptr)
@@ -95,7 +95,7 @@ struct Abstx_scope : Abstx_node //, CB_Object
 
     void resolve_imports()
     {
-        Seq<Shared<Using_statement>> remaining;
+        Seq<Shared<Abstx_using>> remaining;
 
         while (using_statements.size > 0) {
             remaining.clear();
@@ -140,7 +140,7 @@ struct Abstx_scope : Abstx_node //, CB_Object
     }
 
 
-    Parsing_status finalize() override {
+    virtual Parsing_status finalize() override {
         if (is_codegen_ready(status)) return status;
 
         // resolve any unresolved imports
@@ -172,6 +172,45 @@ struct Abstx_scope : Abstx_node //, CB_Object
         status = Parsing_status::CODE_GENERATED;
     };
 
+};
+
+
+
+// A function scope is the same as a regular scope, but it can own its own identifiers (from the function signature).
+
+struct Abstx_function_scope : Abstx_scope
+{
+    std::map<std::string, Owned<Abstx_identifier>> fn_identifiers; // id name -> id. Identifiers are owned by the function scope.
+
+    Abstx_function_scope() : Abstx_scope((uint64_t)SCOPE_DYNAMIC) {}
+
+    Shared<Abstx_identifier> get_identifier(const std::string& id, bool recursive=true) override
+    {
+        Shared<Abstx_identifier> p_local = identifiers[id];
+        Shared<Abstx_identifier> p_fn = fn_identifiers[id];
+        ASSERT(p_local == nullptr || p_fn == nullptr, "local name overrides not allowed"); // this should give compile error earlier
+        if (p_fn != nullptr) return p_fn;
+        if (p_local != nullptr) return p_local;
+        return Abstx_scope::get_identifier(id, recursive);
+    }
+
+    void add_identifier(const std::string& name, Shared<const CB_Type> type) {
+        Owned<Abstx_identifier> id = alloc(Abstx_identifier());
+        id->name = name;
+        id->cb_type = type;
+        id->owner = this;
+        fn_identifiers[name] = (std::move(id));
+    }
+
+    Parsing_status finalize() override {
+        for (const auto& id : fn_identifiers) {
+            if (!is_codegen_ready(id.second->finalize())) {
+                status = id.second->status;
+                return status;
+            }
+        }
+        return Abstx_scope::finalize();
+    }
 };
 
 

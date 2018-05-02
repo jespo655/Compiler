@@ -14,9 +14,11 @@ Example:
     a = foo(foo(2));
 generates C code:
     void foo(int i, int* r) { *r = i; return; }
-    int _tmp_123;
-    foo(2, &_tmp_123);
-    foo(_tmp_123, &a);
+    { // temporary values are kept inside a separate scope
+        int _tmp_123;
+        foo(2, &_tmp_123);
+        foo(_tmp_123, &a);
+    }
 
 
 
@@ -57,7 +59,7 @@ struct Abstx_function_call : Statement
     // either function or function_pointer has to be defined
     // if both are defined, function_pointer will be overwritten in finalize() so the types match
     Shared<Abstx_function> function;
-    Shared<Identifier> function_pointer;
+    Shared<Abstx_identifier> function_pointer;
     Seq<Owned<Value_expression>> in_args;
     Seq<Owned<Variable_expression>> out_args;
 

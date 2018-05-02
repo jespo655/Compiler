@@ -32,7 +32,7 @@ struct CB_Any : CB_Type {
         CB_Type::type->generate_type(os);
         os << "type; void* v_ptr; } ";
         generate_type(os);
-        os << ";";
+        os << ";" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); os << "void"; return; }

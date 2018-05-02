@@ -15,7 +15,7 @@ a, b = 1, 2;    // more than one variable can be assigned at the same time. The 
 a, b = foo();   // The lhs and rhs count will not match if a function in rhs returns more than one value.
 */
 
-struct Assignment_statement : Statement {
+struct Abstx_assignment : Statement {
 
     Seq<Owned<Variable_expression>> lhs;
     Seq<Owned<Value_expression>> rhs;

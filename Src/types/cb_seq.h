@@ -58,7 +58,7 @@ struct CB_Seq : CB_Type
         v_type->generate_type(os);
         os << "* v_ptr; } ";
         generate_type(os);
-        os << ";";
+        os << ";" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
@@ -151,7 +151,7 @@ struct CB_Fixed_seq : CB_Type
         CB_u32::type->generate_literal(os, &size);
         os << "] ";
         generate_type(os);
-        os << ";";
+        os << ";" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data != nullptr);

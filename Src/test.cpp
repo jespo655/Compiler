@@ -252,7 +252,7 @@ void ptr_reference_test()
     // auto sp2 = shared_ptr<Scope>(new Scope());
     // sp2->dynamic = true;
 
-    // Identifier id{};
+    // Abstx_identifier id{};
     // id.parent_scope = sp1;
     // id.parent_scope.lock()->debug_print(os);
 
@@ -414,6 +414,52 @@ void code_gen_test()
 
 
 
+void abstx_test()
+{
+    std::cout << "creating function type" << std::endl;
+    CB_Function fn_type; // owned by some global list of types
+    fn_type.in_types.add(CB_i8::type);
+    fn_type.in_types.add(CB_Range::type);
+    fn_type.out_types.add(CB_Float::type);
+    fn_type.out_types.add(CB_Range::type);
+    fn_type.finalize();
+
+
+    std::cout << "creating abstx function id" << std::endl;
+    Abstx_identifier fn_id; // owned by the scope it is defined in
+    fn_id.name = "foo";
+    fn_id.cb_type = &fn_type;
+    fn_id.finalize();
+
+    std::cout << "creating abstx function" << std::endl;
+    Abstx_function fn; // owned by the scope it is defined in
+    fn.function_identifier = &fn_id;
+    fn.scope = alloc(Abstx_function_scope());
+    fn.scope->owner = &fn;
+    std::cout << "adding identifiers to function scope" << std::endl;
+    fn.scope->add_identifier("in1", CB_i8::type);
+    fn.scope->add_identifier("in2", CB_Range::type);
+    fn.scope->add_identifier("out1", CB_Float::type);
+    fn.scope->add_identifier("out2", CB_Range::type);
+    std::cout << "adding arguments from scope to function" << std::endl;
+    fn.add_arg(true, fn.scope->get_identifier("in1"));
+    fn.add_arg(true, fn.scope->get_identifier("in2"));
+    fn.add_arg(false, fn.scope->get_identifier("out1"));
+    fn.add_arg(false, fn.scope->get_identifier("out2"));
+    std::cout << "finalizing function" << std::endl;
+    Parsing_status ps = fn.finalize();
+    if (is_codegen_ready(ps)) {
+        std::cout << "generating code" << std::endl;
+        CB_i8::type->generate_typedef(std::cout);
+        CB_Range::type->generate_typedef(std::cout);
+        CB_Float::type->generate_typedef(std::cout);
+        fn.generate_code(std::cout);
+    } else {
+        std::cout << "failed to finalize: " << ps << std::endl;
+    }
+}
+
+
 int main()
 {
     // Debug_os os{std::cout};
@@ -429,8 +475,10 @@ int main()
     // template_test();
     // range_test();
     // flag_test();
-    compile_test();
+    // compile_test();
     // code_gen_test();
+
+    abstx_test();
 
     std::cout << "all test done!" << std::endl;
 }

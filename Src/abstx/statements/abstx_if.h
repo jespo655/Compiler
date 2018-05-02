@@ -16,66 +16,66 @@ else {}
 then {}
 */
 
-struct Conditional_scope : Abstx_node {
 
-    Owned<Value_expression> condition;
-    Owned<Abstx_scope> scope;
 
-    std::string toS() const override { return "if(){}"; }
 
-    void debug_print(Debug_os& os, bool recursive=true) const override
-    {
-        os << "if(";
-        if (recursive) {
-            ASSERT(condition != nullptr);
-            os << condition->toS();
+struct Abstx_if : Statement {
+
+    struct Abstx_conditional_scope : Abstx_node {
+
+        Owned<Value_expression> condition;
+        Owned<Abstx_scope> scope;
+
+        std::string toS() const override { return "if(){}"; }
+
+        void debug_print(Debug_os& os, bool recursive=true) const override
+        {
+            os << "if(";
+            if (recursive) {
+                ASSERT(condition != nullptr);
+                os << condition->toS();
+            }
+            os << ") ";
+            if (recursive) {
+                ASSERT(scope != nullptr);
+                scope->debug_print(os, recursive);
+            }
+            else os << std::endl;
         }
-        os << ") ";
-        if (recursive) {
-            ASSERT(scope != nullptr);
-            scope->debug_print(os, recursive);
-        }
-        else os << std::endl;
-    }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
+        Parsing_status finalize() override {
+            if (is_codegen_ready(status)) return status;
 
-        if (!is_codegen_ready(condition->finalize())) {
-            status = condition->status;
+            if (!is_codegen_ready(condition->finalize())) {
+                status = condition->status;
+                return status;
+            }
+            Shared<const CB_Type> type = condition->get_type();
+            if (*type != *CB_Bool::type) {
+                status = Parsing_status::TYPE_ERROR;
+                return status;
+            }
+            if (!is_codegen_ready(scope->finalize())) {
+                status = scope->status;
+                return status;
+            }
+            // we reached the end -> we are done
+            status = Parsing_status::FULLY_RESOLVED;
             return status;
         }
-        Shared<const CB_Type> type = condition->get_type();
-        if (*type != *CB_Bool::type) {
-            status = Parsing_status::TYPE_ERROR;
-            return status;
-        }
-        if (!is_codegen_ready(scope->finalize())) {
-            status = scope->status;
-            return status;
-        }
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
 
-    void generate_code(std::ostream& target) override {
-        ASSERT(is_codegen_ready(status));
-        target << "if (";
-        condition->generate_code(target);
-        target << ") ";
-        scope->generate_code(target);
-        status = Parsing_status::CODE_GENERATED;
+        void generate_code(std::ostream& target) override {
+            ASSERT(is_codegen_ready(status));
+            target << "if (";
+            condition->generate_code(target);
+            target << ") ";
+            scope->generate_code(target);
+            status = Parsing_status::CODE_GENERATED;
+        };
     };
 
-};
 
-
-
-
-struct If_statement : Statement {
-
-    Seq<Owned<Conditional_scope>> conditional_scopes;
+    Seq<Owned<Abstx_conditional_scope>> conditional_scopes;
     Owned<Abstx_scope> else_scope; // is entered if none of the conditional scopes are entered
     // Owned<Abstx_scope> then_scope; // is entered if not the else_scope is entered
 

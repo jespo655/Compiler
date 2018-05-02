@@ -8,7 +8,7 @@ Consecutive defer statements in the same order are performed in reverse order at
 Think of it like a "defer stack"
 */
 
-struct Defer_statement : Statement {
+struct Abstx_defer : Statement {
 
     Owned<Statement> statement;
 

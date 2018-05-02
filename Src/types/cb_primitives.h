@@ -13,7 +13,7 @@ struct cpp_type : CB_Type { \
     void generate_typedef(ostream& os) const override { \
         os << "typedef " << #c_type << " "; \
         generate_type(os); \
-        os << ";"; \
+        os << ";" << std::endl; \
     } \
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override { \
         ASSERT(raw_data); \

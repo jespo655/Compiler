@@ -1,7 +1,7 @@
 @echo off
 
 set INCLUDE_PATHS=-Lutilities
-set SRC_FILES=*.cpp lexer/*.cpp utilities/*.cpp types/*.cpp runtime_dll/*.cpp
+set SRC_FILES=*.cpp lexer/*.cpp utilities/*.cpp types/*.cpp runtime_dll/*.cpp abstx/*.cpp
 :: parser/*.cpp code_gen/*.cpp
 set LIBS32=runtime_dll/dyncall/lib32/libdyncall_s.lib
 set LIBS64=runtime_dll/dyncall/lib64/libdyncall_s.lib

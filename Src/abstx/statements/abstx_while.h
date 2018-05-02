@@ -9,7 +9,7 @@
 while (b) {}
 */
 
-struct While_statement : Statement {
+struct Abstx_while : Statement {
 
     Owned<Value_expression> condition;
     Owned<Abstx_scope> scope;

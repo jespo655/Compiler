@@ -31,9 +31,9 @@ struct CB_Range : CB_Type {
         CB_f64::type->generate_type(os);
         os << " r_start; ";
         CB_f64::type->generate_type(os);
-        " r_end; } ";
+        os << " r_end; } ";
         generate_type(os);
-        os << ";";
+        os << ";" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);

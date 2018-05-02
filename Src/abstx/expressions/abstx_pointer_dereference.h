@@ -7,7 +7,7 @@
 
 struct Abstx_pointer_dereference : Variable_expression {
 
-    Shared<Identifier> pointer_id; // Owned by parent scope
+    Shared<Abstx_identifier> pointer_id; // Owned by parent scope
 
     std::string toS() const override {
         ASSERT(pointer_id->name.length() > 0);
@@ -49,7 +49,7 @@ struct Abstx_pointer_dereference : Variable_expression {
 
 struct Abstx_address_of : Value_expression {
 
-    Shared<Identifier> pointer_id; // Owned by parent scope
+    Shared<Abstx_identifier> pointer_id; // Owned by parent scope
     Owned<CB_Pointer> pointer_type = nullptr;
 
     std::string toS() const override {

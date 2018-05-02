@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 
 enum struct Parsing_status
 {
@@ -22,6 +23,22 @@ enum struct Parsing_status
 
 };
 
+static std::ostream& operator<<(std::ostream& os, Parsing_status ps) {
+    switch(ps) {
+        case Parsing_status::NOT_PARSED: return os << "NOT_PARSED";
+        case Parsing_status::PARTIALLY_PARSED: return os << "PARTIALLY_PARSED";
+        case Parsing_status::FULLY_RESOLVED: return os << "FULLY_RESOLVED";
+        case Parsing_status::CODE_GENERATED: return os << "CODE_GENERATED";
+        case Parsing_status::DEPENDENCIES_NEEDED: return os << "DEPENDENCIES_NEEDED";
+        case Parsing_status::SYNTAX_ERROR: return os << "SYNTAX_ERROR";
+        case Parsing_status::TYPE_ERROR: return os << "TYPE_ERROR";
+        case Parsing_status::CYCLIC_DEPENDENCY: return os << "CYCLIC_DEPENDENCY";
+        case Parsing_status::COMPILE_TIME_ERROR: return os << "COMPILE_TIME_ERROR";
+        case Parsing_status::UNDECLARED_IDENTIFIER: return os << "UNDECLARED_IDENTIFIER";
+        case Parsing_status::FATAL_ERROR: return os << "FATAL_ERROR";
+    }
+    return os;
+}
 
 static is_error(Parsing_status p) {
     if (p == Parsing_status::NOT_PARSED

@@ -192,7 +192,7 @@ struct CB_Function : CB_Type
         generate_type(os);
         os << "*)(";
         // TODO: output arg types
-        os << ");";
+        os << ");" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         if (!raw_data) os << "NULL";

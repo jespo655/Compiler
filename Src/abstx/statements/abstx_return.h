@@ -11,7 +11,7 @@ return 1, b=2;      // named and non-named return values can be mixed. However, 
 b=2; return 1;      // the return count only has to include all non-named return values.
 */
 
-struct Return_statement : Statement {
+struct Abstx_return : Statement {
 
     // Return parameters should not be included in this statement.
     // Instead, during parsing additional assignment statements should be inserted directly

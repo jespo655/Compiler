@@ -31,7 +31,7 @@ struct CB_String : CB_Type {
         // for now, just use regular null-terminated char*
         os << "typedef char* ";
         generate_type(os);
-        os << ";";
+        os << ";" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);

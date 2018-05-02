@@ -23,11 +23,24 @@ TODO: decide exact syntax and usage, before implementing the class
 
 */
 
-struct Using_statement : Statement {
+struct Abstx_using : Statement {
 
     Owned<Value_expression> subject;
 
     std::string toS() const override { return "using statement"; }
+
+    Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+
+        if (!is_codegen_ready(subject->finalize())) {
+            status = subject->status;
+            return status;
+        }
+
+        // we reached the end -> we are done
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
 };
 
 

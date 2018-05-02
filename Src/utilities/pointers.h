@@ -180,6 +180,7 @@ struct Shared {
     T* operator->() const { ASSERT(v != nullptr); return v; }
     T& operator*() const { ASSERT(v != nullptr); return *v; }
     operator bool() const { return v != nullptr; }
+    operator Shared<const T>() const { Shared<const T>(v); }
     explicit operator T*() const { return v; }
 
     // copy

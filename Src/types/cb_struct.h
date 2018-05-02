@@ -186,7 +186,7 @@ struct CB_Struct : CB_Type
         // if (member.size>0) os << std::endl;
         os << "} ";
         generate_type(os);
-        os << ";";
+        os << ";" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(_default_value, "struct must be finalized before it can be used"); // assert finalized

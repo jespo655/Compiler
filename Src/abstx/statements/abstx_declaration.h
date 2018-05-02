@@ -15,9 +15,9 @@ a := b;         // infers type from the variable b. The value of b overwrites th
 a, b := foo();  // The lhs and rhs count will not match if a function in rhs returns more than one value.
 */
 
-struct Declaration_statement : Statement {
+struct Abstx_declaration : Statement {
 
-    Seq<Owned<Identifier>> identifiers;
+    Seq<Owned<Abstx_identifier>> identifiers;
     Seq<Owned<Value_expression>> rhs;
 
     std::string toS() const override {

@@ -23,6 +23,7 @@ static T operator-=(T& i, const flag& f) { i = i - f; }              \
 static bool operator==(const T& i, const flag& f) { return i == i + f; } \
 static bool operator!=(const T& i, const flag& f) { return i == i - f; } \
 
+
 GENERATE_FLAG_OPERATORS(uint8_t);
 GENERATE_FLAG_OPERATORS(uint16_t);
 GENERATE_FLAG_OPERATORS(uint32_t);

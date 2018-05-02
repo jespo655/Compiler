@@ -12,5 +12,5 @@ void add_note(const std::string& msg);
 
 void exit_if_errors();
 
-void set_logging(bool); // if set to false, no errors will be logged. Default is true.
+void set_logging(bool on); // if set to false, no errors will be logged. Default is true.
 

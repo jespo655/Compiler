@@ -6,7 +6,7 @@
 #include <sstream>
 
 
-struct Identifier : Variable_expression {
+struct Abstx_identifier : Variable_expression {
     Shared<const CB_Type> cb_type = nullptr; // nullptr if not yet inferred
     std::string name = "";
     // any value; // For default value, use cb_type.default_value() (@todo should this even be here?)

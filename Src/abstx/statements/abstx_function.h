@@ -16,24 +16,25 @@ struct Abstx_function : Value_expression
 {
     struct Function_arg
     {
-        Shared<Identifier> identifier; // Owned by the function scope
+        Shared<Abstx_identifier> identifier; // Owned by the function scope
         Any default_value;
         bool is_using = false; // only for structs - imports that struct's members into the function scope
         bool has_default_value = false;
         bool explicit_uninitialized = false;
     };
 
-    Shared<Identifier> function_identifier; // contains the name and type of the function
+    Shared<Abstx_identifier> function_identifier; // contains the name and type of the function
     Seq<Owned<Function_arg>> in_args; // in arguments metadata
     Seq<Owned<Function_arg>> out_args; // out arguments metadata
-    Owned<Abstx_scope> scope; // function scope
+    Owned<Abstx_function_scope> scope; // function scope
 
     std::string toS() const override {
         // @todo: write better toS()
         return "function";
     }
 
-    void add_arg(bool in, Shared<Identifier> id) {
+    // the abstract identifier should be owned by the function scope
+    void add_arg(bool in, Shared<Abstx_identifier> id) {
         Owned<Function_arg> arg = alloc(Function_arg());
         arg->identifier = id;
         arg->default_value = id->get_type()->default_value();
@@ -67,6 +68,12 @@ struct Abstx_function : Value_expression
         Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_identifier->cb_type);
         ASSERT(fn_type != nullptr);
 
+        // check function scope. This also finalizes all argument identifiers
+        if (!is_codegen_ready(scope->finalize())) {
+            status = scope->status;
+            return status;
+        }
+
         // check arguments (the same way as function_identifier, but also check type)
         ASSERT(in_args.size == fn_type->in_types.size); // @todo this should maybe give a compile error / status TYPE_ERROR
         size_t index = 0;
@@ -81,7 +88,7 @@ struct Abstx_function : Value_expression
                 return status;
             }
             if (*fa->identifier->cb_type != *fn_type->in_types[index]) {
-                // @todo generate compile error "type mismatch in function type"
+                log_error("type mismatch in function in types", context); // @todo: write better error message, including which types are mismatching
                 status = Parsing_status::TYPE_ERROR;
                 return status;
             }
@@ -100,17 +107,11 @@ struct Abstx_function : Value_expression
                 return status;
             }
             if (*fa->identifier->cb_type != *fn_type->out_types[index]) {
-                // @todo generate compile error "type mismatch in function type"
+                log_error("type mismatch in function out types", context); // @todo: write better error message, including which types are mismatching
                 status = Parsing_status::TYPE_ERROR;
                 return status;
             }
             index++;
-        }
-
-        // check function scope
-        if (!is_codegen_ready(scope->finalize())) {
-            status = scope->status;
-            return status;
         }
 
         // we reached the end -> we are done
@@ -130,7 +131,7 @@ struct Abstx_function : Value_expression
             if (i) target << ", ";
             arg->identifier->cb_type->generate_type(target);
             target << " ";
-            if (arg->identifier->cb_type->is_primitive()) {
+            if (!arg->identifier->cb_type->is_primitive()) {
                 target << "const* "; // pass primitives by value; non-primitives by const pointer
             }
             arg->identifier->generate_code(target);
