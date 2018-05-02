@@ -85,7 +85,6 @@ struct any; // used for default values
 struct CB_Type
 {
     static const shared<const CB_Type> type; // self reference / CB_Type
-    static const bool primitive = true;
     static constexpr uint32_t _default_value = 0;
     static std::map<int, std::string> typenames; // mapped from uid to name. Only compile time.
     static std::map<int, any> default_values; // mapped from uid to value. Only compile time.
@@ -106,6 +105,10 @@ struct CB_Type
         return name;
     }
 
+    // is_primitive(): should return true if we'd rather copy the value itself than a pointer to it (+do pointer dereferences!)
+    virtual bool is_primitive() const { return true; }
+
+    // alignment(): should return the minimum alignment according to c standard (1, 2, 4 or 8 (on 64bit) bytes)
     virtual size_t alignment() const { return cb_sizeof(); }
 
     const any& default_value() const;

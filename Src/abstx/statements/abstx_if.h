@@ -42,7 +42,7 @@ struct Conditional_scope : Abstx_node {
         if (is_codegen_ready(status)) return status;
 
         if (!is_codegen_ready(condition->finalize())) {
-            status = Parsing_status::DEPENDENCIES_NEEDED;
+            status = condition->status;
             return status;
         }
         seq<shared<const CB_Type>> types = condition->get_type();
@@ -51,7 +51,7 @@ struct Conditional_scope : Abstx_node {
             return status;
         }
         if (!is_codegen_ready(scope->finalize())) {
-            status = Parsing_status::DEPENDENCIES_NEEDED;
+            status = scope->status;
             return status;
         }
         // we reached the end -> we are done

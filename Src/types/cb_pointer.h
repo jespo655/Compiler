@@ -6,7 +6,6 @@
 
 struct CB_Pointer : CB_Type
 {
-    static const bool primitive = true;
     static constexpr void* _default_value = nullptr;
     shared<const CB_Type> v_type = nullptr;
     bool owning = false;
@@ -22,6 +21,8 @@ struct CB_Pointer : CB_Type
         oss << (owning?"*!":"*");
         return oss.str();
     }
+
+    bool is_primitive() const override { return true; }
 
     void finalize() {
         std::string tos = toS();

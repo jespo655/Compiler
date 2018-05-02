@@ -11,12 +11,10 @@ std::map<int, std::string> CB_Type::typenames{};
 std::map<int, any> CB_Type::default_values{};
 std::map<int, size_t> CB_Type::cb_sizes{};
 
-const bool CB_Type::primitive;
 constexpr uint32_t CB_Type::_default_value;
 static const CB_Type static_cb_type("type", sizeof(CB_Type::_default_value), &CB_Type::_default_value);
 const shared<const CB_Type> CB_Type::type = &static_cb_type;
 
-const bool CB_Any::primitive;
 constexpr void* CB_Any::_default_value;
 static const CB_Any static_cb_any("any", sizeof(CB_Any::_default_value), &CB_Any::_default_value);
 const shared<const CB_Type> CB_Any::type = &static_cb_any;
@@ -47,7 +45,6 @@ void CB_Type::register_type(const std::string& name, size_t size, void const* de
 #include "cb_primitives.h"
 
 #define PRIMITIVE_STATICS(cpp_type, tos, c_type) \
-const bool cpp_type::primitive; \
 constexpr c_type cpp_type::_default_value; \
 static const cpp_type static_##cpp_type(tos, sizeof(cpp_type::_default_value), &cpp_type::_default_value); \
 const shared<const CB_Type> cpp_type::type = &static_##cpp_type;
@@ -74,20 +71,17 @@ PRIMITIVE_STATICS(CB_Float, "float", double);
 PRIMITIVE_STATICS(CB_Flag, "flag", uint8_t);
 
 #include "cb_range.h"
-const bool CB_Range::primitive;
 constexpr double CB_Range::_default_value[2];
 static const CB_Range static_cb_range("range", sizeof(CB_Range::_default_value), &CB_Range::_default_value);
 const shared<const CB_Type> CB_Range::type = &static_cb_range;
 
 #include "cb_string.h"
-const bool CB_String::primitive;
 constexpr char CB_String::_default_str[];
 constexpr char const* CB_String::_default_value;
 static const CB_String static_cb_string("string", sizeof(&CB_String::_default_value), &CB_String::_default_value);
 const shared<const CB_Type> CB_String::type = &static_cb_string;
 
 #include "cb_pointer.h"
-const bool CB_Pointer::primitive;
 constexpr void* CB_Pointer::_default_value;
 // an explicit unresolved_pointer is needed just so that unresolved pointers can be used and thrown away without storing
 // otherwise, the next time an unresolved pointer is used, the reference will be a dangling pointer (which is bad)
@@ -95,24 +89,20 @@ static const CB_Pointer _unresolved_pointer = CB_Pointer(true);
 // type is registered with CB_Pointer::finalize()
 
 #include "cb_function.h"
-const bool CB_Function ::primitive;
 constexpr void(*CB_Function::_default_value)();
 // type is registered with CB_Function::finalize()
 
 #include "cb_struct.h"
-const bool CB_Struct::primitive;
 // default value is different for each instance
 // type is registered with CB_Struct::finalize()
 
 #include "cb_seq.h"
-const bool CB_Seq::primitive;
 constexpr CB_Seq::c_representation CB_Seq::_default_value;
 // an explicit unresolved_sequence is needed just so that unresolved sequences can be used and thrown away without storing
 // otherwise, the next time an unresolved sequence is used, the reference will be a dangling pointer (which is bad)
 static const CB_Seq _unresolved_sequence = CB_Seq(true);
 // type is registered with CB_Seq::finalize()
 
-const bool CB_Fixed_seq::primitive;
 // an explicit unresolved_sequence is needed just so that unresolved sequences can be used and thrown away without storing
 // otherwise, the next time an unresolved sequence is used, the reference will be a dangling pointer (which is bad)
 static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
@@ -128,8 +118,6 @@ static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
 
 
 #ifdef TEST
-
-#include "cb_struct.h" // @todo
 
 void test_type(shared<const CB_Type> type)
 {

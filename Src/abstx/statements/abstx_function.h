@@ -1,8 +1,9 @@
 #pragma once
 
-#include "statement.h"
-#include "scope.h"
-#include "../types/function.h"
+#include "abstx_statement.h"
+#include "abstx_scope.h"
+#include "../../types/cb_function.h"
+#include "../../utilities/pointers.h"
 
 /*
 Syntax:
@@ -11,87 +12,140 @@ sum : fn(int, int)->int = fn(a: int, b: int)->int { return a+b; }; // only one r
 bar : fn() = fn() {}; // no return value -> don't need the arrow
 */
 
-
-/*
-
-Teori:
-
-Basic koncept:
-    All typechecking är compile time -> vilka typer en funktion vill ha måste vara känt compile time
-    Fråga: hur mycket är inbakat i typen och hur mycket i själva objektet?
-
-    Objektet kan ändras under runtime, ej konstant
-
-
-
-
-    Enklaste: typen innehåller all typinformation. Fn_Type: fn(int)->int
-    f : fn(int)->int = fn(a:int)->int{return a;}
-    a := f(2); // ok
-    a := f("2"); // ej ok: type mismatch: expected int but found string
-    a := f(); // ej ok: wrong number of arguments: expected 1 argument but found 0
-
-    Tillägg: default arguments.
-    f : fn(int)->int = fn(a:int=2)->int{return a;}
-    a := f(2); // ok
-    a := f("2"); // ej ok, type mismatch: expected int but found string
-    a := f(); // ok, a får värdet 2 (givet i funktionsobjektet) <-- OBS! Funktionsobjektet gör detta möjligt, inte typen
-
-    Tillägg: named arguments.
-    f : fn(int,int)->int = fn(a:int,b:int)->int{return a;}
-    a := f(1,2); // ok, returnerar 1
-    a := f(1,b=2); // ok, returnerar 1
-    a := f(1,a=1); // ej ok, a får värde 2 gånger och b får inget värde
-    a := f(b=2,a=1); // ok, returnerar 1
-
-
-    Default och named arguments är egenskaper hos funktionsobjektet, inte typen.
-    Lösning: Tillåt endast för statiska objekt - funktionspekare som är garanterade att aldrig ändras.
-
-
-
-
-Att lägga till:
-
-
-Statements:
-    virtual void run(); // utför statementet i sin local scope
-
-Value_expression:
-    virtual Owned<Value_expression> eval(); // förenklar abstract syntax tree, bör returnera en så simpel trädstruktur som möjligt (helst value literal)
-                                            // skapar alltid ett nytt objekt! (I värsta fall en djup kopia av sig själv)
-
-
-
-*/
-
-
-
-
-struct Function_arg
+struct Abstx_function : Value_expression
 {
-    shared<Identifier> identifier; // owned by the function scope
-    CB_Any default_value;
-    CB_Bool is_using = false; // only for structs - imports that struct's members into the function scope
-    CB_Bool has_default_value = false;
-    CB_Bool explicit_uninitialized = false;
-}
+    struct Function_arg
+    {
+        shared<Identifier> identifier; // owned by the function scope
+        any default_value;
+        bool is_using = false; // only for structs - imports that struct's members into the function scope
+        bool has_default_value = false;
+        bool explicit_uninitialized = false;
+    };
 
-struct Function : Value_expression
-{
-    shared<Function_type> function_type;
-    CB_Dynamic_seq<CB_Owning_pointer<Function_arg>> in_args;
-    CB_Dynamic_seq<CB_Owning_pointer<Function_arg>> out_args;
+    shared<Identifier> function_identifier; // contains the name and type of the function
+    seq<owned<Function_arg>> in_args; // in arguments metadata
+    seq<owned<Function_arg>> out_args; // out arguments metadata
+    owned<CB_Scope> scope; // function scope
 
     virtual seq<owned<Value_expression>> eval() ; // TODO
 
-    shared<CB_Type> get_type() override
+    seq<shared<const CB_Type>> get_type() override
     {
-        return static_pointer_cast<CB_Type>(function_type);
+        return function_identifier->get_type();
     }
 
-}
-CB_Type Function::type = type("Function");
+    Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+        ASSERT(function_identifier != nullptr);
+
+        // check function identifier
+        if (!is_codegen_ready(function_identifier->status)) {
+            if (is_error(function_identifier->status)) {
+                // error in dependency -> this inherits the error
+                status = function_identifier->status;
+            } else {
+                // dependency is just not finished parsing yet - wait for it and try again later
+                // @todo add dependency chain
+                status = Parsing_status::DEPENDENCIES_NEEDED;
+            }
+            return status;
+        }
+
+        // type is finalized -> get a pointer to it so we can typecheck arguments
+        shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_identifier->cb_type);
+        ASSERT(fn_type != nullptr);
+
+        // check arguments (the same way as function_identifier, but also check type)
+        ASSERT(in_args.size == fn_type->in_types.size); // @todo this should maybe give a compile error / status TYPE_ERROR
+        size_t index = 0;
+        for (const auto& fa : in_args) {
+            if (!is_codegen_ready(fa->identifier->status)) {
+                if (is_error(fa->identifier->status)) {
+                    status = fa->identifier->status;
+                } else {
+                    // @todo add dependency chain
+                    status = Parsing_status::DEPENDENCIES_NEEDED;
+                }
+                return status;
+            }
+            if (*fa->identifier->cb_type != *fn_type->in_types[index]) {
+                // @todo generate compile error "type mismatch in function type"
+                status = Parsing_status::TYPE_ERROR;
+                return status;
+            }
+            index++;
+        }
+        ASSERT(out_args.size == fn_type->out_types.size); // @todo this should maybe give a compile error / status TYPE_ERROR
+        index = 0;
+        for (const auto& fa : out_args) {
+            if (!is_codegen_ready(fa->identifier->status)) {
+                if (is_error(fa->identifier->status)) {
+                    status = fa->identifier->status;
+                } else {
+                    // @todo add dependency chain
+                    status = Parsing_status::DEPENDENCIES_NEEDED;
+                }
+                return status;
+            }
+            if (*fa->identifier->cb_type != *fn_type->out_types[index]) {
+                // @todo generate compile error "type mismatch in function type"
+                status = Parsing_status::TYPE_ERROR;
+                return status;
+            }
+            index++;
+        }
+
+        // check function scope
+        if (!is_codegen_ready(scope->finalize())) {
+            status = scope->status;
+            return status;
+        }
+
+        // we reached the end -> we are done
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+
+    void generate_code(std::ostream& target) override {
+        ASSERT(is_codegen_ready(status));
+
+        // function declaration syntax
+        target << "void "; // all cb functions returns void
+        function_identifier->generate_code(target);
+        target << "(";
+        for (int i = 0; i < in_args.size; ++i) {
+            const auto& arg = in_args[i];
+            if (i) target << ", ";
+            arg->identifier->cb_type->generate_type(target);
+            target << " ";
+            if (arg->identifier->cb_type->is_primitive()) {
+                target << "const* "; // pass primitives by value; non-primitives by const pointer
+            }
+            arg->identifier->generate_code(target);
+        }
+        if (in_args.size > 0 && out_args.size > 0) target << ", ";
+        for (int i = 0; i < out_args.size; ++i) {
+            const auto& arg = out_args[i];
+            if (i) target << ", ";
+            arg->identifier->cb_type->generate_type(target);
+            target << "* "; // always pass non-cost pointer to the original value
+            arg->identifier->generate_code(target);
+        }
+        target << ") ";
+        scope->generate_code(target);
+        status = Parsing_status::CODE_GENERATED;
+
+        // Generated code:
+        // int is primitive, T is not primitive
+        // default values for a, b are set during the function call (another abstx node)
+        /*
+        void foo(int a, T const* b, int* a, T* b) {
+            // scope satatements
+        }
+        */
+    };
+};
 
 
 

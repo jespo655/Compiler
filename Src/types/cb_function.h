@@ -146,7 +146,6 @@ för funktion: titta om samma funktion redan är definierad som en typ i CB_Type
 
 struct CB_Function : CB_Type
 {
-    static const bool primitive = true;
     static constexpr void(*_default_value)() = nullptr;
     seq<shared<const CB_Type>> in_types;
     seq<shared<const CB_Type>> out_types;
@@ -171,6 +170,8 @@ struct CB_Function : CB_Type
         if (out_types.size > 1) oss << ")";
         return oss.str();
     }
+
+    bool is_primitive() const override { return true; }
 
     void finalize() {
         std::string tos = toS();

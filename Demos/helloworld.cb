@@ -1,11 +1,11 @@
 
 
 // compile time:
-
+/*
 #run fn() {
     print("Hello, World!");
 };
-
+*/
 
 
 // run time:

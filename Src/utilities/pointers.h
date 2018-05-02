@@ -231,6 +231,14 @@ template<typename T, typename T2>
 shared<T> dynamic_pointer_cast(const shared<T2>& ptr) {
     return shared<T>(dynamic_cast<T*>(ptr.v));
 }
+template<typename T, typename T2>
+shared<T> static_pointer_cast(const owned<T2>& ptr) {
+    return shared<T>(static_cast<T*>(ptr.v));
+}
+template<typename T, typename T2>
+shared<T> static_pointer_cast(const shared<T2>& ptr) {
+    return shared<T>(static_cast<T*>(ptr.v));
+}
 
 template<typename T, typename T2>
 owned<T> owning_pointer_cast(owned<T2>&& ptr) {

@@ -18,13 +18,14 @@ a : String = "text";
 
 struct CB_String : CB_Type {
     static const shared<const CB_Type> type;
-    static const bool primitive = false;
     static constexpr char _default_str[] = "";
     static constexpr char const* _default_value = _default_str;
 
     CB_String() { uid = type->uid; }
     CB_String(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     std::string toS() const override { return "string"; }
+
+    bool is_primitive() const override { return true; }
 
     void generate_typedef(ostream& os) const override {
         // for now, just use regular null-terminated char*

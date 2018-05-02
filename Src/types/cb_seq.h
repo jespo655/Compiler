@@ -17,7 +17,6 @@ a : T[] = [t1, t2, t3]; // T and N inferred
 
 struct CB_Seq : CB_Type
 {
-    static const bool primitive = false;
     struct c_representation { uint32_t size; uint32_t capacity; void* v_ptr; }; // void* is actually T*
     static constexpr c_representation _default_value = (c_representation){0, 0, nullptr};
     shared<const CB_Type> v_type = nullptr;
@@ -33,6 +32,8 @@ struct CB_Seq : CB_Type
         oss << "[]";
         return oss.str();
     }
+
+    bool is_primitive() const override { return false; }
 
     void finalize() {
         std::string tos = toS();
@@ -93,7 +94,6 @@ struct CB_Seq : CB_Type
 
 struct CB_Fixed_seq : CB_Type
 {
-    static const bool primitive = false;
     shared<const CB_Type> v_type = nullptr;
     void* _default_value = nullptr;
     uint32_t size = 0;
@@ -112,6 +112,8 @@ struct CB_Fixed_seq : CB_Type
         oss << "]";
         return oss.str();
     }
+
+    bool is_primitive() const override { return false; }
 
     void finalize() {
         // set default_value

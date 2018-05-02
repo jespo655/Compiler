@@ -18,12 +18,13 @@ Usages:
 
 struct CB_Any : CB_Type {
     static const shared<const CB_Type> type; // type any
-    static const bool primitive = false;
     static constexpr void* _default_value = nullptr;
 
     CB_Any() { uid = type->uid; }
     CB_Any(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     std::string toS() const override { return "any"; }
+
+    bool is_primitive() const override { return false; }
 
     // code generation functions
     void generate_typedef(ostream& os) const override {

@@ -100,7 +100,6 @@ struct CB_Struct : CB_Type
         }
     };
 
-    static const bool primitive = false;
     seq<Struct_member> members;
     void* _default_value = nullptr;
     size_t max_alignment = 0;
@@ -132,6 +131,8 @@ struct CB_Struct : CB_Type
         oss << "}";
         return oss.str();
     }
+
+    bool is_primitive() const override { return false; }
 
     void add_member(const std::string& id, const shared<const CB_Type>& type) {
         ASSERT(type != nullptr);

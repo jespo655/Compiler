@@ -16,12 +16,13 @@ a : Range = 0..2;
 
 struct CB_Range : CB_Type {
     static const shared<const CB_Type> type;
-    static const bool primitive = false;
     static constexpr double _default_value[2] = {0, 0};
 
     CB_Range() { uid = type->uid; }
     CB_Range(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     std::string toS() const override { return "range"; }
+
+    bool is_primitive() const override { return false; }
 
     virtual size_t alignment() const override { return CB_f64::type->alignment(); }
 
