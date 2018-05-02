@@ -24,13 +24,6 @@ struct Identifier : Variable_expression {
         return cb_type;
     }
 
-    virtual seq<owned<Value_expression>> eval()
-    {
-        seq<owned<Value_expression>> s;
-        s.add(owning_pointer_cast<Value_expression>(alloc<Identifier>(*this)));
-        return s;
-    }
-
     Parsing_status finalize() override {
         if (is_codegen_ready(status)) return status;
         ASSERT(name != "");

@@ -82,27 +82,30 @@ struct Abstx_function_call : Statement
             return status;
         }
 
+        shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_pointer->get_type());
+        ASSERT(fn_type != nullptr);
+
         // check types
-        if (in_args.size != function_pointer->in_args.size) {
+        if (in_args.size != fn_type->in_types.size) {
             // @todo generate compile error
             status = Parsing_status::TYPE_ERROR;
             return status;
         }
         for (int i = 0; i < in_args.size; ++i) {
-            if (in_args[i]->get_type() != function_pointer->in_args[i]) {
+            if (in_args[i]->get_type() != fn_type->in_types[i]) {
                 // @todo generate compile error
                 status = Parsing_status::TYPE_ERROR;
                 return status;
             }
         }
 
-        if (out_args.size != function_pointer->out_args.size) {
+        if (out_args.size != fn_type->out_types.size) {
             // @todo generate compile error
             status = Parsing_status::TYPE_ERROR;
             return status;
         }
         for (int i = 0; i < out_args.size; ++i) {
-            if (out_args[i]->get_type() != function_pointer->out_args[i]) {
+            if (out_args[i]->get_type() != fn_type->out_types[i]) {
                 // @todo generate compile error
                 status = Parsing_status::TYPE_ERROR;
                 return status;
@@ -117,7 +120,7 @@ struct Abstx_function_call : Statement
     void generate_code(std::ostream& target) override
     {
         ASSERT(is_codegen_ready(status));
-        target << function_pointer->generate_code();
+        function_pointer->generate_code(target);
         target << "(";
         for (int i = 0; i < in_args.size; ++i) {
             const auto& arg = in_args[i];
