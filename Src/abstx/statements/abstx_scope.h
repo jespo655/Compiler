@@ -143,8 +143,19 @@ struct CB_Scope : Abstx_node //, CB_Object
     Parsing_status finalize() override {
         if (is_codegen_ready(status)) return status;
 
+        // resolve any unresolved imports
         if (using_statements.size > 0) resolve_imports();
         ASSERT(using_statements.size == 0);
+
+        // check that all statements are fully resolved
+        for (const auto& st : statements) {
+            if (!is_codegen_ready(st->finalize())) {
+                status = st->status;
+                return status;
+            }
+        }
+
+        // @todo check if anything else should be done here
 
         // we reached the end -> we are done
         status = Parsing_status::FULLY_RESOLVED;
@@ -153,7 +164,11 @@ struct CB_Scope : Abstx_node //, CB_Object
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));
-        target << "return;";
+        target << "{" << std::endl;
+        for (const auto& st : statements) {
+            st->generate_code(target);
+        }
+        target << "}" << std::endl;
         status = Parsing_status::CODE_GENERATED;
     };
 
