@@ -65,7 +65,7 @@ struct Declaration_statement : Statement {
 
         if (rhs.size != 0 && identifiers.size != rhs.size) {
             status = Parsing_status::TYPE_ERROR;
-            return status; // @todo: add support for value packs
+            return status;
         }
         for (const auto& id : identifiers) {
             ASSERT(id != nullptr)
@@ -97,7 +97,7 @@ struct Declaration_statement : Statement {
                 target << ";" << std::endl;
             }
         } else {
-            ASSERT(identifiers.size == rhs.size); // this might not be the case, since some value_expressions might give several values (@TODO: add support for value packs)
+            ASSERT(identifiers.size == rhs.size);
             for (int i = 0; i < rhs.size; ++i) {
                 identifiers[i]->cb_type->generate_type(target);
                 target << " ";

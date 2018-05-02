@@ -38,8 +38,8 @@ struct While_statement : Statement {
             status = Parsing_status::DEPENDENCIES_NEEDED;
             return status;
         }
-        seq<shared<const CB_Type>> types = condition->get_type();
-        if (types.size != 1 || *types[0] != *CB_Bool::type) {
+        shared<const CB_Type> type = condition->get_type();
+        if (*type != *CB_Bool::type) {
             status = Parsing_status::TYPE_ERROR;
             return status;
         }

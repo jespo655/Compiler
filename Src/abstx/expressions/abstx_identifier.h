@@ -20,10 +20,8 @@ struct Identifier : Variable_expression {
         return oss.str();
     }
 
-    virtual seq<shared<const CB_Type>> get_type() override {
-        seq<shared<const CB_Type>> s;
-        s.add(cb_type);
-        return s;
+    virtual shared<const CB_Type> get_type() override {
+        return cb_type;
     }
 
     virtual seq<owned<Value_expression>> eval()

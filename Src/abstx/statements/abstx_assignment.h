@@ -50,7 +50,7 @@ struct Assignment_statement : Statement {
     Parsing_status finalize() override {
         if (is_codegen_ready(status)) return status;
 
-        if (lhs.size != rhs.size) return status; // @todo: add support for value packs
+        if (lhs.size != rhs.size) return status;
         for (const auto& var_exp : lhs) {
             ASSERT(var_exp != nullptr)
             if (!is_codegen_ready(var_exp->finalize())) { // this expression is owned by this statement -> finalize them too
@@ -72,7 +72,7 @@ struct Assignment_statement : Statement {
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));
-        ASSERT(lhs.size == rhs.size); // this might not be the case, since some value_expressions might give several values (@TODO: add support for value packs)
+        ASSERT(lhs.size == rhs.size);
         for (int i = 0; i < lhs.size; ++i) {
             lhs[i]->generate_code(target); // this should be a valid c style lvalue
             target << " = ";

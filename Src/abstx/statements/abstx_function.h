@@ -30,7 +30,7 @@ struct Abstx_function : Value_expression
 
     virtual seq<owned<Value_expression>> eval() ; // TODO
 
-    seq<shared<const CB_Type>> get_type() override
+    shared<const CB_Type> get_type() override
     {
         return function_identifier->get_type();
     }
