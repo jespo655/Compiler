@@ -1,5 +1,6 @@
 #include "abstx.h"
 #include "statements/abstx_assignment.h"
+#include "statements/abstx_c_code.h"
 #include "statements/abstx_declaration.h"
 #include "statements/abstx_defer.h"
 #include "statements/abstx_for.h"
