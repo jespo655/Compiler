@@ -40,16 +40,16 @@ struct Abstx_node
     // This method should always be implemented in all non-abstract classes.
     virtual std::string toS() const = 0;
 
+    // finalize(): check that all dependencies are finalized and that there are no errors.
+    // This is done recursively. The parsing status is updated, then returned.
+    // This function should only be called when the abstx node has finished parsing, and is expected to be complete.
+    virtual Parsing_status finalize() = 0;
+
     // generate_code(): generate code and output it to to target.
     // This is done recursively to ensure that all dependencies are outputted first.
     virtual void generate_code(std::ostream& target) {
         target << "/* " << toS() << " */";
     };
-
-    // finalize(): check that all dependencies are finalized and that there are no errors.
-    // This is done recursively. The parsing status is updated, then returned.
-    // This function should only be called when the abstx node has finished parsing, and is expected to be complete.
-    virtual Parsing_status finalize();
 
     // Set owner in a type safe way
     template<typename T> void set_owner(const shared<T>& p)

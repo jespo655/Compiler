@@ -1,6 +1,6 @@
 #pragma once
 
-#include "statement.h"
+#include "abstx_statement.h"
 
 /*
 Possible solution for generic functions:

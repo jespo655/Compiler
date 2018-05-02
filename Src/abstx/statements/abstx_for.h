@@ -1,7 +1,7 @@
 #pragma once
 
 #include "abstx_statement.h"
-#include "scope.h"
+#include "abstx_scope.h"
 #include "../expressions/value_expression.h"
 #include "../../utilities/unique_id.h"
 
@@ -16,14 +16,14 @@ for (n in range, reverse) {}
 
 struct For_range {
     virtual void generate_code(std::ostream& target) = 0;
-}
+};
 
 struct Int_range : For_range {
 
-}
+};
 struct Double_range : For_range {
     bool double_precision = false;
-}
+};
 struct Seq_range : For_range {
     std::string index_name = "_it";
     int step = 1;
@@ -33,17 +33,17 @@ struct Seq_range : For_range {
         // @todo: seq.size, seq[] should both be handled by something else
 
         static auto uid = get_unique_id();
-        seq->type.generate_type(target);
-        target << " " << index_name << ";" << std::endl;
-        target << "for(size_t _it_" << uid << " = ";
-        if (reverse) target << "seq.size-1";
-        else target << "0";
-        target << "; " << index_name << " = " << "seq.v_ptr[_it_" << uid << "], _it_" << uid;
-        if (reverse) target << " >= 0; _it_" << uid << " -= ";
-        else target << " < " << "seq.size" << "; _it_" << uid << " += ";
-        target << step << ") ";
+        // seq->type.generate_type(target);
+        // target << " " << index_name << ";" << std::endl;
+        // target << "for(size_t _it_" << uid << " = ";
+        // if (reverse) target << "seq.size-1";
+        // else target << "0";
+        // target << "; " << index_name << " = " << "seq.v_ptr[_it_" << uid << "], _it_" << uid;
+        // if (reverse) target << " >= 0; _it_" << uid << " -= ";
+        // else target << " < " << "seq.size" << "; _it_" << uid << " += ";
+        // target << step << ") ";
     }
-}
+};
 
 struct For_statement : Statement {
 
@@ -91,12 +91,12 @@ struct For_statement : Statement {
         ASSERT(is_codegen_ready(status));
         target << "for(";
         switch(range_type) {
-            case INT_RANGE:
-            case FLOAT_RANGE:
-            case SEQ_RANGE:
+            case INT_RANGE: break;
+            case FLOAT_RANGE: break;
+            case SEQ_RANGE: break;
         }
 
-        statement->generate_code(target);
+        scope->generate_code(target);
     }
 
 };

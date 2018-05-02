@@ -1,8 +1,9 @@
 #pragma once
 
-#include "statement.h"
-#include "scope.h"
+#include "abstx_statement.h"
+#include "abstx_scope.h"
 #include "../expressions/value_expression.h"
+#include "../../types/cb_primitives.h"
 
 #include <sstream>
 
@@ -37,6 +38,36 @@ struct Conditional_scope : Abstx_node {
         else os << std::endl;
     }
 
+    Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+
+        if (!is_codegen_ready(condition->finalize())) {
+            status = Parsing_status::DEPENDENCIES_NEEDED;
+            return status;
+        }
+        seq<shared<const CB_Type>> types = condition->get_type();
+        if (types.size != 1 || *types[0] != *CB_Bool::type) {
+            status = Parsing_status::TYPE_ERROR;
+            return status;
+        }
+        if (!is_codegen_ready(scope->finalize())) {
+            status = Parsing_status::DEPENDENCIES_NEEDED;
+            return status;
+        }
+        // we reached the end -> we are done
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+
+    void generate_code(std::ostream& target) override {
+        ASSERT(is_codegen_ready(status));
+        target << "if (";
+        condition->generate_code(target);
+        target << ") ";
+        scope->generate_code(target);
+        status = Parsing_status::CODE_GENERATED;
+    };
+
 };
 
 
@@ -46,7 +77,7 @@ struct If_statement : Statement {
 
     seq<owned<Conditional_scope>> conditional_scopes;
     owned<CB_Scope> else_scope; // is entered if none of the conditional scopes are entered
-    owned<CB_Scope> then_scope; // is entered if not the else_scope is entered
+    // owned<CB_Scope> then_scope; // is entered if not the else_scope is entered
 
     std::string toS() const override
     {
@@ -59,7 +90,7 @@ struct If_statement : Statement {
             first = false;
         }
         if (else_scope != nullptr) oss << " else{}";
-        if (then_scope != nullptr) oss << " then{}";
+        // if (then_scope != nullptr) oss << " then{}";
         return oss.str();
     }
 
@@ -73,11 +104,46 @@ struct If_statement : Statement {
             os << "else ";
             if (recursive) else_scope->debug_print(os, recursive);
         }
-        if (then_scope != nullptr) {
-            os << "then ";
-            if (recursive) then_scope->debug_print(os, recursive);
-        }
+        // if (then_scope != nullptr) {
+        //     os << "then ";
+        //     if (recursive) then_scope->debug_print(os, recursive);
+        // }
     }
+
+    Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+        for (const auto& cs : conditional_scopes) {
+            if (!is_codegen_ready(cs->finalize())) {
+                status = cs->status;
+                return status;
+            }
+        }
+        if (else_scope != nullptr && !is_codegen_ready(else_scope->finalize())) {
+            status = else_scope->status;
+            return status;
+        }
+        // if (then_scope != nullptr && !is_codegen_ready(then_scope->finalize())) {
+        //     status = then_scope->status;
+        //     return status;
+        // }
+        // we reached the end -> we are done
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+
+    void generate_code(std::ostream& target) override {
+        ASSERT(is_codegen_ready(status));
+        for (int i = 0; i < conditional_scopes.size; ++i) {
+            if (i) target << "else ";
+            conditional_scopes[i]->generate_code(target);
+        }
+        if (else_scope != nullptr) {
+            target << "else ";
+            else_scope->generate_code(target);
+        }
+        // @todo: add support for then-scopes (needs support for adding a statement to a scope) see syntax below
+        status = Parsing_status::CODE_GENERATED;
+    };
 
 };
 

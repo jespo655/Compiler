@@ -48,23 +48,25 @@ struct Assignment_statement : Statement {
     }
 
     Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+
         if (lhs.size != rhs.size) return status; // @todo: add support for value packs
         for (const auto& var_exp : lhs) {
             ASSERT(var_exp != nullptr)
-            if (!is_codegen_ready(var_exp->status)) {
-                status = Parsing_status::DEPENDENCIES_NEEDED; // @todo: save all dependencies in a list for later (maybe)
+            if (!is_codegen_ready(var_exp->finalize())) { // this expression is owned by this statement -> finalize them too
+                status = var_exp->status;
                 return status;
             }
         }
         for (const auto& val_exp : rhs) {
             ASSERT(val_exp != nullptr)
-            if (!is_codegen_ready(val_exp->status)) {
-                status = Parsing_status::DEPENDENCIES_NEEDED;
+            if (!is_codegen_ready(val_exp->finalize())) {
+                status = val_exp->status;
                 return status;
             }
         }
         // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED
+        status = Parsing_status::FULLY_RESOLVED;
         return status;
     }
 
@@ -77,7 +79,7 @@ struct Assignment_statement : Statement {
             lhs[i]->generate_code(target); // this should be a valid c style lvalue
             target << ";" << std::endl;
         }
-        status = CODE_GENERATED;
+        status = Parsing_status::CODE_GENERATED;
     };
 
 };

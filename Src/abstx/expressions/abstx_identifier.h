@@ -33,6 +33,14 @@ struct Identifier : Variable_expression {
         return s;
     }
 
+    Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+        ASSERT(name != "");
+        // we reached the end -> we are done
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+
     void generate_code(std::ostream& target) override
     {
         // this should ouput the identifier used as a variable, since it's a subclass of Variable_expression

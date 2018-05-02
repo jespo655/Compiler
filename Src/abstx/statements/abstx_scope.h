@@ -1,8 +1,8 @@
 #pragma once
 
-#include "statement.h"
-#include "using.h"
-#include "../expressions/identifier.h"
+#include "abstx_statement.h"
+#include "abstx_using.h"
+#include "../expressions/abstx_identifier.h"
 #include "../../utilities/flag.h"
 #include "../../types/cb_string.h"
 
@@ -14,9 +14,6 @@ A scope is its own contained block of code
 Scopes can be used two ways: dynamically and statically.
 Static scopes can declare identifiers in any order. Everything is processed practically in parallell.
 Dynamic scopes perform each action in order. An identifier can only be used after it's declared. (Check that id->context < use->context)
-
-CB_Scope is actually a CB class, but since it has dependencies on abstx, it is defined here instead,
-avoiding cross dependencies between packages.
 
 Syntax:
 {...} // Anonymous scope
@@ -105,9 +102,8 @@ struct CB_Scope : Abstx_node //, CB_Object
 
             for (auto us : using_statements) {
                 if (us->status == Parsing_status::NOT_PARSED || us->status == Parsing_status::PARTIALLY_PARSED) {
-                    us->status = Parsing_status::DEPENDENCIES_NEEDED;
 
-                    Parsing_status status; // = fully_resolve(us->subject); // FIXME: fully_resolve(value_expr)
+                    Parsing_status status = us->finalize();
                     if (status == Parsing_status::FULLY_RESOLVED) {
                         ASSERT(false, "FIXME: eval");
                         CB_Any scope;// = eval(us->subject); // FIXME: eval(value_expr)
@@ -142,6 +138,24 @@ struct CB_Scope : Abstx_node //, CB_Object
         }
         ASSERT(using_statements.size == 0);
     }
+
+
+    Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+
+        if (using_statements.size > 0) resolve_imports();
+        ASSERT(using_statements.size == 0);
+
+        // we reached the end -> we are done
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+
+    void generate_code(std::ostream& target) override {
+        ASSERT(is_codegen_ready(status));
+        target << "return;";
+        status = Parsing_status::CODE_GENERATED;
+    };
 
 };
 
