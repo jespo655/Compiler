@@ -18,7 +18,6 @@ goto END
 :64BIT
 echo Compiling cube_64...
 g++ -std=gnu++14 %INCLUDE_PATHS% %SRC_FILES% %LIBS64% -o %OUTPUT_NAME%
-:: parser/*.cpp
 
 :END
 
@@ -26,6 +25,5 @@ g++ -std=gnu++14 %INCLUDE_PATHS% %SRC_FILES% %LIBS64% -o %OUTPUT_NAME%
 :: /Y supresses prompting to confirm you want to overwrite an existing destination file (seems to not do anything)
 :: /Q : Suppresses the display of xcopy messages.
 :: /R : Copies read-only files.
-:: comment one of these, depedning on where the exe should be placed
-rem xcopy /B /Q /Y "cube.exe" "C:/PATH/cube.exe"
-xcopy /B /Q /Y "cube.exe" "D:/PATH/cube.exe"
+if exist C:\PATH\ xcopy /B /Q /Y "cube.exe" "C:/PATH/cube.exe"
+if exist D:\PATH\ xcopy /B /Q /Y "cube.exe" "D:/PATH/cube.exe"
