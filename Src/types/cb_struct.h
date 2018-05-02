@@ -80,14 +80,14 @@ struct CB_Struct : CB_Type
 {
     struct Struct_member {
         std::string id;
-        shared<const CB_Type> type;
-        any default_value;
+        Shared<const CB_Type> type;
+        Any default_value;
         bool is_using = false; // allowes implicit cast to that member
         bool explicit_uninitialized = false;
         size_t byte_position;
 
         Struct_member() {};
-        Struct_member(const std::string& id, const shared<const CB_Type>& type, const any& default_value, bool is_using=false)
+        Struct_member(const std::string& id, const Shared<const CB_Type>& type, const Any& default_value, bool is_using=false)
             : id{id}, type{type}, default_value{default_value}, is_using{is_using} {};
 
         std::string toS() const {
@@ -100,7 +100,7 @@ struct CB_Struct : CB_Type
         }
     };
 
-    seq<Struct_member> members;
+    Seq<Struct_member> members;
     void* _default_value = nullptr;
     size_t max_alignment = 0;
 
@@ -134,7 +134,7 @@ struct CB_Struct : CB_Type
 
     bool is_primitive() const override { return false; }
 
-    void add_member(const std::string& id, const shared<const CB_Type>& type) {
+    void add_member(const std::string& id, const Shared<const CB_Type>& type) {
         ASSERT(type != nullptr);
         members.add(Struct_member(id, type, type->default_value()));
     }

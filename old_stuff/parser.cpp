@@ -1046,7 +1046,7 @@ bool read_struct_type(Token const *& it, unique_ptr<Struct_type>& st, Scope* sco
 
 
 
-// TODO: if the type already exists in the local scope, return a shared ptr to that instead
+// TODO: if the type already exists in the local scope, return a Shared ptr to that instead
 bool read_type(Token const *& it, shared_ptr<Type_info>& info, Scope* scope)
 {
     ASSERT(it!=nullptr);

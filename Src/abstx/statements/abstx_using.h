@@ -25,7 +25,7 @@ TODO: decide exact syntax and usage, before implementing the class
 
 struct Using_statement : Statement {
 
-    owned<Value_expression> subject;
+    Owned<Value_expression> subject;
 
     std::string toS() const override { return "using statement"; }
 };

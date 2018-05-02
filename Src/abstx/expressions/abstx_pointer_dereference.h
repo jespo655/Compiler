@@ -7,7 +7,7 @@
 
 struct Abstx_pointer_dereference : Variable_expression {
 
-    shared<Identifier> pointer_id; // owned by parent scope
+    Shared<Identifier> pointer_id; // Owned by parent scope
 
     std::string toS() const override {
         ASSERT(pointer_id->name.length() > 0);
@@ -16,8 +16,8 @@ struct Abstx_pointer_dereference : Variable_expression {
         return oss.str();
     }
 
-    virtual shared<const CB_Type> get_type() override {
-        shared<const CB_Pointer> type = dynamic_pointer_cast<const CB_Pointer>(pointer_id->get_type());
+    virtual Shared<const CB_Type> get_type() override {
+        Shared<const CB_Pointer> type = dynamic_pointer_cast<const CB_Pointer>(pointer_id->get_type());
         ASSERT(type != nullptr);
         ASSERT(type->v_type != nullptr);
         return type->v_type;
@@ -49,8 +49,8 @@ struct Abstx_pointer_dereference : Variable_expression {
 
 struct Abstx_address_of : Value_expression {
 
-    shared<Identifier> pointer_id; // owned by parent scope
-    owned<CB_Pointer> pointer_type = nullptr;
+    Shared<Identifier> pointer_id; // Owned by parent scope
+    Owned<CB_Pointer> pointer_type = nullptr;
 
     std::string toS() const override {
         ASSERT(pointer_id->name.length() > 0);
@@ -59,7 +59,7 @@ struct Abstx_address_of : Value_expression {
         return oss.str();
     }
 
-    virtual shared<const CB_Type> get_type() override {
+    virtual Shared<const CB_Type> get_type() override {
         return static_pointer_cast<const CB_Type>(pointer_type);
     }
 

@@ -17,8 +17,8 @@ a, b = foo();   // The lhs and rhs count will not match if a function in rhs ret
 
 struct Assignment_statement : Statement {
 
-    seq<owned<Variable_expression>> lhs;
-    seq<owned<Value_expression>> rhs;
+    Seq<Owned<Variable_expression>> lhs;
+    Seq<Owned<Value_expression>> rhs;
 
     // lhs: []*Variable_expression;
     // rhs: []*Value_expression;
@@ -53,7 +53,7 @@ struct Assignment_statement : Statement {
         if (lhs.size != rhs.size) return status;
         for (const auto& var_exp : lhs) {
             ASSERT(var_exp != nullptr)
-            if (!is_codegen_ready(var_exp->finalize())) { // this expression is owned by this statement -> finalize them too
+            if (!is_codegen_ready(var_exp->finalize())) { // this expression is Owned by this statement -> finalize them too
                 status = var_exp->status;
                 return status;
             }

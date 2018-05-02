@@ -147,8 +147,8 @@ för funktion: titta om samma funktion redan är definierad som en typ i CB_Type
 struct CB_Function : CB_Type
 {
     static constexpr void(*_default_value)() = nullptr;
-    seq<shared<const CB_Type>> in_types;
-    seq<shared<const CB_Type>> out_types;
+    Seq<Shared<const CB_Type>> in_types;
+    Seq<Shared<const CB_Type>> out_types;
 
     std::string toS() const override {
         std::ostringstream oss;

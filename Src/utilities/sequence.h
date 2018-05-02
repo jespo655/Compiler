@@ -10,7 +10,7 @@
 const int DEFAULT_CAPACITY = 16; // arbitrary power of 2
 
 template<typename T>
-struct seq {
+struct Seq {
     uint32_t size = 0;
     uint32_t capacity = DEFAULT_CAPACITY;
     T* v_ptr = nullptr;
@@ -26,14 +26,14 @@ struct seq {
         return oss.str();
     }
 
-    seq() {
+    Seq() {
         size = 0;
         capacity = DEFAULT_CAPACITY;
         v_ptr = (T*)malloc(capacity*sizeof(T));
         // size is always 0 at init, so no need to init members
     }
 
-    ~seq() {
+    ~Seq() {
         for (uint32_t i = 0; i < size; ++i) {
             v_ptr[i].~T();
         }
@@ -44,31 +44,31 @@ struct seq {
     }
 
     // copy
-    seq& operator=(const seq& seq) {
+    Seq& operator=(const Seq& Seq) {
         for (uint32_t i = 0; i < size; ++i) {
             v_ptr[i].~T();
         }
-        resize(seq.size, false);
+        resize(Seq.size, false);
         for (uint32_t i = 0; i < size; ++i) {
-            new (&v_ptr[i]) T(seq.v_ptr[i]);
+            new (&v_ptr[i]) T(Seq.v_ptr[i]);
         }
         return *this;
     }
-    seq(const seq& seq) { *this = seq; }
+    Seq(const Seq& Seq) { *this = Seq; }
 
     // move
-    seq& operator=(seq&& seq) {
-        this->~seq(); // free all members
-        size = seq.size;
-        capacity = seq.capacity;
-        v_ptr = seq.v_ptr;
+    Seq& operator=(Seq&& Seq) {
+        this->~Seq(); // free all members
+        size = Seq.size;
+        capacity = Seq.capacity;
+        v_ptr = Seq.v_ptr;
 
-        seq.size = 0;
-        seq.capacity = 0;
-        seq.v_ptr = nullptr;
+        Seq.size = 0;
+        Seq.capacity = 0;
+        Seq.v_ptr = nullptr;
         return *this;
     }
-    seq(seq&& seq) { *this = std::move(seq); }
+    Seq(Seq&& Seq) { *this = std::move(Seq); }
 
 
     T& operator[](uint32_t index) {
@@ -78,11 +78,11 @@ struct seq {
     T operator[](uint32_t index) const { return get(index); }
 
 
-    template<typename T2> operator==(const seq<T2>& seq) const { return false; }
-    bool operator==(const seq<T>& seq) const {
-        if (size != seq.size) return false;
+    template<typename T2> operator==(const Seq<T2>& Seq) const { return false; }
+    bool operator==(const Seq<T>& Seq) const {
+        if (size != Seq.size) return false;
         for (int i = 0; i < size; ++i) {
-            if (v_ptr[i] != seq.v_ptr[i]) return false;
+            if (v_ptr[i] != Seq.v_ptr[i]) return false;
         }
         return true;
     }
@@ -158,8 +158,8 @@ struct seq {
 
     struct iterator {
         uint32_t index = 0;
-        seq& _seq;
-        iterator(seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
+        Seq& _seq;
+        iterator(Seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
         T& operator*() const { ASSERT(index < _seq.size); return _seq.v_ptr[index]; }
         iterator& operator++() { ++index; return *this; }
         bool operator==(const iterator& o) const { return index == o.index; }
@@ -169,8 +169,8 @@ struct seq {
 
     struct const_iterator {
         uint32_t index = 0;
-        const seq& _seq;
-        const_iterator(const seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
+        const Seq& _seq;
+        const_iterator(const Seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
         const T& operator*() const { ASSERT(index < _seq.size); return _seq.v_ptr[index]; }
         const_iterator& operator++() { ++index; return *this; }
         bool operator==(const const_iterator& o) const { return index == o.index; }
@@ -199,7 +199,7 @@ a : T[N] = [t1, t2, t3]; // T and N inferred
 */
 
 template<typename T, uint32_t c_size>
-struct fixed_seq {
+struct Fixed_seq {
     constexpr static uint32_t size = c_size;
     constexpr static uint32_t capacity = c_size;
     T v[c_size];
@@ -215,14 +215,14 @@ struct fixed_seq {
         return oss.str();
     }
 
-    fixed_seq(bool init=true) {
+    Fixed_seq(bool init=true) {
         if (init) {
             for (uint32_t i = 0; i < size; ++i) {
                 new (&v[i]) T();
             }
         }
     }
-    ~fixed_seq() {
+    ~Fixed_seq() {
         for (uint32_t i = 0; i < size; ++i) v[i].~T();
     }
 
@@ -245,20 +245,20 @@ struct fixed_seq {
         }
     }
 
-    explicit operator seq<T>() const
+    explicit operator Seq<T>() const
     {
-        seq<T> seq;
-        seq.reallocate(size);
-        seq.size = size;
-        memcpy(seq.v_ptr, v, size*sizeof(T));
-        return seq;
+        Seq<T> Seq;
+        Seq.reallocate(size);
+        Seq.size = size;
+        memcpy(Seq.v_ptr, v, size*sizeof(T));
+        return Seq;
     }
 
     struct iterator {
         uint32_t index = 0;
-        const fixed_seq& seq;
-        iterator(const fixed_seq& seq, uint32_t i=0) : seq{seq}, index{i} {}
-        const T& operator*() const { ASSERT(index < seq.size); return seq.v_ptr[index]; }
+        const Fixed_seq& Seq;
+        iterator(const Fixed_seq& Seq, uint32_t i=0) : Seq{Seq}, index{i} {}
+        const T& operator*() const { ASSERT(index < Seq.size); return Seq.v_ptr[index]; }
         iterator& operator++() { ++index; return *this; }
         bool operator==(const iterator& o) const { return index == o.index; }
         bool operator!=(const iterator& o) const { return !(*this == o); }
@@ -281,26 +281,26 @@ struct fixed_seq {
 
 // copy
 template<typename T>
-seq<T>& seq<T>::operator=(const seq<T>& seq) {
+Seq<T>& Seq<T>::operator=(const Seq<T>& Seq) {
     for (uint32_t i = 0; i < size; ++i) {
         v_ptr[i].~T();
     }
-    resize(seq.size, false);
+    resize(Seq.size, false);
     for (uint32_t i = 0; i < size; ++i) {
-        new (&v_ptr[i]) T(seq.v_ptr[i]);
+        new (&v_ptr[i]) T(Seq.v_ptr[i]);
     }
     return *this;
 }
 
 #include "pointers.h"
 template<typename T, typename PT=CB_Owning_pointer<T>>
-seq<PT>& seq<PT>::operator=(const seq<PT>& seq) {
+Seq<PT>& Seq<PT>::operator=(const Seq<PT>& Seq) {
     for (uint32_t i = 0; i < size; ++i) {
         v_ptr[i].~T();
     }
-    resize(seq.size, false);
+    resize(Seq.size, false);
     for (uint32_t i = 0; i < size; ++i) {
-        // new (&v_ptr[i]) T(seq.v_ptr[i]);
+        // new (&v_ptr[i]) T(Seq.v_ptr[i]);
     }
     return *this;
 }

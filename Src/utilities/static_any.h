@@ -44,10 +44,10 @@ struct static_any {
     }
 
     template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    shared<T> get_shared() {
+    Shared<T> get_shared() {
         ASSERT(v_ptr != nullptr);
         ASSERT(T::type == v_type);
-        return shared<T>((T*)v_ptr);
+        return Shared<T>((T*)v_ptr);
     }
 
     bool has_value(const CB_Type& t) const {

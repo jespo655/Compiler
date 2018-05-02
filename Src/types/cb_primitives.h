@@ -4,7 +4,7 @@
 
 #define GENERATE_PRIMITIVE(cpp_type, tos, c_type, literal_suffix) \
 struct cpp_type : CB_Type { \
-    static const shared<const CB_Type> type; \
+    static const Shared<const CB_Type> type; \
     static constexpr c_type _default_value = 0; \
     cpp_type() { uid = type->uid; } \
     cpp_type(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {} \

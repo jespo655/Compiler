@@ -56,10 +56,10 @@ struct Abstx_function_call : Statement
 {
     // either function or function_pointer has to be defined
     // if both are defined, function_pointer will be overwritten in finalize() so the types match
-    shared<Abstx_function> function;
-    shared<Identifier> function_pointer;
-    seq<owned<Value_expression>> in_args;
-    seq<owned<Variable_expression>> out_args;
+    Shared<Abstx_function> function;
+    Shared<Identifier> function_pointer;
+    Seq<Owned<Value_expression>> in_args;
+    Seq<Owned<Variable_expression>> out_args;
 
     std::string toS() const override { return "function call statement"; }
 
@@ -82,7 +82,7 @@ struct Abstx_function_call : Statement
             return status;
         }
 
-        shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_pointer->get_type());
+        Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_pointer->get_type());
         ASSERT(fn_type != nullptr);
 
         // check types

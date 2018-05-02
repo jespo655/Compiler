@@ -1,7 +1,7 @@
 #include "parser.h"
 #include "../abstx/value_list.h"
 #include "../abstx/scope.h"
-#include "../abstx/seq.h"
+#include "../abstx/Seq.h"
 #include "../abstx/operators.h"
 #include "../compile_time/compile_time.h"
 
@@ -106,7 +106,7 @@ std::shared_ptr<Value_expression> compile_value_list(Token_iterator& it, std::sh
 
 // Part 1:
 // if token is '(' read value list
-// else if token is '[' read seq literal
+// else if token is '[' read Seq literal
 // else if token is integer, float, bool or string literal, construct appropriate literal node
 // else if token is symbol or identifier, check if it's a prefix operator
 //      if it is, read value expression (with min_prio = op.prio), then construct prefix operator node

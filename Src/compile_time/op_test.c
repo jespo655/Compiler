@@ -32,7 +32,7 @@ int main()
 
     // TODO: förstå memset, sätt in memset i value::alloc
 
-    // för strings, seq, array gör ett
+    // för strings, Seq, array gör ett
 
     // memset:
     // memset(void* dst, byte value, int count)

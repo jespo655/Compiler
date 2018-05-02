@@ -7,7 +7,7 @@
 struct CB_Pointer : CB_Type
 {
     static constexpr void* _default_value = nullptr;
-    shared<const CB_Type> v_type = nullptr;
+    Shared<const CB_Type> v_type = nullptr;
     bool owning = false;
 
     CB_Pointer(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }

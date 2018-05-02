@@ -46,7 +46,7 @@ void generate_code(std::ostream& target, Function const* entry_point, const std:
     target << std::endl << "/* End of code */" << std::endl;
 }
 
-// void generate_assignment_code(std::ostream& target, shared<Assignment_statement> as);
+// void generate_assignment_code(std::ostream& target, Shared<Assignment_statement> as);
 
 
 

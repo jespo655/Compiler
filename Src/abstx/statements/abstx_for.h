@@ -30,17 +30,17 @@ struct Seq_range : For_range {
     bool reverse = false;
 
     void generate_code(std::ostream& target) override {
-        // @todo: seq.size, seq[] should both be handled by something else
+        // @todo: Seq.size, Seq[] should both be handled by something else
 
         static auto uid = get_unique_id();
-        // seq->type.generate_type(target);
+        // Seq->type.generate_type(target);
         // target << " " << index_name << ";" << std::endl;
         // target << "for(size_t _it_" << uid << " = ";
-        // if (reverse) target << "seq.size-1";
+        // if (reverse) target << "Seq.size-1";
         // else target << "0";
-        // target << "; " << index_name << " = " << "seq.v_ptr[_it_" << uid << "], _it_" << uid;
+        // target << "; " << index_name << " = " << "Seq.v_ptr[_it_" << uid << "], _it_" << uid;
         // if (reverse) target << " >= 0; _it_" << uid << " -= ";
-        // else target << " < " << "seq.size" << "; _it_" << uid << " += ";
+        // else target << " < " << "Seq.size" << "; _it_" << uid << " += ";
         // target << step << ") ";
     }
 };
@@ -54,12 +54,12 @@ struct For_statement : Statement {
     };
 
     std::string index_name = "_it";
-    owned<Value_expression> range; // range or sequence
+    Owned<Value_expression> range; // range or sequence
     bool reverse = false;
     double step = 1;
     Range_type range_type;
 
-    owned<CB_Scope> scope;
+    Owned<CB_Scope> scope;
 
     std::string toS() const override { return "while(){}"; }
 

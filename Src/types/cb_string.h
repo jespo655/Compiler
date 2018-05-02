@@ -17,7 +17,7 @@ a : String = "text";
 */
 
 struct CB_String : CB_Type {
-    static const shared<const CB_Type> type;
+    static const Shared<const CB_Type> type;
     static constexpr char _default_str[] = "";
     static constexpr char const* _default_value = _default_str;
 

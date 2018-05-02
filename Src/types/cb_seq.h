@@ -19,7 +19,7 @@ struct CB_Seq : CB_Type
 {
     struct c_representation { uint32_t size; uint32_t capacity; void* v_ptr; }; // void* is actually T*
     static constexpr c_representation _default_value = (c_representation){0, 0, nullptr};
-    shared<const CB_Type> v_type = nullptr;
+    Shared<const CB_Type> v_type = nullptr;
 
     CB_Seq(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }
     CB_Seq(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
@@ -94,7 +94,7 @@ struct CB_Seq : CB_Type
 
 struct CB_Fixed_seq : CB_Type
 {
-    shared<const CB_Type> v_type = nullptr;
+    Shared<const CB_Type> v_type = nullptr;
     void* _default_value = nullptr;
     uint32_t size = 0;
 

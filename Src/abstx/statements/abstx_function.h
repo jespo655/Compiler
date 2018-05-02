@@ -16,19 +16,19 @@ struct Abstx_function : Value_expression
 {
     struct Function_arg
     {
-        shared<Identifier> identifier; // owned by the function scope
-        any default_value;
+        Shared<Identifier> identifier; // Owned by the function scope
+        Any default_value;
         bool is_using = false; // only for structs - imports that struct's members into the function scope
         bool has_default_value = false;
         bool explicit_uninitialized = false;
     };
 
-    shared<Identifier> function_identifier; // contains the name and type of the function
-    seq<owned<Function_arg>> in_args; // in arguments metadata
-    seq<owned<Function_arg>> out_args; // out arguments metadata
-    owned<CB_Scope> scope; // function scope
+    Shared<Identifier> function_identifier; // contains the name and type of the function
+    Seq<Owned<Function_arg>> in_args; // in arguments metadata
+    Seq<Owned<Function_arg>> out_args; // out arguments metadata
+    Owned<CB_Scope> scope; // function scope
 
-    shared<const CB_Type> get_type() override
+    Shared<const CB_Type> get_type() override
     {
         return function_identifier->get_type();
     }
@@ -51,7 +51,7 @@ struct Abstx_function : Value_expression
         }
 
         // type is finalized -> get a pointer to it so we can typecheck arguments
-        shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_identifier->cb_type);
+        Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_identifier->cb_type);
         ASSERT(fn_type != nullptr);
 
         // check arguments (the same way as function_identifier, but also check type)
@@ -223,7 +223,7 @@ struct Function_instance {
 
     void reset_function_scope() {
         // reset identifiers and imported scopes
-        function_scope.identifiers = std::map<CB_String, shared<Identifier>>();
+        function_scope.identifiers = std::map<CB_String, Shared<Identifier>>();
         function_scope.imported_scopes.clear();
         ASSERT(function_scope.using_statements.size == 0); // should not be used for dynamic scopes
 

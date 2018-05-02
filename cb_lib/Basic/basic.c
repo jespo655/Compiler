@@ -144,49 +144,49 @@ cb_u64 closest_higher_power_of_2(cb_u64 v)
     return v;
 }
 
-cb_u64 dynamic_seq_capacity(Seq* seq)
+cb_u64 dynamic_seq_capacity(Seq* Seq)
 {
-    cb_u64 v = seq->length<16?16:seq->length;
+    cb_u64 v = Seq->length<16?16:Seq->length;
     return closest_higher_power_of_2(v);
 }
 
-void resize_seq(Seq* seq, cb_u64 data_size, cb_u64 length) {
-    if (length < seq->length) {
+void resize_seq(Seq* Seq, cb_u64 data_size, cb_u64 length) {
+    if (length < Seq->length) {
         // TODO - requires proper deletion of structs (with owning pointers and that kind of stuff)
-    } else if (length > dynamic_seq_capacity(seq)) {
+    } else if (length > dynamic_seq_capacity(Seq)) {
         cb_u64 new_capacity = closest_higher_power_of_2(length);
         void* new_data = malloc(new_capacity);
-        memcpy(new_data, seq->data, seq->length);
-        memset(new_data+seq->length*data_size, 0, (new_capacity-seq->length)*data_size); // this should be default constructors for that type
-        free(seq->data);
-        seq->data = (cb_byte*)new_data;
-        seq->length = length;
+        memcpy(new_data, Seq->data, Seq->length);
+        memset(new_data+Seq->length*data_size, 0, (new_capacity-Seq->length)*data_size); // this should be default constructors for that type
+        free(Seq->data);
+        Seq->data = (cb_byte*)new_data;
+        Seq->length = length;
     }
 }
 
-void static_seq_index(Seq* seq, cb_u64 data_size, cb_uint index, cb_byte** __retval) {
+void static_seq_index(Seq* Seq, cb_u64 data_size, cb_uint index, cb_byte** __retval) {
     // assert(index < length);
-    *__retval = seq->data + index*data_size;
+    *__retval = Seq->data + index*data_size;
 }
 
-void dynamic_seq_index(Seq* seq, cb_u64 data_size, cb_uint index, cb_byte** __retval) {
-    if (seq->data == NULL) {
+void dynamic_seq_index(Seq* Seq, cb_u64 data_size, cb_uint index, cb_byte** __retval) {
+    if (Seq->data == NULL) {
         cb_u64 new_capacity = closest_higher_power_of_2(index+1);
-        seq->data = (cb_byte*)malloc(new_capacity);
-        // assert(seq->data != NULL);
-        seq->length = index+1;
-        memset(seq->data, 0, new_capacity*data_size); // this should be default constructors for that type
-    } else if (index >= seq->length && index >= dynamic_seq_capacity(seq)) {
+        Seq->data = (cb_byte*)malloc(new_capacity);
+        // assert(Seq->data != NULL);
+        Seq->length = index+1;
+        memset(Seq->data, 0, new_capacity*data_size); // this should be default constructors for that type
+    } else if (index >= Seq->length && index >= dynamic_seq_capacity(Seq)) {
         cb_u64 new_capacity = closest_higher_power_of_2(index+1);
         void* new_data = malloc(new_capacity);
         // assert(new_data != NULL);
-        memcpy(new_data, seq->data, seq->length);
-        memset(new_data+seq->length*data_size, 0, (new_capacity-seq->length)*data_size); // this should be default constructors for that type
-        free(seq->data);
-        seq->data = (cb_byte*)new_data;
-        seq->length = index+1;
+        memcpy(new_data, Seq->data, Seq->length);
+        memset(new_data+Seq->length*data_size, 0, (new_capacity-Seq->length)*data_size); // this should be default constructors for that type
+        free(Seq->data);
+        Seq->data = (cb_byte*)new_data;
+        Seq->length = index+1;
     }
-    *__retval = seq->data + index * data_size;
+    *__retval = Seq->data + index * data_size;
 }
 
 
@@ -238,15 +238,15 @@ void destroy_owning_ptr(void* ptr) {
     free(*(void**)ptr);
 }
 
-void destroy_seq(Seq* seq, Destructor destr) {
+void destroy_seq(Seq* Seq, Destructor destr) {
     int i;
-    for (i = 0; i < seq->length; ++i) {
-        destr(&seq->data[i]);
+    for (i = 0; i < Seq->length; ++i) {
+        destr(&Seq->data[i]);
     }
 }
-void destroy_dynamic_seq(Seq* seq, Destructor destr) {
-    destroy_seq(seq, destr);
-    free(seq->data);
+void destroy_dynamic_seq(Seq* Seq, Destructor destr) {
+    destroy_seq(Seq, destr);
+    free(Seq->data);
 }
 
 

@@ -58,22 +58,22 @@ alloc($T : type)-> *!T {
 
 
 /*
-owned should have deleted copy construcor and copy assignment operator.
-However, that gives lots of problems with template classes such as seq<OP> and any (assignment callbacks).
+Owned should have deleted copy construcor and copy assignment operator.
+However, that gives lots of problems with template classes such as Seq<OP> and any (assignment callbacks).
 
 
 */
 
-template<typename T> struct owned;
-template<typename T> owned<T> alloc(const T& t);
-template<typename T> owned<T> alloc(T&& t);
+template<typename T> struct Owned;
+template<typename T> Owned<T> alloc(const T& t);
+template<typename T> Owned<T> alloc(T&& t);
 template<typename T, bool> struct deep_copy;
 
 
 
 // owning pointer - owns the object and deallocates it when done.
 template<typename T>
-struct owned {
+struct Owned {
     T* v = nullptr;
 
     std::string toS() const {
@@ -83,8 +83,8 @@ struct owned {
     }
 
     // default constructor
-    owned() {}
-    ~owned() {
+    Owned() {}
+    ~Owned() {
         if (v != nullptr) {
             v->~T();
             free(v);
@@ -98,42 +98,42 @@ struct owned {
     explicit operator T*() const { return v; }
 
     // copy - not allowed (makes a deep copy?). If passing a owned_ptr to a function, move constructor should be used. (In CB this will be done automatically)
-    owned& operator=(const owned& ptr)
+    Owned& operator=(const Owned& ptr)
     {
         if (v == nullptr) *this = std::move(ptr.deep_copy());
         else *v = *ptr;
     }
-    owned(const owned& ptr) { *this = ptr; }
+    Owned(const Owned& ptr) { *this = ptr; }
 
-    owned& operator=(const nullptr_t& ptr) { ASSERT(ptr == nullptr); this->~owned(); return *this; }
-    owned(const nullptr_t& ptr) { *this = ptr; }
+    Owned& operator=(const nullptr_t& ptr) { ASSERT(ptr == nullptr); this->~Owned(); return *this; }
+    Owned(const nullptr_t& ptr) { *this = ptr; }
 
     // move
-    owned& operator=(owned&& ptr) {
-        this->~owned();
+    Owned& operator=(Owned&& ptr) {
+        this->~Owned();
         v = ptr.v;
         ptr.v = nullptr;
         return *this;
     }
-    owned(owned&& ptr) { *this = std::move(ptr); }
+    Owned(Owned&& ptr) { *this = std::move(ptr); }
 
-    owned& operator=(T*&& ptr) {
-        this->~owned();
+    Owned& operator=(T*&& ptr) {
+        this->~Owned();
         v = ptr;
         ptr = nullptr;
         return *this;
     }
-    owned(T*&& ptr) { *this = std::move(ptr); }
+    Owned(T*&& ptr) { *this = std::move(ptr); }
 
-    owned deep_copy() const {
+    Owned deep_copy() const {
         return ::deep_copy<T, std::is_copy_constructible<T>::value>()(*this);
     }
 };
 
 
 template<typename T>
-owned<T> alloc(const T& t) {
-    owned<T> ptr;
+Owned<T> alloc(const T& t) {
+    Owned<T> ptr;
     ptr.v = (T*)malloc(sizeof(T));
     ASSERT(ptr.v != nullptr);
     new (ptr.v) T(t);
@@ -141,22 +141,22 @@ owned<T> alloc(const T& t) {
 }
 
 template<typename T>
-owned<T> alloc(T&& t) {
-    owned<T> ptr;
+Owned<T> alloc(T&& t) {
+    Owned<T> ptr;
     ptr.v = (T*)malloc(sizeof(T));
     new (ptr.v) T(std::move(t));
     return ptr;
 }
 
 template<typename T> struct deep_copy<T,true> { // copy constructible
-    owned<T> operator()(const owned<T>& ptr) {
+    Owned<T> operator()(const Owned<T>& ptr) {
         if (ptr == nullptr) return nullptr;
         else return alloc<T>(*ptr);
     }
 };
 
 template<typename T> struct deep_copy<T,false> { // non-copy constructible - deep copies are not allowed.
-    owned<T> operator()(const owned<T>& ptr) { ASSERT(false); return nullptr; }
+    Owned<T> operator()(const Owned<T>& ptr) { ASSERT(false); return nullptr; }
 };
 
 
@@ -164,7 +164,7 @@ template<typename T> struct deep_copy<T,false> { // non-copy constructible - dee
 // shares happily with other sharing pointers
 // can not be created from an object, only from other pointers
 template<typename T> // T is a CB type
-struct shared {
+struct Shared {
     T* v = nullptr;
 
     std::string toS() const {
@@ -174,8 +174,8 @@ struct shared {
     }
 
     // default constructor
-    shared() {}
-    ~shared() { v = nullptr; }
+    Shared() {}
+    ~Shared() { v = nullptr; }
 
     T* operator->() const { ASSERT(v != nullptr); return v; }
     T& operator*() const { ASSERT(v != nullptr); return *v; }
@@ -183,66 +183,66 @@ struct shared {
     explicit operator T*() const { return v; }
 
     // copy
-    shared& operator=(const shared& ptr) { v = ptr.v; return *this; }
-    shared(const shared& ptr) { *this = ptr; }
+    Shared& operator=(const Shared& ptr) { v = ptr.v; return *this; }
+    Shared(const Shared& ptr) { *this = ptr; }
 
-    shared& operator=(const owned<T>& ptr) { v = ptr.v; return *this; }
-    shared(const owned<T>& ptr) { *this = ptr; }
+    Shared& operator=(const Owned<T>& ptr) { v = ptr.v; return *this; }
+    Shared(const Owned<T>& ptr) { *this = ptr; }
 
-    shared& operator=(T* ptr) { v = ptr; return *this; }
-    shared(T* ptr) { *this = ptr; }
+    Shared& operator=(T* ptr) { v = ptr; return *this; }
+    Shared(T* ptr) { *this = ptr; }
 
-    shared& operator=(const nullptr_t& ptr) { ASSERT(ptr == nullptr); v = ptr; return *this; }
-    shared(const nullptr_t& ptr) { *this = ptr; }
+    Shared& operator=(const nullptr_t& ptr) { ASSERT(ptr == nullptr); v = ptr; return *this; }
+    Shared(const nullptr_t& ptr) { *this = ptr; }
 };
 
 // comparison betweens different kinds of pointers
-template<typename T> bool operator==(const shared<T>& lhs, const shared<T>& rhs) { return lhs.v == rhs.v; }
-template<typename T> bool operator==(const owned<T>& lhs, const owned<T>& rhs) { return lhs.v == rhs.v; }
-template<typename T> bool operator==(const shared<T>& lhs, const owned<T>& rhs) { return lhs.v == rhs.v; }
-template<typename T> bool operator==(const owned<T>& lhs, const shared<T>& rhs) { return lhs.v == rhs.v; }
-template<typename T> bool operator==(const shared<T>& lhs, const T* rhs) { return lhs.v == rhs; }
-template<typename T> bool operator==(const T* lhs, const shared<T>& rhs) { return lhs == rhs.v; }
-template<typename T> bool operator==(const owned<T>& lhs, const T* rhs) { return lhs.v == rhs; }
-template<typename T> bool operator==(const T* lhs, const owned<T>& rhs) { return lhs == rhs.v; }
-template<typename T> bool operator==(const shared<T>& lhs, const nullptr_t rhs) { return lhs.v == rhs; }
-template<typename T> bool operator==(const nullptr_t lhs, const shared<T>& rhs) { return lhs == rhs.v; }
-template<typename T> bool operator==(const owned<T>& lhs, const nullptr_t rhs) { return lhs.v == rhs; }
-template<typename T> bool operator==(const nullptr_t lhs, const owned<T>& rhs) { return lhs == rhs.v; }
+template<typename T> bool operator==(const Shared<T>& lhs, const Shared<T>& rhs) { return lhs.v == rhs.v; }
+template<typename T> bool operator==(const Owned<T>& lhs, const Owned<T>& rhs) { return lhs.v == rhs.v; }
+template<typename T> bool operator==(const Shared<T>& lhs, const Owned<T>& rhs) { return lhs.v == rhs.v; }
+template<typename T> bool operator==(const Owned<T>& lhs, const Shared<T>& rhs) { return lhs.v == rhs.v; }
+template<typename T> bool operator==(const Shared<T>& lhs, const T* rhs) { return lhs.v == rhs; }
+template<typename T> bool operator==(const T* lhs, const Shared<T>& rhs) { return lhs == rhs.v; }
+template<typename T> bool operator==(const Owned<T>& lhs, const T* rhs) { return lhs.v == rhs; }
+template<typename T> bool operator==(const T* lhs, const Owned<T>& rhs) { return lhs == rhs.v; }
+template<typename T> bool operator==(const Shared<T>& lhs, const nullptr_t rhs) { return lhs.v == rhs; }
+template<typename T> bool operator==(const nullptr_t lhs, const Shared<T>& rhs) { return lhs == rhs.v; }
+template<typename T> bool operator==(const Owned<T>& lhs, const nullptr_t rhs) { return lhs.v == rhs; }
+template<typename T> bool operator==(const nullptr_t lhs, const Owned<T>& rhs) { return lhs == rhs.v; }
 
-template<typename T> bool operator!=(const shared<T>& lhs, const shared<T>& rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const owned<T>& lhs, const owned<T>& rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const shared<T>& lhs, const owned<T>& rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const owned<T>& lhs, const shared<T>& rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const shared<T>& lhs, const T* rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const T* lhs, const shared<T>& rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const owned<T>& lhs, const T* rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const T* lhs, const owned<T>& rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const shared<T>& lhs, const nullptr_t rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const nullptr_t lhs, const shared<T>& rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const owned<T>& lhs, const nullptr_t rhs) { return !(lhs == rhs); }
-template<typename T> bool operator!=(const nullptr_t lhs, const owned<T>& rhs) { return !(lhs == rhs); }
-
-template<typename T, typename T2>
-shared<T> dynamic_pointer_cast(const owned<T2>& ptr) {
-    return shared<T>(dynamic_cast<T*>(ptr.v));
-}
-template<typename T, typename T2>
-shared<T> dynamic_pointer_cast(const shared<T2>& ptr) {
-    return shared<T>(dynamic_cast<T*>(ptr.v));
-}
-template<typename T, typename T2>
-shared<T> static_pointer_cast(const owned<T2>& ptr) {
-    return shared<T>(static_cast<T*>(ptr.v));
-}
-template<typename T, typename T2>
-shared<T> static_pointer_cast(const shared<T2>& ptr) {
-    return shared<T>(static_cast<T*>(ptr.v));
-}
+template<typename T> bool operator!=(const Shared<T>& lhs, const Shared<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Owned<T>& lhs, const Owned<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Shared<T>& lhs, const Owned<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Owned<T>& lhs, const Shared<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Shared<T>& lhs, const T* rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const T* lhs, const Shared<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Owned<T>& lhs, const T* rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const T* lhs, const Owned<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Shared<T>& lhs, const nullptr_t rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const nullptr_t lhs, const Shared<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Owned<T>& lhs, const nullptr_t rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const nullptr_t lhs, const Owned<T>& rhs) { return !(lhs == rhs); }
 
 template<typename T, typename T2>
-owned<T> owning_pointer_cast(owned<T2>&& ptr) {
-    auto p = owned<T>(dynamic_cast<T*>(ptr.v));
+Shared<T> dynamic_pointer_cast(const Owned<T2>& ptr) {
+    return Shared<T>(dynamic_cast<T*>(ptr.v));
+}
+template<typename T, typename T2>
+Shared<T> dynamic_pointer_cast(const Shared<T2>& ptr) {
+    return Shared<T>(dynamic_cast<T*>(ptr.v));
+}
+template<typename T, typename T2>
+Shared<T> static_pointer_cast(const Owned<T2>& ptr) {
+    return Shared<T>(static_cast<T*>(ptr.v));
+}
+template<typename T, typename T2>
+Shared<T> static_pointer_cast(const Shared<T2>& ptr) {
+    return Shared<T>(static_cast<T*>(ptr.v));
+}
+
+template<typename T, typename T2>
+Owned<T> owning_pointer_cast(Owned<T2>&& ptr) {
+    auto p = Owned<T>(dynamic_cast<T*>(ptr.v));
     if (p.v != nullptr) ptr.v = nullptr;
     return p;
 }

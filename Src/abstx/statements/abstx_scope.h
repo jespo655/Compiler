@@ -29,12 +29,12 @@ const flag SCOPE_SELF_CONTAINED = 3; // should be set if the scope never referen
 struct CB_Scope : Abstx_node //, CB_Object
 {
     // static CB_Type type;
-    seq<owned<Statement>> statements;
+    Seq<Owned<Statement>> statements;
 
-    std::map<std::string, shared<Identifier>> identifiers; // id name -> id. Identifiers are owned by their declaration statements.
+    std::map<std::string, Shared<Identifier>> identifiers; // id name -> id. Identifiers are Owned by their declaration statements.
 
-    seq<shared<CB_Scope>> imported_scopes;
-    seq<shared<Using_statement>> using_statements; // Used in the parsing process. Owned by the list of statements above. Once a using statement has been resolved, it should be returned from this list.
+    Seq<Shared<CB_Scope>> imported_scopes;
+    Seq<Shared<Using_statement>> using_statements; // Used in the parsing process. Owned by the list of statements above. Once a using statement has been resolved, it should be returned from this list.
                                                    // FIXME: add a safeguard for when several using-statements tries to import the same scope.
     uint8_t flags = 0;
     bool dynamic() const { return flags == SCOPE_DYNAMIC; }
@@ -57,7 +57,7 @@ struct CB_Scope : Abstx_node //, CB_Object
     std::string toS() const override { return dynamic()? "scope(d)" : "scope(s)"; }
     // CB_Object* heap_copy() const override { CB_Scope* tp = new CB_Scope(); *tp = *this; return tp; }
 
-    shared<Identifier> get_identifier(const std::string& id, bool recursive=true)
+    Shared<Identifier> get_identifier(const std::string& id, bool recursive=true)
     {
         auto p = identifiers[id];
         ASSERT(!self_contained() || p != nullptr)
@@ -85,7 +85,7 @@ struct CB_Scope : Abstx_node //, CB_Object
         return p;
     }
 
-    // shared<CB_Scope> get_scope(const std::string& id, bool recursive=true)
+    // Shared<CB_Scope> get_scope(const std::string& id, bool recursive=true)
     // {
     //     auto p = get_identifier(id, recursive);
     //     if (p == nullptr || *(p->type) != CB_Scope::type) return nullptr;
@@ -95,7 +95,7 @@ struct CB_Scope : Abstx_node //, CB_Object
 
     void resolve_imports()
     {
-        seq<shared<Using_statement>> remaining;
+        Seq<Shared<Using_statement>> remaining;
 
         while (using_statements.size > 0) {
             remaining.clear();
@@ -183,7 +183,7 @@ struct CB_Scope : Abstx_node //, CB_Object
 
 struct Anonymous_scope : Statement
 {
-    owned<CB_Scope> scope;
+    Owned<CB_Scope> scope;
 
     std::string toS() const override
     {

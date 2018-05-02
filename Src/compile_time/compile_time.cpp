@@ -7,7 +7,7 @@
 
 #include "../abstx/numbers.h"
 #include "../abstx/str.h"
-#include "../abstx/seq.h"
+#include "../abstx/Seq.h"
 #include "../abstx/scope.h"
 #include "../abstx/function.h"
 
@@ -155,8 +155,8 @@ std::vector<Value> evaluate(std::shared_ptr<Literal_seq> lit) {
 
 
 
-// seq -> value
-// seq har en fix size
+// Seq -> value
+// Seq har en fix size
 // allokera bara så mycket minne!
 
 

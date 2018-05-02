@@ -6,7 +6,7 @@
  Description: public header for library dynload
  License:
 
-   Copyright (c) 2007-2015 Daniel Adler <dadler@uni-goettingen.de>, 
+   Copyright (c) 2007-2015 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -38,7 +38,7 @@ extern "C" {
 
 /* --- public api ---------------------------------------------------------- */
 
-/* shared library loading and explicit symbol resolving */
+/* Shared library loading and explicit symbol resolving */
 
 typedef struct DLLib_ DLLib;
 

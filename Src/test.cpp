@@ -119,15 +119,15 @@ struct Verbose
 };
 
 
-owned<Verbose> create_verbose()
+Owned<Verbose> create_verbose()
 {
     cout << "creating" << endl;
-    owned<Verbose> vp = alloc(Verbose());
+    Owned<Verbose> vp = alloc(Verbose());
     cout << "returning" << endl;
     return vp;
 }
 
-void grab_verbose(shared<Verbose> vp) {
+void grab_verbose(Shared<Verbose> vp) {
     cout << "grabbed " << vp->i << endl;
     cout << "returning" << endl;
 }
@@ -136,7 +136,7 @@ void grab_verbose(shared<Verbose> vp) {
 void owning_test()
 {
     // Verbose v = Verbose();
-    owned<Verbose> vp = create_verbose();
+    Owned<Verbose> vp = create_verbose();
     cout << "vp: " << vp.toS() << endl;
     cout << "v.i: " << vp->i << endl;
     grab_verbose(std::move(vp));
@@ -175,25 +175,25 @@ ostream& operator<<(ostream& os, const Dummy& d)
 }
 
 template<typename Seq_t>
-void seq_generic_test(Seq_t& seq)
+void seq_generic_test(Seq_t& Seq)
 {
     cout << "test begin" << endl;
-    cout << "sizeof(seq) = " << sizeof(seq) << endl;
+    cout << "sizeof(Seq) = " << sizeof(Seq) << endl;
     int min = 5;
     int max = 100;
     for (int i = min; i < max; ++i) {
         // ostringstream oss;
         // oss << i;
-        // seq.set(i, oss.str());
-        // seq.set(i, i);
+        // Seq.set(i, oss.str());
+        // Seq.set(i, i);
         Dummy d;
         d.i = i;
-        seq.set(i, d);
-        if (i%10 == 0) cout << "size: " << seq.get_size() << ", capacity: " << seq.get_capacity() << endl;
+        Seq.set(i, d);
+        if (i%10 == 0) cout << "size: " << Seq.get_size() << ", capacity: " << Seq.get_capacity() << endl;
     }
     for (int i = min-1; i < max+1; ++i)
-        cout << "seq[" << i << "] = " << seq[i] << endl;
-    cout << "sizeof(seq) = " << sizeof(seq) << endl;
+        cout << "Seq[" << i << "] = " << Seq[i] << endl;
+    cout << "sizeof(Seq) = " << sizeof(Seq) << endl;
 
     cout << "test complete" << endl;
 }
@@ -201,16 +201,16 @@ void seq_generic_test(Seq_t& seq)
 
 void seq_test()
 {
-    // fixed_seq<Dummy, 50> s_seq;
-    // seq<Dummy> d_seq;
+    // Fixed_seq<Dummy, 50> s_seq;
+    // Seq<Dummy> d_seq;
 
-    // // fixed_seq<int, 5> s_seq;
-    // // seq<int> d_seq;
+    // // Fixed_seq<int, 5> s_seq;
+    // // Seq<int> d_seq;
 
     // seq_generic_test(s_seq);
     // seq_generic_test(d_seq);
 
-    // cout << "size = " << sizeof(fixed_seq<int, 0>);
+    // cout << "size = " << sizeof(Fixed_seq<int, 0>);
 }
 
 
@@ -318,7 +318,7 @@ void size_test()
     // cout << "double: " << sizeof(double) << endl;
 
     cout << "unique size = " << sizeof(std::unique_ptr<int>) << endl;
-    cout << "shared size = " << sizeof(std::shared_ptr<int>) << endl;
+    cout << "Shared size = " << sizeof(std::shared_ptr<int>) << endl;
     cout << "bool size = " << sizeof(bool);
 
 }

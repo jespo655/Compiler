@@ -10,7 +10,7 @@ struct Value_expression : Abstx_node
     /*
         get_type() should return nullptr if unable to infer the type (yet).
     */
-    virtual shared<const CB_Type> get_type() = 0;
+    virtual Shared<const CB_Type> get_type() = 0;
 };
 
 

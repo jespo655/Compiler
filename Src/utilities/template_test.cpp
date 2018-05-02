@@ -35,10 +35,10 @@ int main()
     S s;
     S2 s2;
 
-    shared<S> sp = &s;
-    shared<S> sp2 = &s2;
+    Shared<S> sp = &s;
+    Shared<S> sp2 = &s2;
 
-    shared<S> sp3 = sp2;
+    Shared<S> sp3 = sp2;
 
     std::cout << sp->toS() << std::endl;
     std::cout << sp2->toS() << std::endl;
@@ -52,8 +52,8 @@ int main()
     // std::cout << "t: " << t.t.i << std::endl;
     // std::cout << "t2: " << t2.t.i << std::endl;
 
-    // seq<S> s;
-    // seq<TS<S>> ts;
+    // Seq<S> s;
+    // Seq<TS<S>> ts;
 
     // s.resize(3, true);
     // ts.resize(3, false);
@@ -61,8 +61,8 @@ int main()
     // std::cout << "s: " << s.toS() << std::endl;
     // std::cout << "ts: " << ts.toS() << std::endl;
 
-    // shared<seq<S>> ps = &s;
-    // owned<seq<TS<S>>> pts = &ts;
+    // Shared<Seq<S>> ps = &s;
+    // Owned<Seq<TS<S>>> pts = &ts;
 
     // std::cout << "ps: " << ps.toS() << std::endl;
     // std::cout << "pts: " << pts.toS() << std::endl;

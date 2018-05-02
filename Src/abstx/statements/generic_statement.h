@@ -14,7 +14,7 @@ NYI
 
 // struct Generic_statement : Statement
 // {
-//     owned<Statement> statement;
+//     Owned<Statement> statement;
 
 //     std::string toS() const override { ASSERT(statement != nullptr); return "generic "+statement->toS(); }
 // }

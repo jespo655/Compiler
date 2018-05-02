@@ -46,21 +46,21 @@ void test()
 // #include "abstx/abstx.h"
 // // Go up in the Abstx tree until a parent scope is found.
 // // If no scope is found, return nullptr
-// shared<CB_Scope> Abstx_node::parent_scope() const
+// Shared<CB_Scope> Abstx_node::parent_scope() const
 // {
-//     shared<Abstx_node> abstx = owner;
+//     Shared<Abstx_node> abstx = owner;
 //     while (abstx != nullptr) {
-//         shared<CB_Scope> scope = dynamic_pointer_cast<CB_Scope>(abstx);
+//         Shared<CB_Scope> scope = dynamic_pointer_cast<CB_Scope>(abstx);
 //         if (scope != nullptr) return scope;
 //         else abstx = abstx->owner;
 //     }
 //     return nullptr;
 // }
 
-// shared<CB_Scope> Abstx_node::global_scope()
+// Shared<CB_Scope> Abstx_node::global_scope()
 // {
 //     auto parent = parent_scope();
-//     if (parent == nullptr) return dynamic_pointer_cast<CB_Scope>(shared<Abstx_node>(this));
+//     if (parent == nullptr) return dynamic_pointer_cast<CB_Scope>(Shared<Abstx_node>(this));
 //     if (parent->owner == nullptr) return parent;
 //     else return parent->global_scope();
 // }

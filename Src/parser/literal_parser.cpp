@@ -3,7 +3,7 @@
 #include "../abstx/numbers.h"
 #include "../abstx/bool.h"
 #include "../abstx/str.h"
-#include "../abstx/seq.h"
+#include "../abstx/Seq.h"
 #include "../compile_time/compile_time.h"
 #include <cstdlib>
 
@@ -151,16 +151,16 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
     ASSERT(it->type == Token_type::SYMBOL && it->token == "[");
     ASSERT(!it.error);
 
-    auto seq = std::shared_ptr<Literal_seq>(new Literal_seq());
+    auto Seq = std::shared_ptr<Literal_seq>(new Literal_seq());
 
-    seq->owner = parent_scope;
-    seq->context = it->context;
-    seq->start_token_index = it.current_index;
+    Seq->owner = parent_scope;
+    Seq->context = it->context;
+    Seq->start_token_index = it.current_index;
 
-    seq->type = std::shared_ptr<Type_seq>(new Type_seq());
-    seq->type->owner = seq;
-    seq->type->context = seq->context;
-    seq->type->start_token_index = seq->start_token_index;
+    Seq->type = std::shared_ptr<Type_seq>(new Type_seq());
+    Seq->type->owner = Seq;
+    Seq->type->context = Seq->context;
+    Seq->type->start_token_index = Seq->start_token_index;
 
     it.eat_token(); // eat the "[" token
 
@@ -192,7 +192,7 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
             auto type = parent_scope->get_type(id.token);
             if (type == nullptr) {
                 log_error("Type not found: \""+id.token+"\" undeclared",id.context);
-                seq->status = Parsing_status::SYNTAX_ERROR;
+                Seq->status = Parsing_status::SYNTAX_ERROR;
 
                 //   Maybe: (this could log strange errors if multiple definitions of id)
                 // auto t_id = parent_scope->get_identifier(id.token);
@@ -200,7 +200,7 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
                 //     add_note("\""+id.token"\" is declared as a non-type variable here:", t_id->context);
                 // }
 
-            } else seq->type->type = type;
+            } else Seq->type->type = type;
         }
 
         if (!it.error && symbol.token == ",") {
@@ -214,31 +214,31 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
             auto size_expr = compile_value_expression(it, parent_scope);
             ASSERT(size_expr != nullptr);
             if (size_expr->status == Parsing_status::FATAL_ERROR) {
-                seq->status = Parsing_status::FATAL_ERROR;
-                return seq;
+                Seq->status = Parsing_status::FATAL_ERROR;
+                return Seq;
             } else if (is_error(size_expr->status)) {
-                seq->status = size_expr->status;
+                Seq->status = size_expr->status;
             } else {
                 ASSERT(size_expr->status == Parsing_status::FULLY_RESOLVED);
                 Value v = eval(size_expr);
                 ASSERT(v.get_type() != nullptr);
                 if (auto i_type = std::dynamic_pointer_cast<Type_int>(v.get_type())) { // if (v.type->is_integer_type())
-                    seq->type->size = i_type->cpp_value(v.get_value());
+                    Seq->type->size = i_type->cpp_value(v.get_value());
                     has_size_data = true;
                 } else {
                     log_error("Type mismatch: expected integer type but found "+v.get_type()->toS(), size_expr->context);
-                    seq->status == Parsing_status::TYPE_ERROR;
+                    Seq->status == Parsing_status::TYPE_ERROR;
                 }
             }
 
             // const Token& size_literal = it.expect(Token_type::INTEGER);
             // if (!it.error) {
             //     // ASSERT(false, "FIXME: stoi")
-            //     seq->type->size = std::stoi(size_literal.token);
+            //     Seq->type->size = std::stoi(size_literal.token);
             //     has_size_data = true;
             // } else {
             //     add_note("Only integer literals are supported for sequence literal size declaration");
-            //     seq->status = Parsing_status::SYNTAX_ERROR;
+            //     Seq->status = Parsing_status::SYNTAX_ERROR;
             // }
         }
 
@@ -247,8 +247,8 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
         ASSERT(it.error || it.current_index == first_member_index);
 
         if (it.error) {
-            add_note("In the meta data of sequence literal that started here: ", seq->context);
-            seq->status = Parsing_status::SYNTAX_ERROR;
+            add_note("In the meta data of sequence literal that started here: ", Seq->context);
+            Seq->status = Parsing_status::SYNTAX_ERROR;
             it.current_index = first_member_index;
         }
 
@@ -257,8 +257,8 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
 
     // read value expressions until "]" token
     // check the type of each expression, log error if unable to get type
-    // if seq->type is nullptr, get the type from the first value
-    // else if v->type != seq->type log error
+    // if Seq->type is nullptr, get the type from the first value
+    // else if v->type != Seq->type log error
 
     bool first = true;
     std::vector<std::shared_ptr<Value_expression>> type_errors;
@@ -269,33 +269,33 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
         }
         if (!first) it.expect(Token_type::SYMBOL, ",");
         if (it.error) {
-            seq->status = Parsing_status::SYNTAX_ERROR;
+            Seq->status = Parsing_status::SYNTAX_ERROR;
             // try to recover
             it.current_index = it.find_matching_token(it.current_index, Token_type::SYMBOL, "]", "Seq_literal", "Missing \"]\"") + 1;
             if(it.error) {
-                seq->status = Parsing_status::FATAL_ERROR;
-                return seq; // not ok, undefined behaviour if we continue
+                Seq->status = Parsing_status::FATAL_ERROR;
+                return Seq; // not ok, undefined behaviour if we continue
             }
             break; // we didn't read the whole sequence, but that's ok. We log an error and continue with the next thing.
         }
 
         auto value_expr = compile_value_expression(it, parent_scope);
         ASSERT(value_expr != nullptr);
-        value_expr->owner = seq;
+        value_expr->owner = Seq;
 
-        seq->members.push_back(value_expr);
+        Seq->members.push_back(value_expr);
         if (is_error(value_expr->status)) {
-            seq->status = value_expr->status;
+            Seq->status = value_expr->status;
             if (is_fatal(value_expr->status)) {
-                return seq; // not ok, undefined behaviour if we continue
+                return Seq; // not ok, undefined behaviour if we continue
             }
         } else {
             ASSERT(value_expr->status == Parsing_status::FULLY_RESOLVED); // FIXME: it might have dependencies?
             auto member_type = value_expr->get_type();
             ASSERT(member_type != nullptr);
 
-            if (seq->type->type == nullptr) seq->type->type = member_type; // infer the type from the first member
-            else if (seq->type->type != member_type) {
+            if (Seq->type->type == nullptr) Seq->type->type = member_type; // infer the type from the first member
+            else if (Seq->type->type != member_type) {
                 type_errors.push_back(value_expr);
             }
         }
@@ -303,45 +303,45 @@ std::shared_ptr<Value_expression> compile_sequence_literal(Token_iterator& it, s
         first = false;
     }
 
-    if (seq->type->type == nullptr) {
-        log_error("Unable to infer the type of sequence literal", seq->context);
-        seq->status = Parsing_status::TYPE_ERROR;
-        seq->type->status = Parsing_status::TYPE_ERROR;
+    if (Seq->type->type == nullptr) {
+        log_error("Unable to infer the type of sequence literal", Seq->context);
+        Seq->status = Parsing_status::TYPE_ERROR;
+        Seq->type->status = Parsing_status::TYPE_ERROR;
     } else if (!type_errors.empty()) {
-        log_error("Incompatible types in sequence literal of type "+seq->type->type->toS(), seq->context);
+        log_error("Incompatible types in sequence literal of type "+Seq->type->type->toS(), Seq->context);
         for (auto member : type_errors) {
             add_note("Member of type "+member->get_type()->toS()+" found here:", member->context);
         }
-        seq->status = Parsing_status::TYPE_ERROR;
-        seq->type->status = Parsing_status::TYPE_ERROR;
+        Seq->status = Parsing_status::TYPE_ERROR;
+        Seq->type->status = Parsing_status::TYPE_ERROR;
     } else {
-        seq->type->status = seq->type->type->status;
+        Seq->type->status = Seq->type->type->status;
     }
 
-    if (!is_error(seq->status)) {
-        seq->status = Parsing_status::FULLY_RESOLVED;
+    if (!is_error(Seq->status)) {
+        Seq->status = Parsing_status::FULLY_RESOLVED;
     }
 
     if (!has_size_data) {
-        seq->type->size = seq->members.size();
+        Seq->type->size = Seq->members.size();
     } else {
-        if (seq->type->size < seq->members.size()) {
+        if (Seq->type->size < Seq->members.size()) {
             // if size < members.size, give warning and cut off
-            log_warning("Give size is less than the number of elements in the sequence literal. Exess members are ignored.", seq->context);
-            seq->members.resize(seq->type->size);
-        } else while (seq->type->size > seq->members.size()) {
+            log_warning("Give size is less than the number of elements in the sequence literal. Exess members are ignored.", Seq->context);
+            Seq->members.resize(Seq->type->size);
+        } else while (Seq->type->size > Seq->members.size()) {
             // if size > members.size, pad with default literals
             auto default_literal = std::shared_ptr<Literal>(new Literal());
-            default_literal->owner = seq;
+            default_literal->owner = Seq;
             default_literal->start_token_index = it.current_index - 1;
             default_literal->context = it.look_back(1).context;
             default_literal->status = Parsing_status::FULLY_RESOLVED;
-            default_literal->value.alloc(seq->type->type);
-            seq->members.push_back(default_literal);
+            default_literal->value.alloc(Seq->type->type);
+            Seq->members.push_back(default_literal);
         }
     }
 
-    return seq;
+    return Seq;
 }
 
 

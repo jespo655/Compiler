@@ -15,7 +15,7 @@ a : Range = 0..2;
 */
 
 struct CB_Range : CB_Type {
-    static const shared<const CB_Type> type;
+    static const Shared<const CB_Type> type;
     static constexpr double _default_value[2] = {0, 0};
 
     CB_Range() { uid = type->uid; }

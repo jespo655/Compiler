@@ -8,20 +8,20 @@ That is, they have to be defined in a .cpp-file.
 #include "cb_any.h"
 
 std::map<int, std::string> CB_Type::typenames{};
-std::map<int, any> CB_Type::default_values{};
+std::map<int, Any> CB_Type::default_values{};
 std::map<int, size_t> CB_Type::cb_sizes{};
 
 constexpr uint32_t CB_Type::_default_value;
 static const CB_Type static_cb_type("type", sizeof(CB_Type::_default_value), &CB_Type::_default_value);
-const shared<const CB_Type> CB_Type::type = &static_cb_type;
+const Shared<const CB_Type> CB_Type::type = &static_cb_type;
 
 constexpr void* CB_Any::_default_value;
 static const CB_Any static_cb_any("any", sizeof(CB_Any::_default_value), &CB_Any::_default_value);
-const shared<const CB_Type> CB_Any::type = &static_cb_any;
+const Shared<const CB_Type> CB_Any::type = &static_cb_any;
 
-const any& CB_Type::default_value() const
+const Any& CB_Type::default_value() const
 {
-    const any& a = default_values[uid];
+    const Any& a = default_values[uid];
     if (*a.v_type != *this) {
         std::cerr << std::endl << "error: default value type doesn't match: dv.v_type.uid = "
             << a.v_type->uid << "; *this.uid = " << this->uid << std::endl;
@@ -36,7 +36,7 @@ void CB_Type::register_type(const std::string& name, size_t size, void const* de
     ASSERT(typenames[uid] == ""); // can't register double value (this should never happen if uid works correctly)
     typenames[uid] = name;
     cb_sizes[uid] = size;
-    default_values[uid] = std::move(any(this, default_value));
+    default_values[uid] = std::move(Any(this, default_value));
 }
 
 
@@ -47,7 +47,7 @@ void CB_Type::register_type(const std::string& name, size_t size, void const* de
 #define PRIMITIVE_STATICS(cpp_type, tos, c_type) \
 constexpr c_type cpp_type::_default_value; \
 static const cpp_type static_##cpp_type(tos, sizeof(cpp_type::_default_value), &cpp_type::_default_value); \
-const shared<const CB_Type> cpp_type::type = &static_##cpp_type;
+const Shared<const CB_Type> cpp_type::type = &static_##cpp_type;
 
 PRIMITIVE_STATICS(CB_Bool, "bool", bool);
 
@@ -73,13 +73,13 @@ PRIMITIVE_STATICS(CB_Flag, "flag", uint8_t);
 #include "cb_range.h"
 constexpr double CB_Range::_default_value[2];
 static const CB_Range static_cb_range("range", sizeof(CB_Range::_default_value), &CB_Range::_default_value);
-const shared<const CB_Type> CB_Range::type = &static_cb_range;
+const Shared<const CB_Type> CB_Range::type = &static_cb_range;
 
 #include "cb_string.h"
 constexpr char CB_String::_default_str[];
 constexpr char const* CB_String::_default_value;
 static const CB_String static_cb_string("string", sizeof(&CB_String::_default_value), &CB_String::_default_value);
-const shared<const CB_Type> CB_String::type = &static_cb_string;
+const Shared<const CB_Type> CB_String::type = &static_cb_string;
 
 #include "cb_pointer.h"
 constexpr void* CB_Pointer::_default_value;
@@ -119,7 +119,7 @@ static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
 
 #ifdef TEST
 
-void test_type(shared<const CB_Type> type)
+void test_type(Shared<const CB_Type> type)
 {
     std::cout << type->toS() << ": ";
     type->generate_type(std::cout);

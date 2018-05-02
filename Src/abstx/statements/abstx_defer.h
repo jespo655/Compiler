@@ -10,7 +10,7 @@ Think of it like a "defer stack"
 
 struct Defer_statement : Statement {
 
-    owned<Statement> statement;
+    Owned<Statement> statement;
 
     std::string toS() const override {
         ASSERT(statement != nullptr);

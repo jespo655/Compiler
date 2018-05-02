@@ -80,14 +80,14 @@ Then that same data has to be able to be outputted as a C style literal.
 */
 
 
-struct any; // used for default values
+struct Any; // used for default values
 
 struct CB_Type
 {
-    static const shared<const CB_Type> type; // self reference / CB_Type
+    static const Shared<const CB_Type> type; // self reference / CB_Type
     static constexpr uint32_t _default_value = 0;
     static std::map<int, std::string> typenames; // mapped from uid to name. Only compile time.
-    static std::map<int, any> default_values; // mapped from uid to value. Only compile time.
+    static std::map<int, Any> default_values; // mapped from uid to value. Only compile time.
     static std::map<int, size_t> cb_sizes; // mapped from uid to size. Only compile time.
 
     uint32_t uid;
@@ -111,7 +111,7 @@ struct CB_Type
     // alignment(): should return the minimum alignment according to c standard (1, 2, 4 or 8 (on 64bit) bytes)
     virtual size_t alignment() const { return cb_sizeof(); }
 
-    const any& default_value() const;
+    const Any& default_value() const;
     size_t cb_sizeof() const { return cb_sizes[uid]; }
 
     bool operator==(const CB_Type& o) const { return uid == o.uid; }

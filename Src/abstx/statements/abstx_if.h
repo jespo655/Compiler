@@ -18,8 +18,8 @@ then {}
 
 struct Conditional_scope : Abstx_node {
 
-    owned<Value_expression> condition;
-    owned<CB_Scope> scope;
+    Owned<Value_expression> condition;
+    Owned<CB_Scope> scope;
 
     std::string toS() const override { return "if(){}"; }
 
@@ -45,7 +45,7 @@ struct Conditional_scope : Abstx_node {
             status = condition->status;
             return status;
         }
-        shared<const CB_Type> type = condition->get_type();
+        Shared<const CB_Type> type = condition->get_type();
         if (*type != *CB_Bool::type) {
             status = Parsing_status::TYPE_ERROR;
             return status;
@@ -75,9 +75,9 @@ struct Conditional_scope : Abstx_node {
 
 struct If_statement : Statement {
 
-    seq<owned<Conditional_scope>> conditional_scopes;
-    owned<CB_Scope> else_scope; // is entered if none of the conditional scopes are entered
-    // owned<CB_Scope> then_scope; // is entered if not the else_scope is entered
+    Seq<Owned<Conditional_scope>> conditional_scopes;
+    Owned<CB_Scope> else_scope; // is entered if none of the conditional scopes are entered
+    // Owned<CB_Scope> then_scope; // is entered if not the else_scope is entered
 
     std::string toS() const override
     {

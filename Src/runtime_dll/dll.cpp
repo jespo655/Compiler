@@ -51,7 +51,7 @@ dll_handle dll::compile_dll(std::vector<std::string> src_files)
     std::ostringstream dll{};
     std::ostringstream cmd{};
     dll << base_filename << ++dll_counter << ".dll";
-    cmd << "gcc -shared -o " << dll.str();
+    cmd << "gcc -Shared -o " << dll.str();
     for (std::string& file_name : src_files) cmd << " " << file_name;
     system(cmd.str().c_str());
     return load_dll(dll.str());

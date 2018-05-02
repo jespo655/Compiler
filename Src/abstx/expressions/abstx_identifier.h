@@ -7,7 +7,7 @@
 
 
 struct Identifier : Variable_expression {
-    shared<const CB_Type> cb_type = nullptr; // nullptr if not yet inferred
+    Shared<const CB_Type> cb_type = nullptr; // nullptr if not yet inferred
     std::string name = "";
     // any value; // For default value, use cb_type.default_value() (@todo should this even be here?)
 
@@ -20,7 +20,7 @@ struct Identifier : Variable_expression {
         return oss.str();
     }
 
-    virtual shared<const CB_Type> get_type() override {
+    virtual Shared<const CB_Type> get_type() override {
         return cb_type;
     }
 

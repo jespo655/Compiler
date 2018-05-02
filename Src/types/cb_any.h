@@ -17,7 +17,7 @@ Usages:
 */
 
 struct CB_Any : CB_Type {
-    static const shared<const CB_Type> type; // type any
+    static const Shared<const CB_Type> type; // type any
     static constexpr void* _default_value = nullptr;
 
     CB_Any() { uid = type->uid; }
@@ -53,12 +53,12 @@ struct CB_Any : CB_Type {
 
 // Below: utilities version of any that can be used in c++
 
-struct any {
-    shared<const CB_Type> v_type; // the type of v
+struct Any {
+    Shared<const CB_Type> v_type; // the type of v
     void const* v_ptr = nullptr;
 
-    any() {} // default value
-    any(shared<const CB_Type> type, void const* ptr) : v_type{type}, v_ptr{ptr} {} // default value
+    Any() {} // default value
+    Any(Shared<const CB_Type> type, void const* ptr) : v_type{type}, v_ptr{ptr} {} // default value
 
     std::string toS() const {
         if (v_ptr) {
@@ -69,18 +69,18 @@ struct any {
         else return "---";
     }
 
-    any& operator=(const any& any) {
-        v_ptr = any.v_ptr;
-        v_type = any.v_type;
+    Any& operator=(const Any& Any) {
+        v_ptr = Any.v_ptr;
+        v_type = Any.v_type;
     }
-    any(const any& any) { *this = any; }
+    Any(const Any& Any) { *this = Any; }
 
-    any& operator=(any&& any) {
-        v_type = any.v_type;
-        v_ptr = any.v_ptr;
-        any.v_ptr = nullptr;
+    Any& operator=(Any&& Any) {
+        v_type = Any.v_type;
+        v_ptr = Any.v_ptr;
+        Any.v_ptr = nullptr;
     }
-    any(any&& any) { *this = std::move(any); }
+    Any(Any&& Any) { *this = std::move(Any); }
 
     bool has_value(const CB_Type& t) const {
         return t == *v_type && v_ptr != nullptr;

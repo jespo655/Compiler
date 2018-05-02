@@ -21,7 +21,7 @@ struct CB_Scope;
 struct Abstx_node
 {
     // should be set immediately on creation:
-    shared<Abstx_node> owner; // points to the parent node in the abstx tree
+    Shared<Abstx_node> owner; // points to the parent node in the abstx tree
     Token_context context;
     int start_token_index = -1; // Points to the first token in the expression
 
@@ -52,7 +52,7 @@ struct Abstx_node
     };
 
     // Set owner in a type safe way
-    template<typename T> void set_owner(const shared<T>& p)
+    template<typename T> void set_owner(const Shared<T>& p)
     {
         auto abstx_p = dynamic_pointer_cast<Abstx_node>(p);
         ASSERT(abstx_p != nullptr); // this checks for both if p is nullptr, and if T is a subclass of Abstx_node
@@ -63,10 +63,10 @@ struct Abstx_node
     virtual ~Abstx_node() {}
 
     // Return a pointer to the closest parent scope in the tree
-    virtual shared<CB_Scope> parent_scope() const;
+    virtual Shared<CB_Scope> parent_scope() const;
 
     // Return a pointer to the root parent scope in the tree
-    virtual shared<CB_Scope> global_scope();
+    virtual Shared<CB_Scope> global_scope();
 };
 
 
@@ -89,7 +89,7 @@ Modifiers: Generic
 
 Value_expression:
     Variable_expression
-    Literal (bool, int, string, float, seq, map)
+    Literal (bool, int, string, float, Seq, map)
     Function call
 
 Variable_expression:

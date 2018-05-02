@@ -11,8 +11,8 @@ while (b) {}
 
 struct While_statement : Statement {
 
-    owned<Value_expression> condition;
-    owned<CB_Scope> scope;
+    Owned<Value_expression> condition;
+    Owned<CB_Scope> scope;
 
     std::string toS() const override { return "while(){}"; }
 
@@ -38,7 +38,7 @@ struct While_statement : Statement {
             status = Parsing_status::DEPENDENCIES_NEEDED;
             return status;
         }
-        shared<const CB_Type> type = condition->get_type();
+        Shared<const CB_Type> type = condition->get_type();
         if (*type != *CB_Bool::type) {
             status = Parsing_status::TYPE_ERROR;
             return status;

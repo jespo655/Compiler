@@ -17,8 +17,8 @@ a, b := foo();  // The lhs and rhs count will not match if a function in rhs ret
 
 struct Declaration_statement : Statement {
 
-    seq<owned<Identifier>> identifiers;
-    seq<owned<Value_expression>> rhs;
+    Seq<Owned<Identifier>> identifiers;
+    Seq<Owned<Value_expression>> rhs;
 
     std::string toS() const override {
         ASSERT(identifiers.size > 0);
