@@ -26,7 +26,20 @@ struct Abstx_function : Value_expression
     Shared<Identifier> function_identifier; // contains the name and type of the function
     Seq<Owned<Function_arg>> in_args; // in arguments metadata
     Seq<Owned<Function_arg>> out_args; // out arguments metadata
-    Owned<CB_Scope> scope; // function scope
+    Owned<Abstx_scope> scope; // function scope
+
+    std::string toS() const override {
+        // @todo: write better toS()
+        return "function";
+    }
+
+    void add_arg(bool in, Shared<Identifier> id) {
+        Owned<Function_arg> arg = alloc(Function_arg());
+        arg->identifier = id;
+        arg->default_value = id->get_type()->default_value();
+        if (in) in_args.add(std::move(arg));
+        else out_args.add(std::move(arg));
+    }
 
     Shared<const CB_Type> get_type() override
     {
@@ -219,7 +232,7 @@ struct Function_instance {
     static CB_Type type; // Type "Function_pointer" - only here to conform to standard for a CB value. Special cases are needed elsewhere, to use function_type instead for type checking.
     Function_type function_type; // holds all metadata
 
-    CB_Scope function_scope;
+    Abstx_scope function_scope;
 
     void reset_function_scope() {
         // reset identifiers and imported scopes

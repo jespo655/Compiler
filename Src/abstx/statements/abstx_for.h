@@ -59,7 +59,7 @@ struct For_statement : Statement {
     double step = 1;
     Range_type range_type;
 
-    Owned<CB_Scope> scope;
+    Owned<Abstx_scope> scope;
 
     std::string toS() const override { return "while(){}"; }
 

@@ -112,7 +112,7 @@ static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
 
 
 // #include "../abstx/statements/scope.h"
-// CB_Type CB_Scope::type = CB_Type("scope", 0, CB_Scope());
+// CB_Type Abstx_scope::type = CB_Type("scope", 0, Abstx_scope());
 
 
 

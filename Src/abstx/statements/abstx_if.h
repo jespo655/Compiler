@@ -19,7 +19,7 @@ then {}
 struct Conditional_scope : Abstx_node {
 
     Owned<Value_expression> condition;
-    Owned<CB_Scope> scope;
+    Owned<Abstx_scope> scope;
 
     std::string toS() const override { return "if(){}"; }
 
@@ -76,8 +76,8 @@ struct Conditional_scope : Abstx_node {
 struct If_statement : Statement {
 
     Seq<Owned<Conditional_scope>> conditional_scopes;
-    Owned<CB_Scope> else_scope; // is entered if none of the conditional scopes are entered
-    // Owned<CB_Scope> then_scope; // is entered if not the else_scope is entered
+    Owned<Abstx_scope> else_scope; // is entered if none of the conditional scopes are entered
+    // Owned<Abstx_scope> then_scope; // is entered if not the else_scope is entered
 
     std::string toS() const override
     {

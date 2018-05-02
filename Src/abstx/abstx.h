@@ -10,7 +10,7 @@
 #include <ostream>
 #include <iostream> // for debug purposes
 
-struct CB_Scope;
+struct Abstx_scope;
 
 /*
     An Abstx_node is a node in the abstract syntax tree.
@@ -21,7 +21,7 @@ struct CB_Scope;
 struct Abstx_node
 {
     // should be set immediately on creation:
-    Shared<Abstx_node> owner; // points to the parent node in the abstx tree
+    Shared<Abstx_node> owner = nullptr; // points to the parent node in the abstx tree
     Token_context context;
     int start_token_index = -1; // Points to the first token in the expression
 
@@ -59,14 +59,20 @@ struct Abstx_node
         owner = abstx_p;
     }
 
+    // default constructor
+    Abstx_node() {}
+
+    // constructor that automatically sets owner
+    Abstx_node(Shared<Abstx_node> owner) : owner{owner} {}
+
     // Virtual destructor needed for polymorphism
     virtual ~Abstx_node() {}
 
     // Return a pointer to the closest parent scope in the tree
-    virtual Shared<CB_Scope> parent_scope() const;
+    virtual Shared<Abstx_scope> parent_scope() const;
 
     // Return a pointer to the root parent scope in the tree
-    virtual Shared<CB_Scope> global_scope();
+    virtual Shared<Abstx_scope> global_scope();
 };
 
 

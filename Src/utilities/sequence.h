@@ -109,12 +109,33 @@ struct Seq {
         }
     }
 
+    void set(uint32_t index, T&& t) {
+        ASSERT(v_ptr != nullptr);
+        ASSERT(capacity != 0);
+        if (index < size)
+            v_ptr[index] = t;
+        else {
+            while (index >= capacity) {
+                reallocate(2*capacity);
+            }
+            for (uint32_t i = size; i < index; ++i) {
+                new (&v_ptr[i]) T(); // fill with default values
+            }
+            new (&v_ptr[index]) T(std::move(t));
+            size = index+1;
+        }
+    }
+
     bool empty() const {
         return size == 0;
     }
 
     void add(const T& t) {
         set(size, t);
+    }
+
+    void add(T&& t) {
+        set(size, std::move(t));
     }
 
     void resize(uint32_t new_size, bool init=true, T default_value=T()) {

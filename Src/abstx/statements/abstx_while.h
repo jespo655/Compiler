@@ -12,7 +12,7 @@ while (b) {}
 struct While_statement : Statement {
 
     Owned<Value_expression> condition;
-    Owned<CB_Scope> scope;
+    Owned<Abstx_scope> scope;
 
     std::string toS() const override { return "while(){}"; }
 

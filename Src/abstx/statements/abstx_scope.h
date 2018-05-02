@@ -26,14 +26,14 @@ const flag SCOPE_ASYNC = 1;
 const flag SCOPE_DYNAMIC = 2;
 const flag SCOPE_SELF_CONTAINED = 3; // should be set if the scope never references identifiers outside itself.
 
-struct CB_Scope : Abstx_node //, CB_Object
+struct Abstx_scope : Abstx_node //, CB_Object
 {
     // static CB_Type type;
     Seq<Owned<Statement>> statements;
 
     std::map<std::string, Shared<Identifier>> identifiers; // id name -> id. Identifiers are Owned by their declaration statements.
 
-    Seq<Shared<CB_Scope>> imported_scopes;
+    Seq<Shared<Abstx_scope>> imported_scopes;
     Seq<Shared<Using_statement>> using_statements; // Used in the parsing process. Owned by the list of statements above. Once a using statement has been resolved, it should be returned from this list.
                                                    // FIXME: add a safeguard for when several using-statements tries to import the same scope.
     uint8_t flags = 0;
@@ -41,8 +41,8 @@ struct CB_Scope : Abstx_node //, CB_Object
     bool async() const { return flags == SCOPE_ASYNC; }
     bool self_contained() const { return flags == SCOPE_SELF_CONTAINED; }
 
-    CB_Scope() {}
-    CB_Scope(uint8_t flags) : flags{flags} {}
+    Abstx_scope() {}
+    Abstx_scope(uint8_t flags) : flags{flags} {}
 
     void debug_print(Debug_os& os, bool recursive=true) const override {
         os << "{ // " << toS() << std::endl;
@@ -55,7 +55,7 @@ struct CB_Scope : Abstx_node //, CB_Object
         os << "}" << std::endl;
     }
     std::string toS() const override { return dynamic()? "scope(d)" : "scope(s)"; }
-    // CB_Object* heap_copy() const override { CB_Scope* tp = new CB_Scope(); *tp = *this; return tp; }
+    // CB_Object* heap_copy() const override { Abstx_scope* tp = new Abstx_scope(); *tp = *this; return tp; }
 
     Shared<Identifier> get_identifier(const std::string& id, bool recursive=true)
     {
@@ -85,11 +85,11 @@ struct CB_Scope : Abstx_node //, CB_Object
         return p;
     }
 
-    // Shared<CB_Scope> get_scope(const std::string& id, bool recursive=true)
+    // Shared<Abstx_scope> get_scope(const std::string& id, bool recursive=true)
     // {
     //     auto p = get_identifier(id, recursive);
-    //     if (p == nullptr || *(p->type) != CB_Scope::type) return nullptr;
-    //     return &(p->value.value<CB_Scope>());
+    //     if (p == nullptr || *(p->type) != Abstx_scope::type) return nullptr;
+    //     return &(p->value.value<Abstx_scope>());
     //     return nullptr;
     // }
 
@@ -110,10 +110,10 @@ struct CB_Scope : Abstx_node //, CB_Object
                         if (scope.type == CB_String::type) {
                             ASSERT(false, "FIXME: string import");
                             // compile file, import its global scope
-                        // } else if (scope.type == CB_Scope::type) {
+                        // } else if (scope.type == Abstx_scope::type) {
                         //     // import the scope directly
                         //     ASSERT(false, "FIXME: scope import");
-                        //     // imported_scopes.add(scope.value<CB_Scope>());
+                        //     // imported_scopes.add(scope.value<Abstx_scope>());
                         } else {
                             log_error("Invalid type in using statement: expected string or scope, but found "+scope.type.toS(), us->context);
                             // if nullptr, eval should already have logged error
@@ -183,7 +183,7 @@ struct CB_Scope : Abstx_node //, CB_Object
 
 struct Anonymous_scope : Statement
 {
-    Owned<CB_Scope> scope;
+    Owned<Abstx_scope> scope;
 
     std::string toS() const override
     {
