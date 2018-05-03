@@ -3,7 +3,7 @@
 #include "cb_type.h"
 #include "cb_primitives.h"
 #include "cb_range.h"
-#include "unique_id.h"
+#include "../utilities/unique_id.h"
 
 /*
 CB_Seq: a dynamic sequence that stores the elements on the heap

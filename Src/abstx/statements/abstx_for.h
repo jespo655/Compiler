@@ -4,9 +4,7 @@
 #include "../abstx_scope.h"
 #include "../expressions/value_expression.h"
 #include "../../utilities/unique_id.h"
-
-#include "cb_range.h"
-#include "unique_id.h"
+#include "../../types/cb_range.h" // CB_Iterable
 
 /*
 for (n in range) {}
