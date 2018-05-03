@@ -30,7 +30,7 @@ struct CB_Any : CB_Type {
     void generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
         CB_Type::type->generate_type(os);
-        os << "type; void* v_ptr; } ";
+        os << " type; void* v_ptr; } ";
         generate_type(os);
         os << ";" << std::endl;
     }

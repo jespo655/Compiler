@@ -149,3 +149,10 @@ struct CB_Type
 
 };
 
+
+// functions to get build in types
+Shared<const CB_Type> get_built_in_type(const std::string& name); // slower, but more generic
+Shared<const CB_Type> get_built_in_type(uint32_t uid); // faster, but not as useful
+
+template<typename T> struct Seq; // forward declaration for get_built_in_types
+Shared<Seq<Shared<const CB_Type>>> get_built_in_types();

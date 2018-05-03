@@ -418,10 +418,10 @@ void abstx_test()
 {
     std::cout << "creating function type" << std::endl;
     CB_Function fn_type; // owned by some global list of types
-    fn_type.in_types.add(CB_i8::type);
-    fn_type.in_types.add(CB_Range::type);
-    fn_type.out_types.add(CB_Float::type);
-    fn_type.out_types.add(CB_Range::type);
+    fn_type.in_types.add(get_built_in_type("i8"));
+    fn_type.in_types.add(get_built_in_type("range"));
+    fn_type.out_types.add(get_built_in_type("float"));
+    fn_type.out_types.add(get_built_in_type("range"));
     fn_type.finalize();
 
 
@@ -437,10 +437,10 @@ void abstx_test()
     fn.scope = alloc(Abstx_function_scope());
     fn.scope->owner = &fn;
     std::cout << "adding identifiers to function scope" << std::endl;
-    fn.scope->add_identifier("in1", CB_i8::type);
-    fn.scope->add_identifier("in2", CB_Range::type);
-    fn.scope->add_identifier("out1", CB_Float::type);
-    fn.scope->add_identifier("out2", CB_Range::type);
+    fn.scope->add_identifier("in1", fn_type.in_types[0]);
+    fn.scope->add_identifier("in2", fn_type.in_types[1]);
+    fn.scope->add_identifier("out1", fn_type.out_types[0]);
+    fn.scope->add_identifier("out2", fn_type.out_types[1]);
     std::cout << "adding arguments from scope to function" << std::endl;
     fn.add_arg(true, fn.scope->get_identifier("in1"));
     fn.add_arg(true, fn.scope->get_identifier("in2"));
@@ -450,9 +450,13 @@ void abstx_test()
     Parsing_status ps = fn.finalize();
     if (is_codegen_ready(ps)) {
         std::cout << "generating code" << std::endl;
-        CB_i8::type->generate_typedef(std::cout);
-        CB_Range::type->generate_typedef(std::cout);
-        CB_Float::type->generate_typedef(std::cout);
+        for (const auto& type : *get_built_in_types()) {
+            // this should be done at the beginning of every compiled file (maybe only if the type is necessary?)
+            type->generate_typedef(std::cout);
+        }
+        // CB_i8::type->generate_typedef(std::cout);
+        // CB_Range::type->generate_typedef(std::cout);
+        // CB_Float::type->generate_typedef(std::cout);
         fn.generate_code(std::cout);
     } else {
         std::cout << "failed to finalize: " << ps << std::endl;

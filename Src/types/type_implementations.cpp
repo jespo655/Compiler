@@ -115,6 +115,62 @@ static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
 // CB_Type Abstx_scope::type = CB_Type("scope", 0, Abstx_scope());
 
 
+Seq<Shared<const CB_Type>> built_in_types;
+
+void build_static_type_seq() {
+    if (built_in_types.size > 0) return; // already built
+    built_in_types.add(&static_cb_type);
+    built_in_types.add(&static_cb_any);
+    built_in_types.add(&static_CB_Bool);
+    built_in_types.add(&static_CB_i8);
+    built_in_types.add(&static_CB_i16);
+    built_in_types.add(&static_CB_i32);
+    built_in_types.add(&static_CB_i64);
+    built_in_types.add(&static_CB_u8);
+    built_in_types.add(&static_CB_u16);
+    built_in_types.add(&static_CB_u32);
+    built_in_types.add(&static_CB_u64);
+    built_in_types.add(&static_CB_f32);
+    built_in_types.add(&static_CB_f64);
+    built_in_types.add(&static_CB_Int);
+    built_in_types.add(&static_CB_Uint);
+    built_in_types.add(&static_CB_Float);
+    built_in_types.add(&static_CB_Flag);
+    built_in_types.add(&static_cb_range);
+    built_in_types.add(&static_cb_string);
+    // only primitives - seq, set, function types and struct types are not included here
+}
+
+// slower, but more generic
+Shared<const CB_Type> get_built_in_type(const std::string& name)
+{
+    build_static_type_seq();
+    for (auto& type : built_in_types) {
+        // these two alternatives should be equivalent, but a map lookup should be faster
+        if (name == CB_Type::typenames[type->uid]) return type;
+        // if (name == type->toS()) return type;
+    }
+}
+
+// faster, but not as useful
+Shared<const CB_Type> get_built_in_type(uint32_t uid)
+{
+    build_static_type_seq();
+    for (auto& type : built_in_types) {
+        if (type->uid == uid) return type;
+    }
+}
+
+Shared<Seq<Shared<const CB_Type>>> get_built_in_types()
+{
+    build_static_type_seq();
+    return &built_in_types;
+}
+
+
+
+
+
 
 
 #ifdef TEST
