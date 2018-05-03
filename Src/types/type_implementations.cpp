@@ -71,9 +71,13 @@ PRIMITIVE_STATICS(CB_Float, "float", double);
 PRIMITIVE_STATICS(CB_Flag, "flag", uint8_t);
 
 #include "cb_range.h"
-constexpr double CB_Range::_default_value[2];
+constexpr int64_t CB_Range::_default_value[2];
 static const CB_Range static_cb_range("range", sizeof(CB_Range::_default_value), &CB_Range::_default_value);
 const Shared<const CB_Type> CB_Range::type = &static_cb_range;
+
+constexpr double CB_Float_range::_default_value[2];
+static const CB_Float_range static_cb_float_range("range", sizeof(CB_Float_range::_default_value), &CB_Float_range::_default_value);
+const Shared<const CB_Type> CB_Float_range::type = &static_cb_range;
 
 #include "cb_string.h"
 constexpr char CB_String::_default_str[];
@@ -182,6 +186,7 @@ void build_static_type_seq() {
     built_in_types[static_CB_Float.uid] = &static_CB_Float;
     built_in_types[static_CB_Flag.uid] = &static_CB_Flag;
     built_in_types[static_cb_range.uid] = &static_cb_range;
+    built_in_types[static_cb_float_range.uid] = &static_cb_float_range;
     built_in_types[static_cb_string.uid] = &static_cb_string;
     // only primitives - seq, set, function types and struct types are not included here
 }
@@ -258,6 +263,7 @@ int main()
     test_type(CB_Bool::type);
     test_type(CB_Flag::type);
     test_type(CB_Range::type);
+    test_type(CB_Float_range::type);
     test_type(CB_String::type);
 
     { CB_String type; test_type(&type); }

@@ -2,6 +2,8 @@
 
 #include "cb_type.h"
 #include "cb_primitives.h"
+#include "cb_range.h"
+#include "unique_id.h"
 
 /*
 CB_Seq: a dynamic sequence that stores the elements on the heap
@@ -13,9 +15,13 @@ a : T[] = [size=N: t1, t2, t3]; // T inferred from the type of the members
 a : T[] = [t1, t2, t3]; // T and N inferred
 */
 
+struct CB_Indexable {
+    virtual void generate_index_start(ostream& os, const std::string& id) const = 0;
+    virtual void generate_index_end(ostream& os) const = 0;
+};
 
 
-struct CB_Seq : CB_Type
+struct CB_Seq : CB_Type, CB_Iterable, CB_Indexable
 {
     struct c_representation { uint32_t size; uint32_t capacity; void* v_ptr; }; // void* is actually T*
     static constexpr c_representation _default_value = (c_representation){0, 0, nullptr};
@@ -87,12 +93,48 @@ struct CB_Seq : CB_Type
         os << "free " << id << ".v_ptr;" << std::endl;
     }
 
+    void generate_for(ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override {
+        uint64_t it_uid = get_unique_id();
+        if (!protected_scope) os << "{ "; // open brace to put unique iterator name out of scope for the rest of the program
+        // variable
+        v_type->generate_type(os);
+        if (!v_type->is_primitive()) os << " const*";
+        os << " " << it_name << ";";
+        // for start, unique it name
+        os << "for (size_t _it_" << it_uid << " = ";
+        if(reverse) os << id << ".size-1";
+        else os << "0";
+        os << "; ";
+        // array indexing
+        os << it_name << " = ";
+        if (!v_type->is_primitive()) os << "&";
+        generate_index_start(os, id);
+        os << "_it_" << it_uid;
+        generate_index_end(os);
+        // stop condition
+        os << ", _it_" << it_uid;
+        if(reverse) os << " >= 0";
+        else os << " < " << id << ".size";
+        // increment/decrement
+        os << "; _it_" << uid << (reverse?" -= ":" += ") << step << ")";
+    }
+    void generate_for_after_scope(ostream& os, bool protected_scope = true) const override {
+        if (!protected_scope) os << "}" << std::endl; // close the brace with unique iterator name
+    }
+
+    void generate_index_start(ostream& os, const std::string& id) const override {
+        os << id << ".v_ptr[";
+    }
+    void generate_index_end(ostream& os) const override {
+        os << "]";
+    }
+
 };
 
 
 
 
-struct CB_Fixed_seq : CB_Type
+struct CB_Fixed_seq : CB_Type, CB_Iterable, CB_Indexable
 {
     Shared<const CB_Type> v_type = nullptr;
     void* _default_value = nullptr;
@@ -174,6 +216,42 @@ struct CB_Fixed_seq : CB_Type
         v_type->generate_destructor(os, id+".v_ptr[_it]", depth+1);
         os << " }" << std::endl;
         os << "free " << id << ".v_ptr;" << std::endl;
+    }
+
+    void generate_for(ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override {
+        uint64_t it_uid = get_unique_id();
+        if(!protected_scope) os << "{ "; // open brace to put unique iterator name out of scope for the rest of the program
+        // variable
+        v_type->generate_type(os);
+        if (!v_type->is_primitive()) os << " const*";
+        os << " " << it_name << "; ";
+        // for start, unique it name
+        os << "for (size_t _it_" << it_uid << " = ";
+        if(reverse) os << size << "-1";
+        else os << "0";
+        os << "; ";
+        // array indexing
+        os << it_name << " = ";
+        if (!v_type->is_primitive()) os << "&";
+        generate_index_start(os, id);
+        os << "_it_" << it_uid;
+        generate_index_end(os);
+        // stop condition
+        os << ", _it_" << it_uid;
+        if(reverse) os << " >= 0";
+        else os << " < " << size;
+        // increment/decrement
+        os << "; _it_" << uid << (reverse?" -= ":" += ") << step << ")";
+    }
+    void generate_for_after_scope(ostream& os, bool protected_scope = true) const override {
+        if(!protected_scope) os << "}" << std::endl; // close the brace with unique iterator name
+    }
+
+    void generate_index_start(ostream& os, const std::string& id) const override {
+        os << id << "[";
+    }
+    void generate_index_end(ostream& os) const override {
+        os << "]";
     }
 };
 

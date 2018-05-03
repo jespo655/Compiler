@@ -87,6 +87,10 @@ struct Any {
     bool has_value(const CB_Type& t) const {
         return t == *v_type && v_ptr != nullptr;
     }
+
+    void generate_literal(ostream& os) const {
+        v_type->generate_literal(os, v_ptr);
+    }
 };
 
 

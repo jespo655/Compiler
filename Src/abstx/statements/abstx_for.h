@@ -5,6 +5,9 @@
 #include "../expressions/value_expression.h"
 #include "../../utilities/unique_id.h"
 
+#include "cb_range.h"
+#include "unique_id.h"
+
 /*
 for (n in range) {}
 for (n in range, step=s) {}
@@ -12,56 +15,18 @@ for (n in range, index=s) {}
 for (n in range, reverse) {}
 */
 
-// @TODO: WORK IN PROGRESS
+struct Abstx_for : Statement {
 
-struct For_range {
-    virtual void generate_code(std::ostream& target) = 0;
-};
-
-struct Int_range : For_range {
-
-};
-struct Double_range : For_range {
-    bool double_precision = false;
-};
-struct Seq_range : For_range {
-    std::string index_name = "_it";
-    int step = 1;
+    Owned<Abstx_identifier> range = nullptr; // type has to be subclass of CB_Iterable
+    Shared<const CB_Iterable> iterable_type = nullptr; // the type of range, put here for convenience
     bool reverse = false;
-
-    void generate_code(std::ostream& target) override {
-        // @todo: Seq.size, Seq[] should both be handled by something else
-
-        static auto uid = get_unique_id();
-        // Seq->type.generate_type(target);
-        // target << " " << index_name << ";" << std::endl;
-        // target << "for(size_t _it_" << uid << " = ";
-        // if (reverse) target << "Seq.size-1";
-        // else target << "0";
-        // target << "; " << index_name << " = " << "Seq.v_ptr[_it_" << uid << "], _it_" << uid;
-        // if (reverse) target << " >= 0; _it_" << uid << " -= ";
-        // else target << " < " << "Seq.size" << "; _it_" << uid << " += ";
-        // target << step << ") ";
-    }
-};
-
-struct For_statement : Statement {
-
-    enum Range_type {
-        INT_RANGE,
-        FLOAT_RANGE,
-        SEQ_RANGE
-    };
-
-    std::string index_name = "_it";
-    Owned<Value_expression> range; // range or sequence
-    bool reverse = false;
-    double step = 1;
-    Range_type range_type;
+    uint64_t step = 1;
+    bool anonymous_range = false; // if anonymous,
 
     Owned<Abstx_scope> scope;
+    Shared<Abstx_identifier> it; // owned by the scope
 
-    std::string toS() const override { return "while(){}"; }
+    std::string toS() const override { return "for(){}"; }
 
     void debug_print(Debug_os& os, bool recursive=true) const override
     {
@@ -81,22 +46,57 @@ struct For_statement : Statement {
     }
 
     Parsing_status finalize() override {
-        if (!is_codegen_ready(range->status)) status = Parsing_status::DEPENDENCIES_NEEDED;
-        else if (!is_codegen_ready(scope->status)) status = Parsing_status::DEPENDENCIES_NEEDED;
-        else status = Parsing_status::FULLY_RESOLVED;
+        if (is_codegen_ready(status)) return status;
+
+        // range
+        ASSERT(range != nullptr);
+        if (anonymous_range) {
+            range->name = "_range_" + std::to_string(get_unique_id());
+        }
+        if (!is_codegen_ready(range->finalize())) {
+            status = range->status;
+            return status;
+        }
+
+        // scope
+        ASSERT(scope != nullptr);
+        if (!is_codegen_ready(scope->finalize())) {
+            status = scope->status;
+            return status;
+        }
+
+        // it
+        ASSERT(it != nullptr);
+        if (!is_codegen_ready(it->status)) {
+            if (is_error(it->status)) status = it->status;
+            else status = Parsing_status::DEPENDENCIES_NEEDED;
+            return status;
+        }
+
+        status = Parsing_status::FULLY_RESOLVED;
         return status;
     }
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));
-        target << "for(";
-        switch(range_type) {
-            case INT_RANGE: break;
-            case FLOAT_RANGE: break;
-            case SEQ_RANGE: break;
+
+        if (anonymous_range) {
+            // declare range
+            target << "{ ";
+            range->generate_code(target);
+            target << " = ";
+            range->value.generate_literal(target);
+            target << "; ";
         }
 
+        iterable_type->generate_for(target, range->name, it->name, step, reverse, anonymous_range);
         scope->generate_code(target);
+        iterable_type->generate_for_after_scope(target);
+
+        if (anonymous_range) {
+            // close brace from before
+            target << "}" << std::endl;
+        }
     }
 
 };
