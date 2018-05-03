@@ -1,0 +1,26 @@
+
+#include "basic.cb" // contains print and basic int operators
+
+fn :: generate_primes() -> int[] {
+    primes : int[] = [2, 3, 5]; // dynamic sequence of primes initialized with a few primes
+    for (i in 7..1000 by 2) { // range for loop, from 7 to 1000 inclusive, stepping by 2
+        prime := true; // bool to indicate if i is prime
+        for (p in primes) { // sequence iteration, p will have every value in the sequence once
+            if (i%p == 0) {
+                prime = false;
+                break; // exit the for loop early
+            }
+        }
+        if (prime) {
+            primes.add(i); // adds i to the end of the sequence
+        }
+    }
+    return primes;
+};
+
+fn :: main() {
+    primes := generate_primes();
+    for (p in primes) {
+        print(p, " is prime!");
+    }
+}

@@ -1,0 +1,17 @@
+
+
+// compile time:
+
+#run fn() {
+    print("Hello, World!");
+};
+
+
+
+// run time:
+
+main :: fn() {
+    print("Hello, World!");
+};
+
+// entry point defaults a the function called "main" that takes no parameters.
