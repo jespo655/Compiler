@@ -30,7 +30,6 @@ struct Abstx_scope : Abstx_node
 {
     Seq<Owned<Statement>> statements;
 
-    std::map<std::string, Owned<CB_Type>> types; // type name -> id. the list of types defined in this scope
     std::map<std::string, Shared<Abstx_identifier>> identifiers; // id name -> id. Identifiers are owned by their declaration statements.
     std::map<std::string, Shared<Value_expression>> constant_values; // id name -> value. Values are owned by their declaration statements.
 
@@ -89,49 +88,21 @@ struct Abstx_scope : Abstx_node
     // returns nullpointer if an error occurred. Use add_note() to give additional context
     virtual Shared<const CB_Type> get_type(const std::string& id, bool recursive=true)
     {
-        Shared<const CB_Type> type = nullptr;
         // first: find the type identifier
-        // if the identifier is found, it must have type CB_Type, and the scope it is found in must own that type
-        // if the identifier is not found, it might be one of the built-in types
-
-        // example of types that is found here: struct types, all typedefs declared with ::
-
-        auto type_id = identifiers[id];
-
-        if (type_id != nullptr) {
-            if(*type_id->get_type() != *CB_Type::type) {
+        Shared<Abstx_identifier> type_id = get_identifier(id);
+        if (type_id) {
+            // the identifier was found -> it must have type CB_Type, and its value must be known at compile time
+            if (*type_id->get_type() != *CB_Type::type) {
                 log_error("non-type identifier " + type_id->toS() + " used as type", context);
                 status = Parsing_status::TYPE_ERROR;
                 return nullptr;
             }
-            type = (Shared<CB_Type>)types[id]; // double implicit cast not allowed in c++
-            ASSERT(type != nullptr);
-            return type;
+            uint32_t uid = parse_type_id(type_id->value);
+            return get_built_in_type(uid);
         }
 
-        if (recursive) {
-            // check parent scope
-            while (type == nullptr) {
-                auto parent = parent_scope();
-                if (parent == nullptr) break;
-                type = parent->get_type(id, recursive);
-            }
-
-            // check imported scopes
-            if (using_statements.size > 0) resolve_imports();
-            for (auto scope : imported_scopes) {
-                auto imported_type = scope->get_type(id, false);
-                if (type == nullptr) type = imported_type;
-                else {
-                    // FIXME: log error identifier clash
-                    // first found here: scope->context
-                }
-            }
-            if (type != nullptr) return type; // return type if found
-        }
-
-        // TODO: check builtin types
-        return type;
+        // the identifier was not found in the scope -> it might be one of the built-in types (or it doesn't exist)
+        return get_built_in_type(id);
     }
 
     // Shared<Abstx_scope> get_scope(const std::string& id, bool recursive=true)
