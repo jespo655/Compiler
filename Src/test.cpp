@@ -417,18 +417,22 @@ void code_gen_test()
 void abstx_test()
 {
     std::cout << "creating function type" << std::endl;
-    CB_Function fn_type; // owned by some global list of types
-    fn_type.in_types.add(get_built_in_type("i8"));
-    fn_type.in_types.add(get_built_in_type("range"));
-    fn_type.out_types.add(get_built_in_type("float"));
-    fn_type.out_types.add(get_built_in_type("range"));
-    fn_type.finalize();
-
+    Owned<CB_Function> owned_fn_type = alloc(CB_Function()); // owned by some global list of types
+    ASSERT(owned_fn_type);
+    owned_fn_type->in_types.add(get_built_in_type("i8"));
+    owned_fn_type->in_types.add(get_built_in_type("range"));
+    owned_fn_type->out_types.add(get_built_in_type("float"));
+    owned_fn_type->out_types.add(get_built_in_type("range"));
+    owned_fn_type->finalize();
+    ASSERT(owned_fn_type);
+    std::cout << "adding complex type" << std::endl;
+    Shared<const CB_Function> fn_type = add_complex_type(std::move(owned_fn_type));
+    ASSERT(fn_type);
 
     std::cout << "creating abstx function id" << std::endl;
     Abstx_identifier fn_id; // owned by the scope it is defined in
     fn_id.name = "foo";
-    fn_id.cb_type = &fn_type;
+    fn_id.cb_type = static_pointer_cast<const CB_Type>(fn_type);
     fn_id.finalize();
 
     std::cout << "creating abstx function" << std::endl;
@@ -437,10 +441,10 @@ void abstx_test()
     fn.scope = alloc(Abstx_function_scope());
     fn.scope->owner = &fn;
     std::cout << "adding identifiers to function scope" << std::endl;
-    fn.scope->add_identifier("in1", fn_type.in_types[0]);
-    fn.scope->add_identifier("in2", fn_type.in_types[1]);
-    fn.scope->add_identifier("out1", fn_type.out_types[0]);
-    fn.scope->add_identifier("out2", fn_type.out_types[1]);
+    fn.scope->add_identifier("in1", fn_type->in_types[0]);
+    fn.scope->add_identifier("in2", fn_type->in_types[1]);
+    fn.scope->add_identifier("out1", fn_type->out_types[0]);
+    fn.scope->add_identifier("out2", fn_type->out_types[1]);
     std::cout << "adding arguments from scope to function" << std::endl;
     fn.add_arg(true, fn.scope->get_identifier("in1"));
     fn.add_arg(true, fn.scope->get_identifier("in2"));
@@ -450,13 +454,7 @@ void abstx_test()
     Parsing_status ps = fn.finalize();
     if (is_codegen_ready(ps)) {
         std::cout << "generating code" << std::endl;
-        for (const auto& type : *get_built_in_types()) {
-            // this should be done at the beginning of every compiled file (maybe only if the type is necessary?)
-            type->generate_typedef(std::cout);
-        }
-        // CB_i8::type->generate_typedef(std::cout);
-        // CB_Range::type->generate_typedef(std::cout);
-        // CB_Float::type->generate_typedef(std::cout);
+        generate_typedefs(std::cout);
         fn.generate_code(std::cout);
     } else {
         std::cout << "failed to finalize: " << ps << std::endl;

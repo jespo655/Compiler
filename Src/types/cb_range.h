@@ -26,6 +26,8 @@ struct CB_Range : CB_Type {
 
     virtual size_t alignment() const override { return CB_f64::type->alignment(); }
 
+    void generate_type(ostream& os) const override { os << "_cb_range"; }
+
     void generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
         CB_f64::type->generate_type(os);

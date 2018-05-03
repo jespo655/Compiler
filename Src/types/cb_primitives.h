@@ -10,6 +10,7 @@ struct cpp_type : CB_Type { \
     cpp_type(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {} \
     std::string toS() const override { return tos; } \
     bool is_primitive() const override { return true; } \
+    void generate_type(ostream& os) const override { os << "_cb_" << tos; } \
     void generate_typedef(ostream& os) const override { \
         os << "typedef " << #c_type << " "; \
         generate_type(os); \

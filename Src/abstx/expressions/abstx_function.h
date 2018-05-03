@@ -1,7 +1,7 @@
 #pragma once
 
-#include "abstx_statement.h"
-#include "abstx_scope.h"
+#include "../statements/abstx_statement.h"
+#include "../abstx_scope.h"
 #include "../../types/cb_function.h"
 #include "../../utilities/pointers.h"
 
@@ -75,7 +75,11 @@ struct Abstx_function : Value_expression
         }
 
         // check arguments (the same way as function_identifier, but also check type)
-        ASSERT(in_args.size == fn_type->in_types.size); // @todo this should maybe give a compile error / status TYPE_ERROR
+        if (in_args.size != fn_type->in_types.size) {
+            log_error("type mismatch in function in types: wrong number of in parameters", context);
+            status = Parsing_status::TYPE_ERROR;
+            return status;
+        }
         size_t index = 0;
         for (const auto& fa : in_args) {
             if (!is_codegen_ready(fa->identifier->status)) {
@@ -88,13 +92,19 @@ struct Abstx_function : Value_expression
                 return status;
             }
             if (*fa->identifier->cb_type != *fn_type->in_types[index]) {
-                log_error("type mismatch in function in types", context); // @todo: write better error message, including which types are mismatching
+                log_error("type mismatch in function in types", context);
+                add_note("argument is of type " + fa->identifier->cb_type->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
                 status = Parsing_status::TYPE_ERROR;
                 return status;
             }
             index++;
         }
-        ASSERT(out_args.size == fn_type->out_types.size); // @todo this should maybe give a compile error / status TYPE_ERROR
+
+        if (out_args.size != fn_type->out_types.size) {
+            log_error("type mismatch in function out types: wrong number of out parameters", context);
+            status = Parsing_status::TYPE_ERROR;
+            return status;
+        }
         index = 0;
         for (const auto& fa : out_args) {
             if (!is_codegen_ready(fa->identifier->status)) {
@@ -108,6 +118,7 @@ struct Abstx_function : Value_expression
             }
             if (*fa->identifier->cb_type != *fn_type->out_types[index]) {
                 log_error("type mismatch in function out types", context); // @todo: write better error message, including which types are mismatching
+                add_note("argument is of type " + fa->identifier->cb_type->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
                 status = Parsing_status::TYPE_ERROR;
                 return status;
             }

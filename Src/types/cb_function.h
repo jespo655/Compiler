@@ -188,10 +188,20 @@ struct CB_Function : CB_Type
 
     // code generation functions
     void generate_typedef(ostream& os) const override {
-        os << "typedef void(";
+        os << "typedef void(*";
         generate_type(os);
-        os << "*)(";
-        // TODO: output arg types
+        os << ")(";
+        for (int i = 0; i < in_types.size; ++i) {
+            if (i) os << ", ";
+            in_types[i]->generate_type(os);
+            if (!in_types[i]->is_primitive()) os << " const*";
+        }
+        if (in_types.size > 0 && out_types.size > 0) os << ", ";
+        for (int i = 0; i < out_types.size; ++i) {
+            if (i) os << ", ";
+            out_types[i]->generate_type(os);
+            os << "*";
+        }
         os << ");" << std::endl;
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {

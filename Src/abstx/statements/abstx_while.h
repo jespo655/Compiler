@@ -1,7 +1,7 @@
 #pragma once
 
 #include "abstx_statement.h"
-#include "abstx_scope.h"
+#include "../abstx_scope.h"
 #include "../expressions/value_expression.h"
 #include "../../types/cb_primitives.h"
 

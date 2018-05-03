@@ -27,6 +27,8 @@ struct CB_String : CB_Type {
 
     bool is_primitive() const override { return true; }
 
+    void generate_type(ostream& os) const override { os << "_cb_string"; }
+
     void generate_typedef(ostream& os) const override {
         // for now, just use regular null-terminated char*
         os << "typedef char* ";

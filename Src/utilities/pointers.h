@@ -64,11 +64,12 @@ However, that gives lots of problems with template classes such as Seq<OP> and a
 
 */
 
+// forward declarations
+template<typename T> struct Shared;
 template<typename T> struct Owned;
 template<typename T> Owned<T> alloc(const T& t);
 template<typename T> Owned<T> alloc(T&& t);
 template<typename T, bool> struct deep_copy;
-
 
 
 // owning pointer - owns the object and deallocates it when done.
@@ -94,7 +95,8 @@ struct Owned {
 
     T* operator->() const { ASSERT(v != nullptr); return v; }
     T& operator*() const { ASSERT(v != nullptr); return *v; }
-    operator bool() const { return v != nullptr; }
+    explicit operator bool() const { return v != nullptr; } // Operator bool is super dangerous with pointers, since true/false are also valid pointer values. These have to be explicit!
+    operator Shared<T>() const;
     explicit operator T*() const { return v; }
 
     // copy - not allowed (makes a deep copy?). If passing a owned_ptr to a function, move constructor should be used. (In CB this will be done automatically)
@@ -179,8 +181,8 @@ struct Shared {
 
     T* operator->() const { ASSERT(v != nullptr); return v; }
     T& operator*() const { ASSERT(v != nullptr); return *v; }
-    operator bool() const { return v != nullptr; }
-    operator Shared<const T>() const { Shared<const T>(v); }
+    explicit operator bool() const { return v != nullptr; } // Operator bool is super dangerous with pointers, since true/false are also valid pointer values. These have to be explicit!
+    operator Shared<const T>() const { return Shared<const T>(v); }
     explicit operator T*() const { return v; }
 
     // copy
@@ -242,10 +244,17 @@ Shared<T> static_pointer_cast(const Shared<T2>& ptr) {
 }
 
 template<typename T, typename T2>
-Owned<T> owning_pointer_cast(Owned<T2>&& ptr) {
+Owned<T> owned_dynamic_cast(Owned<T2>&& ptr) {
     auto p = Owned<T>(dynamic_cast<T*>(ptr.v));
     if (p.v != nullptr) ptr.v = nullptr;
     return p;
 }
 
+template<typename T, typename T2>
+Owned<T> owned_static_cast(Owned<T2>&& ptr) {
+    auto p = Owned<T>(static_cast<T*>(ptr.v));
+    if (p.v != nullptr) ptr.v = nullptr;
+    return p;
+}
 
+template<typename T> Owned<T>::operator Shared<T>() const { return Shared<T>(v); }

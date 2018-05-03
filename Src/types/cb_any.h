@@ -26,6 +26,8 @@ struct CB_Any : CB_Type {
 
     bool is_primitive() const override { return false; }
 
+    void generate_type(ostream& os) const override { os << "_cb_any"; }
+
     // code generation functions
     void generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
@@ -87,6 +89,13 @@ struct Any {
     }
 };
 
+
+// functions to parse Any data to c++ native types in a typesafe way
+
+uint32_t parse_type_id(const Any& any);
+std::string parse_string(const Any& any);
+int64_t parse_int(const Any& any);
+uint64_t parse_uint(const Any& any);
 
 
 

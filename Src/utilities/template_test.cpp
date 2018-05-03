@@ -8,16 +8,19 @@
 // #include "../types/function.h"
 #include <iostream>
 #include <string>
+#include <iomanip>
+
+
 
 
 struct S {
     int i = 2;
-    virtual std::string toS() { return "S";}
+    virtual std::string toS() const { return "S";}
 };
 
 struct S2 : S {
     int stat = 2;
-    std::string toS() override { return "S2";}
+    std::string toS() const override { return "S2";}
 };
 
 struct Q { int j; };
@@ -27,22 +30,62 @@ struct TS
 {
     constexpr static int stat = 3;
     T t;
-    std::string toS() { return "TS";}
+    std::string toS() const { return "TS";}
 };
+
+
+Shared<const S> super_foo(Owned<S>&& type) {
+    std::cout << "    type: " << std::hex << type.v << std::endl;
+    Owned<S> o = std::move(type);
+    std::cout << "    !type: " << std::hex << type.v << std::endl;
+    std::cout << "    o: " << std::hex << o.v << std::endl;
+    return (Shared<S>)o; // double cast
+}
+
+template<typename T>
+Shared<const T> template_foo(Owned<T>&& type) {
+    std::cout << "  type: " << std::hex << type.v << std::endl;
+    Owned<S> o = owned_static_cast<S>(std::move(type));
+    std::cout << "  o: " << std::hex << o.v << std::endl;
+    Shared<const S> p = super_foo(std::move(o));
+    std::cout << "  p: " << std::hex << p.v << std::endl;
+    Shared<const T> p2 = static_pointer_cast<const T>(p);
+    std::cout << "  p2: " << std::hex << p2.v << std::endl;
+    return p2;
+}
+
+void pointer_test()
+{
+    Owned<S2> o = alloc(S2());
+    std::cout << std::hex << o.v << std::endl;
+    ASSERT(o);
+    std::cout << "o: " << std::hex << o.v << std::endl;
+    Shared<const S2> s = template_foo(std::move(o));
+    ASSERT(s);
+    ASSERT(!o);
+    std::cout << "s: " << std::hex << s.v << std::endl;
+    std::cout << "!o: " << std::hex << o.v << std::endl;
+    // std::cout << s->toS() << std::endl;
+}
+
+
+
 
 int main()
 {
-    S s;
-    S2 s2;
+    pointer_test();
 
-    Shared<S> sp = &s;
-    Shared<S> sp2 = &s2;
+    // S s;
+    // S2 s2;
 
-    Shared<S> sp3 = sp2;
+    // Shared<S> sp = &s;
+    // Shared<S> sp2 = &s2;
 
-    std::cout << sp->toS() << std::endl;
-    std::cout << sp2->toS() << std::endl;
-    std::cout << sp3->toS() << std::endl;
+    // Shared<S> sp3 = sp2;
+
+    // std::cout << sp->toS() << std::endl;
+    // std::cout << sp2->toS() << std::endl;
+    // std::cout << sp3->toS() << std::endl;
 
 
 
@@ -84,5 +127,6 @@ int main()
     // std::cout << "1: " << f1.toS() << ", " << f1.uid << "; " << f2.toS() << ", " << f2.uid << std::endl;
 
 }
+
 
 #endif

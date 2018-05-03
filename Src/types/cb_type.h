@@ -86,9 +86,9 @@ struct CB_Type
 {
     static const Shared<const CB_Type> type; // self reference / CB_Type
     static constexpr uint32_t _default_value = 0;
-    static std::map<int, std::string> typenames; // mapped from uid to name. Only compile time.
-    static std::map<int, Any> default_values; // mapped from uid to value. Only compile time.
-    static std::map<int, size_t> cb_sizes; // mapped from uid to size. Only compile time.
+    static std::map<uint32_t, std::string> typenames; // mapped from uid to name. Only compile time.
+    static std::map<uint32_t, Any> default_values; // mapped from uid to value. Only compile time.
+    static std::map<uint32_t, size_t> cb_sizes; // mapped from uid to size. Only compile time.
 
     uint32_t uid;
 
@@ -124,7 +124,10 @@ struct CB_Type
     }
 
     // code generation functions
-    virtual void generate_type(ostream& os) const { os << "_cb_type_" << uid; }
+    virtual void generate_type(ostream& os) const {
+        os << "_cb_type";
+        if (uid != type->uid) os << "_" << uid;
+    }
     virtual void generate_typedef(ostream& os) const {
         os << "typedef uint32_t ";
         generate_type(os);
@@ -149,10 +152,23 @@ struct CB_Type
 
 };
 
+// function to parse type ids from compile time code execution
+uint32_t parse_type_id(const Any& any);
 
 // functions to get build in types
 Shared<const CB_Type> get_built_in_type(const std::string& name); // slower, but more generic
 Shared<const CB_Type> get_built_in_type(uint32_t uid); // faster, but not as useful
 
-template<typename T> struct Seq; // forward declaration for get_built_in_types
-Shared<Seq<Shared<const CB_Type>>> get_built_in_types();
+// function to add complex built-in types (CB_Function, CB_Pointer, CB_Seq or CB_Struct)
+Shared<const CB_Type> add_complex_cb_type(Owned<CB_Type>&& type);
+
+template<typename T>
+Shared<const T> add_complex_type(Owned<T>&& type) {
+    type->finalize(); // just to be sure uid is correct
+    Owned<CB_Type> cb_type = owned_static_cast<CB_Type>(std::move(type));
+    Shared<const CB_Type> p = add_complex_cb_type(std::move(cb_type));
+    return static_pointer_cast<const T>(p);
+}
+
+// function to generate typedef for all built-in types
+void generate_typedefs(std::ostream& os);
