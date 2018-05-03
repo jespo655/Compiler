@@ -22,9 +22,31 @@ Shared<Abstx_scope> Abstx_node::global_scope()
 }
 
 
+// data structure to keep allocated void pointers until the program exits
+struct Constant_data_container
+{
+    std::map<void*,void*> data; // void* mapped to itself
 
+    ~Constant_data_container() {
+        for (auto& p : data){
+            free(p.second);
+            p.second = nullptr;
+        }
+    }
+    void add_constant_data(void* p) {
+        data[p] = p;
+    }
+    void free_constant_data(void* p) {
+        free(data[p]);
+        data[p] = nullptr;
+    }
+};
 
+static Constant_data_container _constant_data_container;
 
+void add_constant_data(void* p) { _constant_data_container.add_constant_data(p); }
+void free_constant_data(void* p) { _constant_data_container.free_constant_data(p); }
+void free_all_constant_data() { _constant_data_container.~Constant_data_container(); }
 
 
 
