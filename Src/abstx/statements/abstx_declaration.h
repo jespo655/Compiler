@@ -32,16 +32,16 @@ struct Abstx_declaration : Statement {
             if (!first) oss << ", ";
             oss << id->name;
             first = false;
-            if (id->cb_type == nullptr) all_typed = false;
+            if (id->get_type() == nullptr) all_typed = false;
         }
         if (all_typed) {
             oss << " : ";
             first = true;
             for (auto& id : identifiers) {
                 ASSERT(id != nullptr);
-                ASSERT(id->cb_type != nullptr);
+                ASSERT(id->get_type() != nullptr);
                 if (!first) oss << ", ";
-                oss << id->cb_type->toS();
+                oss << id->get_type()->toS();
                 first = false;
             }
         } else {
@@ -91,7 +91,7 @@ struct Abstx_declaration : Statement {
         if (rhs.empty()) {
             // explicit uninitialized
             for (int i = 0; i < identifiers.size; ++i) {
-                identifiers[i]->cb_type->generate_type(target);
+                identifiers[i]->get_type()->generate_type(target);
                 target << " ";
                 identifiers[i]->generate_code(target); // this should be a variable name
                 target << ";" << std::endl;
@@ -99,7 +99,7 @@ struct Abstx_declaration : Statement {
         } else {
             ASSERT(identifiers.size == rhs.size);
             for (int i = 0; i < rhs.size; ++i) {
-                identifiers[i]->cb_type->generate_type(target);
+                identifiers[i]->get_type()->generate_type(target);
                 target << " ";
                 identifiers[i]->generate_code(target); // this should be a valid c style lvalue
                 target << " = ";

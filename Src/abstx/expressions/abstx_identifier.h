@@ -7,21 +7,21 @@
 
 
 struct Abstx_identifier : Variable_expression {
-    Shared<const CB_Type> cb_type = nullptr; // nullptr if not yet inferred
     std::string name = "";
-    // any value; // For default value, use cb_type.default_value() (@todo should this even be here?)
+    Any value; // might not have an actual value, but must have a type. Constant declared identifiers must have a value
 
     std::string toS() const override {
         ASSERT(name.length() > 0);
         std::ostringstream oss;
         oss << name << ":";
-        if (cb_type == nullptr) oss << "???";
-        else oss << cb_type->toS();
+        if (value.v_type == nullptr) oss << "???";
+        else oss << value.v_type->toS();
+        if (value.v_ptr != nullptr) oss << "=" << value.toS();
         return oss.str();
     }
 
     virtual Shared<const CB_Type> get_type() override {
-        return cb_type;
+        return value.v_type;
     }
 
     Parsing_status finalize() override {

@@ -57,7 +57,7 @@ struct CB_Any : CB_Type {
 
 struct Any {
     Shared<const CB_Type> v_type; // the type of v
-    void const* v_ptr = nullptr;
+    void const* v_ptr = nullptr; // the value, owned by someone else (do not delete it!)
 
     Any() {} // default value
     Any(Shared<const CB_Type> type, void const* ptr) : v_type{type}, v_ptr{ptr} {} // default value

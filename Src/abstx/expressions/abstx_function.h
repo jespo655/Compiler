@@ -65,7 +65,7 @@ struct Abstx_function : Value_expression
         }
 
         // type is finalized -> get a pointer to it so we can typecheck arguments
-        Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_identifier->cb_type);
+        Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_identifier->get_type());
         ASSERT(fn_type != nullptr);
 
         // check function scope. This also finalizes all argument identifiers
@@ -91,9 +91,9 @@ struct Abstx_function : Value_expression
                 }
                 return status;
             }
-            if (*fa->identifier->cb_type != *fn_type->in_types[index]) {
+            if (*fa->identifier->get_type() != *fn_type->in_types[index]) {
                 log_error("type mismatch in function in types", context);
-                add_note("argument is of type " + fa->identifier->cb_type->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
+                add_note("argument is of type " + fa->identifier->get_type()->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
                 status = Parsing_status::TYPE_ERROR;
                 return status;
             }
@@ -116,9 +116,9 @@ struct Abstx_function : Value_expression
                 }
                 return status;
             }
-            if (*fa->identifier->cb_type != *fn_type->out_types[index]) {
+            if (*fa->identifier->get_type() != *fn_type->out_types[index]) {
                 log_error("type mismatch in function out types", context); // @todo: write better error message, including which types are mismatching
-                add_note("argument is of type " + fa->identifier->cb_type->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
+                add_note("argument is of type " + fa->identifier->get_type()->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
                 status = Parsing_status::TYPE_ERROR;
                 return status;
             }
@@ -140,9 +140,9 @@ struct Abstx_function : Value_expression
         for (int i = 0; i < in_args.size; ++i) {
             const auto& arg = in_args[i];
             if (i) target << ", ";
-            arg->identifier->cb_type->generate_type(target);
+            arg->identifier->get_type()->generate_type(target);
             target << " ";
-            if (!arg->identifier->cb_type->is_primitive()) {
+            if (!arg->identifier->get_type()->is_primitive()) {
                 target << "const* "; // pass primitives by value; non-primitives by const pointer
             }
             arg->identifier->generate_code(target);
@@ -151,7 +151,7 @@ struct Abstx_function : Value_expression
         for (int i = 0; i < out_args.size; ++i) {
             const auto& arg = out_args[i];
             if (i) target << ", ";
-            arg->identifier->cb_type->generate_type(target);
+            arg->identifier->get_type()->generate_type(target);
             target << "* "; // always pass non-cost pointer to the original value
             arg->identifier->generate_code(target);
         }

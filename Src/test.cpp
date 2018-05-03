@@ -432,7 +432,7 @@ void abstx_test()
     std::cout << "creating abstx function id" << std::endl;
     Abstx_identifier fn_id; // owned by the scope it is defined in
     fn_id.name = "foo";
-    fn_id.cb_type = static_pointer_cast<const CB_Type>(fn_type);
+    fn_id.value.v_type = static_pointer_cast<const CB_Type>(fn_type);
     fn_id.finalize();
 
     std::cout << "creating abstx function" << std::endl;

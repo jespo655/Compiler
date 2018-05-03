@@ -99,7 +99,7 @@ struct Abstx_scope : Abstx_node
         auto type_id = identifiers[id];
 
         if (type_id != nullptr) {
-            if(*type_id->cb_type != *CB_Type::type) {
+            if(*type_id->get_type() != *CB_Type::type) {
                 log_error("non-type identifier " + type_id->toS() + " used as type", context);
                 status = Parsing_status::TYPE_ERROR;
                 return nullptr;
@@ -246,7 +246,7 @@ struct Abstx_function_scope : Abstx_scope
     void add_identifier(const std::string& name, Shared<const CB_Type> type) {
         Owned<Abstx_identifier> id = alloc(Abstx_identifier());
         id->name = name;
-        id->cb_type = type;
+        id->value.v_type = type;
         id->owner = this;
         fn_identifiers[name] = (std::move(id));
     }

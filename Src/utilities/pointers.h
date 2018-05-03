@@ -165,7 +165,7 @@ template<typename T> struct deep_copy<T,false> { // non-copy constructible - dee
 // sharing pointer - never deallocates the object
 // shares happily with other sharing pointers
 // can not be created from an object, only from other pointers
-template<typename T> // T is a CB type
+template<typename T>
 struct Shared {
     T* v = nullptr;
 
@@ -198,6 +198,8 @@ struct Shared {
     Shared& operator=(const nullptr_t& ptr) { ASSERT(ptr == nullptr); v = ptr; return *this; }
     Shared(const nullptr_t& ptr) { *this = ptr; }
 };
+
+
 
 // comparison betweens different kinds of pointers
 template<typename T> bool operator==(const Shared<T>& lhs, const Shared<T>& rhs) { return lhs.v == rhs.v; }

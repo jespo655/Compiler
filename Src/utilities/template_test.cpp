@@ -75,6 +75,10 @@ int main()
 {
     pointer_test();
 
+    Shared<void> s;
+    void* v = s.v;
+    // Owned<void> o;
+
     // S s;
     // S2 s2;
 
