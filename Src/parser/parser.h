@@ -39,6 +39,9 @@ Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> pare
 // maybe should this also return only Parsing_status?
 Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 
+Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope);
+Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope);
+
 
 
 /*
