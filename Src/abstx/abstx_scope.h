@@ -266,6 +266,8 @@ struct Abstx_function_scope : Abstx_scope
     }
 
     Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+
         for (const auto& id : fn_identifiers) {
             if (!is_codegen_ready(id.second->finalize())) {
                 status = id.second->status;
@@ -283,16 +285,37 @@ struct Abstx_function_scope : Abstx_scope
 // An anonymous scope is a statement that just consists of a scope literal.
 // That begins a new anonymous scope with the current scope as its owner / parent.
 // The dynamic-flag is inherited from the current scope.
-
+// Only allowed in a dynamic context (unnamed scopes makes no sense in static context)
 struct Abstx_anonymous_scope : Statement
 {
-    Owned<Abstx_scope> scope;
+    Owned<Abstx_scope> scope = nullptr;
 
     std::string toS() const override
     {
         ASSERT(scope != nullptr);
         return scope->toS();
     }
+
+    Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+        if (is_error(status) && scope == nullptr) return status;
+
+        ASSERT(scope != nullptr);
+        if (!is_codegen_ready(scope->finalize())) {
+            status = scope->status;
+            return status;
+        }
+
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+
+    void generate_code(std::ostream& target) override {
+        ASSERT(is_codegen_ready(status));
+        scope->generate_code(target);
+        status = Parsing_status::CODE_GENERATED;
+    };
+
 };
 
 

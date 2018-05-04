@@ -44,7 +44,7 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
 
     } else if (it->type == Token_type::SYMBOL && it->token == "{") {
         // nested scope
-        return read_anonymous_static_scope(it, parent_scope);
+        return read_anonymous_scope(it, parent_scope);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "if") {
         // if statement
@@ -137,8 +137,63 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
 }
 
 
-// temporary implementations implement these
-Parsing_status read_anonymous_static_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
+
+Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    it.assert_current(Token_type::SYMBOL, "{"); // checked previously
+
+    Owned<Abstx_anonymous_scope> o = alloc(Abstx_anonymous_scope()); // owned pointer, this will be destroyed when we move it into the scopes list of statments
+    Shared<Abstx_anonymous_scope> s = o; // shared pointer that we can use and modify however we like
+    s->set_owner(parent_scope);
+    s->context = it->context;
+    s->start_token_index = it.current_index;
+
+    if (!parent_scope->dynamic()) {
+        // only allowed in dynamic context
+        log_error("Anonymous scope used in static context. That makes no sense! Did you mean \"using {...};\"?", it->context);
+        s->status = Parsing_status::SYNTAX_ERROR;
+    } else {
+        // create scope
+        s->scope = alloc(Abstx_scope(parent_scope->flags));
+        s->scope->set_owner(s);
+        s->scope->context = it->context;
+        s->scope->start_token_index = it.current_index;
+
+        // parse and resolve all statements in the scope
+        Parsing_status status = Parsing_status::NOT_PARSED;
+        while (!is_error(status) && !it.compare(Token_type::SYMBOL, "}")) {
+            status = read_statement(it, s->scope);
+            // fatal error -> give up
+            // other error -> failed to parse dynamic scope, but we can continue with other stuff if we find the closing brace
+            if (is_error(status) && !is_fatal(status)) {
+                it.current_index = it.find_matching_brace(s->start_token_index);
+                if (it.expect_failed()) {
+                    s->scope->status = Parsing_status::FATAL_ERROR;
+                } else {
+                    s->scope->status = status;
+                }
+                break;
+            }
+            if (is_eof(it->type)) {
+                log_error("Unexpected end of file in the middle of a scope", it->context);
+                add_note("In anonymous scope that started here", s->context);
+                s->scope->status = Parsing_status::FATAL_ERROR;
+                break;
+            }
+        }
+        if (!is_fatal(s->scope->status)) {
+            it.assert(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
+        }
+        s->status = s->scope->status;
+        parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
+        ASSERT(o == nullptr);
+    }
+    ASSERT(s != nullptr);
+    return s->status;
+}
+
+
+
+// temporary implementations, TODO: implement these
 Parsing_status read_if_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_for_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_while_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }

@@ -230,9 +230,9 @@ struct Token_iterator
     int find_matching_paren(int index=-1)
     {
         if (index == -1) index = current_index;
-        ASSERT(index >= 0 && index < tokens.size && tokens[index].type == Token_type::SYMBOL);
-        // ASSERT(tokens[index].token == "(" || tokens[index].token == ")");
-        if (tokens[index].token == ")")
+        ASSERT(index >= 0 && index < tokens.size);
+        // ASSERT(tokens[index].type == Token_type::SYMBOL && (tokens[index].token == "(" || tokens[index].token == ")"));
+        if (tokens[index].type == Token_type::SYMBOL && tokens[index].token == ")")
              return find_matching_token(index-1, Token_type::SYMBOL, "(","paren","Mismatched paren", false); // search backwards
         else return find_matching_token(index+1, Token_type::SYMBOL, ")","paren","Mismatched paren");
     }
@@ -240,9 +240,9 @@ struct Token_iterator
     int find_matching_bracket(int index=-1)
     {
         if (index == -1) index = current_index;
-        ASSERT(index >= 0 && index < tokens.size && tokens[index].type == Token_type::SYMBOL);
-        // ASSERT(tokens[index].token == "[" || tokens[index].token == "]");
-        if (tokens[index].token == "]")
+        ASSERT(index >= 0 && index < tokens.size);
+        // ASSERT(tokens[index].type == Token_type::SYMBOL && (tokens[index].token == "[" || tokens[index].token == "]"));
+        if (tokens[index].type == Token_type::SYMBOL && tokens[index].token == "]")
              return find_matching_token(index-1, Token_type::SYMBOL, "[","bracket","Mismatched bracket", false); // search backwards
         else return find_matching_token(index+1, Token_type::SYMBOL, "]","bracket","Mismatched bracket");
     }
@@ -250,9 +250,9 @@ struct Token_iterator
     int find_matching_brace(int index=-1)
     {
         if (index == -1) index = current_index;
-        ASSERT(index >= 0 && index < tokens.size && tokens[index].type == Token_type::SYMBOL);
-        // ASSERT(tokens[index].token == "{" || tokens[index].token == "}");
-        if (tokens[index].token == "}")
+        ASSERT(index >= 0 && index < tokens.size);
+        // ASSERT(tokens[index].type == Token_type::SYMBOL && (tokens[index].token == "{" || tokens[index].token == "}"));
+        if (tokens[index].type == Token_type::SYMBOL && tokens[index].token == "}")
              return find_matching_token(index-1, Token_type::SYMBOL, "{","brace","Mismatched brace", false); // search backwards
         else return find_matching_token(index+1, Token_type::SYMBOL, "}","brace","Mismatched brace");
     }

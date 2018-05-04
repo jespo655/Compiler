@@ -23,7 +23,7 @@ Shared<Global_scope> parse_tokens(const Seq<Token>& tokens, const std::string& n
 // returns the status of the read statement
 Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 
-Parsing_status read_anonymous_static_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope);
+Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 Parsing_status read_if_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 Parsing_status read_for_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 Parsing_status read_while_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope);
