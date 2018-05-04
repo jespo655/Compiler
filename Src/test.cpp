@@ -379,7 +379,8 @@ void compile_test()
     std::vector<Token> hw_tokens = get_tokens_from_file("../Demos/helloworld.cb");
     std::cout << "../Demos/helloworld.cb tokens: " << endl;
     for (const Token& token : hw_tokens) {
-        std::cout << token.token << " ";
+        if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
+        else std::cout << token.token << " ";
     }
     std::cout << endl;
 
@@ -387,7 +388,8 @@ void compile_test()
     std::vector<Token> code_tokens = get_tokens_from_file("lexer/code.cb");
     std::cout << "lexer/code.cb tokens: " << endl;
     for (const Token& token : code_tokens) {
-        std::cout << token.token << " ";
+        if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
+        else std::cout << token.token << " ";
     }
     std::cout << endl;
 
@@ -396,10 +398,12 @@ void compile_test()
 void code_gen_test()
 {
     // first: get tokens from file
-    std::vector<Token> hw_tokens = get_tokens_from_file("../Demos/helloworld.cb");
-    std::cout << "../Demos/helloworld.cb tokens: " << endl;
+    std::vector<Token> hw_tokens = get_tokens_from_file("../Demos/minimal.cb");
+    std::cout << "../Demos/minimal.cb tokens: " << endl;
     for (const Token& token : hw_tokens) {
-        std::cout << token.token << " ";
+        if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
+        else std::cout << token.token << " ";
+        // std::cout << token << " ";
     }
     std::cout << endl;
 
@@ -478,9 +482,8 @@ int main()
     // range_test();
     // flag_test();
     // compile_test();
-    // code_gen_test();
-
-    abstx_test();
+    code_gen_test();
+    // abstx_test();
 
     std::cout << "all test done!" << std::endl;
 }

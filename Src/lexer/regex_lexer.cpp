@@ -168,20 +168,37 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
         if (try_match(current_line, t, tokens, compiler_rx, Token_type::COMPILER_COMMAND)) { // before symbol
 
             if (t.token == "#string") { // Here-string
+                tokens.pop_back(); // delete the #string token - just insert the string literal
+
                 // if a match cannot be found on the current line, read a new line, concat (including newline), try again
-                if(!try_match(current_line, t, tokens, here_string_rx, Token_type::STRING)) {
+                if(!try_match(current_line, t, tokens, here_string_rx, Token_type::STRING, 2)) {
 
                     // No match on the current line: check line for line, concatenating the result string as we go
                     // Stop at the first delimiter token.
 
+                    Token_context new_context = t.context; // save the old context for later
+
                     std::smatch match;
-                    bool delim_match = regex_search(current_line, match, identifier_rx);
+                    bool delim_match = false;
+                    while (!delim_match) {
+                        delim_match = regex_search(current_line, match, identifier_rx);
+                        if (!delim_match) {
+                            if (regex_match(current_line, match, only_whitespace_rx)) {
+                                // check next line
+                                if (!next_line(current_line, input, new_context)) {
+                                    log_error("Unexpected end of file, expected here-string delimiter identifier", new_context);
+                                    return tokens;
+                                }
+                            } else {
+                                log_error("Unexpected token, expected here-string delimiter identifier", new_context);
+                                return tokens;
+                            }
+                        }
+                    }
                     ASSERT(delim_match);
                     std::string delimiter = match[1];
                     std::regex delimiter_rx("^(.*?)\\b"+delimiter+"\\b"); // build delimiter regex
                     std::ostringstream sb(match.suffix()); // start building the resulting here string
-
-                    Token_context new_context = t.context; // save the old context for later
 
                     while(1) {
                         if (!next_line(current_line, input, new_context)) {
@@ -192,9 +209,11 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
                         if(regex_search(current_line, match, delimiter_rx)) {
                             sb << std::endl << match[1];
                             t.token = sb.str();
+                            t.type = Token_type::STRING;
                             tokens.push_back(t); // this still has the old context
                             new_context.position = 1 + match.length();
                             t.context = new_context; // update to the new context
+                            current_line = match.suffix(); // update current line
                             break;
                         }
 
@@ -295,8 +314,7 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
 
 
 
-// #define RX_TEST
-#ifdef RX_TEST
+#ifdef TEST
 
 // Test suite
 void rx_test(const std::regex& rx, std::string text, const std::vector<std::string>& expected_matches, const std::string test_name = "", const int capture_group = 1)

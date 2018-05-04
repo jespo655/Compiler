@@ -1,0 +1,6 @@
+
+main :: fn() {
+    // #C "printf(\"asd\")";
+    #C #string C_CODE print("Hello, World!"); C_CODE
+};
+

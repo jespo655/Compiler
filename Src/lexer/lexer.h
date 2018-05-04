@@ -6,7 +6,6 @@
 struct Token;
 struct Token_context;
 
-
 /*
 The lexer takes a string and tokenizes it.
 The tokens are stored in a vector, which then can be iterated through and parsed.
