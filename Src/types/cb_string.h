@@ -51,11 +51,6 @@ struct CB_String : CB_Type {
         }
         os << "\"";
     }
-
-    std::string parse_raw_data(void* raw_data) {
-        return std::string((char*)raw_data);
-    }
-
 };
 
 

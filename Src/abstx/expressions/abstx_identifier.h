@@ -24,6 +24,10 @@ struct Abstx_identifier : Variable_expression {
         return value.v_type;
     }
 
+    bool has_constant_value() const {
+        return value.v_ptr != nullptr;
+    }
+
     Parsing_status finalize() override {
         if (is_codegen_ready(status)) return status;
         ASSERT(name != "");

@@ -95,11 +95,11 @@ struct Any {
 
 
 // functions to parse Any data to c++ native types in a typesafe way
-
 uint32_t parse_type_id(const Any& any);
+Shared<const CB_Type> parse_type(const Any& any);
 std::string parse_string(const Any& any);
 int64_t parse_int(const Any& any);
 uint64_t parse_uint(const Any& any);
-
+uint64_t parse_float(const Any& any);
 
 

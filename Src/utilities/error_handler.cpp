@@ -50,8 +50,8 @@ void log_warning(const std::string& msg, const Token_context& context)
 void add_note(const std::string& msg, const Token_context& context)
 {
     if (!should_log) return;
-    // std::cerr << context.toS() << " Note: " << msg << std::endl;
-    std::cerr << "    Note: " << msg << context.toS() << std::endl;
+    std::cerr << context.toS() << ": Note: " << msg << std::endl; // better sublime integration
+    // std::cerr << "    Note: " << msg << ": " << context.toS() << std::endl; // nicer looking in cmd window
 }
 
 

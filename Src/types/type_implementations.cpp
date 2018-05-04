@@ -122,15 +122,23 @@ static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
 
 uint32_t parse_type_id(const Any& any) {
     ASSERT(*any.v_type == *CB_Type::type);
+    ASSERT(any.v_ptr);
     return *(uint32_t*)any.v_ptr;
+}
+
+Shared<const CB_Type> parse_type(const Any& any) {
+    return get_built_in_type(parse_type_id(any));
 }
 
 std::string parse_string(const Any& any) {
     ASSERT(*any.v_type == *CB_String::type);
+    ASSERT(any.v_ptr);
+    ASSERT(*(char**)any.v_ptr);
     return std::string(*(char**)any.v_ptr);
 }
 
 int64_t parse_int(const Any& any) {
+    ASSERT(any.v_ptr);
     if (*any.v_type == *CB_i64::type) return *(int64_t*)any.v_ptr;
     if (*any.v_type == *CB_i32::type) return *(int32_t*)any.v_ptr;
     if (*any.v_type == *CB_i16::type) return *(int16_t*)any.v_ptr;
@@ -140,12 +148,21 @@ int64_t parse_int(const Any& any) {
 }
 
 uint64_t parse_uint(const Any& any) {
+    ASSERT(any.v_ptr);
     if (*any.v_type == *CB_u64::type) return *(uint64_t*)any.v_ptr;
     if (*any.v_type == *CB_u32::type) return *(uint32_t*)any.v_ptr;
     if (*any.v_type == *CB_u16::type) return *(uint16_t*)any.v_ptr;
     if (*any.v_type == *CB_u8::type) return *(uint8_t*)any.v_ptr;
     ASSERT(*any.v_type == *CB_Uint::type);
     return *(uint64_t*)any.v_ptr;
+}
+
+uint64_t parse_float(const Any& any) {
+    ASSERT(any.v_ptr);
+    if (*any.v_type == *CB_f64::type) return *(double*)any.v_ptr;
+    if (*any.v_type == *CB_f32::type) return *(float*)any.v_ptr;
+    ASSERT(*any.v_type == *CB_Float::type);
+    return *(double*)any.v_ptr;
 }
 
 

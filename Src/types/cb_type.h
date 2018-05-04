@@ -152,9 +152,6 @@ struct CB_Type
 
 };
 
-// function to parse type ids from compile time code execution
-uint32_t parse_type_id(const Any& any);
-
 // functions to get build in types
 Shared<const CB_Type> get_built_in_type(const std::string& name); // slower, but more generic
 Shared<const CB_Type> get_built_in_type(uint32_t uid); // faster, but not as useful

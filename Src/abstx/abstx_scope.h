@@ -94,15 +94,27 @@ struct Abstx_scope : Abstx_node
             // the identifier was found -> it must have type CB_Type, and its value must be known at compile time
             if (*type_id->get_type() != *CB_Type::type) {
                 log_error("non-type identifier " + type_id->toS() + " used as type", context);
+                add_note("identifier defined here", type_id->context);
                 status = Parsing_status::TYPE_ERROR;
                 return nullptr;
             }
-            uint32_t uid = parse_type_id(type_id->value);
-            return get_built_in_type(uid);
+            if (!type_id->has_constant_value()) {
+                log_error("value of type " + type_id->toS() + " is not known at compile time", context);
+                add_note("identifier defined here", type_id->context);
+                add_note("all types must be known at compile time");
+                status = Parsing_status::COMPILE_TIME_ERROR;
+                return nullptr;
+            }
+            return parse_type(type_id->value);
         }
 
         // the identifier was not found in the scope -> it might be one of the built-in types (or it doesn't exist)
-        return get_built_in_type(id);
+        auto type = get_built_in_type(id);
+        if (type == nullptr) {
+            log_error("unknown identifier " + type_id->toS() + " used as type", context);
+            status = Parsing_status::TYPE_ERROR;
+        }
+        return type;
     }
 
     // Shared<Abstx_scope> get_scope(const std::string& id, bool recursive=true)
