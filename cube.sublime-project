@@ -25,7 +25,8 @@
     },
     {
       "name": "Test Module",
-      "cmd": ["g++", "-std=c++14", "-I${project_path}\\Src\\utilities", "-DTEST", "$file_name", "-o$file_base_name.exe", "&&", "${file_base_name}.exe"],
+      "cmd": ["g++", "-std=c++14", "-DTEST", "$file_name", "-o$file_base_name.exe", "&&", "${file_base_name}.exe"],
+      // "-I${project_path}\\Src\\utilities",
       "shell": "true",
       "working_dir": "$file_path",
       "file_regex": "^[.\\\\/]*([a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",

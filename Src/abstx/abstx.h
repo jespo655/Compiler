@@ -5,12 +5,14 @@
 #include "../utilities/pointers.h"
 #include "../parser/token.h"
 #include "../parser/parsing_status.h"
+#include "../parser/token_iterator.h"
 
 #include <string>
 #include <ostream>
 #include <iostream> // for debug purposes
 
 struct Abstx_scope;
+struct Global_scope;
 
 /*
     An Abstx_node is a node in the abstract syntax tree.
@@ -45,6 +47,12 @@ struct Abstx_node
     // This function should only be called when the abstx node has finished parsing, and is expected to be complete.
     virtual Parsing_status finalize() = 0;
 
+    // fully_parse(): finish a partial parse, from start_token_index.
+    virtual Parsing_status fully_parse() {}; // = 0;
+
+    // make basic assertions and get the correct token iterator; to be called in the beginning of fully_parse()
+    virtual Token_iterator parse_begin() const;
+
     // generate_code(): generate code and output it to to target.
     // This is done recursively to ensure that all dependencies are outputted first.
     virtual void generate_code(std::ostream& target) {
@@ -72,7 +80,10 @@ struct Abstx_node
     virtual Shared<Abstx_scope> parent_scope() const;
 
     // Return a pointer to the root parent scope in the tree
-    virtual Shared<Abstx_scope> global_scope();
+    virtual Shared<const Global_scope> global_scope() const {
+        return owner->global_scope();
+    }
+
 };
 
 // functions to keep allocated void* safe until program terminates

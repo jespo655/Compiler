@@ -3,6 +3,7 @@
 #include "token.h"
 #include "../utilities/error_handler.h"
 #include "../utilities/assert.h"
+#include "../utilities/sequence.h"
 
 #include <memory>
 #include <string>
@@ -20,14 +21,14 @@ Normal usage is one of the following:
 */
 struct Token_iterator
 {
-    const std::vector<Token>& tokens; // should always end with an EOF-token
+    const Seq<Token>& tokens; // should always end with an EOF-token
     int current_index = 0;
     bool error = false;
 
-    Token_iterator(const std::vector<Token>& tokens, int current_index=0) : tokens{tokens}, current_index{current_index}
+    Token_iterator(const Seq<Token>& tokens, int current_index=0) : tokens{tokens}, current_index{current_index}
     {
-        ASSERT(!tokens.empty()); // not empty
-        ASSERT(tokens[tokens.size()-1].is_eof()); // last token is eof token
+        ASSERT(tokens.size > 0); // not empty
+        ASSERT(tokens[tokens.size-1].is_eof()); // last token is eof token
     }
 
     // iterator interface: prefix* and prefix++ operators
@@ -44,13 +45,18 @@ struct Token_iterator
         return tokens[current_index];
     }
 
+    bool compare(Token_type type, const std::string& token)
+    {
+        const Token& t = current_token();
+        return t.type == type && t.token == token;
+    }
 
     // Returns the token at a specific index.
     // Expects the index n to be inside the bounds of the token vector
     const Token& look_at(int n) {
-        if (n < 0 || n >= tokens.size()) {
+        if (n < 0 || n >= tokens.size) {
             error = true;
-            return tokens[tokens.size()-1];
+            return tokens[tokens.size-1];
         }
         error = false;
         return tokens[n];
@@ -68,7 +74,7 @@ struct Token_iterator
     const Token& eat_token()
     {
         const Token& t = current_token(); // sets error to false
-        if (current_index < tokens.size()-1)
+        if (current_index < tokens.size-1)
             current_index++;
         return t;
     }
@@ -78,7 +84,7 @@ struct Token_iterator
     void eat_tokens(int n)
     {
         ASSERT(n > 0);
-        if (current_index+n >= tokens.size()) current_index = tokens.size();
+        if (current_index+n >= tokens.size) current_index = tokens.size;
         else current_index += n;
         error = false;
     }
@@ -129,6 +135,15 @@ struct Token_iterator
         return t;
     }
 
+    const Token& expect_end_of_statement()
+    {
+        const Token& t = eat_token(); // sets error to false
+        if (t.type != Token_type::SYMBOL || t.token != ";") {
+            log_error("Missing ';' at the end of statement: expected \";\" before \""+t.token+"\"", t.context);
+            error = true;
+        }
+        return t;
+    }
 
     // Returns true if the last expect call failed.
     bool expect_failed() { return error; }
@@ -215,7 +230,7 @@ struct Token_iterator
     int find_matching_paren(int index=-1)
     {
         if (index == -1) index = current_index;
-        ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
+        ASSERT(index >= 0 && index < tokens.size && tokens[index].type == Token_type::SYMBOL);
         // ASSERT(tokens[index].token == "(" || tokens[index].token == ")");
         if (tokens[index].token == ")")
              return find_matching_token(index-1, Token_type::SYMBOL, "(","paren","Mismatched paren", false); // search backwards
@@ -225,7 +240,7 @@ struct Token_iterator
     int find_matching_bracket(int index=-1)
     {
         if (index == -1) index = current_index;
-        ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
+        ASSERT(index >= 0 && index < tokens.size && tokens[index].type == Token_type::SYMBOL);
         // ASSERT(tokens[index].token == "[" || tokens[index].token == "]");
         if (tokens[index].token == "]")
              return find_matching_token(index-1, Token_type::SYMBOL, "[","bracket","Mismatched bracket", false); // search backwards
@@ -235,7 +250,7 @@ struct Token_iterator
     int find_matching_brace(int index=-1)
     {
         if (index == -1) index = current_index;
-        ASSERT(index >= 0 && index < tokens.size() && tokens[index].type == Token_type::SYMBOL);
+        ASSERT(index >= 0 && index < tokens.size && tokens[index].type == Token_type::SYMBOL);
         // ASSERT(tokens[index].token == "{" || tokens[index].token == "}");
         if (tokens[index].token == "}")
              return find_matching_token(index-1, Token_type::SYMBOL, "{","brace","Mismatched brace", false); // search backwards
@@ -245,9 +260,10 @@ struct Token_iterator
     int find_matching_semicolon(int index=-1)
     {
         if (index == -1) index = current_index;
-        ASSERT(index >= 0 && index < tokens.size());
+        ASSERT(index >= 0 && index < tokens.size);
         return find_matching_token(index, Token_type::SYMBOL, ";", "statement","Missing ';' at the end of statement");
     }
+
 
 
 };

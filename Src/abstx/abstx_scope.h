@@ -26,6 +26,8 @@ const flag SCOPE_ASYNC = 1;
 const flag SCOPE_DYNAMIC = 2;
 const flag SCOPE_SELF_CONTAINED = 3; // should be set if the scope never references identifiers outside itself.
 
+struct Abstx_function_call;
+
 struct Abstx_scope : Abstx_node
 {
     Seq<Owned<Statement>> statements;
@@ -36,6 +38,8 @@ struct Abstx_scope : Abstx_node
     Seq<Shared<Abstx_scope>> imported_scopes;
     Seq<Shared<Abstx_using>> using_statements; // Used in the parsing process. Owned by the list of statements above. Once a using statement has been resolved, it should be returned from this list.
                                                    // FIXME: add a safeguard for when several using-statements tries to import the same scope.
+    Seq<Shared<Abstx_function_call>> run_statements;
+
     uint8_t flags = 0;
     bool dynamic() const { return flags == SCOPE_DYNAMIC; }
     bool async() const { return flags == SCOPE_ASYNC; }
@@ -212,8 +216,30 @@ struct Abstx_scope : Abstx_node
 };
 
 
+// A global scope corresponds to one compiled file. It is always static. It has no owner.
 
-// A function scope is the same as a regular scope, but it can own its own identifiers (from the function signature).
+struct Global_scope : Abstx_scope
+{
+    std::string file_name;
+    const Seq<Token> tokens; // should be treated as const
+
+    Global_scope(const Seq<Token>& tokens) : tokens{tokens} {}
+
+    Token_iterator iterator(int index=0) const { return Token_iterator(tokens, index); }
+
+    Shared<Abstx_scope> parent_scope() const override { return nullptr; }
+    Shared<const Global_scope> global_scope() const override { return this; }
+
+    Token_iterator parse_begin() const override {
+        ASSERT(start_token_index == 0); // always beginning of file
+        iterator(start_token_index);
+    }
+
+};
+
+
+
+// A function scope is the same as a regular scope, but it can own its own identifiers (from the function signature). It is always dynamic.
 
 struct Abstx_function_scope : Abstx_scope
 {
@@ -248,6 +274,7 @@ struct Abstx_function_scope : Abstx_scope
         }
         return Abstx_scope::finalize();
     }
+
 };
 
 
@@ -257,7 +284,7 @@ struct Abstx_function_scope : Abstx_scope
 // That begins a new anonymous scope with the current scope as its owner / parent.
 // The dynamic-flag is inherited from the current scope.
 
-struct Anonymous_scope : Statement
+struct Abstx_anonymous_scope : Statement
 {
     Owned<Abstx_scope> scope;
 

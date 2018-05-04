@@ -59,31 +59,6 @@ std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, con
 
 
 
-std::shared_ptr<Global_scope> get_global_scope(std::shared_ptr<Scope> scope)
-{
-    if (scope == nullptr) return nullptr;
-    if (auto gs = std::dynamic_pointer_cast<Global_scope>(scope)) return gs;
-    auto parent = scope->parent_scope();
-    return get_global_scope(parent);
-}
-
-template<typename T>
-Token_iterator get_iterator(std::shared_ptr<T> tp, int index)
-{
-    auto gs = std::dynamic_pointer_cast<Global_scope>(tp);
-    if (gs == nullptr) {
-        auto abstx = std::dynamic_pointer_cast<Abstx_node>(tp);
-        ASSERT(abstx != nullptr);
-        gs = get_global_scope(abstx->parent_scope());
-    }
-    ASSERT(gs != nullptr);
-    return gs->iterator(index);
-}
-
-
-
-
-
 
 
 

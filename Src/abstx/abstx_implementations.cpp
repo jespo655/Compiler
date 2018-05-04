@@ -13,14 +13,13 @@ Shared<Abstx_scope> Abstx_node::parent_scope() const
     return nullptr;
 }
 
-Shared<Abstx_scope> Abstx_node::global_scope()
-{
-    auto parent = parent_scope();
-    if (parent == nullptr) return dynamic_pointer_cast<Abstx_scope>(Shared<Abstx_node>(this));
-    if (parent->owner == nullptr) return parent;
-    else return parent->global_scope();
-}
-
+Token_iterator Abstx_node::parse_begin() const {
+    ASSERT(status == Parsing_status::PARTIALLY_PARSED);
+    ASSERT(start_token_index >= 0);
+    auto gs = global_scope();
+    ASSERT(gs);
+    return gs->iterator(start_token_index);
+};
 
 // data structure to keep allocated void pointers until the program exits
 struct Constant_data_container

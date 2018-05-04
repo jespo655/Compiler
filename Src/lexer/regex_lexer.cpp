@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <iostream> // debugging, error message for unable to open file
+#include <algorithm>
 
 #ifdef EOF
 #undef EOF
@@ -90,6 +91,7 @@ bool try_match(std::string& str, Token& token, std::vector<Token>& tokens, const
     if (regex_search(str, match, rx)) {
         token.token = match[capture_group];
         token.type = type;
+        if (token.type == Token_type::COMPILER_COMMAND) std::transform(token.token.begin(), token.token.end(), token.token.begin(), ::tolower);
         str = match.suffix();
         tokens.push_back(token);
         token.context.position += match.length();

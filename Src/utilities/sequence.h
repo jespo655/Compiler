@@ -75,7 +75,10 @@ struct Seq {
         if (index >= size) set(index, T());
         return v_ptr[index];
     }
-    T operator[](uint32_t index) const { return get(index); }
+    const T& operator[](uint32_t index) const {
+        ASSERT(index < size);
+        return v_ptr[index];
+    }
 
 
     template<typename T2> operator==(const Seq<T2>& Seq) const { return false; }

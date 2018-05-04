@@ -91,8 +91,8 @@ operator(bool)xnor(bool) :: fn(a : bool, b : bool) -> bool { return (a == b); };
 
 // C equivalent to []$T: Seq*, u64 data_size
 
-operator([]$T)[uint] : fn([]$T, uint)->*T = #C "static_seq_index";
-operator([..]$T)[uint] : fn([]$T, uint)->*T = #C "dynamic_seq_index";
+operator([$n]$T)[uint] : fn([]$T, uint)->*T = #C "static_seq_index";
+operator([]$T)[uint] : fn([]$T, uint)->*T = #C "dynamic_seq_index";
 // operator([$K]$T)[K] : fn([$K]$T, K)->*T = #C "dynamic_map_index"; // TODO
 
 
