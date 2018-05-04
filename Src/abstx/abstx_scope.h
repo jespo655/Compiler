@@ -127,6 +127,11 @@ struct Abstx_scope : Abstx_node
 
     void resolve_imports()
     {
+        // @TODO: this function is not complete / doesn't work yet
+        // for now, just assert that no work has to be made, then return
+        ASSERT(using_statements.size == 0);
+        return;
+
         Seq<Shared<Abstx_using>> remaining;
 
         while (using_statements.size > 0) {
