@@ -138,6 +138,46 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
 
 
 
+Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    it.assert_current(Token_type::SYMBOL, "{"); // checked previously
+
+    // create scope
+    Owned<Abstx_scope> scope = alloc(Abstx_scope(parent_scope->flags));
+    scope->set_owner(parent_scope);
+    scope->context = it->context;
+    scope->start_token_index = it.current_index;
+
+    // parse and resolve all statements in the scope
+    Parsing_status status = Parsing_status::NOT_PARSED;
+    while (!is_error(status) && !it.compare(Token_type::SYMBOL, "}")) {
+        status = read_statement(it, scope);
+        // fatal error -> give up
+        // other error -> failed to parse dynamic scope, but we can continue with other stuff if we find the closing brace
+        if (is_error(status) && !is_fatal(status)) {
+            // it.current_index = it.find_matching_brace(scope->start_token_index); // gives better error messages
+            it.current_index = it.find_matching_brace(); // faster
+            if (it.expect_failed()) {
+                add_note("In scope that started here", scope->context); // "good enough" error message for fast solution
+                scope->status = Parsing_status::FATAL_ERROR;
+            } else {
+                scope->status = status;
+            }
+            break;
+        }
+        if (is_eof(it->type)) {
+            log_error("Unexpected end of file in the middle of a scope", it->context);
+            add_note("In scope that started here", scope->context);
+            scope->status = Parsing_status::FATAL_ERROR;
+            break;
+        }
+    }
+    if (!is_fatal(scope->status)) {
+        it.assert(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
+    }
+    return std::move(scope);
+}
+
+
 Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
     it.assert_current(Token_type::SYMBOL, "{"); // checked previously
 
@@ -152,37 +192,11 @@ Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> pare
         log_error("Anonymous scope used in static context. That makes no sense! Did you mean \"using {...};\"?", it->context);
         s->status = Parsing_status::SYNTAX_ERROR;
     } else {
-        // create scope
-        s->scope = alloc(Abstx_scope(parent_scope->flags));
-        s->scope->set_owner(s);
-        s->scope->context = it->context;
-        s->scope->start_token_index = it.current_index;
+        // read scope
+        s->scope = read_scope(it, parent_scope);
+        ASSERT(s->scope != nullptr);
+        // s->scope->set_owner(s); // no need to update owner; parent_scope is good enough
 
-        // parse and resolve all statements in the scope
-        Parsing_status status = Parsing_status::NOT_PARSED;
-        while (!is_error(status) && !it.compare(Token_type::SYMBOL, "}")) {
-            status = read_statement(it, s->scope);
-            // fatal error -> give up
-            // other error -> failed to parse dynamic scope, but we can continue with other stuff if we find the closing brace
-            if (is_error(status) && !is_fatal(status)) {
-                it.current_index = it.find_matching_brace(s->start_token_index);
-                if (it.expect_failed()) {
-                    s->scope->status = Parsing_status::FATAL_ERROR;
-                } else {
-                    s->scope->status = status;
-                }
-                break;
-            }
-            if (is_eof(it->type)) {
-                log_error("Unexpected end of file in the middle of a scope", it->context);
-                add_note("In anonymous scope that started here", s->context);
-                s->scope->status = Parsing_status::FATAL_ERROR;
-                break;
-            }
-        }
-        if (!is_fatal(s->scope->status)) {
-            it.assert(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
-        }
         s->status = s->scope->status;
         parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
         ASSERT(o == nullptr);
