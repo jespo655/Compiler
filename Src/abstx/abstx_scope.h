@@ -64,7 +64,6 @@ struct Abstx_scope : Abstx_node
     virtual Shared<Abstx_identifier> get_identifier(const std::string& id, bool recursive=true)
     {
         auto p = identifiers[id];
-        ASSERT(!self_contained() || p != nullptr)
         if (p != nullptr) return p; // local things goes first
 
         if (recursive) {

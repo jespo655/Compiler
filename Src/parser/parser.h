@@ -16,6 +16,7 @@ Shared<Global_scope> parse_string(const std::string& string, const std::string& 
 Shared<Global_scope> parse_tokens(const Seq<Token>& tokens, const std::string& name = "");
 
 
+// temporary variable names should be named _cb_tmp_uid, so we can be sure that they won't nameclash with other things
 
 // statement_parser.cpp
 // reading of statements: identifies which statement it is, and adds it to the parent scope

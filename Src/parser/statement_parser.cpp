@@ -138,6 +138,8 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
 
 
 
+// syntax:
+// { }
 Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
     it.assert_current(Token_type::SYMBOL, "{"); // checked previously
 
@@ -178,6 +180,9 @@ Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_sco
 }
 
 
+
+// syntax (dynamic scope only):
+// { }
 Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
     it.assert_current(Token_type::SYMBOL, "{"); // checked previously
 
@@ -207,6 +212,115 @@ Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> pare
 
 
 
+// syntax:
+// a, b, c := expr;
+// a, b, c : expr = expr;
+// after a successful read, s->start_token_index will point to the first token after ':'.
+Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    // we know that there are a ':' somewhere, so just read identifiers until we reach it
+
+    // expect identifier token
+    // optional, read ',' then expect another identifier token
+    // expect ':' token
+    // find end of statement (';')
+
+    // @todo operator declaration - they have a different identifier syntax
+
+    Owned<Abstx_declaration> o = alloc(Abstx_declaration()); // will be destroyed later
+    Shared<Abstx_declaration> s = o; // shared pointer that we can use and modify however we like
+    s->set_owner(parent_scope);
+    s->context = it->context;
+    s->start_token_index = it.current_index;
+
+    bool error = false;
+    while (1) {
+        // allocate abstx identifier and set base info
+        Owned<Abstx_identifier> id = alloc(Abstx_identifier());
+        id->set_owner(s);
+        s->context = it->context;
+        s->start_token_index = it.current_index;
+
+        // read identifier token
+        if (it.compare(Token_type::KEYWORD, "operator")) {
+            // @TODO also accept operator definitions
+            // operator(type)op(type)
+            // operator op(type)
+            // operator (type)op
+            log_error("Operator overloading is not implemented yet!", it->context);
+        }
+
+        const Token& t = it.expect(Token_type::IDENTIFIER);
+        if (it.expect_failed()) {
+            s->status = Parsing_status::SYNTAX_ERROR;
+            break;
+        }
+
+        id->name = t.token;
+        // check if there is another id with the same name in the current local scope (not allowed)
+        auto old_id = parent_scope->get_identifier(id->name, false);
+        if (old_id != nullptr) {
+            log_error("Redeclaration of identifier "+id->name, id->context);
+            add_note("Previously declared here", old_id->context);
+            // no specific error in the declaration, just ignore the identifier
+        } else {
+            parent_scope->identifiers[id->name] = (Shared<Abstx_identifier>)id;
+            s->identifiers.add(std::move(id));
+        }
+
+        if (it.compare(Token_type::SYMBOL, ",")) continue; // one more
+
+        it.expect(Token_type::SYMBOL, ":");
+        if (it.expect_failed()) {
+            s->status = Parsing_status::SYNTAX_ERROR;
+            break;
+        }
+    }
+
+    if (is_error(s->status)) {
+        add_note("In declaration statement here", s->context);
+        s->status = Parsing_status::SYNTAX_ERROR;
+    }
+
+    // we are done reading -> set the start_token_index to the first value of RHS
+    s->start_token_index = it.current_index;
+
+    // find the closing ';'
+    it.current_index = it.find_matching_semicolon() + 1;
+    if (it.expect_failed()) {
+        add_note("In declaration statement here", s->context);
+        s->status = Parsing_status::FATAL_ERROR;
+        return s->status;
+    }
+
+    // update status
+    if (!is_error(s->status)) s->status = Parsing_status::PARTIALLY_PARSED;
+
+    // if we are in a dynamic scope, we must finalize the statement immediately
+    // this might add one or more function call statements to the scope -> we have to do this before adding the declaration statement to the scope
+    // (in a static scope the order of statements doesn't matter, so adding the function calls later is okay)
+    if (parent_scope->dynamic()) {
+        s->fully_parse();
+        s->finalize();
+        // @todo: maybe log error if not successful? (that might be done inside fully_parse or finalize, though)
+    }
+
+    // add it to the scope
+    parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
+
+    return s->status;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // temporary implementations, TODO: implement these
 Parsing_status read_if_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_for_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
@@ -215,7 +329,6 @@ Parsing_status read_return_statement(Token_iterator& it, Shared<Abstx_scope> par
 Parsing_status read_defer_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_using_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_c_code_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_assignment_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 

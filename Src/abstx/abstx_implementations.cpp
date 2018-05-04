@@ -13,6 +13,19 @@ Shared<Abstx_scope> Abstx_node::parent_scope() const
     return nullptr;
 }
 
+Shared<Abstx_function> Abstx_node::parent_function() const
+{
+    Shared<Abstx_node> abstx = owner;
+    while (abstx != nullptr) {
+        Shared<Abstx_function> fn = dynamic_pointer_cast<Abstx_function>(abstx);
+        if (fn != nullptr) return fn;
+        else abstx = abstx->owner;
+    }
+    return nullptr;
+}
+
+
+
 Token_iterator Abstx_node::parse_begin() const {
     ASSERT(status == Parsing_status::PARTIALLY_PARSED);
     ASSERT(start_token_index >= 0);

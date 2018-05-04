@@ -28,11 +28,15 @@ struct Abstx_identifier : Variable_expression {
         return value.v_ptr != nullptr;
     }
 
+    Parsing_status fully_parse() override {
+        return owner->fully_parse();
+    }
+
     Parsing_status finalize() override {
         if (is_codegen_ready(status)) return status;
-        ASSERT(name != "");
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
+        ASSERT(name != ""); // should have been set immediately at first pass
+        if (value.v_type == nullptr) status == Parsing_status::DEPENDENCIES_NEEDED; // should be set by the declaration statement's fully_parse()
+        else status = Parsing_status::FULLY_RESOLVED; // no need to check for constant value - it will be set at the same time as the type (if it exists)
         return status;
     }
 
