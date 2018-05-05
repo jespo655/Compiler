@@ -24,6 +24,21 @@ Shared<Abstx_function> Abstx_node::parent_function() const
     return nullptr;
 }
 
+// has to be here since it's using Abstx_scope
+Parsing_status Abstx_identifier_reference::finalize() {
+    if (is_codegen_ready(status) || is_error(status)) return status;
+    id = parent_scope()->get_identifier(name);
+    if (id == nullptr) {
+        log_error("Use of undefined identifier", context);
+        status = Parsing_status::UNDECLARED_IDENTIFIER;
+    } else {
+        status = Parsing_status::FULLY_RESOLVED;
+    }
+    return status;
+}
+
+
+
 
 
 Token_iterator Abstx_node::parse_begin() const {
@@ -57,6 +72,7 @@ struct Constant_data_container
 static Constant_data_container _constant_data_container;
 
 void add_constant_data(void* p) { _constant_data_container.add_constant_data(p); }
+void* alloc_constant_data(size_t bytes) { _constant_data_container.add_constant_data(malloc(bytes)); }
 void free_constant_data(void* p) { _constant_data_container.free_constant_data(p); }
 void free_all_constant_data() { _constant_data_container.~Constant_data_container(); }
 

@@ -45,6 +45,7 @@ static std::ostream& operator<<(std::ostream& os, Parsing_status ps) {
 static is_error(Parsing_status p) {
     if (p == Parsing_status::NOT_PARSED
         || p == Parsing_status::PARTIALLY_PARSED
+        || p == Parsing_status::FULLY_PARSED
         || p == Parsing_status::FULLY_RESOLVED
         || p == Parsing_status::CODE_GENERATED
         || p == Parsing_status::DEPENDENCIES_NEEDED)

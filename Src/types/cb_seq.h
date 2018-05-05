@@ -3,7 +3,9 @@
 #include "cb_type.h"
 #include "cb_primitives.h"
 #include "cb_range.h"
+#include "cb_pointer.h"
 #include "../utilities/unique_id.h"
+#include "../utilities/pointers.h"
 
 /*
 CB_Seq: a dynamic sequence that stores the elements on the heap
@@ -29,6 +31,13 @@ struct CB_Seq : CB_Type, CB_Iterable, CB_Indexable
 
     CB_Seq(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }
     CB_Seq(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
+
+    static Shared<const CB_Type> get_seq_type(Shared<const CB_Type> member_type) {
+        Owned<CB_Seq> o = alloc(CB_Seq());
+        o->v_type = member_type;
+        o->finalize();
+        return add_complex_cb_type(owned_static_cast<CB_Type>(std::move(o)));
+    }
 
     std::string toS() const override {
         if (v_type == nullptr) return "_cb_unresolved_sequence";
@@ -143,6 +152,14 @@ struct CB_Fixed_seq : CB_Type, CB_Iterable, CB_Indexable
     CB_Fixed_seq(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }
     CB_Fixed_seq(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     ~CB_Fixed_seq() { free(_default_value); }
+
+    static Shared<const CB_Type> get_seq_type(Shared<const CB_Type> member_type, uint32_t size) {
+        Owned<CB_Fixed_seq> o = alloc(CB_Fixed_seq());
+        o->v_type = member_type;
+        o->size = size;
+        o->finalize();
+        return add_complex_cb_type(owned_static_cast<CB_Type>(std::move(o)));
+    }
 
     std::string toS() const override {
         if (v_type == nullptr) return "_cb_unresolved_sequence";

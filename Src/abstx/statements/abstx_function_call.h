@@ -56,32 +56,43 @@ Syntax:
 
 struct Abstx_function_call : Statement
 {
-    // either function or function_pointer has to be defined
-    // if both are defined, function_pointer will be overwritten in finalize() so the types match
-    Shared<Abstx_function> function;
-    Shared<Abstx_identifier> function_pointer;
+    Shared<Abstx_function> function = nullptr; // inferred through function_pointer in fully_parse
+    Owned<Variable_expression> function_pointer;
     Seq<Owned<Value_expression>> in_args;
     Seq<Owned<Variable_expression>> out_args;
 
     std::string toS() const override { return "function call statement"; }
 
+    Parsing_status fully_parse() override {
+        if (status == Parsing_status::FULLY_RESOLVED || is_codegen_ready(status)) return status;
+        ASSERT(function_pointer != nullptr);
+        if (!is_codegen_ready(function_pointer->fully_parse())) {
+            status = function_pointer->status;
+            return status;
+        }
+        return status;
+    }
+
     Parsing_status finalize() override {
         if (is_codegen_ready(status)) return status;
 
-        // check function pointer
+        ASSERT(function_pointer != nullptr);
+        if (!is_codegen_ready(function_pointer->finalize())) {
+            status = function_pointer->status;
+            return status;
+        }
+
+        Shared<Abstx_identifier_reference> fn_id = dynamic_pointer_cast<Abstx_identifier_reference>(function_pointer);
+        if (fn_id && fn_id->id) {
+            function = dynamic_pointer_cast<Abstx_function>(fn_id->id->value_expression);
+        }
+
         if (function != nullptr) {
             if (!is_codegen_ready(function->status)) {
                 if (is_error(function->status)) status = function->status;
                 else status = Parsing_status::DEPENDENCIES_NEEDED;
                 return status;
             }
-            function_pointer = function->function_identifier; // grab the function pointer from the function
-        }
-        ASSERT(function_pointer != nullptr, "either function or function_pointer has to defined");
-        if (!is_codegen_ready(function_pointer->status)) {
-            if (is_error(function_pointer->status)) status = function_pointer->status;
-            else status = Parsing_status::DEPENDENCIES_NEEDED;
-            return status;
         }
 
         Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_pointer->get_type());

@@ -6,6 +6,7 @@
 struct cpp_type : CB_Type { \
     static const Shared<const CB_Type> type; \
     static constexpr c_type _default_value = 0; \
+    typedef c_type c_typedef; \
     cpp_type() { uid = type->uid; } \
     cpp_type(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {} \
     std::string toS() const override { return tos; } \

@@ -91,6 +91,7 @@ struct Abstx_node
 // functions to keep allocated void* safe until program terminates
 // when the program terminates or when free_all_constant_data() is called, all given void* is freed with free()
 void add_constant_data(void* p);
+void* alloc_constant_data(size_t bytes);
 void free_constant_data(void* p);
 void free_all_constant_data();
 

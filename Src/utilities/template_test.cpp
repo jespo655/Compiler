@@ -16,6 +16,7 @@
 struct S {
     int i = 2;
     virtual std::string toS() const { return "S";}
+    void foo() { static int i = 0; std::cout << ++i << std::endl; }
 };
 
 struct S2 : S {
@@ -70,13 +71,26 @@ void pointer_test()
 
 
 
+void static_test()
+{
+    S s1, s2;
+    s1.foo();
+    s1.foo();
+    s1.foo();
+    s1.foo();
+    s2.foo();
+    s2.foo();
+    s2.foo();
+    s2.foo();
+}
 
 int main()
 {
-    pointer_test();
+    static_test();
+    // pointer_test();
 
-    Shared<void> s;
-    void* v = s.v;
+    // Shared<void> s;
+    // void* v = s.v;
     // Owned<void> o;
 
     // S s;

@@ -46,6 +46,14 @@ struct Abstx_function : Value_expression
         return function_identifier->get_type();
     }
 
+    bool has_constant_value() const {
+        return false; // @todo: check if this is reasonable
+    }
+
+    void const* get_constant_value() override {
+        return nullptr;
+    }
+
     Parsing_status finalize() override {
         if (is_codegen_ready(status)) return status;
         ASSERT(function_identifier != nullptr);

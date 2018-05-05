@@ -44,31 +44,31 @@ void CB_Type::register_type(const std::string& name, size_t size, void const* de
 
 #include "cb_primitives.h"
 
-#define PRIMITIVE_STATICS(cpp_type, tos, c_type) \
-constexpr c_type cpp_type::_default_value; \
+#define PRIMITIVE_STATICS(cpp_type, tos) \
+constexpr cpp_type::c_typedef cpp_type::_default_value; \
 static const cpp_type static_##cpp_type(tos, sizeof(cpp_type::_default_value), &cpp_type::_default_value); \
 const Shared<const CB_Type> cpp_type::type = &static_##cpp_type;
 
-PRIMITIVE_STATICS(CB_Bool, "bool", bool);
+PRIMITIVE_STATICS(CB_Bool, "bool");
 
-PRIMITIVE_STATICS(CB_i8, "i8", int8_t);
-PRIMITIVE_STATICS(CB_i16, "i16", int16_t);
-PRIMITIVE_STATICS(CB_i32, "i32", int32_t);
-PRIMITIVE_STATICS(CB_i64, "i64", int64_t);
+PRIMITIVE_STATICS(CB_i8, "i8");
+PRIMITIVE_STATICS(CB_i16, "i16");
+PRIMITIVE_STATICS(CB_i32, "i32");
+PRIMITIVE_STATICS(CB_i64, "i64");
 
-PRIMITIVE_STATICS(CB_u8, "u8", uint8_t);
-PRIMITIVE_STATICS(CB_u16, "u16", uint16_t);
-PRIMITIVE_STATICS(CB_u32, "u32", uint32_t);
-PRIMITIVE_STATICS(CB_u64, "u64", uint64_t);
+PRIMITIVE_STATICS(CB_u8, "u8");
+PRIMITIVE_STATICS(CB_u16, "u16");
+PRIMITIVE_STATICS(CB_u32, "u32");
+PRIMITIVE_STATICS(CB_u64, "u64");
 
-PRIMITIVE_STATICS(CB_f32, "f32", float);
-PRIMITIVE_STATICS(CB_f64, "f64", double);
+PRIMITIVE_STATICS(CB_f32, "f32");
+PRIMITIVE_STATICS(CB_f64, "f64");
 
-PRIMITIVE_STATICS(CB_Int, "int", int64_t);
-PRIMITIVE_STATICS(CB_Uint, "uint", uint64_t);
-PRIMITIVE_STATICS(CB_Float, "float", double);
+PRIMITIVE_STATICS(CB_Int, "int");
+PRIMITIVE_STATICS(CB_Uint, "uint");
+PRIMITIVE_STATICS(CB_Float, "float");
 
-PRIMITIVE_STATICS(CB_Flag, "flag", uint8_t);
+PRIMITIVE_STATICS(CB_Flag, "flag");
 
 #include "cb_range.h"
 constexpr int64_t CB_Range::_default_value[2];

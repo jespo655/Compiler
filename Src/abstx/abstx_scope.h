@@ -33,7 +33,6 @@ struct Abstx_scope : Abstx_node
     Seq<Owned<Statement>> statements;
 
     std::map<std::string, Shared<Abstx_identifier>> identifiers; // id name -> id. Identifiers are owned by their declaration statements.
-    std::map<std::string, Shared<Value_expression>> constant_values; // id name -> value. Values are owned by their declaration statements.
 
     Seq<Shared<Abstx_scope>> imported_scopes;
     Seq<Shared<Abstx_using>> using_statements; // Used in the parsing process. Owned by the list of statements above. Once a using statement has been resolved, it should be returned from this list.
@@ -92,7 +91,7 @@ struct Abstx_scope : Abstx_node
     virtual Shared<const CB_Type> get_type(const std::string& id, bool recursive=true)
     {
         // first: find the type identifier
-        Shared<Abstx_identifier> type_id = get_identifier(id);
+        Shared<Abstx_identifier> type_id = get_identifier(id, recursive);
         if (type_id) {
             // the identifier was found -> it must have type CB_Type, and its value must be known at compile time
             if (*type_id->get_type() != *CB_Type::type) {
