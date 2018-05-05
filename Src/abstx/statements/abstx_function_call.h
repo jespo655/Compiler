@@ -59,7 +59,7 @@ struct Abstx_function_call : Statement
     Shared<Abstx_function> function = nullptr; // inferred through function_pointer in fully_parse
     Owned<Variable_expression> function_pointer;
     Seq<Owned<Value_expression>> in_args;
-    Seq<Owned<Variable_expression>> out_args;
+    Seq<Shared<Variable_expression>> out_args;
 
     std::string toS() const override { return "function call statement"; }
 
@@ -153,5 +153,26 @@ struct Abstx_function_call : Statement
         target << ");" << std::endl;
 
         status = Parsing_status::CODE_GENERATED;
+    }
+};
+
+
+struct Abstx_function_call_expression : Variable_expression {
+    Shared<Abstx_function_call> function_call;
+    std::string toS() const override { return "function call expression"; }
+
+    Parsing_status fully_parse() override {
+        ASSERT(function_call);
+        status = function_call->status;
+    }
+
+    Parsing_status finalize() override {
+        ASSERT(function_call);
+        status = function_call->status;
+    }
+
+    void generate_code(std::ostream& target) override {
+        ASSERT(function_call);
+        function_call->generate_code(target);
     }
 };

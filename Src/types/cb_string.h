@@ -20,6 +20,7 @@ struct CB_String : CB_Type {
     static const Shared<const CB_Type> type;
     static constexpr char _default_str[] = "";
     static constexpr char const* _default_value = _default_str;
+    typedef char* c_typedef;
 
     CB_String() { uid = type->uid; }
     CB_String(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
@@ -37,7 +38,7 @@ struct CB_String : CB_Type {
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
-        char const* raw_it = *(char const**)raw_data;
+        char const* raw_it = *(c_typedef const*)raw_data;
         if (!raw_it) os << "NULL";
         os << "\"";
         while (*raw_it)  {
@@ -46,7 +47,7 @@ struct CB_String : CB_Type {
                 case '\r': os << "\\r"; break;
                 case '\"': os << "\\\""; break;
                 case '\\': os << "\\\\"; break;
-                default: os << *(char*)raw_it;
+                default: os << *(c_typedef*)raw_it;
             }
         }
         os << "\"";

@@ -7,13 +7,15 @@
 #include "../abstx/expressions/abstx_pointer_dereference.h"
 #include "../abstx/expressions/abstx_simple_literal.h"
 
+#include "../abstx/statements/abstx_function_call.h"
+#include "../abstx/statements/abstx_declaration.h"
+
 #include "../utilities/sequence.h"
 #include "../utilities/pointers.h"
+
+#include "../types/all_cb_types.h"
 // #include "../compile_time/compile_time.h"
 
-
-Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
-Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
 
 
 
@@ -43,7 +45,7 @@ Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<A
 // '.' getter operator
 // other identifier or symbol token: check if it's an infix operator with prio > min_prio
 //      if it is, read value expression (with min_prio = op.prio), then construct infix operator node
-Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO)
+Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio)
 {
     Owned<Value_expression> expr{nullptr};
 
@@ -51,10 +53,10 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
 
     if (it->type == Token_type::SYMBOL && it->token == "(") {
         // eat the token, then read new value expression, then expect closing paren
-        it->eat_token();
+        it.eat_token();
         expr = read_value_expression(it, parent_scope);
-        it->expect(Token_type::SYMBOL, ")");
-        if (it->expect_failed) {
+        it.expect(Token_type::SYMBOL, ")");
+        if (it.expect_failed()) {
             add_note("In paren enclosed value expression that started here", expr->context);
         }
         expr->status = Parsing_status::FATAL_ERROR; // mismatched parens -> fatal error
@@ -65,9 +67,11 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
     } else if (it->type == Token_type::INTEGER || it->type == Token_type::FLOAT || it->type == Token_type::STRING || it->type == Token_type::BOOL) {
         expr = read_simple_literal(it, parent_scope);
 
-        // @TODO: checked to here
+    }
 
-    } else if (it->type == Token_type::IDENTIFIER) {
+    // @TODO: checked to here
+    /*
+    else if (it->type == Token_type::IDENTIFIER) {
         // This can be either a variable identifier or an infix operator.
         // Create a prefix expr node while it still is untouched, just in case
         auto p_expr = Shared<Prefix_expr>(new Prefix_expr());
@@ -133,10 +137,11 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
             break;
         }
     }
+    */
 
     ASSERT(expr != nullptr);
     ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED);
-    return expr;
+    return std::move(expr);
 }
 
 
@@ -147,7 +152,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
 
 
 
-Owned<Abstx_simple_literal> read_simple_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
     Owned<Abstx_simple_literal> o = alloc(Abstx_simple_literal());
     o->set_owner(parent_scope); // temporary owner; the literal should be owned by a statement somewhere
     o->context = it->context;
@@ -160,14 +165,14 @@ Owned<Abstx_simple_literal> read_simple_literal(Token_iterator& it, Shared<Abstx
             try {
                 if (t.token[0] == '-') {
                     // signed integer literal
-                    o->value->v_type = CB_Int::type;
-                    o->value->v_ptr = alloc_constant_data(CB_Int::type->cb_sizeof());
-                    *(CB_Int::c_typedef)o->value->v_ptr = std::stoll(t.token);
+                    o->value.v_type = CB_Int::type;
+                    o->value.v_ptr = alloc_constant_data(CB_Int::type->cb_sizeof());
+                    *(CB_Int::c_typedef*)o->value.v_ptr = std::stoll(t.token);
                 } else {
                     // unsigned integer literal
-                    o->value->v_type = CB_Uint::type;
-                    o->value->v_ptr = alloc_constant_data(CB_Uint::type->cb_sizeof());
-                    *(CB_Uint::c_typedef)o->value->v_ptr = std::stoull(t.token);
+                    o->value.v_type = CB_Uint::type;
+                    o->value.v_ptr = alloc_constant_data(CB_Uint::type->cb_sizeof());
+                    *(CB_Uint::c_typedef*)o->value.v_ptr = std::stoull(t.token);
                 }
             } catch (std::out_of_range e) {
                 log_error("Integer literal too large to fit!", t.context);
@@ -177,9 +182,9 @@ Owned<Abstx_simple_literal> read_simple_literal(Token_iterator& it, Shared<Abstx
         case Token_type::FLOAT:
             try {
                 // float literal
-                o->value->v_type = CB_Float::type;
-                o->value->v_ptr = alloc_constant_data(CB_Float::type->cb_sizeof());
-                *(CB_Float::c_typedef)o->value->v_ptr = std::stod(t.token);
+                o->value.v_type = CB_Float::type;
+                o->value.v_ptr = alloc_constant_data(CB_Float::type->cb_sizeof());
+                *(CB_Float::c_typedef*)o->value.v_ptr = std::stod(t.token);
             } catch (std::out_of_range e) {
                 log_error("Float literal too large to fit!", t.context);
                 o->status = Parsing_status::FATAL_ERROR;
@@ -188,20 +193,28 @@ Owned<Abstx_simple_literal> read_simple_literal(Token_iterator& it, Shared<Abstx
         case Token_type::BOOL:
             ASSERT(it->token == "true" || it->token == "false"); // this should be checked by lexer
             // boolean literal
-            o->value->v_type = CB_Bool::type;
-            o->value->v_ptr = alloc_constant_data(CB_Bool::type->cb_sizeof());
-            *(CB_Bool::c_typedef)o->value->v_ptr = (t.token == "true");
+            o->value.v_type = CB_Bool::type;
+            o->value.v_ptr = alloc_constant_data(CB_Bool::type->cb_sizeof());
+            *(CB_Bool::c_typedef*)o->value.v_ptr = (t.token == "true");
             break;
         case Token_type::STRING:
-            o->value->v_type = CB_String::type;
-            o->value->v_ptr = alloc_constant_data(CB_String::type->cb_sizeof());
-            *(CB_String::c_typedef)o->value->v_ptr = t.token.c_str(); // valid as long as the list of tokens is alive @warning potentially dangerous
+            o->value.v_type = CB_String::type;
+            o->value.v_ptr = alloc_constant_data(CB_String::type->cb_sizeof());
+            *(CB_String::c_typedef*)o->value.v_ptr = (CB_String::c_typedef)t.token.c_str(); // valid as long as the list of tokens is alive @warning potentially dangerous
             break;
         default:
             ASSERT(false); // any other type of token cannot be a simple literal
     }
     if (!is_error(o->status)) o->finalize();
-    return o;
+    return owned_static_cast<Value_expression>(std::move(o));
+}
+
+
+
+
+Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    // @todo
+    return nullptr;
 }
 
 
@@ -209,12 +222,7 @@ Owned<Abstx_simple_literal> read_simple_literal(Token_iterator& it, Shared<Abstx
 
 
 
-
-
-
-
-
-Parsing_status read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Shared<Variable_expression> fn_id, Seq<Shared<Variable_expression>> lhs) {
+Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs) {
     // syntax: variable_expression()
     // it is inserted as its own statement in the scope
     // if in a declaration statement, the declaration comes first, then the function call,
@@ -238,10 +246,107 @@ Parsing_status read_function_call(Token_iterator& it, Shared<Abstx_scope> parent
         foo(_cb_tmp_1, _cb_tmp_2, &a, &b); // outer fn call
     */
 
+    // Allocate abstx node
+    Owned<Abstx_function_call> o = alloc(Abstx_function_call());
+    o->set_owner(parent_scope); // temporary
+    o->context = it->context;
+    o->start_token_index = it.current_index;
+
+    // Check function identifier
+    Shared<const CB_Type> t = fn_id->get_type();
+    ASSERT(t != nullptr); // type must be known
+    Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(t);
+    if (fn_type == nullptr) {
+        log_error("Non-function expression used as a function", o->context);
+        o->status = Parsing_status::SYNTAX_ERROR;
+    }
+    o->function_pointer = std::move(fn_id);
+
+    // Check out_args
+    if (lhs.size > 0) o->out_args = lhs;
+    else if (fn_type->out_types.size > 0) {
+        // create declaration statement with tmp variables; push it to scope
+        // add its temporary variables as out_args
+        Owned<Abstx_declaration> tmp_decl = alloc(Abstx_declaration());
+        tmp_decl->set_owner(parent_scope);
+        for (const auto& type : fn_type->out_types) {
+            // create tmp identifier; add to declaration statement
+            Owned<Abstx_identifier> tmp_id = alloc(Abstx_identifier());
+            tmp_id->set_owner(Shared<Abstx_declaration>(tmp_decl));
+            tmp_id->context = it->context;
+            // tmp_id->start_token_index = ---; // no start token index since the token doesn't really exist
+            tmp_id->name = "_cb_tmp_" + std::to_string(get_unique_id());
+            tmp_id->value.v_type = type;
+
+            o->out_args.add(static_pointer_cast<Variable_expression>(tmp_id));
+            tmp_decl->identifiers.add(std::move(tmp_id));
+        }
+        parent_scope->statements.add(owned_static_cast<Statement>(std::move(tmp_decl)));
+    }
+
+    it.assert(Token_type::SYMBOL, "("); // this should already have been checked
+
+    while (1) {
+        if (it.compare(Token_type::SYMBOL, ")")) break; // done
+
+        Owned<Value_expression> arg = read_value_expression(it, parent_scope);
+        arg->set_owner(o);
+        ASSERT(arg != nullptr);
+        if (is_error(arg->status)) {
+            o->status = arg->status;
+            if (is_fatal(arg->status)) {
+                break;
+            }
+        }
+
+        // if the value expression is a function call, add its out arguments as in arguments to this function call
+        Shared<Abstx_function_call_expression> fc = dynamic_pointer_cast<Abstx_function_call_expression>(arg);
+        if (fc != nullptr) {
+            ASSERT(fc->function_call != nullptr);
+            if (fc->function_call->out_args.size == 0) {
+                for (const Shared<Variable_expression>& out_arg : fc->function_call->out_args) {
+                    Owned<Variable_expression_reference> id_ref = alloc(Variable_expression_reference());
+                    id_ref->set_owner(o);
+                    id_ref->context = fc->context;
+                    id_ref->start_token_index = fc->start_token_index;
+                    id_ref->expr = out_arg;
+                    o->in_args.add(owned_static_cast<Value_expression>(std::move(id_ref)));
+                }
+            }
+        } else {
+            // not a function call -> just add the argument directly
+            o->in_args.add(std::move(arg));
+        }
 
 
+        if (it.compare(Token_type::SYMBOL, ",")) {
+            it.eat_token();
+            continue;
+        } else if (!it.compare(Token_type::SYMBOL, ")")) {
+            log_error("Missing ')' at end of function call", it->context);
+            o->status = Parsing_status::FATAL_ERROR;
+            break;
+        }
+    }
 
-    return Parsing_status::NOT_PARSED;
+    if (!is_error(o->status)) {
+        it.assert(Token_type::SYMBOL, ")"); // this is already checked / now eat the token
+    } else if (!is_fatal(o->status)) {
+        it.current_index = it.find_matching_paren() + 1;
+        if (it.expect_failed()) {
+            o->status = Parsing_status::FATAL_ERROR;
+        }
+    }
+    Owned<Abstx_function_call_expression> expr;
+    expr->set_owner(parent_scope);
+    expr->context = o->context;
+    expr->start_token_index = o->start_token_index;
+    expr->function_call = o;
+
+    parent_scope->statements.add(owned_static_cast<Statement>(std::move(o)));
+
+    // Abstx_function_call_expression
+    return owned_static_cast<Variable_expression>(std::move(expr));
 }
 
 

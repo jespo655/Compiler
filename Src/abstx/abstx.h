@@ -61,7 +61,7 @@ struct Abstx_node
     };
 
     // Set owner in a type safe way
-    template<typename T> void set_owner(const Shared<T>& p)
+    template<typename T> void set_owner(const T& p)
     {
         auto abstx_p = dynamic_pointer_cast<Abstx_node>(p);
         ASSERT(abstx_p != nullptr); // this checks for both if p is nullptr, and if T is a subclass of Abstx_node

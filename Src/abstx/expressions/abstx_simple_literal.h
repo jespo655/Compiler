@@ -14,13 +14,17 @@ struct Abstx_simple_literal : Value_expression {
         return oss.str();
     }
 
-    virtual Shared<const CB_Type> get_type() override {
+    Shared<const CB_Type> get_type() override {
         return value.v_type;
     }
 
     bool has_constant_value() const {
         ASSERT(value.v_ptr != nullptr); // it should be set during creation
         return true;
+    }
+
+    void const* get_constant_value() override {
+        return value.v_ptr;
     }
 
     Parsing_status fully_parse() override {

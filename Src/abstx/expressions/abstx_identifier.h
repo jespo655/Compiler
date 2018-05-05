@@ -80,6 +80,11 @@ struct Abstx_identifier_reference : Variable_expression {
         return id->has_constant_value();
     }
 
+    void const* get_constant_value() override {
+        ASSERT(id);
+        return id->get_constant_value();
+    }
+
     Parsing_status fully_parse() override {
         if (status != Parsing_status::PARTIALLY_PARSED) return status;
         ASSERT(name != "");
