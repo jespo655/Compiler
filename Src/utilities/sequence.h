@@ -12,7 +12,7 @@ const int DEFAULT_CAPACITY = 16; // arbitrary power of 2
 template<typename T>
 struct Seq {
     uint32_t size = 0;
-    uint32_t capacity = DEFAULT_CAPACITY;
+    uint32_t capacity = 0;
     T* v_ptr = nullptr;
 
     std::string toS() const {
@@ -27,65 +27,65 @@ struct Seq {
     }
 
     Seq() {
-        size = 0;
-        capacity = DEFAULT_CAPACITY;
-        v_ptr = (T*)malloc(capacity*sizeof(T));
         // size is always 0 at init, so no need to init members
     }
 
     ~Seq() {
-        for (uint32_t i = 0; i < size; ++i) {
-            v_ptr[i].~T();
+        if (v_ptr != nullptr) {
+            for (uint32_t i = 0; i < size; ++i) {
+                v_ptr[i].~T();
+            }
+            free(v_ptr);
+            v_ptr = nullptr;
+            size = 0;
+            capacity = 0;
         }
-        free(v_ptr);
-        v_ptr = nullptr;
-        size = 0;
-        capacity = 0;
     }
 
     // copy
-    Seq& operator=(const Seq& Seq) {
+    Seq& operator=(const Seq& seq) {
         for (uint32_t i = 0; i < size; ++i) {
             v_ptr[i].~T();
         }
-        resize(Seq.size, false);
+        resize(seq.size, false);
         for (uint32_t i = 0; i < size; ++i) {
-            new (&v_ptr[i]) T(Seq.v_ptr[i]);
+            new (&v_ptr[i]) T(seq.v_ptr[i]);
         }
         return *this;
     }
-    Seq(const Seq& Seq) { *this = Seq; }
+    Seq(const Seq& seq) { *this = seq; }
 
     // move
-    Seq& operator=(Seq&& Seq) {
+    Seq& operator=(Seq&& seq) {
         this->~Seq(); // free all members
-        size = Seq.size;
-        capacity = Seq.capacity;
-        v_ptr = Seq.v_ptr;
+        size = seq.size;
+        capacity = seq.capacity;
+        v_ptr = seq.v_ptr;
 
-        Seq.size = 0;
-        Seq.capacity = 0;
-        Seq.v_ptr = nullptr;
+        seq.size = 0;
+        seq.capacity = 0;
+        seq.v_ptr = nullptr;
         return *this;
     }
-    Seq(Seq&& Seq) { *this = std::move(Seq); }
+    Seq(Seq&& seq) { *this = std::move(seq); }
 
 
     T& operator[](uint32_t index) {
         if (index >= size) set(index, T());
         return v_ptr[index];
     }
+
     const T& operator[](uint32_t index) const {
         ASSERT(index < size);
         return v_ptr[index];
     }
 
-
-    template<typename T2> operator==(const Seq<T2>& Seq) const { return false; }
-    bool operator==(const Seq<T>& Seq) const {
-        if (size != Seq.size) return false;
+    template<typename T2> operator==(const Seq<T2>& seq) const { return false; }
+    bool operator==(const Seq<T>& seq) const {
+        if (size != seq.size) return false;
+        if (v_ptr == *seq.v_ptr) return true;
         for (int i = 0; i < size; ++i) {
-            if (v_ptr[i] != Seq.v_ptr[i]) return false;
+            if (v_ptr[i] != seq.v_ptr[i]) return false;
         }
         return true;
     }
@@ -96,6 +96,7 @@ struct Seq {
     }
 
     void set(uint32_t index, const T& t) {
+        if (capacity == 0) reallocate(index+1>DEFAULT_CAPACITY?index+1:DEFAULT_CAPACITY);
         ASSERT(v_ptr != nullptr);
         ASSERT(capacity != 0);
         if (index < size)
@@ -113,10 +114,11 @@ struct Seq {
     }
 
     void set(uint32_t index, T&& t) {
+        if (capacity == 0) reallocate(index+1>DEFAULT_CAPACITY?index+1:DEFAULT_CAPACITY);
         ASSERT(v_ptr != nullptr);
         ASSERT(capacity != 0);
         if (index < size)
-            v_ptr[index] = t;
+            v_ptr[index] = std::move(t);
         else {
             while (index >= capacity) {
                 reallocate(2*capacity);
@@ -139,6 +141,13 @@ struct Seq {
 
     void add(T&& t) {
         set(size, std::move(t));
+    }
+
+    void remove_last() {
+        if (size > 0) {
+            size = size - 1;
+            v_ptr[size].~T(); // properly delete the deleted value
+        }
     }
 
     void resize(uint32_t new_size, bool init=true, T default_value=T()) {
@@ -166,6 +175,7 @@ struct Seq {
     }
 
     void reallocate(uint32_t capacity, bool move=true) {
+        if (v_ptr == nullptr) ASSERT(size == 0 && this->capacity == 0);
         if (this->capacity == capacity) return;
         this->capacity = capacity;
         T* new_ptr = (T*)malloc(capacity*sizeof(T));
@@ -174,8 +184,10 @@ struct Seq {
             for (uint32_t i = capacity; i < size; ++i) v_ptr[i].~T(); // properly delete the Ts we won't move
             size = capacity;
         }
-        if (move) memcpy(new_ptr, v_ptr, size*sizeof(T)); // move the values
-        else for (uint32_t i = 0; i < size; ++i) v_ptr[i].~T(); // properly delete all Ts we don't move
+        for (uint32_t i = 0; i < size; ++i) {
+            if (move) new (&new_ptr[i]) T(std::move(v_ptr[i])); // move the value
+            else v_ptr[i].~T(); // properly delete all Ts we don't move
+        }
         free(v_ptr);
         v_ptr = new_ptr;
     }
@@ -269,14 +281,14 @@ struct Fixed_seq {
         }
     }
 
-    explicit operator Seq<T>() const
-    {
-        Seq<T> Seq;
-        Seq.reallocate(size);
-        Seq.size = size;
-        memcpy(Seq.v_ptr, v, size*sizeof(T));
-        return Seq;
-    }
+    // explicit operator Seq<T>() const
+    // {
+    //     Seq<T> Seq;
+    //     Seq.reallocate(size);
+    //     Seq.size = size;
+    //     memcpy(Seq.v_ptr, v, size*sizeof(T)); // This is very dangerous
+    //     return Seq;
+    // }
 
     struct iterator {
         uint32_t index = 0;
