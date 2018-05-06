@@ -5,36 +5,6 @@
 
 
 
-std::shared_ptr<Global_scope> read_global_scope(const std::vector<Token>& tokens, const std::string& name)
-{
-    auto global_scope = std::shared_ptr<Global_scope>(new Global_scope(tokens));
-    global_scope->file_name = name;
-
-    Token_iterator it = global_scope->iterator();
-    global_scope->start_token_index = 0;
-    global_scope->context = it->context;
-
-    global_scope->dynamic = false;
-
-    while (!it->is_eof()) {
-
-        std::shared_ptr<Statement> s = read_statement(it, global_scope);
-        ASSERT(s != nullptr);
-        if (s->status == Parsing_status::FATAL_ERROR) {
-            global_scope->status = Parsing_status::FATAL_ERROR;
-            return global_scope;
-        }
-
-        global_scope->statements.push_back(s);
-    }
-
-    global_scope->status = Parsing_status::PARTIALLY_PARSED;
-    return global_scope;
-
-}
-
-
-
 
 
 

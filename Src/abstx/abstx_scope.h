@@ -39,7 +39,7 @@ struct Abstx_scope : Abstx_node
                                                    // FIXME: add a safeguard for when several using-statements tries to import the same scope.
     Seq<Shared<Abstx_function_call>> run_statements;
 
-    uint8_t flags = 0;
+    uint8_t flags = (uint8_t)SCOPE_SELF_CONTAINED; // scope is self contained until it references something outside its scope
     bool dynamic() const { return flags == SCOPE_DYNAMIC; }
     bool async() const { return flags == SCOPE_ASYNC; }
     bool self_contained() const { return flags == SCOPE_SELF_CONTAINED; }
@@ -83,12 +83,13 @@ struct Abstx_scope : Abstx_node
                     // first found here: p->context()
                 }
             }
+            if (p != nullptr) flags -= SCOPE_SELF_CONTAINED; // we referenced an identifier outside the scope -> not self contained
         }
         return p;
     }
 
     // returns nullpointer if an error occurred. Use add_note() to give additional context
-    virtual Shared<const CB_Type> get_type(const std::string& id, bool recursive=true)
+    virtual Shared<const CB_Type> get_type(const std::string& id, const Token_context& context, bool recursive=true)
     {
         // first: find the type identifier
         Shared<Abstx_identifier> type_id = get_identifier(id, recursive);
@@ -221,7 +222,7 @@ struct Global_scope : Abstx_scope
     std::string file_name;
     const Seq<Token> tokens; // should be treated as const
 
-    Global_scope(const Seq<Token>& tokens) : tokens{tokens} {}
+    Global_scope(Seq<Token>&& tokens) : tokens{std::move(tokens)} {}
 
     Token_iterator iterator(int index=0) const { return Token_iterator(tokens, index); }
 

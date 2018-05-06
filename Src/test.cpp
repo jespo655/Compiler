@@ -8,14 +8,12 @@
 // #include "abstx/statement.h"
 // #include "abstx/type.h"
 // #include "compile_time/workspace.h"
-// #include "utilities/unique_id.h"
-// #include "utilities/assert.h"
 #include "abstx/all_abstx.h"
 #include "types/all_cb_types.h"
 #include "utilities/assert.h"
-// #include "parser/parser.h"
+#include "utilities/unique_id.h"
+#include "parser/parser.h"
 #include "lexer/lexer.h"
-
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -109,13 +107,19 @@ struct AB {
 
 struct Verbose
 {
-    int i = CB_Type::get_unique_type_id();
-    Verbose() { cout << "V " << i << " constructed" << endl; }
-    ~Verbose() { cout << "V " << i << " deleted" << endl; }
-    Verbose(const Verbose& v) { cout << "V " << i << " copy constructor from " << v.i << endl; }
-    Verbose& operator=(const Verbose& v) { cout << "V " << i << " copy assignment from " << v.i << endl; }
-    Verbose(Verbose&& v) { cout << "V " << i << " move constructor from " << v.i << endl; }
-    Verbose& operator=(Verbose&& v) { cout << "V " << i << " move assignment from " << v.i << endl; }
+    int i = get_unique_id();
+    bool deleted = false;
+    Verbose() { cout << "V " << std::dec << i << " constructed" << endl; }
+    ~Verbose() {
+        cout << "V " << std::dec << i << " deleted";
+        if (deleted) cout << " FOR THE SECOND TIME @@@@@@@@@@@@@@@@@@@@@" << endl;
+        cout << endl;
+        deleted = true;
+    }
+    Verbose(const Verbose& v) { cout << "V " << std::dec << i << " copy constructor from " << v.i << endl; }
+    Verbose& operator=(const Verbose& v) { cout << "V " << std::dec << i << " copy assignment from " << v.i << endl; }
+    Verbose(Verbose&& v) { cout << "V " << std::dec << i << " move constructor from " << v.i << endl; }
+    Verbose& operator=(Verbose&& v) { cout << "V " << std::dec << i << " move assignment from " << v.i << endl; }
 };
 
 
@@ -127,11 +131,10 @@ Owned<Verbose> create_verbose()
     return vp;
 }
 
-void grab_verbose(Shared<Verbose> vp) {
+void grab_verbose(Owned<Verbose> vp) {
     cout << "grabbed " << vp->i << endl;
     cout << "returning" << endl;
 }
-
 
 void owning_test()
 {
@@ -141,6 +144,24 @@ void owning_test()
     cout << "v.i: " << vp->i << endl;
     grab_verbose(std::move(vp));
     cout << "vp: " << vp.toS() << endl;
+}
+
+
+Seq<Verbose> get_verbose_seq() {
+    std::cout << "creating seq" << std::endl;
+    Seq<Verbose> seq;
+    seq.add(Verbose());
+    seq[17] = Verbose();
+    std::cout << "returning seq" << std::endl;
+    return seq;
+}
+
+void sequence_test()
+{
+    Seq<Verbose> seq = get_verbose_seq();
+    seq.add(Verbose());
+    for (const Verbose& v : seq) std::cout << std::dec << v.i << " ";
+    std::cout << std::endl;
 }
 
 
@@ -317,8 +338,8 @@ void size_test()
     // cout << "float: " << sizeof(float) << endl;
     // cout << "double: " << sizeof(double) << endl;
 
-    cout << "unique size = " << sizeof(std::unique_ptr<int>) << endl;
-    cout << "Shared size = " << sizeof(std::shared_ptr<int>) << endl;
+    cout << "unique size = " << sizeof(Owned<int>) << endl;
+    cout << "Shared size = " << sizeof(Shared<int>) << endl;
     cout << "bool size = " << sizeof(bool);
 
 }
@@ -375,8 +396,9 @@ void wchar_test() {
 
 void compile_test()
 {
-    // std::shared_ptr<Global_scope> gs = parse_file("../Demos/helloworld.cb");
-    std::vector<Token> hw_tokens = get_tokens_from_file("../Demos/helloworld.cb");
+    /*
+    // Shared<Global_scope> gs = parse_file("../Demos/helloworld.cb");
+    Seq<Token> hw_tokens = get_tokens_from_file("../Demos/helloworld.cb");
     std::cout << "../Demos/helloworld.cb tokens: " << endl;
     for (const Token& token : hw_tokens) {
         if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
@@ -384,21 +406,37 @@ void compile_test()
     }
     std::cout << endl;
 
-
-    std::vector<Token> code_tokens = get_tokens_from_file("lexer/code.cb");
+    Seq<Token> code_tokens = get_tokens_from_file("lexer/code.cb");
     std::cout << "lexer/code.cb tokens: " << endl;
     for (const Token& token : code_tokens) {
         if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
         else std::cout << token.token << " ";
     }
     std::cout << endl;
+    */
+
+    Seq<Token> code_tokens = get_tokens_from_file("test.cb");
+    std::cout << "test.cb tokens: " << endl;
+    for (const Token& token : code_tokens) {
+        if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
+        else std::cout << token.token << " ";
+    }
+    std::cout << endl;
+    // std::cout << "grabbing a token..." << std::endl;
+    // Token t = code_tokens[0];
+    // std::cout << "deleting the token..." << std::endl;
+    // t.~Token();
+
+    // std::cout << "deleting seq..." << std::endl;
+    // code_tokens.~Seq();
+    std::cout << "done!" << std::endl;
 
 }
 
 void code_gen_test()
 {
     // first: get tokens from file
-    std::vector<Token> hw_tokens = get_tokens_from_file("../Demos/minimal.cb");
+    Seq<Token> hw_tokens = get_tokens_from_file("../Demos/minimal.cb");
     std::cout << "../Demos/minimal.cb tokens: " << endl;
     for (const Token& token : hw_tokens) {
         if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
@@ -406,6 +444,9 @@ void code_gen_test()
         // std::cout << token << " ";
     }
     std::cout << endl;
+
+    Shared<Global_scope> gs = parse_file("../Demos/helloworld.cb");
+
 
     // compile into abstx tree
     // TODO
@@ -415,6 +456,8 @@ void code_gen_test()
     // std::set<std::string> c_sources;
     // generate_code(std::cout, &fn, c_sources);
 }
+
+
 
 
 
@@ -481,9 +524,11 @@ int main()
     // template_test();
     // range_test();
     // flag_test();
-    // compile_test();
-    code_gen_test();
+    // code_gen_test();
     // abstx_test();
+
+    compile_test();
+    // sequence_test();
 
     std::cout << "all test done!" << std::endl;
 }

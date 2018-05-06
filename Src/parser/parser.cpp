@@ -1,62 +1,75 @@
 #include "parser.h"
-#include "lexer.h"
+#include "../lexer/lexer.h"
 #include "parsing_status.h"
 #include "token_iterator.h"
 
-#include "../abstx/scope.h"
-#include "../abstx/using.h"
-#include "../abstx/statement.h"
-#include "../abstx/if.h"
-#include "../abstx/for.h"
-#include "../abstx/while.h"
-#include "../abstx/function.h"
-#include "../abstx/declaration.h"
-#include "../abstx/assignment.h"
-#include "../abstx/return.h"
+#include "../abstx/abstx_scope.h"
 
 #include <map>
+#include <string>
 
 
 
 
-std::map<std::string, std::shared_ptr<Global_scope>> global_scopes;
+std::map<std::string, Owned<Global_scope>> global_scopes;
 
 
 
 // FIXME: store a map name -> global scope with parsed scopes
 // If the name already has a global scope, return that instead.
-std::shared_ptr<Global_scope> parse_file(const std::string& file)
+Shared<Global_scope> parse_file(const std::string& file)
 {
-    if (global_scopes[file] != nullptr) return global_scopes[file];
+    if (global_scopes[file] != nullptr) return global_scopes[file]; // do this before get_tokens_from_file()
     return parse_tokens(get_tokens_from_file(file), file);
 }
 
-std::shared_ptr<Global_scope> parse_string(const std::string& string, const std::string& name) // FIXME: add string context
+Shared<Global_scope> parse_string(const std::string& string, const std::string& name, const Token_context& context)
 {
     ASSERT(string != "");
     ASSERT(name != "");
-    if (global_scopes[name] != nullptr) return global_scopes[name];
-    return parse_tokens(get_tokens_from_string(string), name);
+    if (global_scopes[name] != nullptr) return global_scopes[name]; // do this before get_tokens_from_string()
+    Shared<Global_scope> gs = parse_tokens(get_tokens_from_string(string), name);
+    gs->context = context;
+    return gs;
 }
 
-std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, const std::string& name)
+Shared<Global_scope> parse_tokens(Seq<Token>&& tokens, const std::string& name)
+{
+    return read_global_scope(std::move(tokens), name);
+}
+
+
+
+
+
+Shared<Global_scope> read_global_scope(Seq<Token>&& tokens, const std::string& name)
 {
     ASSERT(name != "");
     if (global_scopes[name] != nullptr) return global_scopes[name];
-    if (tokens.size() <= 1) return nullptr;
+    if (tokens.empty()) return nullptr;
 
-    auto global_scope = read_global_scope(tokens, name);
+    Owned<Global_scope> global_scope = alloc(Global_scope(std::move(tokens)));
+    global_scope->file_name = name;
 
-    ASSERT(global_scope->status != Parsing_status::NOT_PARSED);
-    if (!is_error(global_scope->status)) {
-        global_scopes[name] = global_scope;
+    Token_iterator it = global_scope->iterator();
+    global_scope->start_token_index = 0;
+    global_scope->context = it->context;
+
+    while (!it->is_eof()) {
+        Parsing_status ps = read_statement(it, static_pointer_cast<Abstx_scope>(global_scope));
+        if (is_fatal(ps)) {
+            global_scope->status = Parsing_status::FATAL_ERROR;
+            break;
+        }
     }
 
-    return global_scope;
+    if (!is_error(global_scope->status)) {
+        global_scope->status = Parsing_status::PARTIALLY_PARSED;
+        global_scopes[name] = std::move(global_scope);
+    }
+
+    return global_scopes[name];
 }
-
-
-
 
 
 
@@ -105,7 +118,7 @@ std::shared_ptr<Global_scope> parse_tokens(const std::vector<Token>& tokens, con
 
 
 // FIXME: move to declaration_parser
-Parsing_status fully_resolve(std::shared_ptr<Declaration_statement>& declaration)
+Parsing_status fully_resolve(Shared<Declaration_statement>& declaration)
 {
     // TODO:
     // it's partially parsed up till the ':' token
@@ -123,7 +136,7 @@ Parsing_status fully_resolve(std::shared_ptr<Declaration_statement>& declaration
 
 
 // FIXME: move to assignment_parser
-Parsing_status fully_resolve(std::shared_ptr<Assignment_statement>& assignment)
+Parsing_status fully_resolve(Shared<Assignment_statement>& assignment)
 {
     // TODO:
     // Read and fully resolve variable expressions up to the '=' token, store their types in a vector
@@ -166,7 +179,7 @@ Parsing_status fully_resolve(std::shared_ptr<Assignment_statement>& assignment)
 
 
 // FIXME: move to using_parser
-Parsing_status fully_resolve(Token_iterator& it, std::shared_ptr<Using_statement>& statement)
+Parsing_status fully_resolve(Token_iterator& it, Shared<Using_statement>& statement)
 {
     if (statement->status == Parsing_status::FULLY_RESOLVED || is_error(statement->status)) {
         return statement->status;
@@ -180,10 +193,10 @@ Parsing_status fully_resolve(Token_iterator& it, std::shared_ptr<Using_statement
 
     it.eat_token(); // eat the "using" token
 
-    std::shared_ptr<Scope> parent_scope = statement->parent_scope();
+    Shared<Scope> parent_scope = statement->parent_scope();
     ASSERT(parent_scope != nullptr);
 
-    std::shared_ptr<Scope> scope;
+    Shared<Scope> scope;
     std::string key = "";
 
     const Token& id_token = it.eat_token();
@@ -259,13 +272,13 @@ Parsing_status fully_resolve(Token_iterator& it, std::shared_ptr<Using_statement
 
 
 // Partial parse of declaration statement
-Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Declaration_statement>& statement, int declaration_index, std::shared_ptr<Scope> parent_scope)
+Parsing_status partially_parse(Token_iterator& it, Shared<Declaration_statement>& statement, int declaration_index, Shared<Scope> parent_scope)
 {
     ASSERT (!it.error);
     ASSERT (it[declaration_index].type == Token_type::SYMBOL && it[declaration_index].token == ":");
     ASSERT (it.current_index < declaration_index);
 
-    statement = std::shared_ptr<Declaration_statement>{new Declaration_statement()};
+    statement = Shared<Declaration_statement>{new Declaration_statement()};
 
     bool first = true;
 
@@ -277,7 +290,7 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Declaration_s
         const Token& identifier_token = it.expect(Token_type::IDENTIFIER);
 
         if (!it.error) {
-            auto id = std::shared_ptr<Identifier>(new Identifier());
+            auto id = Shared<Identifier>(new Identifier());
             id->name = identifier_token.token;
             id->context = identifier_token.context;
             id->owner = statement;
@@ -304,19 +317,19 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<Declaration_s
 
 
 // Partial parse of for statement
-Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<For_statement>& statement)
+Parsing_status partially_parse(Token_iterator& it, Shared<For_statement>& statement)
 {
     ASSERT (it->type != Token_type::STRING && it->token == "for");
     ASSERT (!it.error);
 
-    statement = std::shared_ptr<For_statement>{new For_statement()};
+    statement = Shared<For_statement>{new For_statement()};
 
     it.eat_token(); // eat the "for" token
 
     it.expect(Token_type::SYMBOL, "(");
     if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1; // go back to the previous "(" and search from there
 
-    statement->scope = std::shared_ptr<Scope>{new Scope()};
+    statement->scope = Shared<Scope>{new Scope()};
     statement->scope->owner = statement;
     statement->scope->start_token_index = it.current_index;
 
@@ -333,19 +346,19 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<For_statement
 
 
 // Partial parse of while statement
-Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<While_statement>& statement)
+Parsing_status partially_parse(Token_iterator& it, Shared<While_statement>& statement)
 {
     ASSERT (it->type != Token_type::STRING && it->token == "while");
     ASSERT (!it.error);
 
-    statement = std::shared_ptr<While_statement>{new While_statement()};
+    statement = Shared<While_statement>{new While_statement()};
 
     it.eat_token(); // eat the "while" token
 
     it.expect(Token_type::SYMBOL, "(");
     if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1; // go back to the previous "(" and search from there
 
-    statement->scope = std::shared_ptr<Scope>{new Scope()};
+    statement->scope = Shared<Scope>{new Scope()};
     statement->scope->owner = statement;
     statement->scope->start_token_index = it.current_index;
 
@@ -362,18 +375,18 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<While_stateme
 
 
 // Partial parse of if statement
-Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<If_statement>& statement)
+Parsing_status partially_parse(Token_iterator& it, Shared<If_statement>& statement)
 {
     ASSERT (it->type != Token_type::STRING && it->token == "if");
     ASSERT (!it.error);
 
-    statement = std::shared_ptr<If_statement>{new If_statement()};
+    statement = Shared<If_statement>{new If_statement()};
 
     // read any number of conditional scopes (if, elsif, elsif, ...)
     do {
         it.eat_token(); // eat the "if"/"elsif" token
 
-        auto cs = std::shared_ptr<Conditional_scope>{new Conditional_scope()};
+        auto cs = Shared<Conditional_scope>{new Conditional_scope()};
         cs->owner = statement;
         cs->start_token_index = it.current_index;
         statement->conditional_scopes.push_back(cs);
@@ -381,7 +394,7 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<If_statement>
         it.expect(Token_type::SYMBOL, "(");
         if (!it.error) it.current_index = it.find_matching_paren(it.current_index-1) + 1; // go back to the previous "(" and search from there
 
-        cs->scope = std::shared_ptr<Scope>{new Scope()};
+        cs->scope = Shared<Scope>{new Scope()};
         cs->scope->owner = cs;
         cs->scope->start_token_index = it.current_index;
 
@@ -394,7 +407,7 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<If_statement>
 
         it.eat_token(); // eat the "else" token
 
-        statement->else_scope = std::shared_ptr<Scope>{new Scope()};
+        statement->else_scope = Shared<Scope>{new Scope()};
         statement->else_scope->owner = statement;
         statement->else_scope->start_token_index = it.current_index;
 
@@ -406,7 +419,7 @@ Parsing_status partially_parse(Token_iterator& it, std::shared_ptr<If_statement>
 
         it.eat_token(); // eat the "then" token
 
-        statement->then_scope = std::shared_ptr<Scope>{new Scope()};
+        statement->then_scope = Shared<Scope>{new Scope()};
         statement->then_scope->owner = statement;
         statement->then_scope->start_token_index = it.current_index;
 

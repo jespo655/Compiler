@@ -9,6 +9,9 @@ struct flag
     uint8_t v;
     flag(const uint8_t& v) { this->v = v; }
     explicit operator uint64_t() const { return 1ULL<<(v-1); }
+    explicit operator uint32_t() const { return 1ULL<<(v-1); }
+    explicit operator uint16_t() const { return 1ULL<<(v-1); }
+    explicit operator uint8_t() const { return 1ULL<<(v-1); }
 };
 
 #define GENERATE_FLAG_OPERATORS(T)                                   \

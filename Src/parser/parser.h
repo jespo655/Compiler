@@ -11,9 +11,11 @@
 #include "../utilities/pointers.h"
 
 // parser.cpp
+// Global scopes are allocated and stored internally - trying to parse a file that has already been parsed will just return a pointer to the old global scope
 Shared<Global_scope> parse_file(const std::string& file_name);
-Shared<Global_scope> parse_string(const std::string& string, const std::string& name = ""); // FIXME: add string context
-Shared<Global_scope> parse_tokens(const Seq<Token>& tokens, const std::string& name = "");
+Shared<Global_scope> parse_string(const std::string& string, const std::string& string_name, const Token_context& context);
+Shared<Global_scope> parse_tokens(Seq<Token>&& tokens, const std::string& name = "");
+Shared<Global_scope> read_global_scope(Seq<Token>&& tokens, const std::string& name = "");
 
 
 // temporary variable names should be named _cb_tmp_uid, so we can be sure that they won't nameclash with other things

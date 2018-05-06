@@ -176,7 +176,7 @@ Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_sco
     if (!is_fatal(scope->status)) {
         it.assert(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
     }
-    return std::move(scope);
+    return scope;
 }
 
 

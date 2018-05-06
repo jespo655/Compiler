@@ -84,9 +84,46 @@ void static_test()
     s2.foo();
 }
 
+
+Seq<int> get_seq() {
+    std::cout << "constructing seq in fn" << std::endl;
+    Seq<int> seq;
+    for (int i = 50; i < 60; ++i) seq.add(i);
+    std::cout << "returning seq in fn" << std::endl;
+    return seq;
+}
+
+void sequence_test()
+{
+    std::cout << "constructing a" << std::endl;
+    Seq<int> a = get_seq();
+    std::cout << "adding to a" << std::endl;
+    for (int i = 0; i < 10; ++i) a.add(i);
+
+    std::cout << "constructing b (move from a)" << std::endl;
+    Seq<int> b = std::move(a);
+    std::cout << "adding to b" << std::endl;
+    for (int i = 10; i < 20; ++i) b.add(i);
+
+    std::cout << "printing b" << std::endl;
+    for (int i : b) std::cout << i << " ";
+    std::cout << std::endl;
+
+    // for (const int& i : b) std::cout << i << " ";
+    // std::cout << std::endl;
+    std::cout << "doing crazy stuff!" << std::endl;
+    b = std::move(b);
+
+    std::cout << "deleting!" << std::endl;
+    a.~Seq();
+    b.~Seq();
+    std::cout << "done!" << std::endl;
+}
+
 int main()
 {
-    static_test();
+    sequence_test();
+    // static_test();
     // pointer_test();
 
     // Shared<void> s;

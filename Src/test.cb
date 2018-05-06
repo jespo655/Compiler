@@ -1,12 +1,18 @@
 
 
 
+
+foo(a, b, c);
+
+a, b, c : int , int, int;
+
+
+
+/*
 Cube
-
-
-
 
 COMPILER NAME: Cube
 file endings: .cb
 
 prefix: CB_X
+*/

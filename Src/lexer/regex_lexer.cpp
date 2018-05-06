@@ -6,7 +6,6 @@
 #include <sstream>
 #include <fstream>
 #include <string>
-#include <vector>
 #include <iostream> // debugging, error message for unable to open file
 #include <algorithm>
 
@@ -86,28 +85,28 @@ bool next_line(std::string& buffer, std::istream& input, Token_context& context)
 }
 
 // returns true if matched
-bool try_match(std::string& str, Token& token, std::vector<Token>& tokens, const std::regex& rx, const Token_type& type, int capture_group = 1) {
+bool try_match(std::string& str, Token& t, Seq<Token>& tokens, const std::regex& rx, const Token_type& type, int capture_group = 1) {
     std::smatch match;
     if (regex_search(str, match, rx)) {
-        token.token = match[capture_group];
-        token.type = type;
-        if (token.type == Token_type::COMPILER_COMMAND) std::transform(token.token.begin(), token.token.end(), token.token.begin(), ::tolower);
+        t.token = match[capture_group];
+        t.type = type;
+        if (t.type == Token_type::COMPILER_COMMAND) std::transform(t.token.begin(), t.token.end(), t.token.begin(), ::tolower);
         str = match.suffix();
-        tokens.push_back(token);
-        token.context.position += match.length();
+        tokens.add(t);
+        t.context.position += match.length();
         return true;
     }
     return false;
 }
 
 
-std::vector<Token> read_tokens(std::istream& input, Token_context initial_context)
+Seq<Token> read_tokens(std::istream& input, Token_context initial_context)
 {
     Token t;
     t.context = initial_context;
 
     std::string current_line = "";
-    std::vector<Token> tokens;
+    Seq<Token> tokens;
 
     std::smatch match;
     bool matched;
@@ -170,7 +169,7 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
         if (try_match(current_line, t, tokens, compiler_rx, Token_type::COMPILER_COMMAND)) { // before symbol
 
             if (t.token == "#string") { // Here-string
-                tokens.pop_back(); // delete the #string token - just insert the string literal
+                tokens.remove_last(); // delete the #string token - just insert the string literal
 
                 // if a match cannot be found on the current line, read a new line, concat (including newline), try again
                 if(!try_match(current_line, t, tokens, here_string_rx, Token_type::STRING, 2)) {
@@ -212,7 +211,7 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
                             sb << std::endl << match[1];
                             t.token = sb.str();
                             t.type = Token_type::STRING;
-                            tokens.push_back(t); // this still has the old context
+                            tokens.add(t); // this still has the old context
                             new_context.position = 1 + match.length();
                             t.context = new_context; // update to the new context
                             current_line = match.suffix(); // update current line
@@ -248,7 +247,7 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
             } else {
                 t.type = Token_type::IDENTIFIER;
             }
-            tokens.push_back(t);
+            tokens.add(t);
             t.context.position += match.length();
             current_line = match.suffix();
             continue;
@@ -261,43 +260,43 @@ std::vector<Token> read_tokens(std::istream& input, Token_context initial_contex
     }
 }
 
-void add_eof_token(std::vector<Token>& tokens, const std::string& file_name)
+void add_eof_token(Seq<Token>& tokens, const std::string& file_name)
 {
     Token t;
     t.token = "eof";
     t.type = Token_type::EOF; // this is what everything should break on in the parser
     t.context.file = file_name;
     t.context.position = 1;
-    t.context.line = !tokens.empty() ? tokens.back().context.line + 1 : 1;
-    tokens.push_back(t);
+    t.context.line = !tokens.empty() ? tokens.get(tokens.size-1).context.line + 1 : 1;
+    tokens.add(t);
 }
 
-std::vector<Token> get_tokens_from_string(const std::string& source, const Token_context& initial_context)
+Seq<Token> get_tokens_from_string(const std::string& source, const Token_context& initial_context)
 {
     std::istringstream iss{source};
-    std::vector<Token> tokens = read_tokens(iss, initial_context);
+    Seq<Token> tokens = read_tokens(iss, initial_context);
     add_eof_token(tokens, initial_context.file);
     return tokens;
 }
 
-std::vector<Token> get_tokens_from_string(const std::string& source, const std::string& string_name)
+Seq<Token> get_tokens_from_string(const std::string& source, const std::string& string_name)
 {
     Token_context initial_context;
     initial_context.file = string_name;
     return get_tokens_from_string(source, initial_context);
 }
 
-std::vector<Token> get_tokens_from_file(const std::string& source_file)
+Seq<Token> get_tokens_from_file(const std::string& source_file)
 {
     std::ifstream file;
     file.open(source_file);
-    std::vector<Token> tokens;
+    Seq<Token> tokens;
     if (file.is_open()) {
         Token_context initial_context;
         initial_context.file = source_file;
         tokens = read_tokens(file, initial_context);
     } else {
-        std::cout << "Unable to open file \"" << source_file << "\"" << std::endl;
+        std::cout << "Unable to open file \"" << source_file << "\"" << std::endl; // @todo: this should be a compile error
     }
     file.close();
     add_eof_token(tokens, source_file);
@@ -319,7 +318,7 @@ std::vector<Token> get_tokens_from_file(const std::string& source_file)
 #ifdef TEST
 
 // Test suite
-void rx_test(const std::regex& rx, std::string text, const std::vector<std::string>& expected_matches, const std::string test_name = "", const int capture_group = 1)
+void rx_test(const std::regex& rx, std::string text, const Seq<std::string>& expected_matches, const std::string test_name = "", const int capture_group = 1)
 {
     std::cout << "Running test" << (test_name==""?"...":" "+test_name) << std::endl;
 
@@ -404,7 +403,7 @@ void rx_test_suite()
     std::cout << "All tests passed." << std::endl;
 }
 
-void print_tokens(const std::vector<Token>& tokens) {
+void print_tokens(const Seq<Token>& tokens) {
     if (tokens.empty()) {
         std::cout << "-- List of tokens is empty. --\n";
         return;
@@ -427,7 +426,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    std::vector<Token> tokens = get_tokens_from_file(argv[1]);
+    Seq<Token> tokens = get_tokens_from_file(argv[1]);
     // print_tokens(tokens);
     std::cout << "Parsed " << tokens.size() << " tokens." << std::endl;
 
@@ -437,7 +436,7 @@ int main(int argc, char** argv) {
 //     tc.line = 417;
 //     tc.position = 57;
 
-//     std::vector<Token> tokens = get_tokens_from_string("asd\n\
+//     Seq<Token> tokens = get_tokens_from_string("asd\n\
 // typeof :: inline fn(t : $T) -> type\n\
 // #modify\n\
 // {\n\

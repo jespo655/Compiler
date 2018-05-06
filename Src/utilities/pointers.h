@@ -100,12 +100,12 @@ struct Owned {
     explicit operator T*() const { return v; }
 
     // copy - not allowed (makes a deep copy?). If passing a owned_ptr to a function, move constructor should be used. (In CB this will be done automatically)
-    Owned& operator=(const Owned& ptr)
-    {
-        if (v == nullptr) *this = std::move(ptr.deep_copy());
-        else *v = *ptr;
-    }
-    Owned(const Owned& ptr) { *this = ptr; }
+    Owned& operator=(const Owned& ptr) = delete;
+    // {
+    //     if (v == nullptr) *this = std::move(ptr.deep_copy());
+    //     else *v = *ptr;
+    // }
+    Owned(const Owned& ptr) = delete; // { *this = ptr; }
 
     Owned& operator=(const nullptr_t& ptr) { ASSERT(ptr == nullptr); this->~Owned(); return *this; }
     Owned(const nullptr_t& ptr) { *this = ptr; }

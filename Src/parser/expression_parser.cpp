@@ -141,7 +141,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
 
     ASSERT(expr != nullptr);
     ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED);
-    return std::move(expr);
+    return expr;
 }
 
 
