@@ -10,6 +10,54 @@
 #include "../utilities/sequence.h"
 #include "../utilities/pointers.h"
 
+
+
+/*
+Structure:
+
+
+Step 1: read_scope, read_statement
+    Starting with nothing but a token iterator, create an abstx node of some kind and return it
+    These functions should do the absolute minimal work necessary
+    In this step, types cannot be guaranteed to be resolved (never use get_type(), it might return nullptr)
+    Important:
+        Set owner, context (of first token) and start_token_index (where fully_parse should continue parsing)
+        Set status to PARTIALLY_PARSED or error
+
+    + Parsing_status read_statement(it, parent_scope): read a generic statement; add it to the parent scope and return parsing status
+
+
+
+Step 2: Statement::fully_parse(), read_value_expression, read_variable_expression
+    Starting with a PARTIALLY_PARSED statement, go through the list of tokens again and fill in any blanks
+    (If status is not PARTIALLY_PARSED or DEPENDENCIES_NEEDED, do nothing)
+    In this step, all types must be known. If get_type() returns nullptr, set status to TYPE_ERROR
+    Important:
+        Set status to FULLY_PARSED or error
+
+    + Parsing_status Statement::fully_parse(): Starting with start_token_index set in read_statement(), continue and parse the statement, including value/variable expressions
+    + Owned<Value_expression> read_value_expression(it, parent_scope): read a generic value expression and return an owned pointer to it
+    + Owned<Variable_expression> read_variable_expression(it, parent_scope): read a generic variable expression and return an owned pointer to it
+
+    For static scopes, statements can be resolved in any order. Keep a list of statements with DEPENDENCIES_NEEDED.
+        If a statement cannot be resolved with DEPENDENCIES_NEEDED, add it to the list and try to resolve the next statement.
+    For dynamic scopes, statments must be resolved in order. If parsing fails with DEPENDENCIES_NEEDED, return and try again from the beginning later
+
+
+*/
+
+// TODO: remove all finalize() from abstx
+// TODO: remove all fully_parse() from non-statement abstx; move virtual function to Statement
+// TODO: move all implementations of fully_parse() to statement_parser.cpp
+
+
+// TODO: for read_function_call(): check if its owner is Abstx_assignment; if it is, grab its identifiers as lhs. Remove LHS as an argument to the function
+
+
+
+
+
+
 // parser.cpp
 // Global scopes are allocated and stored internally - trying to parse a file that has already been parsed will just return a pointer to the old global scope
 Shared<Global_scope> parse_file(const std::string& file_name);

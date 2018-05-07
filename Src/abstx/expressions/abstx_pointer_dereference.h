@@ -17,23 +17,11 @@ struct Abstx_pointer_dereference : Variable_expression {
     }
 
     virtual Shared<const CB_Type> get_type() override {
+        ASSERT(pointer_id);
         Shared<const CB_Pointer> type = dynamic_pointer_cast<const CB_Pointer>(pointer_id->get_type());
         ASSERT(type != nullptr);
         ASSERT(type->v_type != nullptr);
         return type->v_type;
-    }
-
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-
-        if (!is_codegen_ready(pointer_id->status)) {
-            if (is_error(pointer_id->status)) status = pointer_id->status;
-            else status = Parsing_status::DEPENDENCIES_NEEDED;
-            return status;
-        }
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
     }
 
     void generate_code(std::ostream& target) override
@@ -50,7 +38,7 @@ struct Abstx_pointer_dereference : Variable_expression {
 struct Abstx_address_of : Value_expression {
 
     Shared<Abstx_identifier> pointer_id; // Owned by parent scope
-    Owned<CB_Pointer> pointer_type = nullptr;
+    Shared<const CB_Type> pointer_type = nullptr;
 
     std::string toS() const override {
         ASSERT(pointer_id->name.length() > 0);
@@ -60,26 +48,14 @@ struct Abstx_address_of : Value_expression {
     }
 
     virtual Shared<const CB_Type> get_type() override {
-        return static_pointer_cast<const CB_Type>(pointer_type);
-    }
-
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-
-        if (!is_codegen_ready(pointer_id->status)) {
-            if (is_error(pointer_id->status)) status = pointer_id->status;
-            else status = Parsing_status::DEPENDENCIES_NEEDED;
-            return status;
-        }
-
+        ASSERT(pointer_id);
         if (pointer_type == nullptr) {
-            pointer_type = alloc(CB_Pointer());
-            pointer_type->v_type = pointer_id->get_type();
-            pointer_type->finalize();
+            Owned<CB_Pointer> pt = alloc(CB_Pointer());
+            pt->v_type = pointer_id->get_type();
+            pt->finalize();
+            pointer_type = add_complex_cb_type(owned_static_cast<CB_Type>(std::move(pt)));
         }
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
+        return pointer_type;
     }
 
     void generate_code(std::ostream& target) override

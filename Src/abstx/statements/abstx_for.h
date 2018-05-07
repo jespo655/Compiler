@@ -43,37 +43,7 @@ struct Abstx_for : Statement {
         else os << std::endl;
     }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-
-        // range
-        ASSERT(range != nullptr);
-        if (anonymous_range) {
-            range->name = "_range_" + std::to_string(get_unique_id());
-        }
-        if (!is_codegen_ready(range->finalize())) {
-            status = range->status;
-            return status;
-        }
-
-        // scope
-        ASSERT(scope != nullptr);
-        if (!is_codegen_ready(scope->finalize())) {
-            status = scope->status;
-            return status;
-        }
-
-        // it
-        ASSERT(it != nullptr);
-        if (!is_codegen_ready(it->status)) {
-            if (is_error(it->status)) status = it->status;
-            else status = Parsing_status::DEPENDENCIES_NEEDED;
-            return status;
-        }
-
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));

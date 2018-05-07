@@ -17,8 +17,11 @@ struct Abstx_sequence_literal : Value_expression {
 
     virtual Shared<const CB_Type> get_type() override {
         if (seq_type != nullptr) return seq_type;
-        if (member_type == nullptr) member_type = value[0]->get_type();
-        ASSERT(member_type != nullptr); // empty sequence literal is not allowed and should be checked for earlier
+        if (member_type == nullptr) {
+            if (value.size == 0) return nullptr; // empty sequence literal is not allowed and should be checked for earlier
+            member_type = value[0]->get_type();
+        }
+        if (member_type == nullptr) return nullptr; // unable to get type from first value
         seq_type = CB_Seq::get_seq_type(member_type);
         return seq_type;
     }
@@ -45,40 +48,6 @@ struct Abstx_sequence_literal : Value_expression {
             raw_it += mem_size;
         }
         return constant_value;
-    }
-
-    Parsing_status fully_parse() override {
-        if (is_codegen_ready(status)) return status;
-        for (auto& v : value) {
-            if (is_error(v->fully_parse())) {
-                status = v->status;
-                return status;
-            }
-        }
-        status = Parsing_status::FULLY_PARSED;
-        return status;
-    }
-
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-        get_type();
-        ASSERT(member_type);
-        ASSERT(seq_type);
-        for (const auto& v : value) {
-            if (!is_codegen_ready(v->finalize())) {
-                status = v->status;
-                return status;
-            }
-            if (*v->get_type() != *member_type) {
-                log_error("Sequence literal member type " + v->get_type()->toS() + " doesn't match the type of the sequence", v->context);
-                add_note("Sequence starting here is of type " + seq_type->toS(), context);
-                status == Parsing_status::TYPE_ERROR;
-                return status;
-            }
-        }
-
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
     }
 
     void generate_code(std::ostream& target) override

@@ -29,18 +29,8 @@ struct Abstx_using : Statement {
 
     std::string toS() const override { return "using statement"; }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
-        if (!is_codegen_ready(subject->finalize())) {
-            status = subject->status;
-            return status;
-        }
-
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
 };
 
 

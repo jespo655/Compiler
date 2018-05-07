@@ -27,22 +27,6 @@ struct Abstx_simple_literal : Value_expression {
         return value.v_ptr;
     }
 
-    Parsing_status fully_parse() override {
-        if (is_codegen_ready(status)) return status;
-        ASSERT(value.v_type != nullptr);
-        ASSERT(value.v_ptr != nullptr);
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
-
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-        ASSERT(value.v_type != nullptr);
-        ASSERT(value.v_ptr != nullptr);
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
-
     void generate_code(std::ostream& target) override
     {
         ASSERT(is_codegen_ready(status));

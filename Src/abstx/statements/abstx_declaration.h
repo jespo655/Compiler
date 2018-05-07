@@ -60,31 +60,7 @@ struct Abstx_declaration : Statement {
         return oss.str();
     }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-
-        if (rhs.size != 0 && identifiers.size != rhs.size) {
-            status = Parsing_status::TYPE_ERROR;
-            return status;
-        }
-        for (const auto& id : identifiers) {
-            ASSERT(id != nullptr)
-            if (!is_codegen_ready(id->finalize())) {
-                status = id->status; // @todo: save all dependencies in a list for later (maybe)
-                return status;
-            }
-        }
-        for (const auto& val_exp : rhs) {
-            ASSERT(val_exp != nullptr)
-            if (!is_codegen_ready(val_exp->finalize())) {
-                status = val_exp->status;
-                return status;
-            }
-        }
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));

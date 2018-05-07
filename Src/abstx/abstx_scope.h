@@ -120,14 +120,6 @@ struct Abstx_scope : Abstx_node
         return type;
     }
 
-    // Shared<Abstx_scope> get_scope(const std::string& id, bool recursive=true)
-    // {
-    //     auto p = get_identifier(id, recursive);
-    //     if (p == nullptr || *(p->type) != Abstx_scope::type) return nullptr;
-    //     return &(p->value.value<Abstx_scope>());
-    //     return nullptr;
-    // }
-
     void resolve_imports()
     {
         // @TODO: this function is not complete / doesn't work yet
@@ -143,8 +135,7 @@ struct Abstx_scope : Abstx_node
             for (auto us : using_statements) {
                 if (us->status == Parsing_status::NOT_PARSED || us->status == Parsing_status::PARTIALLY_PARSED) {
 
-                    Parsing_status status = us->finalize();
-                    if (status == Parsing_status::FULLY_RESOLVED) {
+                    if (us->status == Parsing_status::FULLY_RESOLVED) {
                         ASSERT(false, "FIXME: eval");
                         CB_Any scope;// = eval(us->subject); // FIXME: eval(value_expr)
                         if (scope.type == CB_String::type) {
@@ -158,10 +149,10 @@ struct Abstx_scope : Abstx_node
                             log_error("Invalid type in using statement: expected string or scope, but found "+scope.type.toS(), us->context);
                             // if nullptr, eval should already have logged error
                         }
-                    } else if (status == Parsing_status::DEPENDENCIES_NEEDED) {
+                    } else if (us->status == Parsing_status::DEPENDENCIES_NEEDED) {
                         remaining.add(us);
                     } else {
-                        ASSERT(is_error(status)); // ignore the error
+                        ASSERT(is_error(us->status)); // ignore the error
                     }
                 }
             }
@@ -177,29 +168,6 @@ struct Abstx_scope : Abstx_node
             using_statements = std::move(remaining);
         }
         ASSERT(using_statements.size == 0);
-    }
-
-
-    virtual Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-
-        // resolve any unresolved imports
-        if (using_statements.size > 0) resolve_imports();
-        ASSERT(using_statements.size == 0);
-
-        // check that all statements are fully resolved
-        for (const auto& st : statements) {
-            if (!is_codegen_ready(st->finalize())) {
-                status = st->status;
-                return status;
-            }
-        }
-
-        // @todo check if anything else should be done here
-
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
     }
 
     void generate_code(std::ostream& target) override {
@@ -264,18 +232,6 @@ struct Abstx_function_scope : Abstx_scope
         fn_identifiers[name] = (std::move(id));
     }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-
-        for (const auto& id : fn_identifiers) {
-            if (!is_codegen_ready(id.second->finalize())) {
-                status = id.second->status;
-                return status;
-            }
-        }
-        return Abstx_scope::finalize();
-    }
-
 };
 
 
@@ -295,19 +251,7 @@ struct Abstx_anonymous_scope : Statement
         return scope->toS();
     }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-        if (is_error(status) && scope == nullptr) return status;
-
-        ASSERT(scope != nullptr);
-        if (!is_codegen_ready(scope->finalize())) {
-            status = scope->status;
-            return status;
-        }
-
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in ../parser/statement_parser.cpp
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));

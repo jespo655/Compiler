@@ -47,28 +47,7 @@ struct Abstx_assignment : Statement {
         return oss.str();
     }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-
-        if (lhs.size != rhs.size) return status;
-        for (const auto& var_exp : lhs) {
-            ASSERT(var_exp != nullptr)
-            if (!is_codegen_ready(var_exp->finalize())) { // this expression is Owned by this statement -> finalize them too
-                status = var_exp->status;
-                return status;
-            }
-        }
-        for (const auto& val_exp : rhs) {
-            ASSERT(val_exp != nullptr)
-            if (!is_codegen_ready(val_exp->finalize())) {
-                status = val_exp->status;
-                return status;
-            }
-        }
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));

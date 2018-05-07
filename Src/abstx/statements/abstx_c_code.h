@@ -32,12 +32,7 @@ struct Abstx_c_code : Statement {
         return c_code;
     }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));

@@ -43,22 +43,9 @@ struct Abstx_node
     // This method should always be implemented in all non-abstract classes.
     virtual std::string toS() const = 0;
 
-    // finalize(): check that all dependencies are finalized and that there are no errors.
-    // This is done recursively. The parsing status is updated, then returned.
-    // This function should only be called when the abstx node has finished parsing, and is expected to be complete.
-    virtual Parsing_status finalize() = 0;
-
-    // fully_parse(): finish a partial parse, from start_token_index.
-    virtual Parsing_status fully_parse() {}; // = 0;
-
-    // make basic assertions and get the correct token iterator; to be called in the beginning of fully_parse()
-    virtual Token_iterator parse_begin() const;
-
-    // generate_code(): generate code and output it to to target.
+    // generate_code(): generate valid c code and output it to to target.
     // This is done recursively to ensure that all dependencies are outputted first.
-    virtual void generate_code(std::ostream& target) {
-        target << "/* " << toS() << " */";
-    };
+    virtual void generate_code(std::ostream& target) = 0;
 
     // Set owner in a type safe way
     template<typename T> void set_owner(const T& p)

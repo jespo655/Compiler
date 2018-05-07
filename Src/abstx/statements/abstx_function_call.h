@@ -63,72 +63,7 @@ struct Abstx_function_call : Statement
 
     std::string toS() const override { return "function call statement"; }
 
-    Parsing_status fully_parse() override {
-        if (status == Parsing_status::FULLY_RESOLVED || is_codegen_ready(status)) return status;
-        ASSERT(function_pointer != nullptr);
-        if (!is_codegen_ready(function_pointer->fully_parse())) {
-            status = function_pointer->status;
-            return status;
-        }
-        return status;
-    }
-
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-
-        ASSERT(function_pointer != nullptr);
-        if (!is_codegen_ready(function_pointer->finalize())) {
-            status = function_pointer->status;
-            return status;
-        }
-
-        Shared<Abstx_identifier_reference> fn_id = dynamic_pointer_cast<Abstx_identifier_reference>(function_pointer);
-        if (fn_id && fn_id->id) {
-            function = dynamic_pointer_cast<Abstx_function>(fn_id->id->value_expression);
-        }
-
-        if (function != nullptr) {
-            if (!is_codegen_ready(function->status)) {
-                if (is_error(function->status)) status = function->status;
-                else status = Parsing_status::DEPENDENCIES_NEEDED;
-                return status;
-            }
-        }
-
-        Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_pointer->get_type());
-        ASSERT(fn_type != nullptr);
-
-        // check types
-        if (in_args.size != fn_type->in_types.size) {
-            // @todo generate compile error
-            status = Parsing_status::TYPE_ERROR;
-            return status;
-        }
-        for (int i = 0; i < in_args.size; ++i) {
-            if (in_args[i]->get_type() != fn_type->in_types[i]) {
-                // @todo generate compile error
-                status = Parsing_status::TYPE_ERROR;
-                return status;
-            }
-        }
-
-        if (out_args.size != fn_type->out_types.size) {
-            // @todo generate compile error
-            status = Parsing_status::TYPE_ERROR;
-            return status;
-        }
-        for (int i = 0; i < out_args.size; ++i) {
-            if (out_args[i]->get_type() != fn_type->out_types[i]) {
-                // @todo generate compile error
-                status = Parsing_status::TYPE_ERROR;
-                return status;
-            }
-        }
-
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) override
     {
@@ -161,14 +96,8 @@ struct Abstx_function_call_expression : Variable_expression {
     Shared<Abstx_function_call> function_call;
     std::string toS() const override { return "function call expression"; }
 
-    Parsing_status fully_parse() override {
-        ASSERT(function_call);
-        status = function_call->status;
-    }
-
-    Parsing_status finalize() override {
-        ASSERT(function_call);
-        status = function_call->status;
+    Shared<const CB_Type> get_type() override {
+        ASSERT(false, "Abstx_function_call_expression::get_type() not allowed since functions can have several types - check funcion_call->out_args instead");
     }
 
     void generate_code(std::ostream& target) override {

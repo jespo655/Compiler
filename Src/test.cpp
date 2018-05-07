@@ -480,7 +480,7 @@ void abstx_test()
     Abstx_identifier fn_id; // owned by the scope it is defined in
     fn_id.name = "foo";
     fn_id.value.v_type = static_pointer_cast<const CB_Type>(fn_type);
-    fn_id.finalize();
+    // fn_id.finalize();
 
     std::cout << "creating abstx function" << std::endl;
     Abstx_function fn; // owned by the scope it is defined in
@@ -498,13 +498,13 @@ void abstx_test()
     fn.add_arg(false, fn.scope->get_identifier("out1"));
     fn.add_arg(false, fn.scope->get_identifier("out2"));
     std::cout << "finalizing function" << std::endl;
-    Parsing_status ps = fn.finalize();
-    if (is_codegen_ready(ps)) {
+    // Parsing_status ps = fn.finalize();
+    if (is_codegen_ready(fn.status)) {
         std::cout << "generating code" << std::endl;
         generate_typedefs(std::cout);
         fn.generate_code(std::cout);
     } else {
-        std::cout << "failed to finalize: " << ps << std::endl;
+        std::cout << "failed to finalize: " << fn.status << std::endl;
     }
 }
 

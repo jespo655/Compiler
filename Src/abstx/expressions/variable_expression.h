@@ -19,7 +19,6 @@ struct Variable_expression_reference : Variable_expression {
     }
 
     virtual Shared<const CB_Type> get_type() override {
-        finalize();
         ASSERT(expr);
         return expr->get_type();
     }
@@ -34,22 +33,8 @@ struct Variable_expression_reference : Variable_expression {
         return expr->get_constant_value();
     }
 
-    Parsing_status fully_parse() override {
-        if (status != Parsing_status::PARTIALLY_PARSED) return status;
-        ASSERT(expr);
-        status = Parsing_status::FULLY_PARSED;
-        return status;
-    }
-
-    Parsing_status finalize() override {
-        ASSERT(expr);
-        if (is_error(expr->status)) status = expr->status;
-        else status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
-
     void generate_code(std::ostream& target) override {
-        finalize();
+        ASSERT(expr);
         return expr->generate_code(target);
     }
 };

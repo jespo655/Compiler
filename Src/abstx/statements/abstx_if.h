@@ -43,27 +43,6 @@ struct Abstx_if : Statement {
             else os << std::endl;
         }
 
-        Parsing_status finalize() override {
-            if (is_codegen_ready(status)) return status;
-
-            if (!is_codegen_ready(condition->finalize())) {
-                status = condition->status;
-                return status;
-            }
-            Shared<const CB_Type> type = condition->get_type();
-            if (*type != *CB_Bool::type) {
-                status = Parsing_status::TYPE_ERROR;
-                return status;
-            }
-            if (!is_codegen_ready(scope->finalize())) {
-                status = scope->status;
-                return status;
-            }
-            // we reached the end -> we are done
-            status = Parsing_status::FULLY_RESOLVED;
-            return status;
-        }
-
         void generate_code(std::ostream& target) override {
             ASSERT(is_codegen_ready(status));
             target << "if (";
@@ -77,7 +56,7 @@ struct Abstx_if : Statement {
 
     Seq<Owned<Abstx_conditional_scope>> conditional_scopes;
     Owned<Abstx_scope> else_scope; // is entered if none of the conditional scopes are entered
-    // Owned<Abstx_scope> then_scope; // is entered if not the else_scope is entered
+    // Owned<Abstx_scope> then_scope; // is entered if not the else_scope is entered // @todo: find a good way to express this in C code
 
     std::string toS() const override
     {
@@ -110,26 +89,7 @@ struct Abstx_if : Statement {
         // }
     }
 
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-        for (const auto& cs : conditional_scopes) {
-            if (!is_codegen_ready(cs->finalize())) {
-                status = cs->status;
-                return status;
-            }
-        }
-        if (else_scope != nullptr && !is_codegen_ready(else_scope->finalize())) {
-            status = else_scope->status;
-            return status;
-        }
-        // if (then_scope != nullptr && !is_codegen_ready(then_scope->finalize())) {
-        //     status = then_scope->status;
-        //     return status;
-        // }
-        // we reached the end -> we are done
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));

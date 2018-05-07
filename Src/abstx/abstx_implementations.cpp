@@ -24,24 +24,10 @@ Shared<Abstx_function> Abstx_node::parent_function() const
     return nullptr;
 }
 
-// has to be here since it's using Abstx_scope
-Parsing_status Abstx_identifier_reference::finalize() {
-    if (is_codegen_ready(status) || is_error(status)) return status;
-    id = parent_scope()->get_identifier(name);
-    if (id == nullptr) {
-        log_error("Use of undefined identifier", context);
-        status = Parsing_status::UNDECLARED_IDENTIFIER;
-    } else {
-        status = Parsing_status::FULLY_RESOLVED;
-    }
-    return status;
-}
 
 
 
-
-
-Token_iterator Abstx_node::parse_begin() const {
+Token_iterator Statement::parse_begin() const {
     ASSERT(status == Parsing_status::PARTIALLY_PARSED);
     ASSERT(start_token_index >= 0);
     auto gs = global_scope();

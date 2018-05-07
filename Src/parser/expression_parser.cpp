@@ -205,7 +205,27 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_sco
         default:
             ASSERT(false); // any other type of token cannot be a simple literal
     }
-    if (!is_error(o->status)) o->finalize();
+    // if (!is_error(o->status)) o->finalize();
+
+/*
+    // TODO: do this too
+    Parsing_status fully_parse() override {
+        if (is_codegen_ready(status)) return status;
+        ASSERT(value.v_type != nullptr);
+        ASSERT(value.v_ptr != nullptr);
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+
+    Parsing_status finalize() override {
+        if (is_codegen_ready(status)) return status;
+        ASSERT(value.v_type != nullptr);
+        ASSERT(value.v_ptr != nullptr);
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+*/
+
     return owned_static_cast<Value_expression>(std::move(o));
 }
 
@@ -213,7 +233,52 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_sco
 
 
 Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    // syntax:
+    //   [val_expr, val_expr, val_expr] // type of first value determines type (next token is ',' or ']')
+    //   [val_expr: val_expr, val_expr] // first value determines type (next token is ':')
+    //   [] // type error: unable to determine type of sequence
+    //   [int:] // ok
+
     // @todo
+
+/*
+    Parsing_status fully_parse() override {
+        if (is_codegen_ready(status)) return status;
+        for (auto& v : value) {
+            if (is_error(v->fully_parse())) {
+                status = v->status;
+                return status;
+            }
+        }
+        status = Parsing_status::FULLY_PARSED;
+        return status;
+    }
+
+    Parsing_status finalize() {
+        // @todo this should be a part of read_sequence_literal
+        if (is_codegen_ready(status)) return status;
+        get_type();
+        ASSERT(member_type);
+        ASSERT(seq_type);
+        for (const auto& v : value) {
+            if (!is_codegen_ready(v->finalize())) {
+                status = v->status;
+                return status;
+            }
+            if (*v->get_type() != *member_type) {
+                log_error("Sequence literal member type " + v->get_type()->toS() + " doesn't match the type of the sequence", v->context);
+                add_note("Sequence starting here is of type " + seq_type->toS(), context);
+                status == Parsing_status::TYPE_ERROR;
+                return status;
+            }
+        }
+
+        status = Parsing_status::FULLY_RESOLVED;
+        return status;
+    }
+*/
+
+
     return nullptr;
 }
 
@@ -348,6 +413,41 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
     // Abstx_function_call_expression
     return owned_static_cast<Variable_expression>(std::move(expr));
 }
+
+
+
+
+
+
+
+/*
+Parsing_status Abstx_identifier_reference::finalize() {
+    // TODO: this should be in read_expression
+    if (is_codegen_ready(status) || is_error(status)) return status;
+    id = parent_scope()->get_identifier(name);
+    if (id == nullptr) {
+        log_error("Use of undefined identifier", context);
+        status = Parsing_status::UNDECLARED_IDENTIFIER;
+    } else {
+        status = Parsing_status::FULLY_RESOLVED;
+    }
+    return status;
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

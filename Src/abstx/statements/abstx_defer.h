@@ -17,11 +17,7 @@ struct Abstx_defer : Statement {
         return "defer " + statement->toS();
     }
 
-    Parsing_status finalize() override {
-        if (!is_codegen_ready(statement->status)) status = Parsing_status::DEPENDENCIES_NEEDED;
-        else status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));
