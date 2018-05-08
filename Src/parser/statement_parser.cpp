@@ -206,7 +206,7 @@ Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> pare
         s->scope = read_scope(it, parent_scope);
         ASSERT(s->scope != nullptr);
         // s->scope->set_owner(s); // no need to update owner; parent_scope is good enough
-        ASSERT(is_error(s->scope->status) || s->scope->status == Parsing_status::DEPENDENCIES_NEEDED || s->scope->status == FULLY_PARSED);
+        ASSERT(is_error(s->scope->status) || s->scope->status == Parsing_status::DEPENDENCIES_NEEDED || s->scope->status == Parsing_status::FULLY_PARSED);
 
         s->status = s->scope->status;
         parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
@@ -216,8 +216,9 @@ Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> pare
     return s->status;
 }
 
-Parsing_status anonymous_scope::fully_resolve() {
+Parsing_status Abstx_anonymous_scope::fully_parse() {
     if (status != Parsing_status::PARTIALLY_PARSED && status != Parsing_status::DEPENDENCIES_NEEDED) return status;
+    // @TODO
 }
 
 
@@ -245,7 +246,8 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
     s->context = it->context;
     s->start_token_index = it.current_index;
 
-    bool error = false;
+    // TODO: add special check for if the first token is ':'
+
     while (1) {
         // allocate abstx identifier and set base info
         Owned<Abstx_identifier> id = alloc(Abstx_identifier());
@@ -282,6 +284,7 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
 
         if (it.compare(Token_type::SYMBOL, ",")) continue; // one more
 
+        s->start_token_index = it.current_index; // update start_token_index to point to the ':' token
         it.expect(Token_type::SYMBOL, ":");
         if (it.expect_failed()) {
             s->status = Parsing_status::SYNTAX_ERROR;
@@ -298,6 +301,7 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
     s->start_token_index = it.current_index;
 
     // find the closing ';'
+    // @optimize if dynamic scope, this shouldn't be necessary - fully parse the statement immediately, then check for the ';'
     it.current_index = it.find_matching_semicolon() + 1;
     if (it.expect_failed()) {
         add_note("In declaration statement here", s->context);
@@ -312,8 +316,7 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
     // this might add one or more function call statements to the scope -> we have to do this before adding the declaration statement to the scope
     // (in a static scope the order of statements doesn't matter, so adding the function calls later is okay)
     if (parent_scope->dynamic()) {
-        s->fully_parse(); // @todo check if this is enough
-        // @todo: maybe log error if not successful? (that might be done inside fully_parse or finalize, though)
+        s->fully_parse();
     }
 
     // add it to the scope
@@ -323,6 +326,175 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
 }
 
 
+
+Parsing_status Abstx_declaration::fully_parse() {
+    if (status != Parsing_status::PARTIALLY_PARSED) return status;
+    ASSERT(identifiers.size != 0);
+    Token_iterator it = global_scope()->iterator(start_token_index);
+    it.assert(Token_type::SYMBOL, ":");
+
+    // @todo: allow constant function calls as type identifiers
+    // @todo: allow #run function calls as type identifiers
+    // @todo: don't overwrite FATAL_ERROR with different error message
+    // @todo: allow function calls as RHS
+
+    if (!it.compare(Token_type::SYMBOL, "=") && !it.compare(Token_type::SYMBOL, ":")) {
+        // read list of types
+        auto p_scope = parent_scope();
+        while(1) {
+            Owned<Value_expression> type_expr = read_value_expression(it, p_scope);
+            type_expr->owner = this;
+            if (is_error(type_expr->status)) {
+                add_note("In declaration statement here", context);
+                status = type_expr->status;
+                return status;
+
+            } else if (type_expr->status == Parsing_status::DEPENDENCIES_NEEDED) {
+                status = type_expr->status;
+                // continue reading
+            } else {
+                Shared<const CB_Type> t = type_expr->get_type();
+                ASSERT(t != nullptr, "Value expression should have error status if it can't infer type after read_value_expression()");
+                if (*t != *CB_Type::type) {
+                    log_error("Non-type expresson used as type", type_expr->context);
+                    add_note("In declaration statement here", context);
+                    status = Parsing_status::TYPE_ERROR;
+                } else if(!type_expr->has_constant_value()) {
+                    log_error("Unable to infer type from type expression at compile time", type_expr->context);
+                    add_note("In declaration statement here", context);
+                    add_note("All types must be known at compile time!");
+                    status = Parsing_status::TYPE_ERROR;
+                }
+            }
+
+            type_expressions.add(std::move(type_expr));
+
+            if (it.compare(Token_type::SYMBOL, ",")) {
+                it.eat_token(); // eat token and continue
+            } else {
+                break; // go to next step
+            }
+        }
+
+        // list must either be of size 1 (all identifiers have the same type) or the same size as the number of identifiers
+        if (type_expressions.size != 1 && type_expressions.size != identifiers.size) {
+            log_error("Wrong number of types supplied in declaration statement", context);
+            if (identifiers.size == 1) add_note("Expected 1 type but found "+std::to_string(type_expressions.size), context);
+            else add_note("Expected either 1 or "+std::to_string(identifiers.size)+" types but found "+std::to_string(type_expressions.size), context);
+            status = Parsing_status::SYNTAX_ERROR;
+        } else {
+            // assign types to identifiers
+            size_t index = 0;
+            for (const auto& id : identifiers) {
+                // @todo (operators) the operator should already have a type - a function type with in arguments defined. Check that the types match and assign out argument types!
+                Shared<Value_expression> type_expr = type_expressions[index];
+                if (!is_error(type_expr->status) && type_expr->status != Parsing_status::DEPENDENCIES_NEEDED) {
+                    id->value.v_type = parse_type(type_expressions[index]->get_constant_value());
+                    ASSERT(id->value.v_type != nullptr);
+                } else ASSERT(is_error(status) || status == Parsing_status::DEPENDENCIES_NEEDED);
+                if (type_expressions.size != 1) ++index;
+            }
+        }
+    }
+
+    if (it.compare(Token_type::SYMBOL, "=") || it.compare(Token_type::SYMBOL, ":")) {
+        bool constant = it.compare(Token_type::SYMBOL, ":");
+
+        // read list of values
+        auto p_scope = parent_scope();
+        while(1) {
+            Owned<Value_expression> value_expr = read_value_expression(it, p_scope);
+            value_expr->owner = this;
+            if (is_error(value_expr->status)) {
+                add_note("In declaration statement here", context);
+                status = value_expr->status;
+                return status;
+
+            } else if (value_expr->status == Parsing_status::DEPENDENCIES_NEEDED) {
+                status = value_expr->status;
+                // continue reading
+            } else {
+                Shared<const CB_Type> t = value_expr->get_type();
+                ASSERT(t != nullptr, "Value expression should have error status if it can't infer type after read_value_expression()");
+                if(constant && !value_expr->has_constant_value()) {
+                    log_error("Unable to declare a constant value from a non-constant value expression", value_expr->context);
+                    add_note("In declaration statement here", context);
+                    status = Parsing_status::COMPILE_TIME_ERROR;
+                }
+            }
+
+            value_expressions.add(std::move(value_expr));
+
+            if (it.compare(Token_type::SYMBOL, ",")) {
+                it.eat_token(); // eat token and continue
+            } else {
+                break; // go to next step
+            }
+        }
+
+        // list must either be of size 1 (all identifiers have the same value) or the same size as the number of identifiers
+        if (value_expressions.size != 1 && value_expressions.size != identifiers.size) {
+            log_error("Wrong number of values supplied in declaration statement", context);
+            if (identifiers.size == 1) add_note("Expected 1 type but found "+std::to_string(value_expressions.size), context);
+            else add_note("Expected either 1 or "+std::to_string(identifiers.size)+" types but found "+std::to_string(value_expressions.size), context);
+            if (!is_error(status)) status = Parsing_status::SYNTAX_ERROR;
+        } else {
+            // assign values to identifiers
+            size_t index = 0;
+            for (const auto& id : identifiers) {
+                // @todo (operators) the operator should already have a type - a function type with in arguments defined. Check that the types match and assign out argument types!
+                Shared<Value_expression> value_expr = value_expressions[index];
+                id->value_expression = value_expr;
+
+                // check that type match or assign type if it hasn't been inferred yet
+                Shared<const CB_Type> type = value_expr->get_type();
+                ASSERT(type != nullptr || is_error(value_expr->status) || value_expr->status == Parsing_status::DEPENDENCIES_NEEDED);
+                if (type != nullptr) {
+                    if (id->value.v_type == nullptr) id->value.v_type = type;
+                    else if (*id->value.v_type != *type) {
+                        log_error("Type of value expression doesn't match the type of the assigned identifier!", value_expr->context);
+                        add_note("Unable to convert type from "+type->toS()+" to "+id->value.v_type->toS());
+                        status = Parsing_status::TYPE_ERROR;
+                    }
+                }
+
+                if (!is_error(value_expr->status) && value_expr->status != Parsing_status::DEPENDENCIES_NEEDED) {
+                    id->value.v_type = parse_type(value_expressions[index]->get_constant_value());
+                    ASSERT(id->value.v_type != nullptr);
+                } else ASSERT(is_error(status) || status == Parsing_status::DEPENDENCIES_NEEDED);
+                if (value_expressions.size != 1) ++index;
+            }
+        }
+
+    }
+
+    it.expect_end_of_statement();
+    if (it.expect_failed()) {
+        add_note("In declaration statement here", context);
+        status = Parsing_status::SYNTAX_ERROR;
+    }
+    return status;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+Parsing_status read_assignment_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+
+    Owned<Abstx_declaration> o = alloc(Abstx_declaration()); // will be destroyed later
+    Shared<Abstx_declaration> s = o; // shared pointer that we can use and modify however we like
+    s->set_owner(parent_scope);
+    s->context = it->context;
+    s->start_token_index = it.current_index;
+}
 
 
 
@@ -341,7 +513,6 @@ Parsing_status read_return_statement(Token_iterator& it, Shared<Abstx_scope> par
 Parsing_status read_defer_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_using_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_c_code_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_assignment_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
 
 // maybe should this also return only Parsing_status?

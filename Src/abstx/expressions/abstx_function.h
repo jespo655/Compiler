@@ -50,8 +50,9 @@ struct Abstx_function : Value_expression
         return false; // @todo: check if this is reasonable
     }
 
-    void const* get_constant_value() override {
-        return nullptr;
+    const Any& get_constant_value() override {
+        static Any no_value;
+        return no_value;
     }
 
     void generate_code(std::ostream& target) override {

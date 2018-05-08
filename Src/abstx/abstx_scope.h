@@ -197,11 +197,6 @@ struct Global_scope : Abstx_scope
     Shared<Abstx_scope> parent_scope() const override { return nullptr; }
     Shared<const Global_scope> global_scope() const override { return this; }
 
-    Token_iterator parse_begin() const override {
-        ASSERT(start_token_index == 0); // always beginning of file
-        iterator(start_token_index);
-    }
-
 };
 
 

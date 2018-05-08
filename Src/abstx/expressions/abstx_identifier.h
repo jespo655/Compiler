@@ -25,6 +25,7 @@ struct Abstx_identifier : Variable_expression {
     }
 
     virtual Shared<const CB_Type> get_type() override {
+        if (value.v_type == nullptr && value_expression != nullptr) value.v_type == value_expression->get_type();
         return value.v_type;
     }
 
@@ -32,10 +33,10 @@ struct Abstx_identifier : Variable_expression {
         return value.v_ptr != nullptr || (value_expression != nullptr && value_expression->has_constant_value());
     }
 
-    void const* get_constant_value() override {
-        if (value.v_ptr != nullptr) return value.v_ptr;
-        if (value_expression != nullptr && value_expression->has_constant_value()) value.v_ptr = value_expression->get_constant_value();
-        return value.v_ptr;
+    const Any& get_constant_value() override {
+        if (value.v_ptr != nullptr) return value;
+        if (value_expression != nullptr && value_expression->has_constant_value()) value.v_ptr = value_expression->get_constant_value().v_ptr;
+        return value;
     }
 
     void generate_code(std::ostream& target) override
@@ -69,7 +70,7 @@ struct Abstx_identifier_reference : Variable_expression {
         return id->has_constant_value();
     }
 
-    void const* get_constant_value() override {
+    const Any& get_constant_value() override {
         ASSERT(id);
         return id->get_constant_value();
     }

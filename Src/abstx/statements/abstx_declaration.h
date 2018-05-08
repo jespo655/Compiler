@@ -18,7 +18,8 @@ a, b := foo();  // The lhs and rhs count will not match if a function in rhs ret
 struct Abstx_declaration : Statement {
 
     Seq<Owned<Abstx_identifier>> identifiers;
-    Seq<Owned<Value_expression>> rhs;
+    Seq<Owned<Value_expression>> type_expressions;
+    Seq<Owned<Value_expression>> value_expressions;
 
     std::string toS() const override {
         ASSERT(identifiers.size > 0);
@@ -45,13 +46,13 @@ struct Abstx_declaration : Statement {
                 first = false;
             }
         } else {
-            ASSERT(rhs.size > 0);
+            ASSERT(value_expressions.size > 0);
         }
-        if (rhs.size > 0) {
+        if (value_expressions.size > 0) {
             if (all_typed) oss << " = ";
             else oss << " := ";
             first = true;
-            for (auto& ev : rhs) {
+            for (auto& ev : value_expressions) {
                 ASSERT(ev != nullptr);
                 oss << ev->toS();
             }
@@ -64,7 +65,7 @@ struct Abstx_declaration : Statement {
 
     void generate_code(std::ostream& target) override {
         ASSERT(is_codegen_ready(status));
-        if (rhs.empty()) {
+        if (value_expressions.empty()) {
             // explicit uninitialized
             for (int i = 0; i < identifiers.size; ++i) {
                 identifiers[i]->get_type()->generate_type(target);
@@ -73,13 +74,13 @@ struct Abstx_declaration : Statement {
                 target << ";" << std::endl;
             }
         } else {
-            ASSERT(identifiers.size == rhs.size);
-            for (int i = 0; i < rhs.size; ++i) {
+            ASSERT(identifiers.size == value_expressions.size);
+            for (int i = 0; i < value_expressions.size; ++i) {
                 identifiers[i]->get_type()->generate_type(target);
                 target << " ";
                 identifiers[i]->generate_code(target); // this should be a valid c style lvalue
                 target << " = ";
-                rhs[i]->generate_code(target); // this should be a valid c style lvalue
+                value_expressions[i]->generate_code(target); // this should be a valid c style lvalue
                 target << ";" << std::endl;
             }
         }

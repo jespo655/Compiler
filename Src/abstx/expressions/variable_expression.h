@@ -28,7 +28,7 @@ struct Variable_expression_reference : Variable_expression {
         return expr->has_constant_value();
     }
 
-    void const* get_constant_value() override {
+    const Any& get_constant_value() override {
         ASSERT(expr);
         return expr->get_constant_value();
     }

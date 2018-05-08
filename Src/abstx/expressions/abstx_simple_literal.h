@@ -23,8 +23,8 @@ struct Abstx_simple_literal : Value_expression {
         return true;
     }
 
-    void const* get_constant_value() override {
-        return value.v_ptr;
+    const Any& get_constant_value() override {
+        return value;
     }
 
     void generate_code(std::ostream& target) override

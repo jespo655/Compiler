@@ -85,12 +85,13 @@ struct Any; // used for default values
 struct CB_Type
 {
     static const Shared<const CB_Type> type; // self reference / CB_Type
-    static constexpr uint32_t _default_value = 0;
-    static std::map<uint32_t, std::string> typenames; // mapped from uid to name. Only compile time.
-    static std::map<uint32_t, Any> default_values; // mapped from uid to value. Only compile time.
-    static std::map<uint32_t, size_t> cb_sizes; // mapped from uid to size. Only compile time.
+    typedef uint32_t c_typedef;
+    static constexpr c_typedef _default_value = 0;
+    static std::map<c_typedef, std::string> typenames; // mapped from uid to name. Only compile time.
+    static std::map<c_typedef, Any> default_values; // mapped from uid to value. Only compile time.
+    static std::map<c_typedef, size_t> cb_sizes; // mapped from uid to size. Only compile time.
 
-    uint32_t uid;
+    c_typedef uid;
 
     CB_Type() { uid = type->uid; } // default value for the type
     CB_Type(const std::string& name, size_t size, void const* default_value) {
@@ -134,7 +135,7 @@ struct CB_Type
         os << ";" << std::endl;
     }
     // literal & destructor has an additional argument depth, to safeguard against infinite loops
-    virtual void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const { ASSERT(raw_data); os << *(uint32_t*)raw_data << "UL"; }
+    virtual void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const { ASSERT(raw_data); os << *(c_typedef*)raw_data << "UL"; }
     virtual void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const { };
     // constructor:
     //   type name = literal(default_value); // default
@@ -154,7 +155,7 @@ struct CB_Type
 
 // functions to get build in types
 Shared<const CB_Type> get_built_in_type(const std::string& name); // slower, but more generic
-Shared<const CB_Type> get_built_in_type(uint32_t uid); // faster, but not as useful
+Shared<const CB_Type> get_built_in_type(CB_Type::c_typedef uid); // faster, but not as useful
 
 // function to add complex built-in types (CB_Function, CB_Pointer, CB_Seq or CB_Struct)
 Shared<const CB_Type> add_complex_cb_type(Owned<CB_Type>&& type);

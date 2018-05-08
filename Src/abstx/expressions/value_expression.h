@@ -3,6 +3,7 @@
 #include "../abstx.h"
 #include "../../utilities/sequence.h"
 #include "../../types/cb_type.h"
+#include "../../types/cb_any.h"
 
 // An evaluated value is anything that evaluates to a value that can be read.
 struct Value_expression : Abstx_node
@@ -15,7 +16,7 @@ struct Value_expression : Abstx_node
 
     // get_constant_value(): return nullpointer if there is no constant value
     // this value can then be parsed by the type (given by get_type())
-    virtual void const* get_constant_value() = 0;
+    virtual const Any& get_constant_value() = 0;
 };
 
 

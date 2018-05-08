@@ -49,6 +49,7 @@ Step 2: Statement::fully_parse(), read_value_expression, read_variable_expressio
 // TODO: remove all finalize() from abstx
 // TODO: remove all fully_parse() from non-statement abstx; move virtual function to Statement
 // TODO: move all implementations of fully_parse() to statement_parser.cpp
+// TODO: add function to resolve dependencies for statements that failed with DEPENDENCIES_NEEDED in fully_parse() (necessary for static scopes)
 
 
 // TODO: for read_function_call(): check if its owner is Abstx_assignment; if it is, grab its identifiers as lhs. Remove LHS as an argument to the function
