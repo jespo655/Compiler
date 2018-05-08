@@ -12,14 +12,14 @@
       "cmd": ["$project_path/src/make.bat"],
       "shell": "true",
       "working_dir": "${project_path}/Src",
-      "file_regex": "^[.\\\\/]*([a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
+      "file_regex": "^([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
       "variants": [
         {
           "name": "Run",
           "cmd": ["cube.exe"],
           "shell": "true",
           "working_dir": "${project_path}/Src",
-          "file_regex": "^[.\\\\/]*([a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
+          "file_regex": "^([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
         }
       ],
     },
@@ -29,7 +29,7 @@
       // "-I${project_path}\\Src\\utilities",
       "shell": "true",
       "working_dir": "$file_path",
-      "file_regex": "^[.\\\\/]*([a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
+      "file_regex": "^([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
       "variants": [],
     }
   ],
