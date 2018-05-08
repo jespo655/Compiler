@@ -153,7 +153,7 @@ struct Token_iterator
     const Token& assert(const Token_type& expected_type, std::string expected_token="")
     {
         ASSERT(!error);
-        ASSERT((*this)->type == expected_type && expected_token=="" || (*this)->token == expected_token);
+        ASSERT((*this)->type == expected_type && expected_token=="" || (*this)->token == expected_token, "Expected '"+expected_token+"' token");
         return eat_token();
     }
 

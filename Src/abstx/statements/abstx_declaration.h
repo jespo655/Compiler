@@ -74,19 +74,18 @@ struct Abstx_declaration : Statement {
                 target << ";" << std::endl;
             }
         } else {
-            ASSERT(identifiers.size == value_expressions.size);
-            for (int i = 0; i < value_expressions.size; ++i) {
+            ASSERT(value_expressions.size == 1 || value_expressions.size == identifiers.size);
+            for (int i = 0; i < identifiers.size; ++i) {
                 identifiers[i]->get_type()->generate_type(target);
                 target << " ";
                 identifiers[i]->generate_code(target); // this should be a valid c style lvalue
                 target << " = ";
-                value_expressions[i]->generate_code(target); // this should be a valid c style lvalue
+                value_expressions[(value_expressions.size==1?0:i)]->generate_code(target); // this should be a valid c style lvalue
                 target << ";" << std::endl;
             }
         }
         status = Parsing_status::CODE_GENERATED;
     };
-
 
 };
 

@@ -1,6 +1,11 @@
 
+a, b, c := -1, 2, 3;
+
+// d := a;
+
+/*
 main :: fn() {
     // #C "printf(\"asd\")";
     #C #string C_CODE print("Hello, World!"); C_CODE
 };
-
+*/

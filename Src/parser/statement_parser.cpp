@@ -206,7 +206,7 @@ Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> pare
         s->scope = read_scope(it, parent_scope);
         ASSERT(s->scope != nullptr);
         // s->scope->set_owner(s); // no need to update owner; parent_scope is good enough
-        ASSERT(is_error(s->scope->status) || s->scope->status == Parsing_status::DEPENDENCIES_NEEDED || s->scope->status == Parsing_status::FULLY_PARSED);
+        ASSERT(is_error(s->scope->status) || s->scope->status == Parsing_status::DEPENDENCIES_NEEDED || s->scope->status == Parsing_status::FULLY_RESOLVED);
 
         s->status = s->scope->status;
         parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
@@ -248,12 +248,15 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
 
     // TODO: add special check for if the first token is ':'
 
+    // std::cout << "reading declaration statement" << std::endl; // @debug
     while (1) {
         // allocate abstx identifier and set base info
         Owned<Abstx_identifier> id = alloc(Abstx_identifier());
         id->set_owner(s);
         s->context = it->context;
         s->start_token_index = it.current_index;
+
+        // std::cout << "reading declared identifier starting with token " << it->toS() << " at index " << it.current_index << std::endl; // @debug
 
         // read identifier token
         if (it.compare(Token_type::KEYWORD, "operator")) {
@@ -282,20 +285,24 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
             s->identifiers.add(std::move(id));
         }
 
-        if (it.compare(Token_type::SYMBOL, ",")) continue; // one more
-
-        s->start_token_index = it.current_index; // update start_token_index to point to the ':' token
-        it.expect(Token_type::SYMBOL, ":");
-        if (it.expect_failed()) {
-            s->status = Parsing_status::SYNTAX_ERROR;
-            break;
+        if (it.compare(Token_type::SYMBOL, ",")) {
+            it.eat_token(); // eat token and continue
+        } else {
+            break; // go to next step
         }
+    }
+
+    s->start_token_index = it.current_index; // update start_token_index to point to the ':' token
+    it.expect(Token_type::SYMBOL, ":");
+    if (it.expect_failed()) {
+        s->status = Parsing_status::SYNTAX_ERROR;
     }
 
     if (is_error(s->status)) {
         add_note("In declaration statement here", s->context);
-        s->status = Parsing_status::SYNTAX_ERROR;
     }
+
+    // std::cout << "done reading declaration" << std::endl; // @debug
 
     // we are done reading -> set the start_token_index to the first value of RHS
     s->start_token_index = it.current_index;
@@ -330,8 +337,9 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
 Parsing_status Abstx_declaration::fully_parse() {
     if (status != Parsing_status::PARTIALLY_PARSED) return status;
     ASSERT(identifiers.size != 0);
-    Token_iterator it = global_scope()->iterator(start_token_index);
-    it.assert(Token_type::SYMBOL, ":");
+    Token_iterator it = global_scope()->iterator(start_token_index); // starting with the first value after the ':' token
+
+    // std::cout << "fully parsing declaration statement starting with token " << it->toS() << " at index " << it.current_index << std::endl; // @debug
 
     // @todo: allow constant function calls as type identifiers
     // @todo: allow #run function calls as type identifiers
@@ -342,6 +350,9 @@ Parsing_status Abstx_declaration::fully_parse() {
         // read list of types
         auto p_scope = parent_scope();
         while(1) {
+
+            // std::cout << "reading type expression" << std::endl; // @debug
+
             Owned<Value_expression> type_expr = read_value_expression(it, p_scope);
             type_expr->owner = this;
             if (is_error(type_expr->status)) {
@@ -376,6 +387,8 @@ Parsing_status Abstx_declaration::fully_parse() {
             }
         }
 
+        // std::cout << "assigning types" << std::endl; // @debug
+
         // list must either be of size 1 (all identifiers have the same type) or the same size as the number of identifiers
         if (type_expressions.size != 1 && type_expressions.size != identifiers.size) {
             log_error("Wrong number of types supplied in declaration statement", context);
@@ -399,10 +412,16 @@ Parsing_status Abstx_declaration::fully_parse() {
 
     if (it.compare(Token_type::SYMBOL, "=") || it.compare(Token_type::SYMBOL, ":")) {
         bool constant = it.compare(Token_type::SYMBOL, ":");
+        it.eat_token(); // eat the ':'/'=' token
+
+        // std::cout << "reading " << (constant?"constant":"non-constant") << " values in declaration" << std::endl; // @debug
 
         // read list of values
         auto p_scope = parent_scope();
         while(1) {
+
+            // std::cout << "reading " << (constant?"constant":"non-constant") << " value" << std::endl; // @debug
+
             Owned<Value_expression> value_expr = read_value_expression(it, p_scope);
             value_expr->owner = this;
             if (is_error(value_expr->status)) {
@@ -414,11 +433,11 @@ Parsing_status Abstx_declaration::fully_parse() {
                 status = value_expr->status;
                 // continue reading
             } else {
-                Shared<const CB_Type> t = value_expr->get_type();
-                ASSERT(t != nullptr, "Value expression should have error status if it can't infer type after read_value_expression()");
+                ASSERT(value_expr->get_type() != nullptr, "Value expression should have error status if it can't infer type after read_value_expression()");
                 if(constant && !value_expr->has_constant_value()) {
                     log_error("Unable to declare a constant value from a non-constant value expression", value_expr->context);
                     add_note("In declaration statement here", context);
+                    value_expr->status = Parsing_status::COMPILE_TIME_ERROR;
                     status = Parsing_status::COMPILE_TIME_ERROR;
                 }
             }
@@ -431,6 +450,8 @@ Parsing_status Abstx_declaration::fully_parse() {
                 break; // go to next step
             }
         }
+
+        // std::cout << "assigning " << (constant?"constant":"non-constant") << " values" << std::endl; // @debug
 
         // list must either be of size 1 (all identifiers have the same value) or the same size as the number of identifiers
         if (value_expressions.size != 1 && value_expressions.size != identifiers.size) {
@@ -454,27 +475,43 @@ Parsing_status Abstx_declaration::fully_parse() {
                     else if (*id->value.v_type != *type) {
                         log_error("Type of value expression doesn't match the type of the assigned identifier!", value_expr->context);
                         add_note("Unable to convert type from "+type->toS()+" to "+id->value.v_type->toS());
+                        value_expr->status = Parsing_status::TYPE_ERROR;
                         status = Parsing_status::TYPE_ERROR;
                     }
                 }
 
-                if (!is_error(value_expr->status) && value_expr->status != Parsing_status::DEPENDENCIES_NEEDED) {
-                    id->value.v_type = parse_type(value_expressions[index]->get_constant_value());
-                    ASSERT(id->value.v_type != nullptr);
-                } else ASSERT(is_error(status) || status == Parsing_status::DEPENDENCIES_NEEDED);
+                if (constant) {
+                    if (!is_error(value_expr->status) && value_expr->status != Parsing_status::DEPENDENCIES_NEEDED) {
+                        ASSERT(value_expr->has_constant_value());
+                        const Any& c_value = value_expr->get_constant_value();
+                        ASSERT(*c_value.v_type == *id->value.v_type); // checked above
+                        id->value.v_ptr = c_value.v_ptr;
+                    } else ASSERT(is_error(status) || status == Parsing_status::DEPENDENCIES_NEEDED);
+                }
+
                 if (value_expressions.size != 1) ++index;
             }
         }
 
     }
 
+    // std::cout << "end of declaration statement" << std::endl; // @debug
+
     it.expect_end_of_statement();
     if (it.expect_failed()) {
         add_note("In declaration statement here", context);
         status = Parsing_status::SYNTAX_ERROR;
     }
-    return status;
 
+    if (!is_error(status) && status != Parsing_status::DEPENDENCIES_NEEDED) {
+        for (const auto& id : identifiers) {
+            id->finalize();
+            ASSERT(id->status == Parsing_status::FULLY_RESOLVED);
+        }
+        status = Parsing_status::FULLY_RESOLVED;
+    }
+
+    return status;
 }
 
 
@@ -504,16 +541,43 @@ Parsing_status read_assignment_statement(Token_iterator& it, Shared<Abstx_scope>
 
 
 
-
 // temporary implementations, TODO: implement these
-Parsing_status read_if_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_for_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_while_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_return_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_defer_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_using_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_c_code_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
-Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return Parsing_status::NOT_PARSED; }
+Parsing_status read_if_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
+Parsing_status read_for_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
+Parsing_status read_while_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
+Parsing_status read_return_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
+Parsing_status read_defer_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
+Parsing_status read_using_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
+Parsing_status read_c_code_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
+Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
+Parsing_status Abstx_function_call::fully_parse() {
+    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+}
+
 
 // maybe should this also return only Parsing_status?
 Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return nullptr; }

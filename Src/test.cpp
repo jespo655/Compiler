@@ -422,13 +422,7 @@ void compile_test()
         else std::cout << token.token << " ";
     }
     std::cout << endl;
-    // std::cout << "grabbing a token..." << std::endl;
-    // Token t = code_tokens[0];
-    // std::cout << "deleting the token..." << std::endl;
-    // t.~Token();
 
-    // std::cout << "deleting seq..." << std::endl;
-    // code_tokens.~Seq();
     std::cout << "done!" << std::endl;
 
 }
@@ -439,14 +433,27 @@ void code_gen_test()
     Seq<Token> hw_tokens = get_tokens_from_file("../Demos/minimal.cb");
     std::cout << "../Demos/minimal.cb tokens: " << endl;
     for (const Token& token : hw_tokens) {
-        if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
-        else std::cout << token.token << " ";
-        // std::cout << token << " ";
+        // if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
+        // else std::cout << token.token << " ";
+        std::cout << token << ", ";
     }
     std::cout << endl;
 
-    Shared<Global_scope> gs = parse_file("../Demos/helloworld.cb");
+    // Shared<Global_scope> gs = parse_file("../Demos/helloworld.cb");
+    Shared<Global_scope> gs = parse_tokens(std::move(hw_tokens), "Demos/minimal.cb");
 
+    // later:
+    // find identifier main, it should be a function
+    // fully parse starting from that function
+    // then generate code starting from that function
+
+    for (const auto& s : gs->statements) {
+        Parsing_status ps = s->fully_parse(); // for now, just fully parse the statements
+        std::cout << "fully parsed statement: status " << ps << std::endl;
+
+    }
+
+    for (const auto& s : gs->statements) s->generate_code(std::cout); // for now, just fully parse the statements
 
     // compile into abstx tree
     // TODO
@@ -524,11 +531,11 @@ int main()
     // template_test();
     // range_test();
     // flag_test();
-    // code_gen_test();
     // abstx_test();
 
-    compile_test();
+    // compile_test();
     // sequence_test();
+    code_gen_test();
 
     std::cout << "all test done!" << std::endl;
 }

@@ -47,7 +47,7 @@
 //      if it is, read value expression (with min_prio = op.prio), then construct infix operator node
 Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio)
 {
-    Owned<Value_expression> expr{nullptr};
+    Owned<Value_expression> expr = nullptr;
 
     ASSERT(!it->is_eof()); // this should have already been checked before
 
@@ -67,6 +67,9 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
     } else if (it->type == Token_type::INTEGER || it->type == Token_type::FLOAT || it->type == Token_type::STRING || it->type == Token_type::BOOL) {
         expr = read_simple_literal(it, parent_scope);
 
+    } else {
+        // @todo: more expresisons should be implemented
+        std::cout << "cannot parse value expression starting with token " << it->toS() << std::endl; // @debug
     }
 
     // @TODO: checked to here
@@ -160,6 +163,8 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_sco
 
     const Token& t = it.eat_token();
 
+    std::cout << "reading simple literal from token " << t.toS() << std::endl;
+
     switch(t.type) {
         case Token_type::INTEGER:
             try {
@@ -205,27 +210,8 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_sco
         default:
             ASSERT(false); // any other type of token cannot be a simple literal
     }
-    // if (!is_error(o->status)) o->finalize();
 
-/*
-    // TODO: do this too
-    Parsing_status fully_parse() override {
-        if (is_codegen_ready(status)) return status;
-        ASSERT(value.v_type != nullptr);
-        ASSERT(value.v_ptr != nullptr);
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
-
-    Parsing_status finalize() override {
-        if (is_codegen_ready(status)) return status;
-        ASSERT(value.v_type != nullptr);
-        ASSERT(value.v_ptr != nullptr);
-        status = Parsing_status::FULLY_RESOLVED;
-        return status;
-    }
-*/
-
+    o->status = Parsing_status::FULLY_RESOLVED;
     return owned_static_cast<Value_expression>(std::move(o));
 }
 
@@ -413,6 +399,8 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
     // Abstx_function_call_expression
     return owned_static_cast<Variable_expression>(std::move(expr));
 }
+
+
 
 
 

@@ -6,8 +6,7 @@ enum struct Parsing_status
 {
     NOT_PARSED,             // not parsed at all.
     PARTIALLY_PARSED,       // parsed to the point that it's apparent what type of expression it is. Basic info such as token context and owner has been filled in.
-    FULLY_PARSED,           // the expression and all sub-expressions are fully parsed without errors, but some dependencies might not be done yet. Set with abstx->fully_parse()
-    FULLY_RESOLVED,         // the expression and all sub-expressions are fully parsed without errors. Set with abstx->finalize()
+    FULLY_RESOLVED,         // the expression and all sub-expressions are fully parsed without errors.
     CODE_GENERATED,         // the expression has been fully parsed and code has been outputted to file. Set with abstx->generate_code()
 
     DEPENDENCIES_NEEDED,    // the expression cannot yet be fully parsed because it's waiting for other things to parse first
@@ -28,7 +27,6 @@ static std::ostream& operator<<(std::ostream& os, Parsing_status ps) {
     switch(ps) {
         case Parsing_status::NOT_PARSED: return os << "NOT_PARSED";
         case Parsing_status::PARTIALLY_PARSED: return os << "PARTIALLY_PARSED";
-        case Parsing_status::FULLY_PARSED: return os << "FULLY_PARSED";
         case Parsing_status::FULLY_RESOLVED: return os << "FULLY_RESOLVED";
         case Parsing_status::CODE_GENERATED: return os << "CODE_GENERATED";
         case Parsing_status::DEPENDENCIES_NEEDED: return os << "DEPENDENCIES_NEEDED";
@@ -45,7 +43,6 @@ static std::ostream& operator<<(std::ostream& os, Parsing_status ps) {
 static is_error(Parsing_status p) {
     if (p == Parsing_status::NOT_PARSED
         || p == Parsing_status::PARTIALLY_PARSED
-        || p == Parsing_status::FULLY_PARSED
         || p == Parsing_status::FULLY_RESOLVED
         || p == Parsing_status::CODE_GENERATED
         || p == Parsing_status::DEPENDENCIES_NEEDED)

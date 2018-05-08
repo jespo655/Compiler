@@ -49,8 +49,8 @@ std::regex only_whitespace_rx(R"(^\s*$)");
 std::regex whitespace_rx(R"(^\s+)");
 
 std::regex identifier_rx(R"(^([a-zA-Z]\w*[\?\!]*)\s*)");
-std::regex int_rx(R"(^(\d+)\s*)"); // 1237
-std::regex float_rx(R"(^(\d+\.\d+)\s*)"); // 123.55324, might be expanded with exponent and other standard things
+std::regex int_rx(R"(^(-?\d+)\s*)"); // 1237
+std::regex float_rx(R"(^(-?\d+\.\d+)\s*)"); // 123.55324, might be expanded with exponent and other standard things
 std::regex compiler_rx(R"(^(\#[a-zA-Z]\w*[\?\!]*)\s*)"); // same as identifier but with leading '#'
 
 std::regex comment_start_rx(R"(^\s*(\/\/|\/\*|\*\/)\s*)");
@@ -234,9 +234,9 @@ Seq<Token> read_tokens(std::istream& input, Token_context initial_context)
             continue;
         }
 
+        if(try_match(current_line, t, tokens, float_rx, Token_type::FLOAT)) continue; // must be before int to allow R".\d+" suffix
+        if(try_match(current_line, t, tokens, int_rx, Token_type::INTEGER)) continue; // must be before symbol to allow '-' prefix
         if(try_match(current_line, t, tokens, symbol_rx, Token_type::SYMBOL)) continue;
-        if(try_match(current_line, t, tokens, float_rx, Token_type::FLOAT)) continue;
-        if(try_match(current_line, t, tokens, int_rx, Token_type::INTEGER)) continue;
 
         if (regex_search(current_line, match, identifier_rx)) {
             t.token = match[1];
