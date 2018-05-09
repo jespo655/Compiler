@@ -38,19 +38,9 @@ struct CB_String : CB_Type {
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         ASSERT(raw_data);
-        char const* raw_it = *(c_typedef const*)raw_data;
-        if (!raw_it) os << "NULL";
-        os << "\"";
-        while (*raw_it)  {
-            switch(*raw_it) {
-                case '\n': os << "\\n"; break;
-                case '\r': os << "\\r"; break;
-                case '\"': os << "\\\""; break;
-                case '\\': os << "\\\\"; break;
-                default: os << *(c_typedef*)raw_it;
-            }
-        }
-        os << "\"";
+        char const* raw_str = *(c_typedef const*)raw_data;
+        if (!raw_str) os << "NULL";
+        os << "\"" << raw_str << "\"";
     }
 };
 

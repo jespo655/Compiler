@@ -17,6 +17,10 @@ struct Value_expression : Abstx_node
     // get_constant_value(): return nullpointer if there is no constant value
     // this value can then be parsed by the type (given by get_type())
     virtual const Any& get_constant_value() = 0;
+
+    // finalize(): try to go from non-error parsing status to FULLY_RESOLVED
+    // this might require to finalized owned members or even shared dependencies
+    virtual void finalize() = 0;
 };
 
 

@@ -33,5 +33,12 @@ struct Abstx_simple_literal : Value_expression {
         value.generate_literal(target);
         status = Parsing_status::CODE_GENERATED;
     }
+
+    void finalize() override {
+        if (is_error(status) || is_codegen_ready(status)) return;
+        if (value.v_type == nullptr) return; // literal must have a type
+        if (value.v_ptr == nullptr) return; // literal must have a constant value
+        status = Parsing_status::FULLY_RESOLVED;
+    }
 };
 

@@ -196,7 +196,7 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_sco
             }
             break;
         case Token_type::BOOL:
-            ASSERT(it->token == "true" || it->token == "false"); // this should be checked by lexer
+            ASSERT(t.token == "true" || t.token == "false"); // this should be checked by lexer
             // boolean literal
             o->value.v_type = CB_Bool::type;
             o->value.v_ptr = alloc_constant_data(CB_Bool::type->cb_sizeof());
@@ -206,6 +206,9 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_sco
             o->value.v_type = CB_String::type;
             o->value.v_ptr = alloc_constant_data(CB_String::type->cb_sizeof());
             *(CB_String::c_typedef*)o->value.v_ptr = (CB_String::c_typedef)t.token.c_str(); // valid as long as the list of tokens is alive @warning potentially dangerous
+            std::cout << "read string literal from token " << t << ": c_str() pointer is " << std::hex << (void*)t.token.c_str() << ", contents is " << t.token.c_str() << std::endl;
+            ASSERT(CB_String::type->cb_sizeof() == sizeof(char*));
+            std::cout << "generated literal is " << *(char**)(o->value.v_ptr) << std::endl;
             break;
         default:
             ASSERT(false); // any other type of token cannot be a simple literal

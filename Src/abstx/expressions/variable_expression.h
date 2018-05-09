@@ -37,6 +37,12 @@ struct Variable_expression_reference : Variable_expression {
         ASSERT(expr);
         return expr->generate_code(target);
     }
+
+    void finalize() {
+        ASSERT(expr);
+        expr->finalize();
+        status = expr->status;
+    }
 };
 
 

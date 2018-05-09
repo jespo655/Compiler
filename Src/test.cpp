@@ -490,7 +490,7 @@ void abstx_test()
     // fn_id.finalize();
 
     std::cout << "creating abstx function" << std::endl;
-    Abstx_function fn; // owned by the scope it is defined in
+    Abstx_function_literal fn; // owned by the scope it is defined in
     fn.function_identifier = &fn_id;
     fn.scope = alloc(Abstx_function_scope());
     fn.scope->owner = &fn;

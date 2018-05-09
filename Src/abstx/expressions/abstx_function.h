@@ -11,7 +11,7 @@ sum : fn(int, int)->int = fn(a: int, b: int)->int { return a+b; }; // only one r
 bar : fn() = fn() {}; // no return value -> don't need the arrow
 */
 
-struct Abstx_function : Value_expression
+struct Abstx_function_literal : Value_expression
 {
     struct Function_arg
     {
@@ -93,6 +93,44 @@ struct Abstx_function : Value_expression
         }
         */
     };
+
+    void finalize() override {
+        if (is_error(status) || is_codegen_ready(status)) return;
+        // finalize all identifiers
+
+        function_identifier->finalize();
+        if (is_error(function_identifier->status)) {
+            status = function_identifier->status;
+            return;
+        } else if (function_identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
+            status = Parsing_status::DEPENDENCIES_NEEDED;
+        }
+
+        for (const auto& arg : in_args) {
+            arg->identifier->finalize();
+            if (is_error(arg->identifier->status)) {
+                status = arg->identifier->status;
+                return;
+            } else if (arg->identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
+                status = Parsing_status::DEPENDENCIES_NEEDED;
+            }
+        }
+
+        for (const auto& arg : out_args) {
+            arg->identifier->finalize();
+            if (is_error(arg->identifier->status)) {
+                status = arg->identifier->status;
+                return;
+            } else if (arg->identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
+                status = Parsing_status::DEPENDENCIES_NEEDED;
+            }
+        }
+
+        // note: function scope doesn't need to be fully parsed for the function literal to be
+
+        // update status
+        if (!is_error(status) && status != Parsing_status::DEPENDENCIES_NEEDED) status = Parsing_status::FULLY_RESOLVED;
+    }
 };
 
 

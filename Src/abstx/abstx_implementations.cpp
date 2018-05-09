@@ -13,11 +13,11 @@ Shared<Abstx_scope> Abstx_node::parent_scope() const
     return nullptr;
 }
 
-Shared<Abstx_function> Abstx_node::parent_function() const
+Shared<Abstx_function_literal> Abstx_node::parent_function() const
 {
     Shared<Abstx_node> abstx = owner;
     while (abstx != nullptr) {
-        Shared<Abstx_function> fn = dynamic_pointer_cast<Abstx_function>(abstx);
+        Shared<Abstx_function_literal> fn = dynamic_pointer_cast<Abstx_function_literal>(abstx);
         if (fn != nullptr) return fn;
         else abstx = abstx->owner;
     }
@@ -79,7 +79,7 @@ int main()
     { Abstx_declaration abstx; }
     { Abstx_defer abstx; }
     // { Abstx_for abstx; }
-    { Abstx_function abstx; }
+    { Abstx_function_literal abstx; }
     { Abstx_function_call abstx; }
     // { Abstx_if abstx; } // undefined reference to bool
     { Abstx_return abstx; }

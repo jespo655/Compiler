@@ -56,7 +56,7 @@ Syntax:
 
 struct Abstx_function_call : Statement
 {
-    Shared<Abstx_function> function = nullptr; // inferred through function_pointer in fully_parse
+    Shared<Abstx_function_literal> function = nullptr; // inferred through function_pointer in fully_parse
     Owned<Variable_expression> function_pointer;
     Seq<Owned<Value_expression>> in_args;
     Seq<Shared<Variable_expression>> out_args;

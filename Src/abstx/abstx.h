@@ -13,7 +13,7 @@
 
 struct Abstx_scope;
 struct Global_scope;
-struct Abstx_function;
+struct Abstx_function_literal;
 
 /*
     An Abstx_node is a node in the abstract syntax tree.
@@ -66,7 +66,7 @@ struct Abstx_node
 
     // Return a pointer to the closest parent scope or function in the tree
     virtual Shared<Abstx_scope> parent_scope() const;
-    virtual Shared<Abstx_function> parent_function() const;
+    virtual Shared<Abstx_function_literal> parent_function() const;
 
     // Return a pointer to the root parent scope in the tree
     virtual Shared<const Global_scope> global_scope() const { return owner->global_scope(); }
