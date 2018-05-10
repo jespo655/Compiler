@@ -67,9 +67,8 @@ struct Abstx_scope : Abstx_node
 
         if (recursive) {
             // check parent scope
-            while (p == nullptr) {
-                auto parent = parent_scope();
-                if (parent == nullptr) break;
+            auto parent = parent_scope();
+            if (parent != nullptr) {
                 p = parent->get_identifier(id, recursive);
             }
 
@@ -78,7 +77,7 @@ struct Abstx_scope : Abstx_node
             for (auto scope : imported_scopes) {
                 auto p2 = scope->get_identifier(id, false);
                 if (p == nullptr) p = p2;
-                else {
+                else if (p2 != nullptr) {
                     // FIXME: log error identifier clash
                     // first found here: p->context()
                 }
@@ -190,12 +189,44 @@ struct Global_scope : Abstx_scope
     std::string file_name;
     const Seq<Token> tokens; // should be treated as const
 
-    Global_scope(Seq<Token>&& tokens) : tokens{std::move(tokens)} {}
+    Global_scope(Seq<Token>&& tokens) : tokens{std::move(tokens)} {
+        add_built_in_types_as_identifiers();
+    }
 
     Token_iterator iterator(int index=0) const { return Token_iterator(tokens, index); }
 
     Shared<Abstx_scope> parent_scope() const override { return nullptr; }
     Shared<const Global_scope> global_scope() const override { return this; }
+
+private:
+    static Seq<Owned<Abstx_identifier>> type_identifiers;
+    static Token_context built_in_context;
+
+    void add_built_in_types_as_identifiers()
+    {
+        built_in_context.line = 0;
+        built_in_context.position = 0;
+        built_in_context.file = "CB_built_in_types";
+
+        if (type_identifiers.size == 0) {
+            prepare_built_in_types();
+            for (const auto& t : CB_Type::built_in_types) {
+                Owned<Abstx_identifier> id = alloc(Abstx_identifier());
+                id->owner = nullptr;
+                id->context = built_in_context;
+                id->status = Parsing_status::FULLY_RESOLVED;
+
+                id->name = t.second->toS();
+                id->uid = 0; // suppress uid
+                id->value.v_type = CB_Type::type;
+                id->value.v_ptr = &t.second->uid; // should be safe
+                type_identifiers.add(std::move(id));
+            }
+        }
+        for (const auto& id : type_identifiers) {
+            identifiers[id->name] = Shared<Abstx_identifier>(id);
+        }
+    }
 
 };
 

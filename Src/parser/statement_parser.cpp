@@ -279,11 +279,14 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
         if (old_id != nullptr) {
             log_error("Redeclaration of identifier "+id->name, id->context);
             add_note("Previously declared here", old_id->context);
+            id->status = Parsing_status::REDECLARED_IDENTIFIER;
             // no specific error in the declaration, just ignore the identifier
         } else {
+            // add the identifier to the scope
             parent_scope->identifiers[id->name] = (Shared<Abstx_identifier>)id;
-            s->identifiers.add(std::move(id));
+            id->status = Parsing_status::PARTIALLY_PARSED;
         }
+        s->identifiers.add(std::move(id));
 
         if (it.compare(Token_type::SYMBOL, ",")) {
             it.eat_token(); // eat token and continue
@@ -351,9 +354,11 @@ Parsing_status Abstx_declaration::fully_parse() {
         auto p_scope = parent_scope();
         while(1) {
 
-            // std::cout << "reading type expression" << std::endl; // @debug
-
             Owned<Value_expression> type_expr = read_value_expression(it, p_scope);
+            if (type_expr == nullptr) {
+                status = Parsing_status::SYNTAX_ERROR; // unable to read value expression
+                return status; // give up
+            }
             type_expr->owner = this;
             if (is_error(type_expr->status)) {
                 add_note("In declaration statement here", context);
@@ -361,6 +366,7 @@ Parsing_status Abstx_declaration::fully_parse() {
                 return status;
 
             } else if (type_expr->status == Parsing_status::DEPENDENCIES_NEEDED) {
+                std::cout << "type expression has Parsing_status::DEPENDENCIES_NEEDED" << std::endl;
                 status = type_expr->status;
                 // continue reading
             } else {
@@ -423,6 +429,10 @@ Parsing_status Abstx_declaration::fully_parse() {
             // std::cout << "reading " << (constant?"constant":"non-constant") << " value" << std::endl; // @debug
 
             Owned<Value_expression> value_expr = read_value_expression(it, p_scope);
+            if (value_expr == nullptr) {
+                status = Parsing_status::SYNTAX_ERROR; // unable to read value expression
+                return status; // give up
+            }
             value_expr->owner = this;
             if (is_error(value_expr->status)) {
                 add_note("In declaration statement here", context);

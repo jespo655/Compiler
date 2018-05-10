@@ -10,7 +10,7 @@
 struct Abstx_identifier : Variable_expression {
     std::string name = "";
     Any value; // might not have an actual value, but must have a type. Constant declared identifiers must have a value
-    uint64_t uid = get_unique_id();
+    uint64_t uid = get_unique_id(); // set to 0 to avoid using suffixes
 
     // pointer to the value expression that defined this identifier, or nullptr if not applicable
     // This can be non-standard CB values, for example be a function or scope expression
@@ -46,7 +46,8 @@ struct Abstx_identifier : Variable_expression {
         // this should ouput the identifier used as a variable, since it's a subclass of Variable_expression
         ASSERT(name != "");
         ASSERT(is_codegen_ready(status));
-        target << name << "_" << uid; // uid suffix to avoid name C name clashes
+        target << name;
+        if (uid) target << "_" << uid; // uid suffix to avoid name C name clashes
         status = Parsing_status::CODE_GENERATED;
     }
 

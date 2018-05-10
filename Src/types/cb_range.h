@@ -31,13 +31,13 @@ struct CB_Range : CB_Type, CB_Iterable {
 
     CB_Range() { uid = type->uid; }
     CB_Range(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
-    std::string toS() const override { return "int_range"; }
+    std::string toS() const override { return "range"; }
 
     bool is_primitive() const override { return false; }
 
     virtual size_t alignment() const override { return CB_i64::type->alignment(); }
 
-    void generate_type(ostream& os) const override { os << "_cb_range"; }
+    void generate_type(ostream& os) const override { os << "_cb_i_range"; }
 
     void generate_typedef(ostream& os) const override {
         os << "typedef struct { ";
@@ -81,7 +81,7 @@ struct CB_Float_range : CB_Type, CB_Iterable {
 
     virtual size_t alignment() const override { return CB_f64::type->alignment(); }
 
-    void generate_type(ostream& os) const override { os << "_cb_range"; }
+    void generate_type(ostream& os) const override { os << "_cb_f_range"; }
 
     void generate_typedef(ostream& os) const override {
         os << "typedef struct { ";

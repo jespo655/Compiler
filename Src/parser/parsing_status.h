@@ -17,6 +17,7 @@ enum struct Parsing_status
     CYCLIC_DEPENDENCY,      // there was a cyclic dependency
     COMPILE_TIME_ERROR,     // there was an error in a #run (that was not one of the above error types)
     UNDECLARED_IDENTIFIER,  // it tried to use an identifier which was not yet declared
+    REDECLARED_IDENTIFIER,  // it tried to declare an identifier which was already declared
     FATAL_ERROR,            // there was an error so bad that we couldn't recover. Continued compilation would give undefined behaviour.
 
     // TODO: Add more error types as they pop up
@@ -35,6 +36,7 @@ static std::ostream& operator<<(std::ostream& os, Parsing_status ps) {
         case Parsing_status::CYCLIC_DEPENDENCY: return os << "CYCLIC_DEPENDENCY";
         case Parsing_status::COMPILE_TIME_ERROR: return os << "COMPILE_TIME_ERROR";
         case Parsing_status::UNDECLARED_IDENTIFIER: return os << "UNDECLARED_IDENTIFIER";
+        case Parsing_status::REDECLARED_IDENTIFIER: return os << "REDECLARED_IDENTIFIER";
         case Parsing_status::FATAL_ERROR: return os << "FATAL_ERROR";
     }
     return os;

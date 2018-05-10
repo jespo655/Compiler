@@ -1,5 +1,10 @@
 #include "all_abstx.h"
 
+
+Seq<Owned<Abstx_identifier>> Global_scope::type_identifiers;
+Token_context Global_scope::built_in_context;
+
+
 // Go up in the Abstx tree until a parent scope is found.
 // If no scope is found, return nullptr
 Shared<Abstx_scope> Abstx_node::parent_scope() const

@@ -46,6 +46,8 @@
 // '.' getter operator
 // other identifier or symbol token: check if it's an infix operator with prio > min_prio
 //      if it is, read value expression (with min_prio = op.prio), then construct infix operator node
+
+// If unable to read expression, nullpointer is returned
 Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio)
 {
     Owned<Value_expression> expr = nullptr;
@@ -82,13 +84,16 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
 
     } else {
         log_error("Unable to parse expression",it->context);
-        ASSERT(false, "FIXME: what to do?");
+        return nullptr;
     }
 
     if (expr == nullptr) return expr;
     if (expr->status == Parsing_status::FATAL_ERROR) return expr;
 
     // all expressions should be able to be fully resolved immediately
+    if (!(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED)) {
+        std::cout << "unexpected expr status: " << expr->status << std::endl; // @debug
+    }
     ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED);
 
 

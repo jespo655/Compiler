@@ -7,11 +7,14 @@ That is, they have to be defined in a .cpp-file.
 #include "cb_type.h"
 #include "cb_any.h"
 
-std::map<uint32_t, std::string> CB_Type::typenames{};
-std::map<uint32_t, Any> CB_Type::default_values{};
-std::map<uint32_t, size_t> CB_Type::cb_sizes{};
+std::map<CB_Type::c_typedef, std::string> CB_Type::typenames{};
+std::map<CB_Type::c_typedef, Any> CB_Type::default_values{};
+std::map<CB_Type::c_typedef, size_t> CB_Type::cb_sizes{};
 
-constexpr uint32_t CB_Type::_default_value;
+std::map<CB_Type::c_typedef, Shared<const CB_Type>> CB_Type::built_in_types{};
+std::map<CB_Type::c_typedef, Owned<CB_Type>> CB_Type::complex_types{};
+
+constexpr CB_Type::c_typedef CB_Type::_default_value;
 static const CB_Type static_cb_type("type", sizeof(CB_Type::_default_value), &CB_Type::_default_value);
 const Shared<const CB_Type> CB_Type::type = &static_cb_type;
 
@@ -120,10 +123,10 @@ static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
 
 
 
-uint32_t parse_type_id(const Any& any) {
+CB_Type::c_typedef parse_type_id(const Any& any) {
     ASSERT(*any.v_type == *CB_Type::type);
     ASSERT(any.v_ptr);
-    return *(uint32_t*)any.v_ptr;
+    return *(CB_Type::c_typedef*)any.v_ptr;
 }
 
 Shared<const CB_Type> parse_type(const Any& any) {
@@ -172,52 +175,50 @@ uint64_t parse_float(const Any& any) {
 
 
 
-std::map<uint32_t, Shared<const CB_Type>> built_in_types;
-std::map<uint32_t, Owned<CB_Type>> complex_types;
 
 Shared<const CB_Type> add_complex_cb_type(Owned<CB_Type>&& type) {
-    uint32_t uid = type->uid;
-    Shared<CB_Type> p = complex_types[uid];
+    CB_Type::c_typedef uid = type->uid;
+    Shared<CB_Type> p = CB_Type::complex_types[uid];
     if (p != nullptr) return p;
-    complex_types[uid] = std::move(type);
-    return (Shared<CB_Type>)complex_types[uid]; // double implicit cast is too hard
+    CB_Type::complex_types[uid] = std::move(type);
+    return (Shared<CB_Type>)CB_Type::complex_types[uid]; // double implicit cast is too hard
 }
 
-void build_static_type_seq() {
-    if (!built_in_types.empty()) return; // already built
-    built_in_types[static_cb_type.uid] = &static_cb_type;
-    built_in_types[static_cb_any.uid] = &static_cb_any;
-    built_in_types[static_CB_Bool.uid] = &static_CB_Bool;
-    built_in_types[static_CB_i8.uid] = &static_CB_i8;
-    built_in_types[static_CB_i16.uid] = &static_CB_i16;
-    built_in_types[static_CB_i32.uid] = &static_CB_i32;
-    built_in_types[static_CB_i64.uid] = &static_CB_i64;
-    built_in_types[static_CB_u8.uid] = &static_CB_u8;
-    built_in_types[static_CB_u16.uid] = &static_CB_u16;
-    built_in_types[static_CB_u32.uid] = &static_CB_u32;
-    built_in_types[static_CB_u64.uid] = &static_CB_u64;
-    built_in_types[static_CB_f32.uid] = &static_CB_f32;
-    built_in_types[static_CB_f64.uid] = &static_CB_f64;
-    built_in_types[static_CB_Int.uid] = &static_CB_Int;
-    built_in_types[static_CB_Uint.uid] = &static_CB_Uint;
-    built_in_types[static_CB_Float.uid] = &static_CB_Float;
-    built_in_types[static_CB_Flag.uid] = &static_CB_Flag;
-    built_in_types[static_cb_range.uid] = &static_cb_range;
-    built_in_types[static_cb_float_range.uid] = &static_cb_float_range;
-    built_in_types[static_cb_string.uid] = &static_cb_string;
+void prepare_built_in_types() {
+    if (!CB_Type::built_in_types.empty()) return; // already built
+    CB_Type::built_in_types[static_cb_type.uid] = &static_cb_type;
+    CB_Type::built_in_types[static_cb_any.uid] = &static_cb_any;
+    CB_Type::built_in_types[static_CB_Bool.uid] = &static_CB_Bool;
+    CB_Type::built_in_types[static_CB_i8.uid] = &static_CB_i8;
+    CB_Type::built_in_types[static_CB_i16.uid] = &static_CB_i16;
+    CB_Type::built_in_types[static_CB_i32.uid] = &static_CB_i32;
+    CB_Type::built_in_types[static_CB_i64.uid] = &static_CB_i64;
+    CB_Type::built_in_types[static_CB_u8.uid] = &static_CB_u8;
+    CB_Type::built_in_types[static_CB_u16.uid] = &static_CB_u16;
+    CB_Type::built_in_types[static_CB_u32.uid] = &static_CB_u32;
+    CB_Type::built_in_types[static_CB_u64.uid] = &static_CB_u64;
+    CB_Type::built_in_types[static_CB_f32.uid] = &static_CB_f32;
+    CB_Type::built_in_types[static_CB_f64.uid] = &static_CB_f64;
+    CB_Type::built_in_types[static_CB_Int.uid] = &static_CB_Int;
+    CB_Type::built_in_types[static_CB_Uint.uid] = &static_CB_Uint;
+    CB_Type::built_in_types[static_CB_Float.uid] = &static_CB_Float;
+    CB_Type::built_in_types[static_CB_Flag.uid] = &static_CB_Flag;
+    CB_Type::built_in_types[static_cb_range.uid] = &static_cb_range;
+    CB_Type::built_in_types[static_cb_float_range.uid] = &static_cb_float_range;
+    CB_Type::built_in_types[static_cb_string.uid] = &static_cb_string;
     // only primitives - seq, set, function types and struct types are not included here
 }
 
 // slower, but more generic
 Shared<const CB_Type> get_built_in_type(const std::string& name)
 {
-    build_static_type_seq();
-    for (auto& type : built_in_types) {
+    prepare_built_in_types();
+    for (auto& type : CB_Type::built_in_types) {
         // these two alternatives should be equivalent, but a map lookup should be faster
         if (name == CB_Type::typenames[type.second->uid]) return type.second;
         // if (name == type.second->toS()) return type;
     }
-    for (auto& type : complex_types) {
+    for (auto& type : CB_Type::complex_types) {
         if (name == CB_Type::typenames[type.second->uid]) return (Shared<CB_Type>)type.second; // double implicit cast is too hard
         // if (name == type.second->toS()) return type;
     }
@@ -225,20 +226,20 @@ Shared<const CB_Type> get_built_in_type(const std::string& name)
 }
 
 // faster, but not as useful
-Shared<const CB_Type> get_built_in_type(uint32_t uid)
+Shared<const CB_Type> get_built_in_type(CB_Type::c_typedef uid)
 {
-    build_static_type_seq();
-    Shared<CB_Type> p = complex_types[uid];
+    prepare_built_in_types();
+    Shared<CB_Type> p = CB_Type::complex_types[uid];
     if (p) return p;
-    return built_in_types[uid];
+    return CB_Type::built_in_types[uid];
 }
 
 void generate_typedefs(std::ostream& os)
 {
-    for (const auto& type : built_in_types) {
+    for (const auto& type : CB_Type::built_in_types) {
         type.second->generate_typedef(os);
     }
-    for (const auto& type : complex_types) {
+    for (const auto& type : CB_Type::complex_types) {
         type.second->generate_typedef(os);
     }
 }

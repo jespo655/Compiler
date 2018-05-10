@@ -91,6 +91,9 @@ struct CB_Type
     static std::map<c_typedef, Any> default_values; // mapped from uid to value. Only compile time.
     static std::map<c_typedef, size_t> cb_sizes; // mapped from uid to size. Only compile time.
 
+    static std::map<c_typedef, Shared<const CB_Type>> built_in_types; // mapped from uid to shared type representation of built in types (filled in automatically, types are owned statically by cpp file)
+    static std::map<c_typedef, Owned<CB_Type>> complex_types; // mapped from uid to owned type representation of complex type (filled in over time as the types are defined in the program)
+
     c_typedef uid;
 
     CB_Type() { uid = type->uid; } // default value for the type
@@ -153,9 +156,11 @@ struct CB_Type
 
 };
 
+
 // functions to get build in types
 Shared<const CB_Type> get_built_in_type(const std::string& name); // slower, but more generic
 Shared<const CB_Type> get_built_in_type(CB_Type::c_typedef uid); // faster, but not as useful
+void prepare_built_in_types(); // prepare list of built in types (done automatically in get_built_in_type)
 
 // function to add complex built-in types (CB_Function, CB_Pointer, CB_Seq or CB_Struct)
 Shared<const CB_Type> add_complex_cb_type(Owned<CB_Type>&& type);
