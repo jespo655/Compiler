@@ -253,8 +253,8 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
         // allocate abstx identifier and set base info
         Owned<Abstx_identifier> id = alloc(Abstx_identifier());
         id->set_owner(s);
-        s->context = it->context;
-        s->start_token_index = it.current_index;
+        id->context = it->context;
+        id->start_token_index = it.current_index;
 
         // std::cout << "reading declared identifier starting with token " << it->toS() << " at index " << it.current_index << std::endl; // @debug
 

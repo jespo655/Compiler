@@ -57,34 +57,3 @@ struct Abstx_identifier : Variable_expression {
     }
 
 };
-
-
-struct Abstx_identifier_reference : Variable_expression {
-    std::string name = "";
-    Shared<Abstx_identifier> id = nullptr;
-
-    std::string toS() const override {
-        if (id) return id->toS();
-        return name;
-    }
-
-    virtual Shared<const CB_Type> get_type() override {
-        if (id) return id->get_type();
-        else return nullptr;
-    }
-
-    bool has_constant_value() const override {
-        ASSERT(id);
-        return id->has_constant_value();
-    }
-
-    const Any& get_constant_value() override {
-        ASSERT(id);
-        return id->get_constant_value();
-    }
-
-    void generate_code(std::ostream& target) override {
-        ASSERT(id);
-        return id->generate_code(target);
-    }
-};

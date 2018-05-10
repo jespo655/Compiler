@@ -21,4 +21,5 @@
 #include "expressions/variable_expression.h"
 // #include "expressions/abstx_array_index.h" // this should maybe be handled by an operator
 #include "expressions/abstx_identifier.h"
+#include "expressions/abstx_identifier_reference.h"
 #include "expressions/abstx_pointer_dereference.h"

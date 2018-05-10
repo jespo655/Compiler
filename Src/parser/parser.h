@@ -93,10 +93,12 @@ Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx
 #define DEFAULT_OPERATOR_PRIO 1000
 Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
 Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
+Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs);
 
 Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope);
-
+Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope);
+Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 
 /*
 

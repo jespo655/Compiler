@@ -453,6 +453,8 @@ void code_gen_test()
 
     }
 
+    exit_if_errors();
+
     for (const auto& s : gs->statements) s->generate_code(std::cout); // for now, just fully parse the statements
 
     // compile into abstx tree

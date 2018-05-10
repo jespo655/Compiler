@@ -1,5 +1,8 @@
 
 a, b, c := -1.4, true, "here";
+d, e, f := a, b, c;
+
+// #c #string here printf("hello world!\n") here
 
 // d := a;
 

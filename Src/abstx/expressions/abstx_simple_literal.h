@@ -36,8 +36,8 @@ struct Abstx_simple_literal : Value_expression {
 
     void finalize() override {
         if (is_error(status) || is_codegen_ready(status)) return;
-        if (value.v_type == nullptr) return; // literal must have a type
-        if (value.v_ptr == nullptr) return; // literal must have a constant value
+        ASSERT(value.v_type != nullptr, "type must be set during creation");
+        ASSERT(value.v_ptr != nullptr, "constant value must be set during creation");
         status = Parsing_status::FULLY_RESOLVED;
     }
 };

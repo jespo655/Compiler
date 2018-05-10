@@ -104,4 +104,20 @@ struct Abstx_function_call_expression : Variable_expression {
         ASSERT(function_call);
         function_call->generate_code(target);
     }
+
+    bool has_constant_value() const override {
+        // @todo: function call has constant value if all arguments are consants, and if the function scope is self contained (no bi effects)
+        return false;
+    }
+
+    const Any& get_constant_value() override {
+        static const Any no_value;
+        return no_value;
+    }
+
+    void finalize() override {
+        // the function call should be finalized by the scope finalizer
+        ASSERT(function_call != nullptr);
+        status = function_call->status;
+    }
 };

@@ -13,6 +13,96 @@
 
 
 
+
+struct V {
+    virtual void f() {};  // must be polymorphic to use runtime-checked dynamic_cast
+};
+struct A : virtual V {};
+struct B : virtual V {
+  B(V* v, A* a) {
+    // casts during construction (see the call in the constructor of D below)
+    dynamic_cast<B*>(v); // well-defined: v of type V*, V base of B, results in B*
+    dynamic_cast<B*>(a); // undefined behavior: a has type A*, A not a base of B
+  }
+};
+struct D : A, B {
+    D() : B((A*)this, this) { }
+};
+
+struct Base {
+    virtual ~Base() {}
+};
+
+struct Derived: Base {
+    virtual void name() {}
+};
+
+void dynamic_cast_test()
+{
+    D d; // the most derived object
+    A& a = d; // upcast, dynamic_cast may be used, but unnecessary
+    D& new_d = dynamic_cast<D&>(a); // downcast
+    B& new_b = dynamic_cast<B&>(a); // sidecast
+
+
+    Base* b1 = new Base;
+    if(Derived* d = dynamic_cast<Derived*>(b1))
+    {
+        std::cout << "downcast from b1 to d successful\n";
+        d->name(); // safe to call
+    }
+
+    Base* b2 = new Derived;
+    if(Derived* d = dynamic_cast<Derived*>(b2))
+    {
+        std::cout << "downcast from b2 to d successful\n";
+        d->name(); // safe to call
+    }
+
+    delete b1;
+    delete b2;
+}
+
+void dynamic_cast_test_2()
+{
+    D d; // the most derived object
+    A& a = d; // upcast, dynamic_cast may be used, but unnecessary
+    D& new_d = dynamic_cast<D&>(a); // downcast
+    B& new_b = dynamic_cast<B&>(a); // sidecast
+
+
+    Owned<Base> b1 = alloc(Base());
+    if(Owned<Derived> d = owned_dynamic_cast<Derived>(std::move(b1)))
+    {
+        std::cout << "downcast from b1 to d successful!\n";
+        d->name(); // safe to call
+    }
+
+    Owned<Base> b2 = owned_static_cast<Base>(alloc(Derived()));
+    if(Owned<Derived> d = owned_dynamic_cast<Derived>(std::move(b2)))
+    {
+        std::cout << "downcast from b2 to d successful!\n";
+        d->name(); // safe to call
+    }
+
+    // delete b1.v;
+    // delete b2.v;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct S {
     int i = 2;
     virtual std::string toS() const { return "S";}
@@ -35,6 +125,10 @@ struct TS
 };
 
 
+
+
+
+
 Shared<const S> super_foo(Owned<S>&& type) {
     std::cout << "    type: " << std::hex << type.v << std::endl;
     Owned<S> o = std::move(type);
@@ -55,7 +149,7 @@ Shared<const T> template_foo(Owned<T>&& type) {
     return p2;
 }
 
-void pointer_test()
+void owned_pointer_test()
 {
     Owned<S2> o = alloc(S2());
     std::cout << std::hex << o.v << std::endl;
@@ -122,9 +216,12 @@ void sequence_test()
 
 int main()
 {
-    sequence_test();
+    dynamic_cast_test_2();
+    // dynamic_cast_test();
+    // sequence_test();
     // static_test();
-    // pointer_test();
+    // owned_pointer_test();
+
 
     // Shared<void> s;
     // void* v = s.v;
