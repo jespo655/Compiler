@@ -148,6 +148,7 @@ struct CB_Struct : CB_Type
     }
 
     void finalize() {
+        std::cout << "finalizing struct type" << std::endl;
         size_t total_size = 0;
         if (members.empty()) {
             total_size = 1;
@@ -167,12 +168,16 @@ struct CB_Struct : CB_Type
 
             // fix final alignment so it works in sequences
             align(&total_size, max_alignment);
+
             // copy default value
             _default_value = malloc(total_size);
             for (auto& member : members) {
+                ASSERT(member.id->value.v_type != nullptr);
+                if (member.id->value.v_ptr == nullptr) member.id->value = member.id->value.v_type->default_value();
                 memcpy((uint8_t*)_default_value+member.byte_position, member.id->value.v_ptr, member.id->value.v_type->cb_sizeof());
             }
         }
+        std::cout << "finishging assertions and register_type()" << std::endl;
         ASSERT(total_size > 0);
         ASSERT(_default_value != nullptr);
         register_type(toS(), total_size, _default_value);

@@ -541,6 +541,9 @@ Parsing_status read_assignment_statement(Token_iterator& it, Shared<Abstx_scope>
     s->set_owner(parent_scope);
     s->context = it->context;
     s->start_token_index = it.current_index;
+
+    ASSERT(false, "NYI");
+    return Parsing_status::NOT_PARSED;
 }
 
 

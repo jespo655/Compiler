@@ -455,6 +455,7 @@ void code_gen_test()
 
     exit_if_errors();
 
+    generate_typedefs(std::cout);
     for (const auto& s : gs->statements) s->generate_code(std::cout); // for now, just fully parse the statements
 
     // compile into abstx tree

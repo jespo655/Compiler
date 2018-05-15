@@ -1,8 +1,17 @@
 
 // i : int;
 
-a, b, c := -1.4, true, "here";
-d, e, f := a, b, c;
+s :: struct {
+    i := 2;
+};
+
+s2 :: s;
+a : s2;
+b := a.i;
+
+
+// a, b, c := -1.4, true, "here";
+// d, e, f := a, b, c;
 
 // #c #string here printf("hello world!\n") here
 

@@ -72,6 +72,9 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
     } else if (it->type == Token_type::KEYWORD && it->token == "fn") {
         expr = read_function_literal(it, parent_scope);
 
+    } else if (it->type == Token_type::KEYWORD && it->token == "struct") {
+        expr = read_struct_literal(it, parent_scope);
+
     } else if (it->type == Token_type::INTEGER || it->type == Token_type::FLOAT || it->type == Token_type::STRING || it->type == Token_type::BOOL) {
         expr = read_simple_literal(it, parent_scope);
 
@@ -94,7 +97,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
 
     // all expressions should be able to be fully resolved immediately
     if (!(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED)) {
-        std::cout << "unexpected expr status: " << expr->status << std::endl; // @debug
+        std::cerr << "unexpected expr status: " << expr->status << std::endl; // @debug
     }
     ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED);
 
@@ -234,6 +237,7 @@ Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_sco
         }
     }
 
+    ASSERT(struct_type);
     struct_type->finalize();
     o->struct_type = add_complex_cb_type(owned_static_cast<CB_Type>(std::move(struct_type)));
     o->finalize();
@@ -269,15 +273,16 @@ Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_scope> pare
     }
 
     // Get the type of id
+    ASSERT(id); // id must exist
     Shared<const CB_Type> id_type = id->get_type();
-    ASSERT(id_type != nullptr); // type must be known
+    ASSERT(id_type); // type must be known
 
     Shared<const CB_Struct> struct_type = dynamic_pointer_cast<const CB_Struct>(id_type);
     if (struct_type != nullptr) {
         Shared<const CB_Struct::Struct_member> member = struct_type->get_member(it->token);
         if (member != nullptr) {
             // @TODO: create struct member reference abstx node and return it
-            Owned<Abstx_struct_getter> o;
+            Owned<Abstx_struct_getter> o = alloc(Abstx_struct_getter());
             o->set_owner(parent_scope);
             o->context = dot_context;
             o->start_token_index = it.current_index-1; // pointing to the dot
@@ -318,8 +323,6 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_sco
     o->start_token_index = it.current_index;
 
     const Token& t = it.eat_token();
-
-    std::cout << "reading simple literal from token " << t.toS() << std::endl;
 
     switch(t.type) {
         case Token_type::INTEGER:
