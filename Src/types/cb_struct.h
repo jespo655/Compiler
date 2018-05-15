@@ -3,6 +3,7 @@
 #include "cb_type.h"
 #include "../utilities/sequence.h"
 #include "../utilities/pointers.h"
+#include "../abstx/expressions/abstx_identifier.h"
 
 #include <string>
 #include <iomanip>
@@ -79,23 +80,23 @@ foo(*((uint8_t*)(sa+0)), *((uint8_t*)(sa+1)), *((uint16_t*)(sa+2)));
 struct CB_Struct : CB_Type
 {
     struct Struct_member {
-        std::string id;
-        Shared<const CB_Type> type;
-        Any default_value;
+        Abstx_identifier id;
         bool is_using = false; // allowes implicit cast to that member
-        bool explicit_uninitialized = false;
+        bool explicit_uninitialized = false; // not currently used (ignored by the compiler)
         size_t byte_position;
 
         Struct_member() {};
-        Struct_member(const std::string& id, const Shared<const CB_Type>& type, const Any& default_value, bool is_using=false)
-            : id{id}, type{type}, default_value{default_value}, is_using{is_using} {};
+        Struct_member(const std::string& name, const Any& value, bool is_using=false) : id{}, is_using{is_using} {
+            id.name = name;
+            id.value = value;
+        };
 
         std::string toS() const {
             std::ostringstream oss;
             oss << (is_using?"using ":"")
-                << id << ":"
+                << id.name << ":"
                 << type->toS() << "="
-                << (explicit_uninitialized?"---":default_value.toS());
+                << (explicit_uninitialized?"---":id.value.toS());
             return oss.str();
         }
     };
@@ -136,7 +137,7 @@ struct CB_Struct : CB_Type
 
     void add_member(const std::string& id, const Shared<const CB_Type>& type) {
         ASSERT(type != nullptr);
-        members.add(Struct_member(id, type, type->default_value()));
+        members.add(Struct_member(id, type->default_value()));
     }
 
     void finalize() {
@@ -150,10 +151,10 @@ struct CB_Struct : CB_Type
             // (TODO: rearrange the members if it would save space)
             for (auto& member : members) {
                 // add memory alignment for 16 / 32 bit or bigger values (since this is done in C by default)
-                size_t alignment = member.type->alignment();
+                size_t alignment = member.id.value.v_type->alignment();
                 align(&total_size, alignment);
                 member.byte_position = total_size;
-                total_size += member.type->cb_sizeof();
+                total_size += member.id.value.v_type->cb_sizeof();
                 if (alignment > max_alignment) max_alignment = alignment;
             }
 
@@ -162,7 +163,7 @@ struct CB_Struct : CB_Type
             // copy default value
             _default_value = malloc(total_size);
             for (auto& member : members) {
-                memcpy((uint8_t*)_default_value+member.byte_position, member.default_value.v_ptr, member.type->cb_sizeof());
+                memcpy((uint8_t*)_default_value+member.byte_position, member.id.value.v_ptr, member.id.value.v_type->cb_sizeof());
             }
         }
         ASSERT(total_size > 0);
@@ -180,8 +181,8 @@ struct CB_Struct : CB_Type
         os << "typedef struct{ ";
         for (const auto& member : members) {
             // os << std::endl;
-            member.type->generate_type(os);
-            os << " " << member.id << "; ";
+            member.id.value.v_type->generate_type(os);
+            os << " " << member.id.name << "; ";
         }
         // if (member.size>0) os << std::endl;
         os << "} ";
@@ -197,14 +198,14 @@ struct CB_Struct : CB_Type
         os << "){";
         for (int i = 0; i < members.size; ++i) {
             if (i) os << ", ";
-            members[i].type->generate_literal(os, (uint8_t const*)raw_data+members[i].byte_position);
+            members[i].id.value.v_type->generate_literal(os, (uint8_t const*)raw_data+members[i].byte_position);
         }
         os << "}";
     }
     void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
         if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
         for (const auto& member : members) {
-            member.type->generate_destructor(os, id + "." + member.id, depth+1);
+            member.id.value.v_type->generate_destructor(os, id + "." + member.id.name, depth+1);
         }
     };
 
