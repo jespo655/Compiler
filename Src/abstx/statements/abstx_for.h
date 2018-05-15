@@ -45,7 +45,7 @@ struct Abstx_for : Statement {
 
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(is_codegen_ready(status));
 
         if (anonymous_range) {

@@ -24,12 +24,11 @@ struct Abstx_pointer_dereference : Variable_expression {
         return type->v_type;
     }
 
-    void generate_code(std::ostream& target) override
+    void generate_code(std::ostream& target) const override
     {
         ASSERT(is_codegen_ready(status));
         target << "*";
         pointer_id->generate_code(target);
-        status = Parsing_status::CODE_GENERATED;
     }
 
 };
@@ -58,12 +57,11 @@ struct Abstx_address_of : Value_expression {
         return pointer_type;
     }
 
-    void generate_code(std::ostream& target) override
+    void generate_code(std::ostream& target) const override
     {
         ASSERT(is_codegen_ready(status));
         target << "&";
         pointer_id->generate_code(target);
-        status = Parsing_status::CODE_GENERATED;
     }
 
 };

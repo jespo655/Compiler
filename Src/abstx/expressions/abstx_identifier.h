@@ -26,8 +26,12 @@ struct Abstx_identifier : Variable_expression {
         return oss.str();
     }
 
-    virtual Shared<const CB_Type> get_type() override {
+    Shared<const CB_Type> get_type() override {
         if (value.v_type == nullptr && value_expression != nullptr) value.v_type == value_expression->get_type();
+        return value.v_type;
+    }
+
+    Shared<const CB_Type> get_constant_type() const {
         return value.v_type;
     }
 
@@ -41,14 +45,13 @@ struct Abstx_identifier : Variable_expression {
         return value;
     }
 
-    void generate_code(std::ostream& target) override
+    void generate_code(std::ostream& target) const override
     {
         // this should ouput the identifier used as a variable, since it's a subclass of Variable_expression
         ASSERT(name != "");
         ASSERT(is_codegen_ready(status));
         target << name;
         if (uid) target << "_" << uid; // uid suffix to avoid name C name clashes
-        status = Parsing_status::CODE_GENERATED;
     }
 
     void finalize() {

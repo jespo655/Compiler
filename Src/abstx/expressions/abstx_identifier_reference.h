@@ -35,7 +35,7 @@ struct Abstx_identifier_reference : Variable_expression {
         return id->get_constant_value();
     }
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(id);
         return id->generate_code(target);
     }

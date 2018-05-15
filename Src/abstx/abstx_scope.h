@@ -169,14 +169,13 @@ struct Abstx_scope : Abstx_node
         ASSERT(using_statements.size == 0);
     }
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(is_codegen_ready(status));
         target << "{" << std::endl;
         for (const auto& st : statements) {
             st->generate_code(target);
         }
         target << "}" << std::endl;
-        status = Parsing_status::CODE_GENERATED;
     };
 
 };
@@ -279,10 +278,9 @@ struct Abstx_anonymous_scope : Statement
 
     Parsing_status fully_parse() override; // implemented in ../parser/statement_parser.cpp
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(is_codegen_ready(status));
         scope->generate_code(target);
-        status = Parsing_status::CODE_GENERATED;
     };
 
 };

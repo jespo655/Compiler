@@ -8,6 +8,8 @@
 #include <string>
 #include <iomanip>
 
+#define ONELINE_STRUCT_DEFINITIONS true
+
 /*
 
 T := struct
@@ -140,6 +142,20 @@ struct CB_Struct : CB_Type
         members.add(Struct_member(id, type->default_value()));
     }
 
+    Shared<const Struct_member> get_member(const std::string& id) const {
+        for (auto& member : members) {
+            if (member.id.name == id) return &member;
+        }
+        return nullptr;
+    }
+
+    Shared<const Abstx_identifier> get_abstx_member(const std::string& id) const {
+        for (auto& member : members) {
+            if (member.id.name == id) return &member.id;
+        }
+        return nullptr;
+    }
+
     void finalize() {
         size_t total_size = 0;
         if (members.empty()) {
@@ -178,13 +194,16 @@ struct CB_Struct : CB_Type
     // code generation functions
     void generate_typedef(ostream& os) const override {
         ASSERT(_default_value); // assert finalized
-        os << "typedef struct{ ";
+        os << "typedef struct{";
+        if (!ONELINE_STRUCT_DEFINITIONS && members.size>0) os << " ";
         for (const auto& member : members) {
-            // os << std::endl;
+            if (!ONELINE_STRUCT_DEFINITIONS) os << std::endl;
             member.id.value.v_type->generate_type(os);
-            os << " " << member.id.name << "; ";
+            os << " ";
+            member.id.generate_code(os);
+            os << "; ";
         }
-        // if (member.size>0) os << std::endl;
+        if (!ONELINE_STRUCT_DEFINITIONS && members.size>0) os << std::endl;
         os << "} ";
         generate_type(os);
         os << ";" << std::endl;

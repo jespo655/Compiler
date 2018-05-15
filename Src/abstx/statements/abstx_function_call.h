@@ -65,7 +65,7 @@ struct Abstx_function_call : Statement
 
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
-    void generate_code(std::ostream& target) override
+    void generate_code(std::ostream& target) const override
     {
         ASSERT(is_codegen_ready(status));
         function_pointer->generate_code(target);
@@ -87,7 +87,6 @@ struct Abstx_function_call : Statement
         }
         target << ");" << std::endl;
 
-        status = Parsing_status::CODE_GENERATED;
     }
 };
 
@@ -100,7 +99,7 @@ struct Abstx_function_call_expression : Variable_expression {
         ASSERT(false, "Abstx_function_call_expression::get_type() not allowed since functions can have several types - check funcion_call->out_args instead");
     }
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(function_call);
         function_call->generate_code(target);
     }

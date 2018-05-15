@@ -55,7 +55,7 @@ struct Abstx_function_literal : Value_expression
         return no_value;
     }
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(is_codegen_ready(status));
 
         // function declaration syntax
@@ -82,7 +82,6 @@ struct Abstx_function_literal : Value_expression
         }
         target << ") ";
         scope->generate_code(target);
-        status = Parsing_status::CODE_GENERATED;
 
         // Generated code:
         // int is primitive, T is not primitive

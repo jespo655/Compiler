@@ -33,7 +33,7 @@ struct Variable_expression_reference : Variable_expression {
         return expr->get_constant_value();
     }
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(expr);
         return expr->generate_code(target);
     }

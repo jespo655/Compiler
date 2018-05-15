@@ -27,11 +27,10 @@ struct Abstx_simple_literal : Value_expression {
         return value;
     }
 
-    void generate_code(std::ostream& target) override
+    void generate_code(std::ostream& target) const override
     {
         ASSERT(is_codegen_ready(status));
         value.generate_literal(target);
-        status = Parsing_status::CODE_GENERATED;
     }
 
     void finalize() override {

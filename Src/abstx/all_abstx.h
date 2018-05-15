@@ -23,3 +23,4 @@
 #include "expressions/abstx_identifier.h"
 #include "expressions/abstx_identifier_reference.h"
 #include "expressions/abstx_pointer_dereference.h"
+#include "expressions/abstx_struct_getter.h"

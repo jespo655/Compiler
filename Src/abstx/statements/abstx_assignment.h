@@ -49,7 +49,7 @@ struct Abstx_assignment : Statement {
 
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(is_codegen_ready(status));
         ASSERT(lhs.size == rhs.size);
         for (int i = 0; i < lhs.size; ++i) {
@@ -58,7 +58,6 @@ struct Abstx_assignment : Statement {
             lhs[i]->generate_code(target); // this should be a valid c style lvalue
             target << ";" << std::endl;
         }
-        status = Parsing_status::CODE_GENERATED;
     };
 
 };

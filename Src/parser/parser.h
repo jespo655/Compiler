@@ -91,14 +91,20 @@ Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> pare
 Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 
 #define DEFAULT_OPERATOR_PRIO 1000
+
+// standalone expressions
 Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
 Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
-Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs);
+Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "["
+Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // a single INTEGER/FLOAT/STRING/BOOL token
+Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "struct"
+Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_scope> parent_scope); // a single IDENTIFIER token
+Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "fn"
 
-Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope);
-Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope);
-Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope);
-Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_scope> parent_scope);
+// suffix expressions
+Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs = {}, Owned<Value_expression>&& first_arg = nullptr); // suffix "()"
+Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Value_expression>&& id); // suffix '.'
+// Owned<Value_expression> read_indexing(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Value_expression>&& id); // suffix "[]" // @todo
 
 /*
 

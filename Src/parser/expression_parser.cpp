@@ -6,6 +6,7 @@
 #include "../abstx/expressions/abstx_identifier.h"
 #include "../abstx/expressions/abstx_identifier_reference.h"
 #include "../abstx/expressions/abstx_pointer_dereference.h"
+#include "../abstx/expressions/abstx_struct_getter.h"
 #include "../abstx/expressions/abstx_simple_literal.h"
 
 #include "../abstx/statements/abstx_function_call.h"
@@ -119,8 +120,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
             // expr = compile_seq_indexing(it, expr);
 
         } else if (it->type == Token_type::SYMBOL && it->token == ".") {
-            ASSERT(false, "member access NYI");
-            // expr = compile_getter(it, expr);
+            expr = read_getter(it, parent_scope, std::move(expr));
 
         } else if (it->type == Token_type::SYMBOL || it->type == Token_type::IDENTIFIER) {
             // could be an infix opreator. Check if it is.
@@ -163,6 +163,30 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
 
 
 
+
+Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    it.assert(Token_type::KEYWORD, "struct");
+    it.expect(Token_type::SYMBOL, "{");
+
+    // read declaration statments until }
+    while(!it.compare(Token_type::SYMBOL, "}"))
+    {
+        // read declaration statement
+        // import declared identifier
+    }
+
+    /*
+        struct {
+            a, b : int = 2;
+        }
+
+    */
+
+
+
+}
+
+
 Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
     ASSERT(it->type == Token_type::IDENTIFIER);
     Owned<Abstx_identifier_reference> o = alloc(Abstx_identifier_reference());
@@ -175,6 +199,56 @@ Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abs
     // try to finalize the token - if not successful status should be DEPENDENCIES_NEEDED
     o->finalize();
     return owned_static_cast<Value_expression>(std::move(o));
+}
+
+
+
+Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Value_expression>&& id) {
+    const Token_context& dot_context = it->context; // set context to the '.' token (save for later)
+    it.assert(Token_type::SYMBOL, "."); // assert and eat the '.' token
+    it.expect_current(Token_type::IDENTIFIER);
+    if (it.expect_failed()) {
+        // @TODO: what should we do?
+        // @TODO: set syntax error
+    }
+
+    // Get the type of id
+    Shared<const CB_Type> id_type = id->get_type();
+    ASSERT(id_type != nullptr); // type must be known
+
+    Shared<const CB_Struct> struct_type = dynamic_pointer_cast<const CB_Struct>(id_type);
+    if (struct_type != nullptr) {
+        Shared<const CB_Struct::Struct_member> member = struct_type->get_member(it->token);
+        if (member != nullptr) {
+            // @TODO: create struct member reference abstx node and return it
+            Owned<Abstx_struct_getter> o;
+            o->set_owner(parent_scope);
+            o->context = dot_context;
+            o->start_token_index = it.current_index-1; // pointing to the dot
+            id->set_owner(o);
+            o->struct_expr = owned_static_cast<Variable_expression>(std::move(id));
+            ASSERT(o->struct_expr != nullptr); // Anything with a struct type must be a variable expression (right?)
+            o->member = member;
+            o->member_id = it->token;
+            o->status = Parsing_status::PARTIALLY_PARSED;
+            o->finalize();
+            it.eat_token(); // eat the identifier token
+            return owned_static_cast<Value_expression>(std::move(o));
+        }
+    }
+    // failed to get struct member -> check if it's a dot function call instead
+
+    // check parent scope for a function with the name
+    // check if the next token is '('
+    // read function call with the id as the first argument
+    Owned<Value_expression> id_reference = read_identifier_reference(it, parent_scope);
+    if (it.compare(Token_type::SYMBOL, "(")) {
+        return owned_static_cast<Value_expression>(read_function_call(it, parent_scope, owned_static_cast<Variable_expression>(std::move(id_reference)), {}, std::move(id)));
+    } else {
+        log_error("Dot notation used for something that is neither a struct member or a function call", dot_context);
+        id_reference->status = Parsing_status::SYNTAX_ERROR;
+        return id_reference; // probably best alternative; but this could be nullptr
+    }
 }
 
 
@@ -300,7 +374,7 @@ Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_s
 
 
 
-Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs) {
+Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs, Owned<Value_expression>&& first_arg) {
     // syntax: variable_expression()
     // it is inserted as its own statement in the scope
     // if in a declaration statement, the declaration comes first, then the function call,
@@ -364,6 +438,13 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
 
     it.assert(Token_type::SYMBOL, "("); // this should already have been checked
 
+    // add first arg (if applicable; only for dot call syntax)
+    if (first_arg != nullptr) {
+        first_arg->set_owner(o);
+        o->in_args.add(std::move(first_arg));
+    }
+
+    // add arguments given in parens
     while (1) {
         if (it.compare(Token_type::SYMBOL, ")")) break; // done
 

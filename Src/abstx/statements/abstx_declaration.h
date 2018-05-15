@@ -63,7 +63,7 @@ struct Abstx_declaration : Statement {
 
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(is_codegen_ready(status));
         if (value_expressions.empty()) {
             // explicit uninitialized
@@ -84,7 +84,6 @@ struct Abstx_declaration : Statement {
                 target << ";" << std::endl;
             }
         }
-        status = Parsing_status::CODE_GENERATED;
     };
 
 };

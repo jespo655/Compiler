@@ -43,13 +43,12 @@ struct Abstx_if : Statement {
             else os << std::endl;
         }
 
-        void generate_code(std::ostream& target) override {
+        void generate_code(std::ostream& target) const override {
             ASSERT(is_codegen_ready(status));
             target << "if (";
             condition->generate_code(target);
             target << ") ";
             scope->generate_code(target);
-            status = Parsing_status::CODE_GENERATED;
         };
     };
 
@@ -91,7 +90,7 @@ struct Abstx_if : Statement {
 
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
-    void generate_code(std::ostream& target) override {
+    void generate_code(std::ostream& target) const override {
         ASSERT(is_codegen_ready(status));
         for (int i = 0; i < conditional_scopes.size; ++i) {
             if (i) target << "else ";
@@ -102,7 +101,6 @@ struct Abstx_if : Statement {
             else_scope->generate_code(target);
         }
         // @todo: add support for then-scopes (needs support for adding a statement to a scope) see syntax below
-        status = Parsing_status::CODE_GENERATED;
     };
 
 };

@@ -48,7 +48,7 @@ struct Abstx_sequence_literal : Value_expression {
         return constant_value;
     }
 
-    void generate_code(std::ostream& target) override
+    void generate_code(std::ostream& target) const override
     {
         ASSERT(is_codegen_ready(status));
         if (has_constant_value()) {
@@ -57,7 +57,6 @@ struct Abstx_sequence_literal : Value_expression {
 
         }
         // value.generate_literal(target);
-        status = Parsing_status::CODE_GENERATED;
     }
 };
 
