@@ -8,6 +8,7 @@
 #include "../abstx/expressions/abstx_pointer_dereference.h"
 #include "../abstx/expressions/abstx_struct_getter.h"
 #include "../abstx/expressions/abstx_simple_literal.h"
+#include "../abstx/expressions/abstx_struct_literal.h"
 
 #include "../abstx/statements/abstx_function_call.h"
 #include "../abstx/statements/abstx_declaration.h"
@@ -163,28 +164,84 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
 
 
 
-
+/*
+    struct {
+        a, b : int = 2;
+    }
+*/
 Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    Owned<Abstx_struct_literal> o = alloc(Abstx_struct_literal());
+    o->set_owner(parent_scope);
+    o->context = it->context;
+    o->start_token_index = it.current_index;
+
     it.assert(Token_type::KEYWORD, "struct");
     it.expect(Token_type::SYMBOL, "{");
-
-    // read declaration statments until }
-    while(!it.compare(Token_type::SYMBOL, "}"))
-    {
-        // read declaration statement
-        // import declared identifier
+    if (it.expect_failed()) {
+        add_note("In struct definition here", o->context);
+        o->status = Parsing_status::SYNTAX_ERROR;
+        return owned_static_cast<Value_expression>(std::move(o));
     }
 
-    /*
-        struct {
-            a, b : int = 2;
+    // make a temporary scope for struct identifiers
+    // these identifiers will then be extracted and added to the struct itself
+    o->struct_scope = alloc(Abstx_scope(SCOPE_DYNAMIC)); // set dynamic to make declaration statements try to fully parse immediately
+    o->struct_scope->set_owner(parent_scope);
+    o->struct_scope->status = Parsing_status::PARTIALLY_PARSED;
+    Seq<size_t> using_indeces;
+
+    // read declaration statments until }
+    for (size_t decl_index; !it.compare(Token_type::SYMBOL, "}"); ++decl_index)
+    {
+        if (it.compare(Token_type::KEYWORD, "using")) {
+            it.eat_token();
+            using_indeces.add(decl_index);
         }
 
-    */
+        // read declaration statement (it is imported to the o->struct_scope automatically)
+        Parsing_status status = read_declaration_statement(it, o->struct_scope);
+        if (is_error(status)) {
+            add_note("In struct definition here", o->context);
+            o->status = status;
+            if (status == Parsing_status::FATAL_ERROR) {
+                // can't continue
+                return owned_static_cast<Value_expression>(std::move(o));
+            }
+        } else if (status == Parsing_status::DEPENDENCIES_NEEDED && !is_error(o->status)) {
+            // no error message
+            o->status = status;
+        }
+    }
+    it.assert(Token_type::SYMBOL, "}");
 
+    // stop if error
+    if (is_error(o->status)) return owned_static_cast<Value_expression>(std::move(o));
 
+    // create struct type
+    Owned<CB_Struct> struct_type = alloc(CB_Struct());
 
+    // import identifiers from scope
+    size_t using_index_index = 0;
+    for (int i = 0; i < o->struct_scope->statements.size; ++i) {
+        Shared<Abstx_declaration> decl = dynamic_pointer_cast<Abstx_declaration>(o->struct_scope->statements[i]);
+        ASSERT(decl && !is_error(decl->status)); // if not, we should have stopped earlier
+
+        bool is_using(using_indeces[using_index_index] == i);
+        if (is_using) ++using_index_index;
+        for (const auto& id : decl->identifiers) {
+            struct_type->add_member(Shared<Abstx_identifier>(id), is_using);
+            // @TODO: if is_using and id is not of a struct type, give warning (using is only relevant for structs containing structs)
+        }
+    }
+
+    struct_type->finalize();
+    o->struct_type = add_complex_cb_type(owned_static_cast<CB_Type>(std::move(struct_type)));
+    o->finalize();
+    o->struct_scope->status = o->status; // @check if this shouldn't be inside o->finalize()
+
+    return owned_static_cast<Value_expression>(std::move(o));
 }
+
 
 
 Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
@@ -193,7 +250,6 @@ Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abs
     o->set_owner(parent_scope); // temporary owner; the literal should be owned by a statement somewhere
     o->context = it->context;
     o->start_token_index = it.current_index;
-
     o->name = it.eat_token().token;
 
     // try to finalize the token - if not successful status should be DEPENDENCIES_NEEDED

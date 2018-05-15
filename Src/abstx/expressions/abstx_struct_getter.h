@@ -21,7 +21,7 @@ struct Abstx_struct_getter : Variable_expression {
     Shared<const CB_Type> get_type() override {
         if (value.v_type != nullptr) return value.v_type;
         if (!get_member()) return nullptr;
-        value.v_type = member->id.get_constant_type();
+        value.v_type = member->id->get_constant_type();
         return value.v_type;
     }
 
@@ -46,7 +46,7 @@ struct Abstx_struct_getter : Variable_expression {
         ASSERT(is_codegen_ready(status));
         struct_expr->generate_code(target);
         target << ".";
-        member->id.generate_code(target);
+        member->id->generate_code(target);
     }
 
     void finalize() override {

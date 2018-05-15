@@ -16,6 +16,7 @@
 #include "expressions/value_expression.h"
 #include "expressions/abstx_function.h"
 #include "expressions/abstx_simple_literal.h"
+#include "expressions/abstx_struct_literal.h"
 #include "expressions/abstx_sequence_literal.h"
 
 #include "expressions/variable_expression.h"

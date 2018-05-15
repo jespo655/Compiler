@@ -45,7 +45,8 @@ struct Abstx_scope : Abstx_node
     bool self_contained() const { return flags == SCOPE_SELF_CONTAINED; }
 
     Abstx_scope() {}
-    Abstx_scope(uint8_t flags) : flags{flags} {}
+    Abstx_scope(uint8_t flags) : flags{flags+SCOPE_SELF_CONTAINED} {}
+    Abstx_scope(flag flags) : flags{(uint8_t)flags+SCOPE_SELF_CONTAINED} {}
 
     void debug_print(Debug_os& os, bool recursive=true) const override {
         os << "{ // " << toS() << std::endl;
