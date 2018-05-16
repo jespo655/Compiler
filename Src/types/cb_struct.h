@@ -191,7 +191,7 @@ struct CB_Struct : CB_Type
     void generate_typedef(ostream& os) const override {
         ASSERT(_default_value); // assert finalized
         os << "typedef struct{";
-        if (!ONELINE_STRUCT_DEFINITIONS && members.size>0) os << " ";
+        if (ONELINE_STRUCT_DEFINITIONS && members.size>0) os << " ";
         for (const auto& member : members) {
             if (!ONELINE_STRUCT_DEFINITIONS) os << std::endl;
             member.id->value.v_type->generate_type(os);

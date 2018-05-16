@@ -475,7 +475,10 @@ Parsing_status Abstx_declaration::fully_parse() {
             for (const auto& id : identifiers) {
                 // @todo (operators) the operator should already have a type - a function type with in arguments defined. Check that the types match and assign out argument types!
                 Shared<Value_expression> value_expr = value_expressions[index];
-                id->value_expression = value_expr;
+                if (constant) {
+                    id->value_expression = value_expr;
+                    // if not constant, then we cant be sure that the value_expr is the actual value used later (it might be overwritten)
+                }
 
                 // check that type match or assign type if it hasn't been inferred yet
                 Shared<const CB_Type> type = value_expr->get_type();

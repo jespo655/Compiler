@@ -447,16 +447,29 @@ void code_gen_test()
     // fully parse starting from that function
     // then generate code starting from that function
 
+    bool progress = false;
+    bool done = true;
     for (const auto& s : gs->statements) {
-        Parsing_status ps = s->fully_parse(); // for now, just fully parse the statements
-        std::cout << "fully parsed statement: status " << ps << std::endl;
-
+        if (!is_codegen_ready(s->status) && !is_error(s->status)) {
+            Parsing_status ps = s->fully_parse();
+            std::cout << "fully parsed statement: status " << ps << std::endl;
+            if (!is_codegen_ready(ps)) done = false;
+            else progress = true;
+        }
     }
 
+    std::cout << "exiting if errors" << std::endl;
     exit_if_errors();
 
+    std::cout << "generating typedefs" << std::endl;
     generate_typedefs(std::cout);
-    for (const auto& s : gs->statements) s->generate_code(std::cout); // for now, just fully parse the statements
+
+    std::cout << "generating statement code" << std::endl;
+    for (const auto& s : gs->statements) {
+        ASSERT(s); // no statement can be nullpointer here
+        // @TODO: any dependencies should be generated FIRST!
+        s->generate_code(std::cout); // for now, just fully parse the statements
+    }
 
     // compile into abstx tree
     // TODO

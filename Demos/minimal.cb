@@ -1,5 +1,7 @@
 
-// i : int;
+
+i2 := i;
+i :: b;
 
 s :: struct {
     i := 2;
@@ -7,7 +9,7 @@ s :: struct {
 
 s2 :: s;
 a : s2;
-b := a.i;
+b :: s2;
 
 
 // a, b, c := -1.4, true, "here";

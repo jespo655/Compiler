@@ -68,6 +68,7 @@ struct Abstx_declaration : Statement {
         if (value_expressions.empty()) {
             // explicit uninitialized
             for (int i = 0; i < identifiers.size; ++i) {
+                ASSERT(identifiers[i]); // can't be nullpointer
                 identifiers[i]->get_type()->generate_type(target);
                 target << " ";
                 identifiers[i]->generate_code(target); // this should be a variable name
@@ -76,6 +77,7 @@ struct Abstx_declaration : Statement {
         } else {
             ASSERT(value_expressions.size == 1 || value_expressions.size == identifiers.size);
             for (int i = 0; i < identifiers.size; ++i) {
+                ASSERT(identifiers[i]); // can't be nullpointer
                 identifiers[i]->get_type()->generate_type(target);
                 target << " ";
                 identifiers[i]->generate_code(target); // this should be a valid c style lvalue

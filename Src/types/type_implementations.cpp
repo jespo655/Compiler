@@ -177,6 +177,8 @@ uint64_t parse_float(const Any& any) {
 
 
 Shared<const CB_Type> add_complex_cb_type(Owned<CB_Type>&& type) {
+    ASSERT(type); // can't add nullptr
+    std::cout << "adding complex type " << type.toS() << std::endl;
     CB_Type::c_typedef uid = type->uid;
     Shared<CB_Type> p = CB_Type::complex_types[uid];
     if (p != nullptr) return p;
@@ -236,11 +238,13 @@ Shared<const CB_Type> get_built_in_type(CB_Type::c_typedef uid)
 
 void generate_typedefs(std::ostream& os)
 {
+    // nullpointers are added to the map if we try to access a value that doesn't exist
+    // don't generate types from nullpointers
     for (const auto& type : CB_Type::built_in_types) {
-        type.second->generate_typedef(os);
+        if (type.second) type.second->generate_typedef(os);
     }
     for (const auto& type : CB_Type::complex_types) {
-        type.second->generate_typedef(os);
+        if (type.second) type.second->generate_typedef(os);
     }
 }
 

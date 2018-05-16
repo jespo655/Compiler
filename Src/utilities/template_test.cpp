@@ -12,6 +12,16 @@
 
 
 
+#include <map>
+void map_test() {
+    std::map<int, int> m;
+    int a = m[5];
+    m[3] = 3;
+    for (const auto& pair : m) {
+        std::cout << "(" << pair.first << "," << pair.second << ")" << std::endl;
+    }
+}
+
 
 
 struct V {
@@ -216,7 +226,8 @@ void sequence_test()
 
 int main()
 {
-    dynamic_cast_test_2();
+    map_test();
+    // dynamic_cast_test_2();
     // dynamic_cast_test();
     // sequence_test();
     // static_test();
