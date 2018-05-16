@@ -471,6 +471,10 @@ void code_gen_test()
         s->generate_code(std::cout); // for now, just fully parse the statements
     }
 
+    for (const auto& fn : gs->used_functions) {
+        fn.second->generate_declaration(std::cout, std::cout);
+    }
+
     // compile into abstx tree
     // TODO
 

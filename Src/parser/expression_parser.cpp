@@ -661,7 +661,9 @@ Parsing_status Abstx_function::finalize() {
 
 
 
-void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> fn, bool in, bool allow_multiple) {
+void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> fn, bool in, bool allow_multiple_args) {
+    ASSERT(fn);
+
     while(1) {
         Abstx_function_literal::Function_arg arg{};
         Owned<Abstx_identifier> id = alloc(Abstx_identifier());
@@ -680,6 +682,10 @@ void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> 
 
         it.expect(Token_type::SYMBOL, ":");
         if (it.expect_failed()) break; // syntax error
+
+        if (it.compare(Token_type::SYMBOL, ":") || it.compare(Token_type::SYMBOL, "=")) {
+            ASSERT(false, "Default values for function arguments not yet implemented");
+        }
 
         if (it.compare(Token_type::SYMBOL, "$")) {
             arg.generic_type = true;
@@ -710,6 +716,12 @@ void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> 
             break;
         }
 
+        // add the identifier and arg to the function
+        arg.identifier = id;
+        fn->scope.fn_identifiers[id->name] = std::move(id);
+        if (in) fn->in_args.add(std::move(arg));
+        else fn->out_args.add(std::move(arg));
+
         if (it.compare(Token_type::SYMBOL, ":") || it.compare(Token_type::SYMBOL, "=")) {
             ASSERT(false, "Default values for function arguments not yet implemented");
         }
@@ -717,7 +729,7 @@ void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> 
         // @TODO: actually add the argument to the function / function scope
 
 
-        if (allow_multiple && it.compare(Token_type::SYMBOL, ",")) {
+        if (allow_multiple_args && it.compare(Token_type::SYMBOL, ",")) {
             it.eat_token(); // eat the token and read another argument
         } else {
             // unable to read more arguments
@@ -730,10 +742,25 @@ void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> 
 
 Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope)
 {
+    std::cout << "reading function literal" << std::endl;
     Owned<Abstx_function_literal> o = alloc(Abstx_function_literal());
     o->set_owner(parent_scope);
     o->context = it->context;
     o->start_token_index = it.current_index;
+
+    std::cout << "initializing fn scope" << std::endl;
+    o->scope.set_owner(o);
+    o->scope.flags += SCOPE_DYNAMIC;
+    o->scope.status = Parsing_status::NOT_PARSED;
+
+    std::cout << "initializing fn id" << std::endl;
+    o->function_identifier.set_owner(o);
+    o->function_identifier.value_expression = static_pointer_cast<Value_expression>(o);
+    o->function_identifier.name = "_cb_fn";
+    o->function_identifier.uid = get_unique_id();
+    o->function_identifier.context = it->context;
+    o->function_identifier.start_token_index = it.current_index;
+    o->function_identifier.status = Parsing_status::NOT_PARSED;
 
     it.assert(Token_type::KEYWORD, "fn"); // eat the "fn" token
     it.expect(Token_type::SYMBOL, "(");
@@ -743,6 +770,7 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_s
     }
 
     if (!it.compare(Token_type::SYMBOL, ")")) {
+        std::cout << "reading in arguments" << std::endl;
         // read in arguments
         read_function_arguments(it, o, true, true); // in arguments
 
@@ -756,6 +784,7 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_s
     it.expect(Token_type::SYMBOL, ")");
 
     if (it.compare(Token_type::SYMBOL, "->")) {
+        std::cout << "reading out arguments" << std::endl;
         // read out arguments
         it.eat_token(); // eat the "->" token
         bool parens = false;
@@ -776,35 +805,84 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_s
         if (is_error(o->status)) return owned_static_cast<Value_expression>(std::move(o));
     }
 
-    o->scope.set_owner(o);
+    // set scope context
     o->scope.context = it->context;
     o->scope.start_token_index = it.current_index;
-    o->status = Parsing_status::NOT_PARSED;
 
     it.expect(Token_type::SYMBOL, "{");
     if (it.expect_failed()) {
         o->status = Parsing_status::SYNTAX_ERROR;
+    }
+    if (!is_error(o->status)) o->status = Parsing_status::FULLY_RESOLVED; // @check should this be FULLY_RESOLVED?
+
+    // @todo: before reading statements, ensure that the function type is ready to use
+    // @todo: (recursive functions) this function must return first so the value expression can be used
+    o->finalize(); // finalize before read_scope_statements()
+
+    read_scope_statements(it, &o->scope);
+
+    if (!is_fatal(o->scope.status)) {
+        it.expect(Token_type::SYMBOL, "}");
+        if (it.expect_failed()) o->status == Parsing_status::FATAL_ERROR;
     } else {
-        it.current_index = it.find_matching_brace(it.current_index-1) + 1;
-        if (it.expect_failed()) {
-            o->status = Parsing_status::FATAL_ERROR;
-        }
+        o->status = Parsing_status::FATAL_ERROR;
     }
 
-    if (!is_error(o->status)) o->status = Parsing_status::PARTIALLY_PARSED; // @check FULLY_RESOLVED?
-    // @todo: at this point, ensure that the function type is ready to use
-    o->status = Parsing_status::FULLY_RESOLVED;
-
-    // @todo: (recursive functions) this function must return first so the value expression can be used
-    //   first later (in finalize()?) can the function scope be parsed
-    // read_scope_statements(it, &o->scope);
-    // it.expect(Token_type::SYMBOL, "}");
-    // o->status = o->scope.status;
+    std::cout << "done reading function literal!" << std::endl;
 
     return owned_static_cast<Value_expression>(std::move(o));
 }
 
+void Abstx_function_literal::finalize()
+{
+    // note: function scope doesn't need to be fully parsed for the function literal to be
+    if (is_error(status)) return;
+    if (is_codegen_ready(status) && is_codegen_ready(scope.status)) return;
+    std::cout << "finalizing Abstx_function_literal" << std::endl;
 
+    ASSERT(function_identifier.name != ""); // must be set during creating
+    if (function_identifier.value.v_type == nullptr) {
+        // finalize all identifiers and build function type
+        Owned<CB_Function> fn_type = alloc(CB_Function()); // owned by some global list of types
+
+        for (const auto& arg : in_args) {
+            arg.identifier->finalize();
+            if (is_error(arg.identifier->status)) {
+                status = arg.identifier->status;
+                std::cout << "unable to finalize in argument" << std::endl;
+                return;
+            } else if (arg.identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
+                status = Parsing_status::DEPENDENCIES_NEEDED;
+            }
+            Shared<const CB_Type> type = arg.identifier->get_type();
+            ASSERT(type);
+            fn_type->in_types.add(type);
+        }
+
+        for (const auto& arg : out_args) {
+            arg.identifier->finalize();
+            if (is_error(arg.identifier->status)) {
+                status = arg.identifier->status;
+                std::cout << "unable to finalize out argument" << std::endl;
+                return;
+            } else if (arg.identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
+                status = Parsing_status::DEPENDENCIES_NEEDED;
+            }
+            Shared<const CB_Type> type = arg.identifier->get_type();
+            ASSERT(type);
+            fn_type->out_types.add(type);
+        }
+
+        function_identifier.value.v_type = static_pointer_cast<const CB_Type>(add_complex_type(std::move(fn_type)));
+    }
+    ASSERT(function_identifier.value.v_type); // if type creation failed we should have already returned
+    function_identifier.value.v_ptr = this;
+    function_identifier.status = Parsing_status::FULLY_RESOLVED;
+
+    // update status
+    std::cout << "successfully finalizing Abstx_function_literal" << std::endl;
+    if (!is_error(status) && status != Parsing_status::DEPENDENCIES_NEEDED) status = Parsing_status::FULLY_RESOLVED;
+}
 
 
 

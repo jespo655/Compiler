@@ -156,6 +156,9 @@ Parsing_status read_scope_statements(Token_iterator& it, Shared<Abstx_scope> sco
             return scope->status;
         }
     }
+    if (!is_error(scope->status) && scope->status != Parsing_status::DEPENDENCIES_NEEDED) {
+        scope->status = Parsing_status::FULLY_RESOLVED;
+    }
     return scope->status;
 }
 
@@ -590,8 +593,49 @@ Parsing_status read_using_statement(Token_iterator& it, Shared<Abstx_scope> pare
 }
 
 Parsing_status read_c_code_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+    // @TODO: allow generic constant value expressions of type string
+    // for now, only accept string literals
+    // it is so easy that everything can be done here
+
+    Owned<Abstx_c_code> o = alloc(Abstx_c_code());
+    o->set_owner(parent_scope);
+    o->context = it->context;
+    o->start_token_index = it.current_index;
+
+    it.assert(Token_type::COMPILER_COMMAND, "#c");
+    o->c_code = it.expect(Token_type::STRING).token;
+    if (it.expect_failed()) {
+        o->status = Parsing_status::SYNTAX_ERROR;
+    }
+
+    it.expect_end_of_statement();
+    if (it.expect_failed()) {
+        o->status = Parsing_status::FATAL_ERROR;
+    }
+
+    if (!is_error(o->status)) o->status = Parsing_status::FULLY_RESOLVED;
+    Parsing_status status = o->status;
+    parent_scope->statements.add(owned_static_cast<Statement>(std::move(o)));
+    return status;
 }
+
+Parsing_status Abstx_c_code::fully_parse() {
+    // @TODO: allow generic constant value expressions of type string
+    // for now, only string literals are allowed, and all parsing is done in read_c_code_statement()
+    ASSERT(is_error(status) || is_codegen_ready(status));
+    return status;
+
+    // assert first token is #C
+    // read value expression
+    // if next token is not ';' error
+    // if expression.get_type() is not string, error
+    // if expression.has_constant_value is not true, error
+    // grab the value through expression.get_constant_value
+}
+
+
+
+
 
 Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
     ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
@@ -828,18 +872,6 @@ Parsing_status Abstx_while::finalize() override {
     return status;
 }
 */
-
-
-
-
-Parsing_status Abstx_c_code::fully_parse() {
-    // assert first token is #C
-    // read value expression
-    // if next token is not ';' error
-    // if expression.get_type() is not string, error
-    // if expression.has_constant_value is not true, error
-    // grab the value through expression.get_constant_value
-}
 
 
 

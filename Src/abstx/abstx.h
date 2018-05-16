@@ -69,7 +69,7 @@ struct Abstx_node
     virtual Shared<Abstx_function_literal> parent_function() const;
 
     // Return a pointer to the root parent scope in the tree
-    virtual Shared<const Global_scope> global_scope() const { return owner->global_scope(); }
+    virtual Shared<Global_scope> global_scope() const { return owner->global_scope(); }
 
 
 

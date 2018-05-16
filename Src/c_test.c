@@ -8,6 +8,25 @@ extern "C" {
 #include "stdbool.h"
 #include "stdio.h"
 
+
+
+typedef void(*cb_fn)();
+
+void _cb_fn_4436() { printf("foo\n"); }
+
+// cb_fn foo = _cb_fn_4436;
+
+
+void fn_test() {
+
+    void _cb_fn_4437() { printf("foo\n"); }
+
+    cb_fn foo = _cb_fn_4436;
+    foo();
+
+}
+
+
 // typedef struct {
 //     void* v_ptr;
 //     uint32_t type;
@@ -92,6 +111,7 @@ void for_test()
 // }
 
 int main() {
+    fn_test();
 
     // _cb_type_21 f = foo;
     // _cb_u8 u8;
@@ -100,7 +120,7 @@ int main() {
     // f(u8, &range, &fl, &range);
 
     // struct_test();
-    for_test();
+    // for_test();
 }
 
 #ifdef __CPLUSPLUS

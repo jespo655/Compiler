@@ -1,6 +1,9 @@
 
 
-foo :: fn() {};
+foo :: fn(i:int) {
+    #C #string here printf("hello world!\n") here;
+    a := i;
+};
 
 
 // i : int = i2; // TODO: this should fail with cyclic dependency
@@ -20,7 +23,6 @@ foo :: fn() {};
 // a, b, c := -1.4, true, "here";
 // d, e, f := a, b, c;
 
-// #c #string here printf("hello world!\n") here
 
 // d := a;
 

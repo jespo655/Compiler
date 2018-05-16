@@ -188,6 +188,7 @@ struct Global_scope : Abstx_scope
 {
     std::string file_name;
     const Seq<Token> tokens; // should be treated as const
+    std::map<uint64_t, Shared<const Abstx_function_literal>> used_functions; // map fn_id_uid -> abstx_fn
 
     Global_scope(Seq<Token>&& tokens) : tokens{std::move(tokens)} {
         add_built_in_types_as_identifiers();
@@ -196,7 +197,7 @@ struct Global_scope : Abstx_scope
     Token_iterator iterator(int index=0) const { return Token_iterator(tokens, index); }
 
     Shared<Abstx_scope> parent_scope() const override { return nullptr; }
-    Shared<const Global_scope> global_scope() const override { return this; }
+    Shared<Global_scope> global_scope() const override { return (Global_scope*)this; }
 
 private:
     static Seq<Owned<Abstx_identifier>> type_identifiers;
@@ -250,13 +251,13 @@ struct Abstx_function_scope : Abstx_scope
         return Abstx_scope::get_identifier(id, recursive);
     }
 
-    void add_identifier(const std::string& name, Shared<const CB_Type> type) {
-        Owned<Abstx_identifier> id = alloc(Abstx_identifier());
-        id->name = name;
-        id->value.v_type = type;
-        id->owner = this;
-        fn_identifiers[name] = (std::move(id));
-    }
+    // void add_identifier(const std::string& name, Shared<const CB_Type> type) {
+    //     Owned<Abstx_identifier> id = alloc(Abstx_identifier());
+    //     id->name = name;
+    //     id->value.v_type = type;
+    //     id->owner = this;
+    //     fn_identifiers[name] = (std::move(id));
+    // }
 
 };
 

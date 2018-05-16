@@ -16,7 +16,6 @@ struct Abstx_function_literal : Value_expression
     struct Function_arg
     {
         Shared<Abstx_identifier> identifier; // Owned by the function scope
-        Any default_value;
         bool is_using = false; // only for structs - imports that struct's members into the function scope
         bool has_default_value = false;
         bool explicit_uninitialized = false;
@@ -24,12 +23,10 @@ struct Abstx_function_literal : Value_expression
         bool generic_type = false; // $ marker on the type -> type must be known at compile time of function call
     };
 
-
-    Shared<Abstx_identifier> function_identifier; // contains the name and type of the function
+    Abstx_identifier function_identifier; // contains the hidden name and type of the function
     Seq<Function_arg> in_args; // in arguments metadata
     Seq<Function_arg> out_args; // out arguments metadata
     Abstx_function_scope scope; // function scope
-
 
     std::string toS() const override {
         // @todo: write better toS()
@@ -40,31 +37,46 @@ struct Abstx_function_literal : Value_expression
     void add_arg(bool in, Shared<Abstx_identifier> id) {
         Function_arg arg{};
         arg.identifier = id;
-        arg.default_value = id->get_type()->default_value();
         if (in) in_args.add(std::move(arg));
         else out_args.add(std::move(arg));
     }
 
     Shared<const CB_Type> get_type() override
     {
-        return function_identifier->get_type();
+        return function_identifier.get_type();
     }
 
     bool has_constant_value() const {
-        return false; // @todo: check if this is reasonable
+        return true;
     }
 
     const Any& get_constant_value() override {
-        static Any no_value;
-        return no_value;
+        ASSERT(function_identifier.value.v_type); // should be set earlier
+        if (function_identifier.value.v_ptr == nullptr) function_identifier.value.v_ptr = this;
+        return function_identifier.get_constant_value();
     }
 
     void generate_code(std::ostream& target) const override {
+        global_scope()->used_functions[function_identifier.uid] = this;
+        return function_identifier.generate_code(target);
+    }
+
+    // all declaration must be generated in a global scope
+    // before this, all types must be defined
+    void generate_declaration(std::ostream& target, std::ostream& header) const {
+        generate_declaration_internal(header, true);
+        generate_declaration_internal(target, false);
+    };
+
+    void finalize() override; // implemented in expression_parser.cpp
+
+private:
+    void generate_declaration_internal(std::ostream& target, bool header) const {
         ASSERT(is_codegen_ready(status));
 
         // function declaration syntax
         target << "void "; // all cb functions returns void
-        function_identifier->generate_code(target);
+        function_identifier.generate_code(target);
         target << "(";
         for (int i = 0; i < in_args.size; ++i) {
             const auto& arg = in_args[i];
@@ -84,8 +96,12 @@ struct Abstx_function_literal : Value_expression
             target << "* "; // always pass non-cost pointer to the original value
             arg.identifier->generate_code(target);
         }
-        target << ") ";
-        scope.generate_code(target);
+        target << ")";
+        if (header) target << ";" << std::endl;
+        else {
+            target << " ";
+            scope.generate_code(target);
+        }
 
         // Generated code:
         // int is primitive, T is not primitive
@@ -95,44 +111,6 @@ struct Abstx_function_literal : Value_expression
             // scope satatements
         }
         */
-    };
-
-    void finalize() override {
-        if (is_error(status) || is_codegen_ready(status)) return;
-        // finalize all identifiers
-
-        function_identifier->finalize();
-        if (is_error(function_identifier->status)) {
-            status = function_identifier->status;
-            return;
-        } else if (function_identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
-            status = Parsing_status::DEPENDENCIES_NEEDED;
-        }
-
-        for (const auto& arg : in_args) {
-            arg.identifier->finalize();
-            if (is_error(arg.identifier->status)) {
-                status = arg.identifier->status;
-                return;
-            } else if (arg.identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
-                status = Parsing_status::DEPENDENCIES_NEEDED;
-            }
-        }
-
-        for (const auto& arg : out_args) {
-            arg.identifier->finalize();
-            if (is_error(arg.identifier->status)) {
-                status = arg.identifier->status;
-                return;
-            } else if (arg.identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
-                status = Parsing_status::DEPENDENCIES_NEEDED;
-            }
-        }
-
-        // note: function scope doesn't need to be fully parsed for the function literal to be
-
-        // update status
-        if (!is_error(status) && status != Parsing_status::DEPENDENCIES_NEEDED) status = Parsing_status::FULLY_RESOLVED;
     }
 };
 

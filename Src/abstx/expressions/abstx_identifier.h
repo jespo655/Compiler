@@ -50,7 +50,7 @@ struct Abstx_identifier : Variable_expression {
     {
         // this should ouput the identifier used as a variable, since it's a subclass of Variable_expression
         ASSERT(name != "");
-        ASSERT(is_codegen_ready(status));
+        ASSERT(is_codegen_ready(status), "id: "+name);
         target << name;
         if (uid) target << "_" << uid; // uid suffix to avoid name C name clashes
     }
@@ -65,7 +65,7 @@ struct Abstx_identifier : Variable_expression {
             if (decl != nullptr) {
                 decl->fully_parse();
             } else {
-                // id could be owned by a struct
+                // id could be owned by a struct or function
                 ASSERT(is_error(status)); // if not error, we should have been able to infer type by now
             }
         }
