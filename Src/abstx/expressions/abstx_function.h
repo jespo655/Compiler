@@ -20,12 +20,16 @@ struct Abstx_function_literal : Value_expression
         bool is_using = false; // only for structs - imports that struct's members into the function scope
         bool has_default_value = false;
         bool explicit_uninitialized = false;
+        bool generic_id = false; // $ marker on the identifier -> value must be known at compile time of function call
+        bool generic_type = false; // $ marker on the type -> type must be known at compile time of function call
     };
 
+
     Shared<Abstx_identifier> function_identifier; // contains the name and type of the function
-    Seq<Owned<Function_arg>> in_args; // in arguments metadata
-    Seq<Owned<Function_arg>> out_args; // out arguments metadata
-    Owned<Abstx_function_scope> scope; // function scope
+    Seq<Function_arg> in_args; // in arguments metadata
+    Seq<Function_arg> out_args; // out arguments metadata
+    Abstx_function_scope scope; // function scope
+
 
     std::string toS() const override {
         // @todo: write better toS()
@@ -34,9 +38,9 @@ struct Abstx_function_literal : Value_expression
 
     // the abstract identifier should be owned by the function scope
     void add_arg(bool in, Shared<Abstx_identifier> id) {
-        Owned<Function_arg> arg = alloc(Function_arg());
-        arg->identifier = id;
-        arg->default_value = id->get_type()->default_value();
+        Function_arg arg{};
+        arg.identifier = id;
+        arg.default_value = id->get_type()->default_value();
         if (in) in_args.add(std::move(arg));
         else out_args.add(std::move(arg));
     }
@@ -65,23 +69,23 @@ struct Abstx_function_literal : Value_expression
         for (int i = 0; i < in_args.size; ++i) {
             const auto& arg = in_args[i];
             if (i) target << ", ";
-            arg->identifier->get_type()->generate_type(target);
+            arg.identifier->get_type()->generate_type(target);
             target << " ";
-            if (!arg->identifier->get_type()->is_primitive()) {
+            if (!arg.identifier->get_type()->is_primitive()) {
                 target << "const* "; // pass primitives by value; non-primitives by const pointer
             }
-            arg->identifier->generate_code(target);
+            arg.identifier->generate_code(target);
         }
         if (in_args.size > 0 && out_args.size > 0) target << ", ";
         for (int i = 0; i < out_args.size; ++i) {
             const auto& arg = out_args[i];
             if (i) target << ", ";
-            arg->identifier->get_type()->generate_type(target);
+            arg.identifier->get_type()->generate_type(target);
             target << "* "; // always pass non-cost pointer to the original value
-            arg->identifier->generate_code(target);
+            arg.identifier->generate_code(target);
         }
         target << ") ";
-        scope->generate_code(target);
+        scope.generate_code(target);
 
         // Generated code:
         // int is primitive, T is not primitive
@@ -106,21 +110,21 @@ struct Abstx_function_literal : Value_expression
         }
 
         for (const auto& arg : in_args) {
-            arg->identifier->finalize();
-            if (is_error(arg->identifier->status)) {
-                status = arg->identifier->status;
+            arg.identifier->finalize();
+            if (is_error(arg.identifier->status)) {
+                status = arg.identifier->status;
                 return;
-            } else if (arg->identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
+            } else if (arg.identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
                 status = Parsing_status::DEPENDENCIES_NEEDED;
             }
         }
 
         for (const auto& arg : out_args) {
-            arg->identifier->finalize();
-            if (is_error(arg->identifier->status)) {
-                status = arg->identifier->status;
+            arg.identifier->finalize();
+            if (is_error(arg.identifier->status)) {
+                status = arg.identifier->status;
                 return;
-            } else if (arg->identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
+            } else if (arg.identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
                 status = Parsing_status::DEPENDENCIES_NEEDED;
             }
         }

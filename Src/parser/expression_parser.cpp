@@ -70,7 +70,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
         expr = read_sequence_literal(it, parent_scope);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "fn") {
-        expr = read_function_literal(it, parent_scope);
+        expr = read_fn_literal(it, parent_scope);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "struct") {
         expr = read_struct_literal(it, parent_scope);
@@ -572,14 +572,305 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
 }
 
 
+/*
+Parsing_status Abstx_function::finalize() {
+    // @TODO: This should be done as a part of read_function_expression
+
+    if (is_codegen_ready(status)) return status;
+    ASSERT(function_identifier != nullptr);
+
+    // check function identifier
+    if (!is_codegen_ready(function_identifier->status)) {
+        if (is_error(function_identifier->status)) {
+            // error in dependency -> this inherits the error
+            status = function_identifier->status;
+        } else {
+            // dependency is just not finished parsing yet - wait for it and try again later
+            // @todo add dependency chain
+            status = Parsing_status::DEPENDENCIES_NEEDED;
+        }
+        return status;
+    }
+
+    // type is finalized -> get a pointer to it so we can typecheck arguments
+    Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_identifier->get_type());
+    ASSERT(fn_type != nullptr);
+
+    // check function scope. This also finalizes all argument identifiers
+    if (!is_codegen_ready(scope->finalize())) {
+        status = scope->status;
+        return status;
+    }
+
+    // check arguments (the same way as function_identifier, but also check type)
+    if (in_args.size != fn_type->in_types.size) {
+        log_error("type mismatch in function in types: wrong number of in parameters", context);
+        status = Parsing_status::TYPE_ERROR;
+        return status;
+    }
+    size_t index = 0;
+    for (const auto& fa : in_args) {
+        if (!is_codegen_ready(fa->identifier->status)) {
+            if (is_error(fa->identifier->status)) {
+                status = fa->identifier->status;
+            } else {
+                // @todo add dependency chain
+                status = Parsing_status::DEPENDENCIES_NEEDED;
+            }
+            return status;
+        }
+        if (*fa->identifier->get_type() != *fn_type->in_types[index]) {
+            log_error("type mismatch in function in types", context);
+            add_note("argument is of type " + fa->identifier->get_type()->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
+            status = Parsing_status::TYPE_ERROR;
+            return status;
+        }
+        index++;
+    }
+
+    if (out_args.size != fn_type->out_types.size) {
+        log_error("type mismatch in function out types: wrong number of out parameters", context);
+        status = Parsing_status::TYPE_ERROR;
+        return status;
+    }
+    index = 0;
+    for (const auto& fa : out_args) {
+        if (!is_codegen_ready(fa->identifier->status)) {
+            if (is_error(fa->identifier->status)) {
+                status = fa->identifier->status;
+            } else {
+                // @todo add dependency chain
+                status = Parsing_status::DEPENDENCIES_NEEDED;
+            }
+            return status;
+        }
+        if (*fa->identifier->get_type() != *fn_type->out_types[index]) {
+            log_error("type mismatch in function out types", context); // @todo: write better error message, including which types are mismatching
+            add_note("argument is of type " + fa->identifier->get_type()->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
+            status = Parsing_status::TYPE_ERROR;
+            return status;
+        }
+        index++;
+    }
+
+    // we reached the end -> we are done
+    status = Parsing_status::FULLY_RESOLVED;
+    return status;
+}
+*/
+
+
+
+void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> fn, bool in, bool allow_multiple) {
+    while(1) {
+        Abstx_function_literal::Function_arg arg{};
+        Owned<Abstx_identifier> id = alloc(Abstx_identifier());
+        id->set_owner(Shared<Abstx_node>(&fn->scope));
+        id->context = it->context;
+        id->start_token_index = it.current_index;
+
+        if (it.compare(Token_type::SYMBOL, "$")) {
+            arg.generic_id = true;
+            it.eat_token();
+        }
+
+        // create an identifier
+        id->name = it.expect(Token_type::IDENTIFIER).token;
+        if (it.expect_failed()) break; // syntax error
+
+        it.expect(Token_type::SYMBOL, ":");
+        if (it.expect_failed()) break; // syntax error
+
+        if (it.compare(Token_type::SYMBOL, "$")) {
+            arg.generic_type = true;
+            it.eat_token();
+            const Token& type_token = it.expect(Token_type::IDENTIFIER);
+            // @todo what to do with this type name?
+            ASSERT(false, "generic types NYI");
+        } else {
+            // read regular type expression
+            Owned<Value_expression> type_expr = read_value_expression(it, fn->parent_scope());
+            ASSERT(type_expr);
+            if (is_error(type_expr->status) || type_expr->status == Parsing_status::DEPENDENCIES_NEEDED) {
+                id->status = type_expr->status;
+            } else {
+                Shared<const CB_Type> type_type = type_expr->get_type();
+                if (*type_type != *CB_Type::type) {
+                    log_error("Non-type expresson used as type", type_expr->context);
+                    add_note("In function argument here", fn->context);
+                    id->status = Parsing_status::TYPE_ERROR;
+                } else {
+                    ASSERT(type_expr->has_constant_value());
+                    id->value.v_type = parse_type(type_expr->get_constant_value());
+                }
+            }
+        }
+        if (is_error(id->status)) {
+            fn->status = id->status;
+            break;
+        }
+
+        if (it.compare(Token_type::SYMBOL, ":") || it.compare(Token_type::SYMBOL, "=")) {
+            ASSERT(false, "Default values for function arguments not yet implemented");
+        }
+
+        // @TODO: actually add the argument to the function / function scope
+
+
+        if (allow_multiple && it.compare(Token_type::SYMBOL, ",")) {
+            it.eat_token(); // eat the token and read another argument
+        } else {
+            // unable to read more arguments
+            return;
+        }
+    }
+
+}
+
 
 Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope)
 {
-    ASSERT(false, "function literals NYI");
+    Owned<Abstx_function_literal> o = alloc(Abstx_function_literal());
+    o->set_owner(parent_scope);
+    o->context = it->context;
+    o->start_token_index = it.current_index;
+
+    it.assert(Token_type::KEYWORD, "fn"); // eat the "fn" token
+    it.expect(Token_type::SYMBOL, "(");
+    if (it.expect_failed()) {
+        o->status = Parsing_status::SYNTAX_ERROR;
+        return owned_static_cast<Value_expression>(std::move(o));
+    }
+
+    if (!it.compare(Token_type::SYMBOL, ")")) {
+        // read in arguments
+        read_function_arguments(it, o, true, true); // in arguments
+
+        // check for errors
+        if (it.expect_failed()) {
+            o->status = Parsing_status::SYNTAX_ERROR;
+        }
+        if (is_error(o->status)) return owned_static_cast<Value_expression>(std::move(o));
+    }
+    // end of in arguments
+    it.expect(Token_type::SYMBOL, ")");
+
+    if (it.compare(Token_type::SYMBOL, "->")) {
+        // read out arguments
+        it.eat_token(); // eat the "->" token
+        bool parens = false;
+        if (it.compare(Token_type::SYMBOL, "(")) {
+            it.eat_token();
+            parens = true;
+        }
+        read_function_arguments(it, o, false, parens); // in arguments
+
+        if (parens) {
+            it.expect(Token_type::SYMBOL, ")");
+        }
+
+        // check for errors
+        if (it.expect_failed()) {
+            o->status = Parsing_status::SYNTAX_ERROR;
+        }
+        if (is_error(o->status)) return owned_static_cast<Value_expression>(std::move(o));
+    }
+
+    o->scope.set_owner(o);
+    o->scope.context = it->context;
+    o->scope.start_token_index = it.current_index;
+    o->status = Parsing_status::NOT_PARSED;
+
+    it.expect(Token_type::SYMBOL, "{");
+    if (it.expect_failed()) {
+        o->status = Parsing_status::SYNTAX_ERROR;
+    } else {
+        it.current_index = it.find_matching_brace(it.current_index-1) + 1;
+        if (it.expect_failed()) {
+            o->status = Parsing_status::FATAL_ERROR;
+        }
+    }
+
+    if (!is_error(o->status)) o->status = Parsing_status::PARTIALLY_PARSED; // @check FULLY_RESOLVED?
+    // @todo: at this point, ensure that the function type is ready to use
+    o->status = Parsing_status::FULLY_RESOLVED;
+
+    // @todo: (recursive functions) this function must return first so the value expression can be used
+    //   first later (in finalize()?) can the function scope be parsed
+    // read_scope_statements(it, &o->scope);
+    // it.expect(Token_type::SYMBOL, "}");
+    // o->status = o->scope.status;
+
+    return owned_static_cast<Value_expression>(std::move(o));
 }
 
 
 
+
+
+
+
+Owned<Value_expression> read_function_type(Token_iterator& it, Shared<Abstx_scope> parent_scope)
+{
+    it.assert(Token_type::KEYWORD, "fn"); // eat the "fn" token
+    ASSERT(false, "NYI");
+}
+
+
+// fn() {}
+// fn() {}
+// fn()->() {}
+// fn()->() {}
+// fn()->() {}
+Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope)
+{
+    int start_index = it.current_index; // save this for later
+    it.assert(Token_type::KEYWORD, "fn"); // eat the "fn" token
+
+    // first: find if the function has {}
+    while (!it.error) {
+
+        const Token& t = it.eat_token();
+
+        // look for ';' (end of statement -> fn type literal), or '{' (function scope start)
+        // the first such matching symbol found determines the type of expression.
+        if (t.type == Token_type::SYMBOL) {
+
+            if (t.token == ";") {
+                // end of statement without finding a function scope -> its just a type literal
+                it.current_index = start_index;
+                return read_function_type(it, parent_scope);
+            }
+
+            else if (t.token == "{") {
+                // function scope -> it's a function literal
+                it.current_index = start_index;
+                return read_function_literal(it, parent_scope);
+            }
+
+            else if (t.token == "(") it.current_index = it.find_matching_paren(it.current_index-1) + 1;
+            else if (t.token == "[") it.current_index = it.find_matching_bracket(it.current_index-1) + 1;
+            else if (t.token == "{") it.current_index = it.find_matching_brace(it.current_index-1) + 1;
+
+            else if (t.is_eof() || t.token == ")" || t.token == "]" || t.token == "}") {
+                // unable to find a proper statement
+                log_error("Unexpected token in function expression: \""+t.token+"\"", t.context);
+                it.error = true;
+                break;
+            }
+        }
+    }
+    ASSERT(it.error);
+    add_note("In function expression that started here: ", it.look_at(start_index).context);
+
+    // instead of returning nullpointer, call read_function_type and let it handle more specific error messages
+    // it should end in fatal error
+    // then just return it
+    it.current_index = start_index;
+    auto p = read_function_type(it, parent_scope);
+    ASSERT(p->status == Parsing_status::FATAL_ERROR);
+    return p;
+}
 
 
 

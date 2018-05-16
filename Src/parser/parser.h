@@ -75,6 +75,9 @@ Shared<Global_scope> read_global_scope(Seq<Token>&& tokens, const std::string& n
 // returns the status of the read statement
 Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 
+// read as many statements as possible in the current scope
+Parsing_status read_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope);
+
 Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 Parsing_status read_if_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope);
 Parsing_status read_for_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope);
@@ -99,7 +102,9 @@ Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_s
 Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // a single INTEGER/FLOAT/STRING/BOOL token
 Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "struct"
 Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_scope> parent_scope); // a single IDENTIFIER token
-Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "fn"
+Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "fn"
+Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // function literal with named variables and function scope (called from read_fn_literal)
+Owned<Value_expression> read_function_type(Token_iterator& it, Shared<Abstx_scope> parent_scope); // function type literal with only type expressions (called from read_fn_literal)
 
 // suffix expressions
 Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs = {}, Owned<Value_expression>&& first_arg = nullptr); // suffix "()"

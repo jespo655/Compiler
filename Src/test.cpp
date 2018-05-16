@@ -486,49 +486,49 @@ void code_gen_test()
 
 void abstx_test()
 {
-    std::cout << "creating function type" << std::endl;
-    Owned<CB_Function> owned_fn_type = alloc(CB_Function()); // owned by some global list of types
-    ASSERT(owned_fn_type);
-    owned_fn_type->in_types.add(get_built_in_type("i8"));
-    owned_fn_type->in_types.add(get_built_in_type("range"));
-    owned_fn_type->out_types.add(get_built_in_type("float"));
-    owned_fn_type->out_types.add(get_built_in_type("range"));
-    owned_fn_type->finalize();
-    ASSERT(owned_fn_type);
-    std::cout << "adding complex type" << std::endl;
-    Shared<const CB_Function> fn_type = add_complex_type(std::move(owned_fn_type));
-    ASSERT(fn_type);
+    // std::cout << "creating function type" << std::endl;
+    // Owned<CB_Function> owned_fn_type = alloc(CB_Function()); // owned by some global list of types
+    // ASSERT(owned_fn_type);
+    // owned_fn_type->in_types.add(get_built_in_type("i8"));
+    // owned_fn_type->in_types.add(get_built_in_type("range"));
+    // owned_fn_type->out_types.add(get_built_in_type("float"));
+    // owned_fn_type->out_types.add(get_built_in_type("range"));
+    // owned_fn_type->finalize();
+    // ASSERT(owned_fn_type);
+    // std::cout << "adding complex type" << std::endl;
+    // Shared<const CB_Function> fn_type = add_complex_type(std::move(owned_fn_type));
+    // ASSERT(fn_type);
 
-    std::cout << "creating abstx function id" << std::endl;
-    Abstx_identifier fn_id; // owned by the scope it is defined in
-    fn_id.name = "foo";
-    fn_id.value.v_type = static_pointer_cast<const CB_Type>(fn_type);
-    // fn_id.finalize();
+    // std::cout << "creating abstx function id" << std::endl;
+    // Abstx_identifier fn_id; // owned by the scope it is defined in
+    // fn_id.name = "foo";
+    // fn_id.value.v_type = static_pointer_cast<const CB_Type>(fn_type);
+    // // fn_id.finalize();
 
-    std::cout << "creating abstx function" << std::endl;
-    Abstx_function_literal fn; // owned by the scope it is defined in
-    fn.function_identifier = &fn_id;
-    fn.scope = alloc(Abstx_function_scope());
-    fn.scope->owner = &fn;
-    std::cout << "adding identifiers to function scope" << std::endl;
-    fn.scope->add_identifier("in1", fn_type->in_types[0]);
-    fn.scope->add_identifier("in2", fn_type->in_types[1]);
-    fn.scope->add_identifier("out1", fn_type->out_types[0]);
-    fn.scope->add_identifier("out2", fn_type->out_types[1]);
-    std::cout << "adding arguments from scope to function" << std::endl;
-    fn.add_arg(true, fn.scope->get_identifier("in1"));
-    fn.add_arg(true, fn.scope->get_identifier("in2"));
-    fn.add_arg(false, fn.scope->get_identifier("out1"));
-    fn.add_arg(false, fn.scope->get_identifier("out2"));
-    std::cout << "finalizing function" << std::endl;
-    // Parsing_status ps = fn.finalize();
-    if (is_codegen_ready(fn.status)) {
-        std::cout << "generating code" << std::endl;
-        generate_typedefs(std::cout);
-        fn.generate_code(std::cout);
-    } else {
-        std::cout << "failed to finalize: " << fn.status << std::endl;
-    }
+    // std::cout << "creating abstx function" << std::endl;
+    // Abstx_function_literal fn; // owned by the scope it is defined in
+    // fn.function_identifier = &fn_id;
+    // fn.scope = alloc(Abstx_function_scope());
+    // fn.scope->owner = &fn;
+    // std::cout << "adding identifiers to function scope" << std::endl;
+    // fn.scope->add_identifier("in1", fn_type->in_types[0]);
+    // fn.scope->add_identifier("in2", fn_type->in_types[1]);
+    // fn.scope->add_identifier("out1", fn_type->out_types[0]);
+    // fn.scope->add_identifier("out2", fn_type->out_types[1]);
+    // std::cout << "adding arguments from scope to function" << std::endl;
+    // fn.add_arg(true, fn.scope->get_identifier("in1"));
+    // fn.add_arg(true, fn.scope->get_identifier("in2"));
+    // fn.add_arg(false, fn.scope->get_identifier("out1"));
+    // fn.add_arg(false, fn.scope->get_identifier("out2"));
+    // std::cout << "finalizing function" << std::endl;
+    // // Parsing_status ps = fn.finalize();
+    // if (is_codegen_ready(fn.status)) {
+    //     std::cout << "generating code" << std::endl;
+    //     generate_typedefs(std::cout);
+    //     fn.generate_code(std::cout);
+    // } else {
+    //     std::cout << "failed to finalize: " << fn.status << std::endl;
+    // }
 }
 
 

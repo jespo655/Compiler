@@ -138,6 +138,27 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
 
 
 
+Parsing_status read_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope) {
+    Parsing_status status = Parsing_status::NOT_PARSED;
+    while (!is_error(status) && !it.compare(Token_type::SYMBOL, "}") && !is_eof(it->type)) {
+        status = read_statement(it, scope);
+        // fatal error -> give up
+        // other error -> failed to parse dynamic scope, but we can continue with other stuff if we find the closing brace
+        if (is_error(status) && !is_fatal(status)) {
+            // it.current_index = it.find_matching_brace(scope->start_token_index); // gives better error messages
+            it.current_index = it.find_matching_brace(); // faster
+            if (it.expect_failed()) {
+                add_note("In scope that started here", scope->context); // "good enough" error message for fast solution
+                scope->status = Parsing_status::FATAL_ERROR;
+            } else {
+                scope->status = status;
+            }
+            return scope->status;
+        }
+    }
+    return scope->status;
+}
+
 // syntax:
 // { }
 Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
@@ -153,29 +174,14 @@ Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_sco
     scope->start_token_index = it.current_index;
 
     // parse and resolve all statements in the scope
-    Parsing_status status = Parsing_status::NOT_PARSED;
-    while (!is_error(status) && !it.compare(Token_type::SYMBOL, "}")) {
-        status = read_statement(it, scope);
-        // fatal error -> give up
-        // other error -> failed to parse dynamic scope, but we can continue with other stuff if we find the closing brace
-        if (is_error(status) && !is_fatal(status)) {
-            // it.current_index = it.find_matching_brace(scope->start_token_index); // gives better error messages
-            it.current_index = it.find_matching_brace(); // faster
-            if (it.expect_failed()) {
-                add_note("In scope that started here", scope->context); // "good enough" error message for fast solution
-                scope->status = Parsing_status::FATAL_ERROR;
-            } else {
-                scope->status = status;
-            }
-            break;
-        }
-        if (is_eof(it->type)) {
-            log_error("Unexpected end of file in the middle of a scope", it->context);
-            add_note("In scope that started here", scope->context);
-            scope->status = Parsing_status::FATAL_ERROR;
-            break;
-        }
+    read_scope_statements(it, scope);
+
+    if (is_eof(it->type)) {
+        log_error("Unexpected end of file in the middle of a scope", it->context);
+        add_note("In scope that started here", scope->context);
+        scope->status = Parsing_status::FATAL_ERROR;
     }
+
     if (!is_fatal(scope->status)) {
         it.assert(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
     }
@@ -517,6 +523,7 @@ Parsing_status Abstx_declaration::fully_parse() {
     }
 
     if (!is_error(status) && status != Parsing_status::DEPENDENCIES_NEEDED) {
+        status = Parsing_status::DEPENDENCIES_NEEDED; // to avoid cyclic dependency
         for (const auto& id : identifiers) {
             id->finalize();
             ASSERT(id->status == Parsing_status::FULLY_RESOLVED);
@@ -820,97 +827,9 @@ Parsing_status Abstx_while::finalize() override {
     status = Parsing_status::FULLY_RESOLVED;
     return status;
 }
-
-
-
-
-
-Parsing_status Abstx_function::finalize() {
-    // @TODO: This should be done as a part of read_function_expression
-
-    if (is_codegen_ready(status)) return status;
-    ASSERT(function_identifier != nullptr);
-
-    // check function identifier
-    if (!is_codegen_ready(function_identifier->status)) {
-        if (is_error(function_identifier->status)) {
-            // error in dependency -> this inherits the error
-            status = function_identifier->status;
-        } else {
-            // dependency is just not finished parsing yet - wait for it and try again later
-            // @todo add dependency chain
-            status = Parsing_status::DEPENDENCIES_NEEDED;
-        }
-        return status;
-    }
-
-    // type is finalized -> get a pointer to it so we can typecheck arguments
-    Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(function_identifier->get_type());
-    ASSERT(fn_type != nullptr);
-
-    // check function scope. This also finalizes all argument identifiers
-    if (!is_codegen_ready(scope->finalize())) {
-        status = scope->status;
-        return status;
-    }
-
-    // check arguments (the same way as function_identifier, but also check type)
-    if (in_args.size != fn_type->in_types.size) {
-        log_error("type mismatch in function in types: wrong number of in parameters", context);
-        status = Parsing_status::TYPE_ERROR;
-        return status;
-    }
-    size_t index = 0;
-    for (const auto& fa : in_args) {
-        if (!is_codegen_ready(fa->identifier->status)) {
-            if (is_error(fa->identifier->status)) {
-                status = fa->identifier->status;
-            } else {
-                // @todo add dependency chain
-                status = Parsing_status::DEPENDENCIES_NEEDED;
-            }
-            return status;
-        }
-        if (*fa->identifier->get_type() != *fn_type->in_types[index]) {
-            log_error("type mismatch in function in types", context);
-            add_note("argument is of type " + fa->identifier->get_type()->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
-            status = Parsing_status::TYPE_ERROR;
-            return status;
-        }
-        index++;
-    }
-
-    if (out_args.size != fn_type->out_types.size) {
-        log_error("type mismatch in function out types: wrong number of out parameters", context);
-        status = Parsing_status::TYPE_ERROR;
-        return status;
-    }
-    index = 0;
-    for (const auto& fa : out_args) {
-        if (!is_codegen_ready(fa->identifier->status)) {
-            if (is_error(fa->identifier->status)) {
-                status = fa->identifier->status;
-            } else {
-                // @todo add dependency chain
-                status = Parsing_status::DEPENDENCIES_NEEDED;
-            }
-            return status;
-        }
-        if (*fa->identifier->get_type() != *fn_type->out_types[index]) {
-            log_error("type mismatch in function out types", context); // @todo: write better error message, including which types are mismatching
-            add_note("argument is of type " + fa->identifier->get_type()->toS() + ", but the function type expected type " + fn_type->in_types[index]->toS());
-            status = Parsing_status::TYPE_ERROR;
-            return status;
-        }
-        index++;
-    }
-
-    // we reached the end -> we are done
-    status = Parsing_status::FULLY_RESOLVED;
-    return status;
-}
-
 */
+
+
 
 
 Parsing_status Abstx_c_code::fully_parse() {

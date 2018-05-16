@@ -1,15 +1,20 @@
 
 
-i2 := i;
-i :: b;
+foo :: fn() {};
 
-s :: struct {
-    i := 2;
-};
 
-s2 :: s;
-a : s2;
-b :: s2;
+// i : int = i2; // TODO: this should fail with cyclic dependency
+// i2 : int = i;
+
+// i :: b;
+
+// s :: struct {
+//     i := 2;
+// };
+
+// s2 :: s;
+// a : s2;
+// b :: s2;
 
 
 // a, b, c := -1.4, true, "here";
