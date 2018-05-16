@@ -13,6 +13,13 @@ struct Variable_expression : Value_expression
 struct Variable_expression_reference : Variable_expression {
     Shared<Variable_expression> expr = nullptr;
 
+    void set_reference(Shared<Variable_expression> ref) {
+        context = ref->context;
+        start_token_index = ref->start_token_index;
+        status = ref->status;
+        expr = ref;
+    }
+
     std::string toS() const override {
         ASSERT(expr);
         return expr->toS();

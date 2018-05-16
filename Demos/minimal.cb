@@ -1,9 +1,10 @@
 
 
-foo :: fn(i:int) {
+foo :: fn(i:uint)->r:int {
     #C #string here printf("hello world!\n") here;
-    a := i;
 };
+
+foo2 := foo(2);
 
 
 // i : int = i2; // TODO: this should fail with cyclic dependency

@@ -378,22 +378,36 @@ Parsing_status Abstx_declaration::fully_parse() {
                 std::cout << "type expression has Parsing_status::DEPENDENCIES_NEEDED" << std::endl;
                 status = type_expr->status;
                 // continue reading
+            } else if (Shared<Abstx_function_call_expression> fn_call = dynamic_pointer_cast<Abstx_function_call_expression>(type_expr)) {
+                // @todo: allow function calls if they are constant
+                log_error("Function calls not allowd as type specifier", type_expr->context);
+                status = Parsing_status::TYPE_ERROR;
+                // for completeness sake, add the out arguments, then set the expression to null to indicate we are done
+                for (const auto& arg : fn_call->function_call->out_args) {
+                    Owned<Variable_expression_reference> ref = alloc(Variable_expression_reference());
+                    ref->owner = this;
+                    ref->set_reference(arg);
+                    ref->finalize();
+                    type_expressions.add(owned_static_cast<Value_expression>(std::move(ref)));
+                }
+                type_expr = nullptr;
+
             } else {
                 Shared<const CB_Type> t = type_expr->get_type();
                 ASSERT(t != nullptr, "Value expression should have error status if it can't infer type after read_value_expression()");
                 if (*t != *CB_Type::type) {
-                    log_error("Non-type expresson used as type", type_expr->context);
-                    add_note("In declaration statement here", context);
+                    log_error("Non-type expresson used as type in declaration statement", type_expr->context);
                     status = Parsing_status::TYPE_ERROR;
                 } else if(!type_expr->has_constant_value()) {
                     log_error("Unable to infer type from type expression at compile time", type_expr->context);
-                    add_note("In declaration statement here", context);
                     add_note("All types must be known at compile time!");
                     status = Parsing_status::TYPE_ERROR;
                 }
             }
 
-            type_expressions.add(std::move(type_expr));
+            if (type_expr) {
+                type_expressions.add(std::move(type_expr));
+            }
 
             if (it.compare(Token_type::SYMBOL, ",")) {
                 it.eat_token(); // eat token and continue
@@ -451,17 +465,33 @@ Parsing_status Abstx_declaration::fully_parse() {
             } else if (value_expr->status == Parsing_status::DEPENDENCIES_NEEDED) {
                 status = value_expr->status;
                 // continue reading
+            } else if (Shared<Abstx_function_call_expression> fn_call = dynamic_pointer_cast<Abstx_function_call_expression>(value_expr)) {
+                // add it's out arguments, then set the expression to null to indicate we are done
+                for (const auto& arg : fn_call->function_call->out_args) {
+                    Owned<Variable_expression_reference> ref = alloc(Variable_expression_reference());
+                    ref->owner = this;
+                    ref->set_reference(arg);
+                    ref->finalize();
+                    if(constant && !ref->has_constant_value()) {
+                        log_error("Unable to declare a constant value from a non-constant value expression", value_expr->context);
+                        ref->status = Parsing_status::COMPILE_TIME_ERROR;
+                        status = Parsing_status::COMPILE_TIME_ERROR;
+                    }
+                    value_expressions.add(owned_static_cast<Value_expression>(std::move(ref)));
+                }
+                value_expr = nullptr;
             } else {
                 ASSERT(value_expr->get_type() != nullptr, "Value expression should have error status if it can't infer type after read_value_expression()");
                 if(constant && !value_expr->has_constant_value()) {
                     log_error("Unable to declare a constant value from a non-constant value expression", value_expr->context);
-                    add_note("In declaration statement here", context);
                     value_expr->status = Parsing_status::COMPILE_TIME_ERROR;
                     status = Parsing_status::COMPILE_TIME_ERROR;
                 }
             }
 
-            value_expressions.add(std::move(value_expr));
+            if (value_expr) {
+                value_expressions.add(std::move(value_expr));
+            }
 
             if (it.compare(Token_type::SYMBOL, ",")) {
                 it.eat_token(); // eat token and continue
@@ -638,10 +668,6 @@ Parsing_status Abstx_c_code::fully_parse() {
 
 
 Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
-}
-
-Parsing_status Abstx_function_call::fully_parse() {
     ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
 }
 

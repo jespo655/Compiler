@@ -492,6 +492,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
             o->out_args.add(static_pointer_cast<Variable_expression>(tmp_id));
             tmp_decl->identifiers.add(std::move(tmp_id));
         }
+        tmp_decl->status = Parsing_status::FULLY_RESOLVED; // mark as resolved @check if some errors should be reported here
         parent_scope->statements.add(owned_static_cast<Statement>(std::move(tmp_decl)));
     }
 
@@ -548,12 +549,13 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
     }
 
     if (!is_error(o->status)) {
+        o->status = Parsing_status::FULLY_RESOLVED;
         it.assert(Token_type::SYMBOL, ")"); // this is already checked / now eat the token
     } else if (!is_fatal(o->status)) {
         it.current_index = it.find_matching_paren() + 1;
-        if (it.expect_failed()) {
-            o->status = Parsing_status::FATAL_ERROR;
-        }
+    }
+    if (it.expect_failed()) {
+        o->status = Parsing_status::FATAL_ERROR;
     }
 
     // create a function call expression to reference the function call statement
@@ -563,6 +565,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
     expr->start_token_index = o->start_token_index;
     expr->function_call = o;
     expr->status = o->status;
+    expr->finalize();
 
     // add the function call statement to parent scope as a separate statement
     parent_scope->statements.add(owned_static_cast<Statement>(std::move(o)));
@@ -570,6 +573,16 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
     // return the function call expression
     return owned_static_cast<Variable_expression>(std::move(expr));
 }
+
+Parsing_status Abstx_function_call::fully_parse() {
+    // Abstx_function_call is just an imaginary construct with no token context
+    // It should always be finished during read_function_call()
+    ASSERT(is_error(status) || is_codegen_ready(status));
+    return status;
+}
+
+
+
 
 
 /*
