@@ -50,7 +50,7 @@
 //      if it is, read value expression (with min_prio = op.prio), then construct infix operator node
 
 // If unable to read expression, nullpointer is returned
-Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio)
+Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_node> owner, int min_operator_prio)
 {
     Owned<Value_expression> expr = nullptr;
 
@@ -59,7 +59,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
     if (it->type == Token_type::SYMBOL && it->token == "(") {
         // eat the token, then read new value expression, then expect closing paren
         it.eat_token();
-        expr = read_value_expression(it, parent_scope);
+        expr = read_value_expression(it, owner);
         it.expect(Token_type::SYMBOL, ")");
         if (it.expect_failed()) {
             add_note("In paren enclosed value expression that started here", expr->context);
@@ -67,19 +67,19 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
         expr->status = Parsing_status::FATAL_ERROR; // mismatched parens -> fatal error
 
     } else if (it->type == Token_type::SYMBOL && it->token == "[") {
-        expr = read_sequence_literal(it, parent_scope);
+        expr = read_sequence_literal(it, owner);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "fn") {
-        expr = read_fn_literal(it, parent_scope);
+        expr = read_fn_literal(it, owner);
 
     } else if (it->type == Token_type::KEYWORD && it->token == "struct") {
-        expr = read_struct_literal(it, parent_scope);
+        expr = read_struct_literal(it, owner);
 
     } else if (it->type == Token_type::INTEGER || it->type == Token_type::FLOAT || it->type == Token_type::STRING || it->type == Token_type::BOOL) {
-        expr = read_simple_literal(it, parent_scope);
+        expr = read_simple_literal(it, owner);
 
     } else if (it->type == Token_type::IDENTIFIER) {
-        expr = read_identifier_reference(it, parent_scope);
+        expr = read_identifier_reference(it, owner);
 
         // This can be either a variable identifier or an infix operator.
 
@@ -101,7 +101,6 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
     }
     ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED);
 
-
     // Part 2: chained suffix operators
     // expr = compile_chained_suffixes(it, expr);
     while (true) {
@@ -116,7 +115,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
                 expr->status = Parsing_status::FATAL_ERROR;
                 break;
             } else {
-                expr = owned_static_cast<Value_expression>(read_function_call(it, parent_scope, std::move(variable_expr), {}));
+                expr = owned_static_cast<Value_expression>(read_function_call(it, owner, std::move(variable_expr), {}));
             }
 
         } else if (it->type == Token_type::SYMBOL && it->token == "[") {
@@ -124,7 +123,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
             // expr = compile_seq_indexing(it, expr);
 
         } else if (it->type == Token_type::SYMBOL && it->token == ".") {
-            expr = read_getter(it, parent_scope, std::move(expr));
+            expr = read_getter(it, owner, std::move(expr));
 
         } else if (it->type == Token_type::SYMBOL || it->type == Token_type::IDENTIFIER) {
             // could be an infix opreator. Check if it is.
@@ -137,13 +136,13 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
             bool right_associative = false; // FIXME: set correctly
             if (op_prio > min_operator_prio || right_associative && op_prio == min_operator_prio) {
                 auto i_expr = Shared<Infix_expr>(new Infix_expr());
-                i_expr->owner = parent_scope;
+                i_expr->owner = owner;
                 i_expr->start_token_index = it.current_index;
                 i_expr->context = it->context;
                 it.eat_token();
 
                 i_expr->lhs = expr;
-                i_expr->rhs = compile_value_expression(it, parent_scope, op_prio);
+                i_expr->rhs = compile_value_expression(it, owner, op_prio);
                 // FIXME: check for fatal error
                 i_expr->rhs->owner = i_expr;
                 expr->owner = i_expr;
@@ -165,6 +164,18 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
 }
 
 
+Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<Abstx_node> owner, int min_operator_prio)
+{
+    // since all variable expressions are also value expressions, we can just read it with read_value_expression
+    Owned<Value_expression> val_expr = read_value_expression(it, owner, min_operator_prio);
+    if (val_expr == nullptr) return nullptr;
+    Owned<Variable_expression> var_expr = owned_dynamic_cast<Variable_expression>(std::move(val_expr));
+    if (val_expr == nullptr) {
+        log_error("Pure value expression used as a variable", val_expr->context);
+    }
+    return var_expr;
+}
+
 
 
 /*
@@ -172,9 +183,9 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_s
         a, b : int = 2;
     }
 */
-Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_node> owner) {
     Owned<Abstx_struct_literal> o = alloc(Abstx_struct_literal());
-    o->set_owner(parent_scope);
+    o->owner = owner;
     o->context = it->context;
     o->start_token_index = it.current_index;
 
@@ -189,7 +200,7 @@ Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_sco
     // make a temporary scope for struct identifiers
     // these identifiers will then be extracted and added to the struct itself
     o->struct_scope = alloc(Abstx_scope(SCOPE_DYNAMIC)); // set dynamic to make declaration statements try to fully parse immediately
-    o->struct_scope->set_owner(parent_scope);
+    o->struct_scope->owner = owner;
     o->struct_scope->status = Parsing_status::PARTIALLY_PARSED;
     Seq<size_t> using_indeces;
 
@@ -248,10 +259,10 @@ Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_sco
 
 
 
-Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_node> owner) {
     ASSERT(it->type == Token_type::IDENTIFIER);
     Owned<Abstx_identifier_reference> o = alloc(Abstx_identifier_reference());
-    o->set_owner(parent_scope); // temporary owner; the literal should be owned by a statement somewhere
+    o->owner = owner; // temporary owner; the literal should be owned by a statement somewhere
     o->context = it->context;
     o->start_token_index = it.current_index;
     o->name = it.eat_token().token;
@@ -263,7 +274,7 @@ Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abs
 
 
 
-Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Value_expression>&& id) {
+Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_node> owner, Owned<Value_expression>&& id) {
     const Token_context& dot_context = it->context; // set context to the '.' token (save for later)
     it.assert(Token_type::SYMBOL, "."); // assert and eat the '.' token
     it.expect_current(Token_type::IDENTIFIER);
@@ -283,7 +294,7 @@ Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_scope> pare
         if (member != nullptr) {
             // @TODO: create struct member reference abstx node and return it
             Owned<Abstx_struct_getter> o = alloc(Abstx_struct_getter());
-            o->set_owner(parent_scope);
+            o->owner = owner;
             o->context = dot_context;
             o->start_token_index = it.current_index-1; // pointing to the dot
             id->set_owner(o);
@@ -302,9 +313,9 @@ Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_scope> pare
     // check parent scope for a function with the name
     // check if the next token is '('
     // read function call with the id as the first argument
-    Owned<Value_expression> id_reference = read_identifier_reference(it, parent_scope);
+    Owned<Value_expression> id_reference = read_identifier_reference(it, owner);
     if (it.compare(Token_type::SYMBOL, "(")) {
-        return owned_static_cast<Value_expression>(read_function_call(it, parent_scope, owned_static_cast<Variable_expression>(std::move(id_reference)), {}, std::move(id)));
+        return owned_static_cast<Value_expression>(read_function_call(it, owner, owned_static_cast<Variable_expression>(std::move(id_reference)), {}, std::move(id)));
     } else {
         log_error("Dot notation used for something that is neither a struct member or a function call", dot_context);
         id_reference->status = Parsing_status::SYNTAX_ERROR;
@@ -316,9 +327,9 @@ Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_scope> pare
 
 
 
-Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_node> owner) {
     Owned<Abstx_simple_literal> o = alloc(Abstx_simple_literal());
-    o->set_owner(parent_scope); // temporary owner; the literal should be owned by a statement somewhere
+    o->owner = owner; // temporary owner; the literal should be owned by a statement somewhere
     o->context = it->context;
     o->start_token_index = it.current_index;
 
@@ -378,7 +389,7 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_sco
 
 
 
-Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_node> owner) {
     // syntax:
     //   [val_expr, val_expr, val_expr] // type of first value determines type (next token is ',' or ']')
     //   [val_expr: val_expr, val_expr] // first value determines type (next token is ':')
@@ -433,7 +444,7 @@ Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_s
 
 
 
-Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs, Owned<Value_expression>&& first_arg) {
+Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_node> owner, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs, Owned<Value_expression>&& first_arg) {
     // syntax: variable_expression()
     // it is inserted as its own statement in the scope
     // if in a declaration statement, the declaration comes first, then the function call,
@@ -459,7 +470,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
 
     // Allocate abstx node
     Owned<Abstx_function_call> o = alloc(Abstx_function_call());
-    o->set_owner(parent_scope); // temporary
+    o->owner = owner; // temporary
     o->context = it->context;
     o->start_token_index = it.current_index;
 
@@ -479,7 +490,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
         // create declaration statement with tmp variables; push it to scope
         // add its temporary variables as out_args
         Owned<Abstx_declaration> tmp_decl = alloc(Abstx_declaration());
-        tmp_decl->set_owner(parent_scope);
+        tmp_decl->owner = owner;
         for (const auto& type : fn_type->out_types) {
             // create tmp identifier; add to declaration statement
             Owned<Abstx_identifier> tmp_id = alloc(Abstx_identifier());
@@ -493,7 +504,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
             tmp_decl->identifiers.add(std::move(tmp_id));
         }
         tmp_decl->status = Parsing_status::FULLY_RESOLVED; // mark as resolved @check if some errors should be reported here
-        parent_scope->statements.add(owned_static_cast<Statement>(std::move(tmp_decl)));
+        o->parent_scope()->statements.add(owned_static_cast<Statement>(std::move(tmp_decl)));
     }
 
     it.assert(Token_type::SYMBOL, "("); // this should already have been checked
@@ -508,7 +519,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
     while (1) {
         if (it.compare(Token_type::SYMBOL, ")")) break; // done
 
-        Owned<Value_expression> arg = read_value_expression(it, parent_scope);
+        Owned<Value_expression> arg = read_value_expression(it, owner);
         ASSERT(arg != nullptr);
         arg->set_owner(o);
         if (is_error(arg->status)) {
@@ -560,7 +571,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
 
     // create a function call expression to reference the function call statement
     Owned<Abstx_function_call_expression> expr = alloc(Abstx_function_call_expression());
-    expr->set_owner(parent_scope);
+    expr->owner = owner;
     expr->context = o->context;
     expr->start_token_index = o->start_token_index;
     expr->function_call = o;
@@ -568,7 +579,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_s
     expr->finalize();
 
     // add the function call statement to parent scope as a separate statement
-    parent_scope->statements.add(owned_static_cast<Statement>(std::move(o)));
+    o->parent_scope()->statements.add(owned_static_cast<Statement>(std::move(o)));
 
     // return the function call expression
     return owned_static_cast<Variable_expression>(std::move(expr));
@@ -708,7 +719,7 @@ void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> 
             ASSERT(false, "generic types NYI");
         } else {
             // read regular type expression
-            Owned<Value_expression> type_expr = read_value_expression(it, fn->parent_scope());
+            Owned<Value_expression> type_expr = read_value_expression(it, static_pointer_cast<Abstx_node>(fn));
             ASSERT(type_expr);
             if (is_error(type_expr->status) || type_expr->status == Parsing_status::DEPENDENCIES_NEEDED) {
                 id->status = type_expr->status;
@@ -753,11 +764,11 @@ void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> 
 }
 
 
-Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope)
+Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_node> owner)
 {
     std::cout << "reading function literal" << std::endl;
     Owned<Abstx_function_literal> o = alloc(Abstx_function_literal());
-    o->set_owner(parent_scope);
+    o->owner = owner;
     o->context = it->context;
     o->start_token_index = it.current_index;
 
@@ -901,7 +912,7 @@ void Abstx_function_literal::finalize()
 
 
 
-Owned<Value_expression> read_function_type(Token_iterator& it, Shared<Abstx_scope> parent_scope)
+Owned<Value_expression> read_function_type(Token_iterator& it, Shared<Abstx_node> owner)
 {
     it.assert(Token_type::KEYWORD, "fn"); // eat the "fn" token
     ASSERT(false, "NYI");
@@ -913,7 +924,7 @@ Owned<Value_expression> read_function_type(Token_iterator& it, Shared<Abstx_scop
 // fn()->() {}
 // fn()->() {}
 // fn()->() {}
-Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope)
+Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_node> owner)
 {
     int start_index = it.current_index; // save this for later
     it.assert(Token_type::KEYWORD, "fn"); // eat the "fn" token
@@ -930,13 +941,13 @@ Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_scope> 
             if (t.token == ";") {
                 // end of statement without finding a function scope -> its just a type literal
                 it.current_index = start_index;
-                return read_function_type(it, parent_scope);
+                return read_function_type(it, owner);
             }
 
             else if (t.token == "{") {
                 // function scope -> it's a function literal
                 it.current_index = start_index;
-                return read_function_literal(it, parent_scope);
+                return read_function_literal(it, owner);
             }
 
             else if (t.token == "(") it.current_index = it.find_matching_paren(it.current_index-1) + 1;
@@ -958,7 +969,7 @@ Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_scope> 
     // it should end in fatal error
     // then just return it
     it.current_index = start_index;
-    auto p = read_function_type(it, parent_scope);
+    auto p = read_function_type(it, owner);
     ASSERT(p->status == Parsing_status::FATAL_ERROR);
     return p;
 }
@@ -1004,7 +1015,7 @@ Parsing_status Abstx_identifier_reference::finalize() {
 const int eval_prio = 1000; // FIXME: fix. Maybe use the current operator prio?
 
 
-Shared<Literal> compile_eval_expr(Token_iterator& it, Shared<Abstx_scope> parent_scope)
+Shared<Literal> compile_eval_expr(Token_iterator& it, Shared<Abstx_node> owner)
 {
     auto lit = Shared<Literal>(new Literal());
     lit->owner = parent_scope;
@@ -1033,7 +1044,7 @@ Shared<Literal> compile_eval_expr(Token_iterator& it, Shared<Abstx_scope> parent
 
 
 
-Shared<Value_expression> compile_value_list(Token_iterator& it, Shared<Abstx_scope> parent_scope)
+Shared<Value_expression> compile_value_list(Token_iterator& it, Shared<Abstx_node> owner)
 {
     auto v_list = Shared<Value_list>(new Value_list());
     v_list->owner = parent_scope;
@@ -1099,7 +1110,7 @@ Shared<Value_expression> compile_value_list(Token_iterator& it, Shared<Abstx_sco
 
 
 
-Shared<Variable_expression> compile_variable_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope)
+Shared<Variable_expression> compile_variable_expression(Token_iterator& it, Shared<Abstx_node> owner)
 {
     auto context = it->context;
     auto value_expr = compile_value_expression(it, parent_scope);

@@ -96,19 +96,19 @@ Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx
 #define DEFAULT_OPERATOR_PRIO 1000
 
 // standalone expressions
-Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
-Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
-Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "["
-Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // a single INTEGER/FLOAT/STRING/BOOL token
-Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "struct"
-Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_scope> parent_scope); // a single IDENTIFIER token
-Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // starts with "fn"
-Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_scope> parent_scope); // function literal with named variables and function scope (called from read_fn_literal)
-Owned<Value_expression> read_function_type(Token_iterator& it, Shared<Abstx_scope> parent_scope); // function type literal with only type expressions (called from read_fn_literal)
+Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_node> owner, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
+Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<Abstx_node> owner, int min_operator_prio = DEFAULT_OPERATOR_PRIO);
+Owned<Value_expression> read_sequence_literal(Token_iterator& it, Shared<Abstx_node> owner); // starts with "["
+Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_node> owner); // a single INTEGER/FLOAT/STRING/BOOL token
+Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_node> owner); // starts with "struct"
+Owned<Value_expression> read_identifier_reference(Token_iterator& it, Shared<Abstx_node> owner); // a single IDENTIFIER token
+Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_node> owner); // starts with "fn"
+Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_node> owner); // function literal with named variables and function scope (called from read_fn_literal)
+Owned<Value_expression> read_function_type(Token_iterator& it, Shared<Abstx_node> owner); // function type literal with only type expressions (called from read_fn_literal)
 
 // suffix expressions
-Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs = {}, Owned<Value_expression>&& first_arg = nullptr); // suffix "()"
-Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Value_expression>&& id); // suffix '.'
+Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_node> owner, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs = {}, Owned<Value_expression>&& first_arg = nullptr); // suffix "()"
+Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_node> owner, Owned<Value_expression>&& id); // suffix '.'
 // Owned<Value_expression> read_indexing(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Value_expression>&& id); // suffix "[]" // @todo
 
 /*

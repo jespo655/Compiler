@@ -360,15 +360,13 @@ Parsing_status Abstx_declaration::fully_parse() {
 
     if (!it.compare(Token_type::SYMBOL, "=") && !it.compare(Token_type::SYMBOL, ":")) {
         // read list of types
-        auto p_scope = parent_scope();
         while(1) {
 
-            Owned<Value_expression> type_expr = read_value_expression(it, p_scope);
+            Owned<Value_expression> type_expr = read_value_expression(it, this);
             if (type_expr == nullptr) {
                 status = Parsing_status::SYNTAX_ERROR; // unable to read value expression
                 return status; // give up
             }
-            type_expr->owner = this;
             if (is_error(type_expr->status)) {
                 add_note("In declaration statement here", context);
                 status = type_expr->status;
@@ -446,17 +444,15 @@ Parsing_status Abstx_declaration::fully_parse() {
         // std::cout << "reading " << (constant?"constant":"non-constant") << " values in declaration" << std::endl; // @debug
 
         // read list of values
-        auto p_scope = parent_scope();
         while(1) {
 
             // std::cout << "reading " << (constant?"constant":"non-constant") << " value" << std::endl; // @debug
 
-            Owned<Value_expression> value_expr = read_value_expression(it, p_scope);
+            Owned<Value_expression> value_expr = read_value_expression(it, this);
             if (value_expr == nullptr) {
                 status = Parsing_status::SYNTAX_ERROR; // unable to read value expression
                 return status; // give up
             }
-            value_expr->owner = this;
             if (is_error(value_expr->status)) {
                 add_note("In declaration statement here", context);
                 status = value_expr->status;
