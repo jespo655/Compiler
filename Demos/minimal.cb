@@ -1,20 +1,34 @@
 
 
-foo :: fn(i:uint)->r:int {
-    #C #string here printf("hello world!\n") here;
-    i = 2;
-    i = 3;
-    i = i;
-    i2 : int;
+
+
+
+// foo :: fn(i:uint)->r:int {
+    // #C #string here printf("hello world!\n"); here;
+    // i = 2;
+    // i = 3;
+    // i = i;
+    // i2 : int;
     // i2 = foo(i);
-};
+// };
 
 // foo2, a := foo(2), 2;
 
 
-foo2 :: fn()->r:int {
-    a : int;
-    a = foo(0);
+// foo2 :: fn()->r:int {
+//     a : int;
+//     a = foo(0);
+// };
+
+
+
+hw :: fn(i:int)->r:int {
+    #C #string here printf("hello world #%d!\n", i); here;
+};
+
+
+main :: fn() {
+    i := hw(2); // TODO: this outputs incorrect code (function is called hw instead of _cb_fn_x)
 };
 
 

@@ -3,3 +3,4 @@ OLD/
 *.old*
 *.lnk
 *.sublime-workspace
+*.asm
