@@ -170,7 +170,7 @@ Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<A
     Owned<Value_expression> val_expr = read_value_expression(it, owner, min_operator_prio);
     if (val_expr == nullptr) return nullptr;
     Owned<Variable_expression> var_expr = owned_dynamic_cast<Variable_expression>(std::move(val_expr));
-    if (val_expr == nullptr) {
+    if (var_expr == nullptr) {
         log_error("Pure value expression used as a variable", val_expr->context);
     }
     return var_expr;
@@ -852,8 +852,6 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
         o->status = Parsing_status::FATAL_ERROR;
     }
 
-    std::cout << "done reading function literal!" << std::endl;
-
     return owned_static_cast<Value_expression>(std::move(o));
 }
 
@@ -862,7 +860,6 @@ void Abstx_function_literal::finalize()
     // note: function scope doesn't need to be fully parsed for the function literal to be
     if (is_error(status)) return;
     if (is_codegen_ready(status) && is_codegen_ready(scope.status)) return;
-    std::cout << "finalizing Abstx_function_literal" << std::endl;
 
     ASSERT(function_identifier.name != ""); // must be set during creating
     if (function_identifier.value.v_type == nullptr) {
@@ -873,7 +870,6 @@ void Abstx_function_literal::finalize()
             arg.identifier->finalize();
             if (is_error(arg.identifier->status)) {
                 status = arg.identifier->status;
-                std::cout << "unable to finalize in argument" << std::endl;
                 return;
             } else if (arg.identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
                 status = Parsing_status::DEPENDENCIES_NEEDED;
@@ -887,7 +883,6 @@ void Abstx_function_literal::finalize()
             arg.identifier->finalize();
             if (is_error(arg.identifier->status)) {
                 status = arg.identifier->status;
-                std::cout << "unable to finalize out argument" << std::endl;
                 return;
             } else if (arg.identifier->status == Parsing_status::DEPENDENCIES_NEEDED) {
                 status = Parsing_status::DEPENDENCIES_NEEDED;
@@ -904,7 +899,6 @@ void Abstx_function_literal::finalize()
     function_identifier.status = Parsing_status::FULLY_RESOLVED;
 
     // update status
-    std::cout << "successfully finalizing Abstx_function_literal" << std::endl;
     if (!is_error(status) && status != Parsing_status::DEPENDENCIES_NEEDED) status = Parsing_status::FULLY_RESOLVED;
 }
 

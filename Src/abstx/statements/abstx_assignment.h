@@ -55,7 +55,8 @@ struct Abstx_assignment : Statement {
         for (int i = 0; i < lhs.size; ++i) {
             lhs[i]->generate_code(target); // this should be a valid c style lvalue
             target << " = ";
-            lhs[i]->generate_code(target); // this should be a valid c style lvalue
+            if (rhs.size == 1) rhs[0]->generate_code(target);
+            else rhs[i]->generate_code(target);
             target << ";" << std::endl;
         }
     };

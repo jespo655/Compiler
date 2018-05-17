@@ -233,6 +233,55 @@ Parsing_status Abstx_anonymous_scope::fully_parse() {
 
 
 
+// read_value_rhs used for Abstx_declaration and Abstx_assignment
+Parsing_status read_value_rhs(Token_iterator& it, Shared<Abstx_node> owner, Seq<Owned<Value_expression>>& expressions, bool constant) {
+    Parsing_status status = Parsing_status::NOT_PARSED;
+    while(1) {
+        Owned<Value_expression> value_expr = read_value_expression(it, owner);
+        if (value_expr == nullptr) {
+            status = Parsing_status::SYNTAX_ERROR; // unable to read value expression
+            return status; // give up
+        }
+        if (is_error(value_expr->status) || (!is_error(status) && value_expr->status == Parsing_status::DEPENDENCIES_NEEDED)) {
+            status = value_expr->status;
+            if (is_fatal(status)) break; // give up
+
+        } else if (Shared<Abstx_function_call_expression> fn_call = dynamic_pointer_cast<Abstx_function_call_expression>(value_expr)) {
+            // add it's out arguments, then set the expression to null to indicate we are done
+            for (const auto& arg : fn_call->function_call->out_args) {
+                Owned<Variable_expression_reference> ref = alloc(Variable_expression_reference());
+                ref->owner = owner;
+                ref->set_reference(arg);
+                ref->finalize();
+                if(constant && !ref->has_constant_value()) {
+                    log_error("Unable to declare a constant value from a non-constant value expression", value_expr->context);
+                    ref->status = Parsing_status::COMPILE_TIME_ERROR;
+                    status = Parsing_status::COMPILE_TIME_ERROR;
+                }
+                expressions.add(owned_static_cast<Value_expression>(std::move(ref)));
+            }
+            value_expr = nullptr;
+        } else {
+            ASSERT(value_expr->get_type() != nullptr, "Value expression should have error status if it can't infer type after read_value_expression()");
+            if(constant && !value_expr->has_constant_value()) {
+                log_error("Unable to declare a constant value from a non-constant value expression", value_expr->context);
+                value_expr->status = Parsing_status::COMPILE_TIME_ERROR;
+                status = Parsing_status::COMPILE_TIME_ERROR;
+            }
+        }
+
+        if (value_expr) {
+            expressions.add(std::move(value_expr));
+        }
+
+        if (it.compare(Token_type::SYMBOL, ",")) {
+            it.eat_token(); // eat token and continue
+        } else {
+            break; // go to next step
+        }
+    }
+    return status;
+}
 
 
 // syntax:
@@ -344,8 +393,6 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
     return s->status;
 }
 
-
-
 Parsing_status Abstx_declaration::fully_parse() {
     if (status != Parsing_status::PARTIALLY_PARSED) return status;
     ASSERT(identifiers.size != 0);
@@ -443,57 +490,11 @@ Parsing_status Abstx_declaration::fully_parse() {
 
         // std::cout << "reading " << (constant?"constant":"non-constant") << " values in declaration" << std::endl; // @debug
 
-        // read list of values
-        while(1) {
-
-            // std::cout << "reading " << (constant?"constant":"non-constant") << " value" << std::endl; // @debug
-
-            Owned<Value_expression> value_expr = read_value_expression(it, this);
-            if (value_expr == nullptr) {
-                status = Parsing_status::SYNTAX_ERROR; // unable to read value expression
-                return status; // give up
-            }
-            if (is_error(value_expr->status)) {
-                add_note("In declaration statement here", context);
-                status = value_expr->status;
-                return status;
-
-            } else if (value_expr->status == Parsing_status::DEPENDENCIES_NEEDED) {
-                status = value_expr->status;
-                // continue reading
-            } else if (Shared<Abstx_function_call_expression> fn_call = dynamic_pointer_cast<Abstx_function_call_expression>(value_expr)) {
-                // add it's out arguments, then set the expression to null to indicate we are done
-                for (const auto& arg : fn_call->function_call->out_args) {
-                    Owned<Variable_expression_reference> ref = alloc(Variable_expression_reference());
-                    ref->owner = this;
-                    ref->set_reference(arg);
-                    ref->finalize();
-                    if(constant && !ref->has_constant_value()) {
-                        log_error("Unable to declare a constant value from a non-constant value expression", value_expr->context);
-                        ref->status = Parsing_status::COMPILE_TIME_ERROR;
-                        status = Parsing_status::COMPILE_TIME_ERROR;
-                    }
-                    value_expressions.add(owned_static_cast<Value_expression>(std::move(ref)));
-                }
-                value_expr = nullptr;
-            } else {
-                ASSERT(value_expr->get_type() != nullptr, "Value expression should have error status if it can't infer type after read_value_expression()");
-                if(constant && !value_expr->has_constant_value()) {
-                    log_error("Unable to declare a constant value from a non-constant value expression", value_expr->context);
-                    value_expr->status = Parsing_status::COMPILE_TIME_ERROR;
-                    status = Parsing_status::COMPILE_TIME_ERROR;
-                }
-            }
-
-            if (value_expr) {
-                value_expressions.add(std::move(value_expr));
-            }
-
-            if (it.compare(Token_type::SYMBOL, ",")) {
-                it.eat_token(); // eat token and continue
-            } else {
-                break; // go to next step
-            }
+        // read list of values and check for errors
+        Parsing_status rhs_status = read_value_rhs(it, this, value_expressions, constant);
+        if (is_error(rhs_status)) {
+            status = rhs_status;
+            return status;
         }
 
         // std::cout << "assigning " << (constant?"constant":"non-constant") << " values" << std::endl; // @debug
@@ -568,24 +569,145 @@ Parsing_status Abstx_declaration::fully_parse() {
 
 
 
-
-
-
-
-
 Parsing_status read_assignment_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    if (!parent_scope->dynamic()) {
+        log_error("Assignment statements are not allowd in static scopes!", it->context);
+        it.current_index = it.find_matching_semicolon()+1;
+        if (it.expect_failed()) return Parsing_status::FATAL_ERROR;
+        else return Parsing_status::NOT_PARSED;
+    }
 
-    Owned<Abstx_declaration> o = alloc(Abstx_declaration()); // will be destroyed later
-    Shared<Abstx_declaration> s = o; // shared pointer that we can use and modify however we like
-    s->set_owner(parent_scope);
-    s->context = it->context;
-    s->start_token_index = it.current_index;
+    Owned<Abstx_assignment> o = alloc(Abstx_assignment());
+    o->set_owner(parent_scope);
+    o->context = it->context;
+    o->start_token_index = it.current_index;
 
-    ASSERT(false, "NYI");
-    return Parsing_status::NOT_PARSED;
+    while(1) {
+        // read variable expressions for LHS
+        Owned<Variable_expression> expr = read_variable_expression(it, static_pointer_cast<Abstx_node>(o));
+
+        if (expr == nullptr) {
+            o->status = Parsing_status::SYNTAX_ERROR;
+            break;
+        } else if (is_error(expr->status) || (!is_error(o->status) && expr->status == Parsing_status::DEPENDENCIES_NEEDED)) {
+            o->status = expr->status;
+            if (is_fatal(o->status)) return o->status;
+        } else if (Shared<Abstx_function_call_expression> fn_call = dynamic_pointer_cast<Abstx_function_call_expression>(expr)) {
+            for (const auto& arg : fn_call->function_call->out_args) {
+                ASSERT(arg);
+                Owned<Variable_expression_reference> ref = alloc(Variable_expression_reference());
+                ref->owner = static_pointer_cast<Abstx_node>(o);
+                ref->set_reference(arg);
+                ref->finalize();
+                o->lhs.add(owned_static_cast<Variable_expression>(std::move(ref)));
+            }
+        } else {
+            o->lhs.add(std::move(expr));
+        }
+
+        if (it.compare(Token_type::SYMBOL, ",")) {
+            it.eat_token(); // eat the token and read another
+        } else {
+            break; // go to next step
+        }
+    }
+
+    // @TODO: add support for assignment operators (+ =, - =, etc.)
+    it.expect(Token_type::SYMBOL, "=");
+    if (it.expect_failed()) {
+        o->status = Parsing_status::SYNTAX_ERROR;
+    }
+
+    // read value expressions for RHS
+    Parsing_status rhs_status = read_value_rhs(it, static_pointer_cast<Abstx_node>(o), o->rhs, false);
+    if (is_error(rhs_status)) {
+        o->status = rhs_status;
+    }
+
+    it.expect_end_of_statement();
+    if (it.expect_failed()) {
+        if (!is_fatal(o->status)) o->status = Parsing_status::SYNTAX_ERROR;
+    }
+
+    // perform type checking
+    o->fully_parse();
+
+    Parsing_status status = o->status;
+    parent_scope->statements.add(owned_static_cast<Statement>(std::move(o)));
+    return status;
+}
+
+Parsing_status Abstx_assignment::fully_parse() {
+    if (is_error(status) || is_codegen_ready(status)) return status;
+
+    // perform finalizing of expressions and type checking
+    // list must either be of size 1 (all identifiers have the same value) or the same size as the number of identifiers
+    if (rhs.size != 1 && rhs.size != lhs.size) {
+        log_error("Wrong number of values in assignment", context);
+        if (lhs.size == 1) add_note("Expected 1 value but found "+std::to_string(rhs.size), context);
+        else add_note("Expected either 1 or "+std::to_string(lhs.size)+" values but found "+std::to_string(rhs.size), context);
+        if (!is_error(status)) status = Parsing_status::SYNTAX_ERROR;
+    } else {
+        // typecheck lhs with rhs
+        // everything should have types already
+        size_t index = 0;
+        for (const auto& id : lhs) {
+            Shared<Value_expression> value_expr = rhs[index];
+
+            // finalize expressions
+            ASSERT(id); // can't be nullptr
+            ASSERT(value_expr); // can't be nullptr
+            id->finalize();
+            value_expr->finalize();
+
+            // check that types match
+            Shared<const CB_Type> lhs_type = id->get_type();
+            Shared<const CB_Type> rhs_type = value_expr->get_type();
+
+            if (lhs_type == nullptr) {
+                ASSERT(is_error(id->status) || id->status == Parsing_status::DEPENDENCIES_NEEDED);
+                if (!is_error(status)) status = id->status;
+            } else if (rhs_type == nullptr) {
+                ASSERT(is_error(id->status) || id->status == Parsing_status::DEPENDENCIES_NEEDED);
+                if (!is_error(status)) status = id->status;
+            } else if (*lhs_type != *rhs_type) {
+                log_error("Type of rhs doesn't match the type of lhs in assigment!", value_expr->context);
+                add_note("Unable to convert type from "+rhs_type->toS()+" to "+lhs_type->toS());
+                status = Parsing_status::TYPE_ERROR;
+            }
+
+            if (rhs.size != 1) ++index;
+        }
+    }
+    if (!is_error(status) && status != Parsing_status::DEPENDENCIES_NEEDED) status = Parsing_status::FULLY_RESOLVED;
+    return status;
 }
 
 
+/*
+Parsing_status Abstx_assignment::finalize() {
+    if (is_codegen_ready(status)) return status;
+
+    if (lhs.size != rhs.size) return status;
+    for (const auto& var_exp : lhs) {
+        ASSERT(var_exp != nullptr)
+        if (!is_codegen_ready(var_exp->finalize())) { // this expression is Owned by this statement -> finalize them too
+            status = var_exp->status;
+            return status;
+        }
+    }
+    for (const auto& val_exp : rhs) {
+        ASSERT(val_exp != nullptr)
+        if (!is_codegen_ready(val_exp->finalize())) {
+            status = val_exp->status;
+            return status;
+        }
+    }
+    // we reached the end -> we are done
+    status = Parsing_status::FULLY_RESOLVED;
+    return status;
+}
+*/
 
 
 
@@ -669,7 +791,10 @@ Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> pare
 
 
 // maybe should this also return only Parsing_status?
-Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope) { return nullptr; }
+Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
+    ASSERT(false, "NYI");
+    return nullptr;
+}
 
 
 
@@ -677,29 +802,6 @@ Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx
 
 
 /*
-Parsing_status Abstx_assignment::finalize() {
-    if (is_codegen_ready(status)) return status;
-
-    if (lhs.size != rhs.size) return status;
-    for (const auto& var_exp : lhs) {
-        ASSERT(var_exp != nullptr)
-        if (!is_codegen_ready(var_exp->finalize())) { // this expression is Owned by this statement -> finalize them too
-            status = var_exp->status;
-            return status;
-        }
-    }
-    for (const auto& val_exp : rhs) {
-        ASSERT(val_exp != nullptr)
-        if (!is_codegen_ready(val_exp->finalize())) {
-            status = val_exp->status;
-            return status;
-        }
-    }
-    // we reached the end -> we are done
-    status = Parsing_status::FULLY_RESOLVED;
-    return status;
-}
-
 
 Parsing_status Abstx_declaration::finalize() override {
     if (is_codegen_ready(status)) return status;
