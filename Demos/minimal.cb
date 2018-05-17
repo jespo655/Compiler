@@ -22,13 +22,13 @@
 
 
 
-hw :: fn(i:int)->r:int {
+hw :: fn(i:int) {
     #C #string here printf("hello world #%d!\n", i); here;
 };
 
 
 main :: fn() {
-    i := hw(2); // TODO: this outputs incorrect code (function is called hw instead of _cb_fn_x)
+    hw(2);
 };
 
 

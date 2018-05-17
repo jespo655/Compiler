@@ -786,7 +786,16 @@ Parsing_status Abstx_c_code::fully_parse() {
 
 
 Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(false, "NYI"); return Parsing_status::NOT_PARSED;
+    Owned<Value_expression> expr = read_value_expression(it, static_pointer_cast<Abstx_node>(parent_scope));
+    Shared<Abstx_function_call_expression> fc = dynamic_pointer_cast<Abstx_function_call_expression>(expr);
+    if (expr != nullptr && fc == nullptr) {
+        log_warning("Non-function call used as a statement - it might be ignored", expr->context);
+    }
+    it.expect_end_of_statement();
+    if (it.expect_failed()) return Parsing_status::SYNTAX_ERROR;
+    else return expr->status;
+    // expr will be deallocated; but if any function calls were included in the expression, they will have been inserted in the
+    //   parent scope as individual function call statements (and won't be deallocated)
 }
 
 

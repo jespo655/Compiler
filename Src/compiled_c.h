@@ -32,12 +32,12 @@ typedef struct { _cb_f64 r_start; _cb_f64 r_end; } _cb_f_range;
 typedef char* _cb_string;
 
 // complex types
-typedef void(*_cb_type_22)(_cb_int*);
+typedef void(*_cb_type_22)(_cb_int, _cb_int*);
 typedef void(*_cb_type_23)();
 
 // function declarations
 void _cb_fn_1(_cb_int i, _cb_int* r);
-
+void _cb_fn_2();
 
 #ifdef __CPLUSPLUS
 }

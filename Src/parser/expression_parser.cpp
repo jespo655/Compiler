@@ -499,6 +499,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
             // tmp_id->start_token_index = ---; // no start token index since the token doesn't really exist
             tmp_id->name = "_cb_tmp_" + std::to_string(get_unique_id());
             tmp_id->value.v_type = type;
+            tmp_id->finalize();
 
             o->out_args.add(static_pointer_cast<Variable_expression>(tmp_id));
             tmp_decl->identifiers.add(std::move(tmp_id));
