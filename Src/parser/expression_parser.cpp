@@ -481,6 +481,8 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
     if (fn_type == nullptr) {
         log_error("Non-function expression used as a function", o->context);
         o->status = Parsing_status::SYNTAX_ERROR;
+    } else if (fn_id->has_constant_value()) {
+        o->function = (Abstx_function_literal*)fn_id->get_constant_value().v_ptr;
     }
     o->function_pointer = std::move(fn_id);
 
@@ -560,15 +562,61 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
         }
     }
 
+    // check for errors during parsing
+    if (is_error(o->status) && !is_fatal(o->status)) {
+        it.current_index = it.find_matching_paren();
+        if (it.expect_failed()) o->status = Parsing_status::FATAL_ERROR;
+    }
+
+    // perform type checking (if no parsing error)
     if (!is_error(o->status)) {
-        o->status = Parsing_status::FULLY_RESOLVED;
-        it.assert(Token_type::SYMBOL, ")"); // this is already checked / now eat the token
-    } else if (!is_fatal(o->status)) {
-        it.current_index = it.find_matching_paren() + 1;
+        ASSERT(fn_type);
+        // compare in_args with fn_type->in_types
+        for (int i = 0; i < fn_type->in_types.size; ++i) {
+            const auto& type = fn_type->in_types[i];
+            if (i < o->in_args.size) {
+                // types must match
+                if (*o->in_args[i]->get_type() != *type) {
+                    log_error("Mismatched types in function call; unable to convert from type "+o->in_args[i]->get_type()->toS()+" to "+type->toS(), o->in_args[i]->context);
+                    o->status = Parsing_status::TYPE_ERROR;
+                }
+            } else if (o->function) {
+                // if the function literal is known and there is a default argument, insert that here
+                if (o->function->in_args.size > i && o->function->in_args[i].has_default_value) {
+                    Owned<Abstx_simple_literal> default_value = alloc(Abstx_simple_literal());
+                    default_value->set_owner(o);
+                    default_value->context = it->context;
+                    ASSERT(o->function->in_args[i].identifier->has_constant_value());
+                    default_value->value = o->function->in_args[i].identifier->get_constant_value();
+                    default_value->status = Parsing_status::FULLY_RESOLVED;
+                    o->in_args[i] = owned_static_cast<Value_expression>(std::move(default_value));
+                } else {
+                    log_error("Missing argument to function; expected argument of type "+type->toS(), it->context);
+                    add_note("Function literal here does not have default argument for argument "+std::to_string(i), o->function->context);
+                    o->status = Parsing_status::TYPE_ERROR;
+                }
+            } else {
+                log_error("Missing argument to function; expected argument of type "+type->toS(), it->context);
+                o->status = Parsing_status::TYPE_ERROR;
+            }
+            // check for constant values (if no other error, and if function literal could be inferred)
+            if (!is_error(o->status) && o->function && o->function->in_args[i].generic_id && !o->in_args[i]->has_constant_value()) {
+                log_error("Non-constant value supplied for function argument that must be constant", o->in_args[i]->context);
+                add_note("Argument marked as constant here", o->function->in_args[i].identifier->context);
+                o->status = Parsing_status::COMPILE_TIME_ERROR;
+            }
+        }
+        // Note: Out argument types are checked somewhere else
+
+        // if (!is_error(status) && status != Parsing_status::DEPENDENCIES_NEEDED) {
+        //     // @TODO: compile and run #modify block
+        // }
     }
-    if (it.expect_failed()) {
-        o->status = Parsing_status::FATAL_ERROR;
-    }
+
+    // some cleanup: check for closing paren and update status
+    it.assert(Token_type::SYMBOL, ")"); // this is already checked / now eat the token
+    if (it.expect_failed()) o->status = Parsing_status::FATAL_ERROR;
+    if (!is_error(o->status) && o->status != Parsing_status::DEPENDENCIES_NEEDED) o->status = Parsing_status::FULLY_RESOLVED;
 
     // create a function call expression to reference the function call statement
     Owned<Abstx_function_call_expression> expr = alloc(Abstx_function_call_expression());
@@ -588,7 +636,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
 
 Parsing_status Abstx_function_call::fully_parse() {
     // Abstx_function_call is just an imaginary construct with no token context
-    // It should always be finished during read_function_call()
+    // It should be finalized during initial parsing
     ASSERT(is_error(status) || is_codegen_ready(status));
     return status;
 }
@@ -848,7 +896,10 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
 
     if (!is_fatal(o->scope.status)) {
         it.expect(Token_type::SYMBOL, "}");
-        if (it.expect_failed()) o->status == Parsing_status::FATAL_ERROR;
+        if (it.expect_failed()) {
+            add_note("In function literal here", o->context);
+            o->status == Parsing_status::FATAL_ERROR;
+        }
     } else {
         o->status = Parsing_status::FATAL_ERROR;
     }

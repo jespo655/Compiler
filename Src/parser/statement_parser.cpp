@@ -626,6 +626,7 @@ Parsing_status read_assignment_statement(Token_iterator& it, Shared<Abstx_scope>
 
     it.expect_end_of_statement();
     if (it.expect_failed()) {
+        add_note("In assignment statement here", o->context);
         if (!is_fatal(o->status)) o->status = Parsing_status::SYNTAX_ERROR;
     }
 
@@ -758,6 +759,7 @@ Parsing_status read_c_code_statement(Token_iterator& it, Shared<Abstx_scope> par
 
     it.expect_end_of_statement();
     if (it.expect_failed()) {
+        add_note("In #C statement here", o->context);
         o->status = Parsing_status::FATAL_ERROR;
     }
 
@@ -792,7 +794,11 @@ Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> pare
         log_warning("Non-function call used as a statement - it might be ignored", expr->context);
     }
     it.expect_end_of_statement();
-    if (it.expect_failed()) return Parsing_status::SYNTAX_ERROR;
+    if (it.expect_failed()) {
+        ASSERT(expr);
+        add_note("in value statement here", expr->context); // @debug
+        return Parsing_status::SYNTAX_ERROR;
+    }
     else return expr->status;
     // expr will be deallocated; but if any function calls were included in the expression, they will have been inserted in the
     //   parent scope as individual function call statements (and won't be deallocated)

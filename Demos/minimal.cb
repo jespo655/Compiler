@@ -22,13 +22,13 @@
 
 
 
-hw :: fn(i:int) {
+hw :: fn(i:int, j:int) {
     #C #string here printf("hello world #%d!\n", i); here;
 };
 
 
 main :: fn() {
-    hw(2);
+    -3.hw(-3);
 };
 
 
