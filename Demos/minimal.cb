@@ -22,13 +22,15 @@
 
 
 
-hw :: fn(i:int, j:int) {
+hw :: fn($i:int, j:int) {
     #C #string here printf("hello world #%d!\n", i); here;
 };
 
+a :: -2;
 
 main :: fn() {
-    -3.hw(-3);
+    a.hw(-4);
+    hw(-1,2);
 };
 
 

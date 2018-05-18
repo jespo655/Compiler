@@ -125,7 +125,7 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
                 else if (t.is_eof() || t.token == ")" || t.token == "]" || t.token == "}") {
                     // unable to find a proper statement
                     log_error("Missing ';' at the end of statement: expected \";\" before \""+t.token+"\"", t.context);
-                    add_note("In unresolved statement that started here: ", it.look_at(start_index).context);
+                    add_note("In unresolved statement here", it.look_at(start_index).context);
                     return Parsing_status::FATAL_ERROR;
                 }
             }
@@ -140,23 +140,18 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
 
 Parsing_status read_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope) {
     Parsing_status status = Parsing_status::NOT_PARSED;
-    while (!is_error(status) && !it.compare(Token_type::SYMBOL, "}") && !is_eof(it->type)) {
+    while (!it.compare(Token_type::SYMBOL, "}") && !is_eof(it->type)) {
         status = read_statement(it, scope);
+        ASSERT(!(scope->dynamic() && status == Parsing_status::DEPENDENCIES_NEEDED)); // DEPENDENCIES_NEEDED not allowd in dynamic scopes - everything should be verifiable immedately; otherwise there should be an error
+        // add_note("read statement with status "+toS(status)+", now it is here", it->context); // @debug
         // fatal error -> give up
-        // other error -> failed to parse dynamic scope, but we can continue with other stuff if we find the closing brace
-        if (is_error(status) && !is_fatal(status)) {
-            // it.current_index = it.find_matching_brace(scope->start_token_index); // gives better error messages
-            it.current_index = it.find_matching_brace(); // faster
-            if (it.expect_failed()) {
-                add_note("In scope that started here", scope->context); // "good enough" error message for fast solution
-                scope->status = Parsing_status::FATAL_ERROR;
-            } else {
-                scope->status = status;
-            }
-            return scope->status;
+        // other error -> failed to parse dynamic scope, but we can continue anyway to get more error messages
+        if (is_error(status)) {
+            scope->status = status;
+            if (is_fatal(scope->status)) return scope->status; // give up
         }
     }
-    if (!is_error(scope->status) && scope->status != Parsing_status::DEPENDENCIES_NEEDED) {
+    if (!is_error(scope->status)) {
         scope->status = Parsing_status::FULLY_RESOLVED;
     }
     return scope->status;

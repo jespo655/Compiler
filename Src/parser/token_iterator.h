@@ -56,7 +56,7 @@ struct Token_iterator
     const Token& look_at(int n) {
         if (n < 0 || n >= tokens.size) {
             error = true;
-            return tokens[tokens.size-1];
+            return tokens[tokens.size-1]; // should be eof token
         }
         error = false;
         return tokens[n];
@@ -94,24 +94,18 @@ struct Token_iterator
     // If the token type didn't match the expected type, also logs an error.
     const Token& expect(const Token_type& expected_type)
     {
-        const Token& t = eat_token(); // sets error to false
-        if (t.type != expected_type) {
-            log_error("Expected token of type "+toS(expected_type)+", but found type "+toS(t.type), t.context);
-            error = true;
-        }
+        const Token& t = expect_current(expected_type);
+        if (!error) eat_token(); // eat the expected token
         return t;
     }
 
 
     // Returns the current token and increments the current_index.
     // If the token didn't match the expectation, also logs an error.
-    const Token& expect(const Token_type& expected_type, std::string expected_token)
+    const Token& expect(const Token_type& expected_type, const std::string& expected_token)
     {
-        const Token& t = eat_token(); // sets error to false
-        if (t.type != expected_type || t.token != expected_token) {
-            log_error("Expected token \""+expected_token+"\" ("+toS(expected_type)+"), but found \""+t.token+"\" ("+toS(t.type)+")", t.context);
-            error = true;
-        }
+        const Token& t = expect_current(expected_type, expected_token);
+        if (!error) eat_token(); // eat the expected token
         return t;
     }
 
@@ -125,7 +119,7 @@ struct Token_iterator
         return t;
     }
 
-    const Token& expect_current(const Token_type& expected_type, std::string expected_token)
+    const Token& expect_current(const Token_type& expected_type, const std::string& expected_token)
     {
         const Token& t = current_token(); // sets error to false
         if (t.type != expected_type || t.token != expected_token) {
@@ -137,11 +131,11 @@ struct Token_iterator
 
     const Token& expect_end_of_statement()
     {
-        const Token& t = eat_token(); // sets error to false
+        const Token& t = current_token(); // sets error to false
         if (t.type != Token_type::SYMBOL || t.token != ";") {
             log_error("Missing ';' at the end of statement: expected \";\" before \""+t.token+"\"", t.context);
             error = true;
-        }
+        } else eat_token();
         return t;
     }
 
@@ -150,14 +144,14 @@ struct Token_iterator
 
     // ASSERTs that the current token is next, then eat it
     // Used like expect, but gives compiler runtime error instead of a logged compile error.
-    const Token& assert(const Token_type& expected_type, std::string expected_token="")
+    const Token& assert(const Token_type& expected_type, const std::string& expected_token="")
     {
         ASSERT(!error);
         ASSERT((*this)->type == expected_type && expected_token=="" || (*this)->token == expected_token, "Expected '"+expected_token+"' token");
         return eat_token();
     }
 
-    const Token& assert_current(const Token_type& expected_type, std::string expected_token="")
+    const Token& assert_current(const Token_type& expected_type, const std::string& expected_token="")
     {
         ASSERT(!error);
         ASSERT((*this)->type == expected_type && expected_token=="" || (*this)->token == expected_token);
@@ -166,21 +160,26 @@ struct Token_iterator
 
 
     // If error, logs an appropriate error and returns -1
-    int find_matching_token(int index, const Token_type& expected_closing_type, const std::string& expected_closing_token, const std::string& range_name, const std::string& error_string, bool forward=true, bool log_errors=true)
+    int find_matching_token(int index, const Token_type& expected_closing_type, const std::string& expected_closing_token, const std::string& range_name, const std::string& error_string, bool forward=true, bool from_middle=false, bool log_errors=true)
     {
         const Token& start_token = look_at(index);
-        ASSERT(!start_token.is_eof());
+        if (start_token.type == expected_closing_type && start_token.token == expected_closing_token) return index;
+
+        std::cout << "finding " << expected_closing_token << " from index " << index << " ('" << start_token.token << "')" << (forward?" (forward)":" (backwards)") << std::endl;
 
         int step = forward ? 1 : -1;
 
         while(true) {
+            index += step;
             const Token& t = look_at(index);
 
             if (t.is_eof()) {
                 if (log_errors) {
                     log_error("Missing \""+expected_closing_token+"\" at end of file",t.context);
-                    if (forward) add_note("In "+range_name+" that started here: ",start_token.context);
-                    else add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                    if (!from_middle) {
+                        if (forward) add_note("In "+range_name+" that started here: ",start_token.context);
+                        else add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                    }
                 }
                 error = true;
                 return -1;
@@ -194,27 +193,27 @@ struct Token_iterator
             if (t.type == Token_type::SYMBOL) {
 
                 if (forward) {
-                    if      (t.token == "(") index = find_matching_paren(index);
-                    else if (t.token == "[") index = find_matching_bracket(index);
-                    else if (t.token == "{") index = find_matching_brace(index);
+                    if      (t.token == "(") index = find_matching_paren(index, log_errors);
+                    else if (t.token == "[") index = find_matching_bracket(index, log_errors);
+                    else if (t.token == "{") index = find_matching_brace(index, log_errors);
 
                     else if (t.token == ")" || t.token == "]" || t.token == "}") {
                         if (log_errors) {
                             log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
-                            add_note("In "+range_name+" that started here: ",start_token.context);
+                            if (!from_middle) add_note("In "+range_name+" that started here: ",start_token.context);
                         }
                         error = true;
                         return -1;
                     }
                 } else {
-                    if      (t.token == ")") index = find_matching_paren(index);
-                    else if (t.token == "]") index = find_matching_bracket(index);
-                    else if (t.token == "}") index = find_matching_brace(index);
+                    if      (t.token == ")") index = find_matching_paren(index, log_errors);
+                    else if (t.token == "]") index = find_matching_bracket(index, log_errors);
+                    else if (t.token == "}") index = find_matching_brace(index, log_errors);
 
                     else if (t.token == "(" || t.token == "[" || t.token == "{") {
                         if (log_errors) {
                             log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
-                            add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                            if (!from_middle) add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
                         }
                         error = true;
                         return -1;
@@ -223,41 +222,40 @@ struct Token_iterator
 
                 if (index == -1) return -1;
             }
-            index += step;
         }
     }
 
-    int find_matching_paren(int index=-1)
+    int find_matching_paren(int index=-1, bool log_errors=true)
     {
         if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size);
         // ASSERT(tokens[index].type == Token_type::SYMBOL && (tokens[index].token == "(" || tokens[index].token == ")"));
         if (tokens[index].type == Token_type::SYMBOL && tokens[index].token == ")")
-             return find_matching_token(index-1, Token_type::SYMBOL, "(","paren","Mismatched paren", false); // search backwards
-        else return find_matching_token(index+1, Token_type::SYMBOL, ")","paren","Mismatched paren");
+             return find_matching_token(index, Token_type::SYMBOL, "(","paren","Mismatched paren", false, false, log_errors); // search backwards
+        else return find_matching_token(index, Token_type::SYMBOL, ")","paren","Mismatched paren", true, !(tokens[index].type == Token_type::SYMBOL && tokens[index].token == "("), log_errors);
     }
 
-    int find_matching_bracket(int index=-1)
+    int find_matching_bracket(int index=-1, bool log_errors=true)
     {
         if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size);
         // ASSERT(tokens[index].type == Token_type::SYMBOL && (tokens[index].token == "[" || tokens[index].token == "]"));
         if (tokens[index].type == Token_type::SYMBOL && tokens[index].token == "]")
-             return find_matching_token(index-1, Token_type::SYMBOL, "[","bracket","Mismatched bracket", false); // search backwards
-        else return find_matching_token(index+1, Token_type::SYMBOL, "]","bracket","Mismatched bracket");
+             return find_matching_token(index, Token_type::SYMBOL, "[","bracket","Mismatched bracket", false, false, log_errors); // search backwards
+        else return find_matching_token(index, Token_type::SYMBOL, "]","bracket","Mismatched bracket", true, !(tokens[index].type == Token_type::SYMBOL && tokens[index].token == "["), log_errors);
     }
 
-    int find_matching_brace(int index=-1)
+    int find_matching_brace(int index=-1, bool log_errors=true)
     {
         if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size);
         // ASSERT(tokens[index].type == Token_type::SYMBOL && (tokens[index].token == "{" || tokens[index].token == "}"));
         if (tokens[index].type == Token_type::SYMBOL && tokens[index].token == "}")
-             return find_matching_token(index-1, Token_type::SYMBOL, "{","brace","Mismatched brace", false); // search backwards
-        else return find_matching_token(index+1, Token_type::SYMBOL, "}","brace","Mismatched brace");
+             return find_matching_token(index, Token_type::SYMBOL, "{","brace","Mismatched brace", false, false, log_errors); // search backwards
+        else return find_matching_token(index, Token_type::SYMBOL, "}","brace","Mismatched brace", true, !(tokens[index].type == Token_type::SYMBOL && tokens[index].token == "{"), log_errors);
     }
 
-    int find_matching_semicolon(int index=-1)
+    int find_matching_semicolon(int index=-1, bool log_errors=true)
     {
         if (index == -1) index = current_index;
         ASSERT(index >= 0 && index < tokens.size);

@@ -592,7 +592,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
                     o->in_args[i] = owned_static_cast<Value_expression>(std::move(default_value));
                 } else {
                     log_error("Missing argument to function; expected argument of type "+type->toS(), it->context);
-                    add_note("Function literal here does not have default argument for argument "+std::to_string(i), o->function->context);
+                    add_note("Function literal here does not have default argument for argument "+o->function->in_args[i].identifier->toS(), o->function->in_args[i].identifier->context);
                     o->status = Parsing_status::TYPE_ERROR;
                 }
             } else {
