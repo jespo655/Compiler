@@ -450,28 +450,32 @@ void code_gen_test()
     bool progress = false;
     bool done = true;
     for (const auto& s : gs->statements) {
+        ASSERT(s); // no statement can be nullpointer here
+        LOG("# statement at [" << s->context.toS() << "]");
         if (!is_codegen_ready(s->status) && !is_error(s->status)) {
             Parsing_status ps = s->fully_parse();
-            std::cout << "fully parsed statement: status " << ps << std::endl;
+            LOG("fully parsed statement [" << s->toS() << "]: status " << ps );
             if (!is_codegen_ready(ps)) done = false;
             else progress = true;
         }
     }
 
-    std::cout << "exiting if errors" << std::endl;
+    LOG("exiting if errors");
     exit_if_errors();
 
-    std::cout << "generating typedefs" << std::endl;
+    LOG("generating typedefs");
     generate_typedefs(std::cout);
 
-    std::cout << "generating statement code" << std::endl;
+    LOG("generating statement code");
     for (const auto& s : gs->statements) {
         ASSERT(s); // no statement can be nullpointer here
         // @TODO: any dependencies should be generated FIRST!
         s->generate_code(std::cout); // for now, just fully parse the statements
     }
 
+    LOG("generating used function code");
     for (const auto& fn : gs->used_functions) {
+        ASSERT(fn.second); // no f unction can be nullpointer here
         fn.second->generate_declaration(std::cout, std::cout);
     }
 

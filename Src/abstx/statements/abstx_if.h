@@ -50,6 +50,17 @@ struct Abstx_if : Statement {
             target << ") ";
             scope->generate_code(target);
         };
+
+        Parsing_status fully_parse() {
+            if (is_codegen_ready(status) || is_error(status)) return status;
+            condition->finalize();
+            // scope->fully_parse(); // @todo this should be done, right?
+
+            if (is_error(condition->status) && !is_fatal(status)) status = condition->status;
+            if (is_error(scope->status) && !is_fatal(status)) status = scope->status;
+            if (!is_error(status)) status = Parsing_status::FULLY_RESOLVED;
+            return status;
+        }
     };
 
 

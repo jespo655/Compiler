@@ -173,7 +173,7 @@ struct CB_Function : CB_Type
 
     bool is_primitive() const override { return true; }
 
-    void finalize() {
+    void finalize() override {
         std::string tos = toS();
         for (const auto& tn_pair : typenames) {
             if (tn_pair.second == tos) {

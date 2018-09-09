@@ -45,7 +45,7 @@ struct Variable_expression_reference : Variable_expression {
         return expr->generate_code(target);
     }
 
-    void finalize() {
+    void finalize() override {
         ASSERT(expr);
         expr->finalize();
         status = expr->status;

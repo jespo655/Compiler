@@ -115,6 +115,9 @@ struct CB_Type
     // alignment(): should return the minimum alignment according to c standard (1, 2, 4 or 8 (on 64bit) bytes)
     virtual size_t alignment() const { return cb_sizeof(); }
 
+    // finalize(): ensure that the uid is correct (important for complex types that might get duplicated)
+    virtual void finalize() { /* do nothing */ }
+
     const Any& default_value() const;
     size_t cb_sizeof() const { return cb_sizes[uid]; }
 

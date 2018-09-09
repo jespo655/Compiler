@@ -55,7 +55,7 @@ struct Abstx_identifier : Variable_expression {
         if (uid) target << "_" << uid; // uid suffix to avoid name C name clashes
     }
 
-    void finalize() {
+    void finalize() override {
         if (is_codegen_ready(status)) return;
         ASSERT(name != ""); // must be set during creation
         if (value.v_type == nullptr) {

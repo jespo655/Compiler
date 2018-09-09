@@ -45,10 +45,19 @@ struct Token_iterator
         return tokens[current_index];
     }
 
+    // Compares against the current token
     bool compare(Token_type type, const std::string& token)
     {
         const Token& t = current_token();
         return t.type == type && t.token == token;
+    }
+
+    // Compares against the current token and eats it if it matches
+    bool eat_conditonal(Token_type type, const std::string& token)
+    {
+        bool match = compare(type, token);
+        if (match && current_index < tokens.size-1) current_index++;
+        return match;
     }
 
     // Returns the token at a specific index.
@@ -74,10 +83,11 @@ struct Token_iterator
     const Token& eat_token()
     {
         const Token& t = current_token(); // sets error to false
-        if (current_index < tokens.size-1)
-            current_index++;
+        if (current_index < tokens.size-1) current_index++;
         return t;
     }
+
+
 
 
     // Increments the current_index by n.

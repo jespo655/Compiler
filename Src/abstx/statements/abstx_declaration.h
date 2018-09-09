@@ -46,7 +46,7 @@ struct Abstx_declaration : Statement {
                 first = false;
             }
         } else {
-            ASSERT(value_expressions.size > 0);
+            ASSERT(value_expressions.size > 0, context.toS());
         }
         if (value_expressions.size > 0) {
             if (all_typed) oss << " = ";

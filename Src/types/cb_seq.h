@@ -50,7 +50,7 @@ struct CB_Seq : CB_Type, CB_Iterable, CB_Indexable
 
     bool is_primitive() const override { return false; }
 
-    void finalize() {
+    void finalize() override {
         std::string tos = toS();
         for (const auto& tn_pair : typenames) {
             if (tn_pair.second == tos) {
@@ -174,7 +174,7 @@ struct CB_Fixed_seq : CB_Type, CB_Iterable, CB_Indexable
 
     bool is_primitive() const override { return false; }
 
-    void finalize() {
+    void finalize() override {
         // set default_value
         if (size != 0) {
             ASSERT(v_type != nullptr);

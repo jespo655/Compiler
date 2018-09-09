@@ -147,7 +147,7 @@ struct CB_Struct : CB_Type
         return nullptr;
     }
 
-    void finalize() {
+    void finalize() override {
         std::cout << "finalizing struct type" << std::endl;
         size_t total_size = 0;
         if (members.empty()) {

@@ -63,8 +63,8 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_n
         it.expect(Token_type::SYMBOL, ")");
         if (it.expect_failed()) {
             add_note("In paren enclosed value expression that started here", expr->context);
+            expr->status = Parsing_status::FATAL_ERROR; // mismatched parens -> fatal error
         }
-        expr->status = Parsing_status::FATAL_ERROR; // mismatched parens -> fatal error
 
     } else if (it->type == Token_type::SYMBOL && it->token == "[") {
         expr = read_sequence_literal(it, owner);
@@ -97,7 +97,7 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_n
 
     // all expressions should be able to be fully resolved immediately
     if (!(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED)) {
-        std::cerr << "unexpected expr status: " << expr->status << std::endl; // @debug
+        LOG("unexpected expr status: " << expr->status); // @debug
     }
     ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED);
 
@@ -160,6 +160,9 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_n
 
     ASSERT(expr != nullptr);
     ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED);
+
+    LOG("read literal " << expr->toS() << " with status " << expr->status << " at " << expr->context.toS());
+
     return expr;
 }
 
@@ -383,6 +386,7 @@ Owned<Value_expression> read_simple_literal(Token_iterator& it, Shared<Abstx_nod
     }
 
     o->finalize(); // try to finalize the expression
+
     return owned_static_cast<Value_expression>(std::move(o));
 }
 
