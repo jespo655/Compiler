@@ -165,7 +165,7 @@ struct Token_iterator
         const Token& start_token = look_at(index);
         if (start_token.type == expected_closing_type && start_token.token == expected_closing_token) return index;
 
-        std::cout << "finding " << expected_closing_token << " from index " << index << " ('" << start_token.token << "')" << (forward?" (forward)":" (backwards)") << std::endl;
+        // std::cout << "finding " << expected_closing_token << " from index " << index << " ('" << start_token.token << "')" << (forward?" (forward)":" (backwards)") << std::endl; // @debug
 
         int step = forward ? 1 : -1;
 

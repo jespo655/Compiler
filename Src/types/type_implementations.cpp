@@ -178,7 +178,7 @@ uint64_t parse_float(const Any& any) {
 
 Shared<const CB_Type> add_complex_cb_type(Owned<CB_Type>&& type) {
     ASSERT(type); // can't add nullptr
-    std::cout << "adding complex type " << type.toS() << std::endl;
+    LOG("adding complex type " << type.toS());
     CB_Type::c_typedef uid = type->uid;
     Shared<CB_Type> p = CB_Type::complex_types[uid];
     if (p != nullptr) return p;

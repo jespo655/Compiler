@@ -45,7 +45,7 @@ static std::ostream& operator<<(std::ostream& os, Parsing_status ps) {
     return os << toS(ps);
 }
 
-static is_error(Parsing_status p) {
+static bool is_error(Parsing_status p) {
     if (p == Parsing_status::NOT_PARSED
         || p == Parsing_status::PARTIALLY_PARSED
         || p == Parsing_status::FULLY_RESOLVED
@@ -54,10 +54,10 @@ static is_error(Parsing_status p) {
     return true;
 }
 
-static is_codegen_ready(Parsing_status p) {
+static bool is_codegen_ready(Parsing_status p) {
     return p == Parsing_status::FULLY_RESOLVED;
 }
 
-static is_fatal(Parsing_status p) {
+static bool is_fatal(Parsing_status p) {
     return p == Parsing_status::FATAL_ERROR;
 }

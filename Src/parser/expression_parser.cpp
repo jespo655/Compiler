@@ -468,6 +468,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
         foo(_cb_tmp_1, _cb_tmp_2, &a, &b); // outer fn call
     */
 
+
     // Allocate abstx node
     Owned<Abstx_function_call> o = alloc(Abstx_function_call());
     o->owner = owner; // temporary
@@ -628,7 +629,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
     expr->finalize();
 
     // add the function call statement to parent scope as a separate statement
-    o->parent_scope()->statements.add(owned_static_cast<Statement>(std::move(o)));
+    expr->parent_scope()->statements.add(owned_static_cast<Statement>(std::move(o)));
 
     // return the function call expression
     return owned_static_cast<Variable_expression>(std::move(expr));
@@ -815,18 +816,18 @@ void read_function_arguments(Token_iterator& it, Shared<Abstx_function_literal> 
 
 Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_node> owner)
 {
-    std::cout << "reading function literal" << std::endl;
+    LOG("reading function literal");
     Owned<Abstx_function_literal> o = alloc(Abstx_function_literal());
     o->owner = owner;
     o->context = it->context;
     o->start_token_index = it.current_index;
 
-    std::cout << "initializing fn scope" << std::endl;
+    LOG("initializing fn scope");
     o->scope.set_owner(o);
     o->scope.flags += SCOPE_DYNAMIC;
     o->scope.status = Parsing_status::NOT_PARSED;
 
-    std::cout << "initializing fn id" << std::endl;
+    LOG("initializing fn id");
     o->function_identifier.set_owner(o);
     o->function_identifier.value_expression = static_pointer_cast<Value_expression>(o);
     o->function_identifier.name = "_cb_fn";
@@ -843,7 +844,7 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
     }
 
     if (!it.compare(Token_type::SYMBOL, ")")) {
-        std::cout << "reading in arguments" << std::endl;
+        LOG("reading in arguments");
         // read in arguments
         read_function_arguments(it, o, true, true); // in arguments
 
@@ -857,7 +858,7 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
     it.expect(Token_type::SYMBOL, ")");
 
     if (it.compare(Token_type::SYMBOL, "->")) {
-        std::cout << "reading out arguments" << std::endl;
+        LOG("reading out arguments");
         // read out arguments
         it.eat_token(); // eat the "->" token
         bool parens = false;

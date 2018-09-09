@@ -49,9 +49,9 @@ struct Abstx_identifier_reference : Variable_expression {
         if (id != nullptr) {
             id->finalize();
             status = id->status;
-            std::cout << "Abstx_identifier_reference.finalize(): finalized identifier " << name << " has status " << id->status << std::endl;
+            LOG("Abstx_identifier_reference.finalize(): finalized identifier " << name << " has status " << id->status);
         } else {
-            std::cout << "Abstx_identifier_reference.finalize(): failed to get identifier " << name << " -> setting Parsing_status::DEPENDENCIES_NEEDED" << std::endl;
+            LOG("Abstx_identifier_reference.finalize(): failed to get identifier " << name << " -> setting Parsing_status::DEPENDENCIES_NEEDED");
             status = Parsing_status::DEPENDENCIES_NEEDED;
         }
     }

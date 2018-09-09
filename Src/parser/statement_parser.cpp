@@ -301,7 +301,7 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
 
     // TODO: add special check for if the first token is ':'
 
-    // std::cout << "reading declaration statement" << std::endl; // @debug
+    // LOG("reading declaration statement");
     while (1) {
         // allocate abstx identifier and set base info
         Owned<Abstx_identifier> id = alloc(Abstx_identifier());
@@ -309,7 +309,7 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
         id->context = it->context;
         id->start_token_index = it.current_index;
 
-        // std::cout << "reading declared identifier starting with token " << it->toS() << " at index " << it.current_index << std::endl; // @debug
+        // LOG("reading declared identifier starting with token " << it->toS() << " at index " << it.current_index);
 
         // read identifier token
         if (it.compare(Token_type::KEYWORD, "operator")) {
@@ -358,7 +358,7 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
         add_note("In declaration statement here", s->context);
     }
 
-    // std::cout << "done reading declaration" << std::endl; // @debug
+    // LOG("done reading declaration");
 
     // we are done reading -> set the start_token_index to the first value of RHS
     s->start_token_index = it.current_index;
@@ -393,7 +393,7 @@ Parsing_status Abstx_declaration::fully_parse() {
     ASSERT(identifiers.size != 0);
     Token_iterator it = global_scope()->iterator(start_token_index); // starting with the first value after the ':' token
 
-    // std::cout << "fully parsing declaration statement starting with token " << it->toS() << " at index " << it.current_index << std::endl; // @debug
+    // LOG("fully parsing declaration statement starting with token " << it->toS() << " at index " << it.current_index);
 
     // @todo: allow constant function calls as type identifiers
     // @todo: allow #run function calls as type identifiers
@@ -415,7 +415,7 @@ Parsing_status Abstx_declaration::fully_parse() {
                 return status;
 
             } else if (type_expr->status == Parsing_status::DEPENDENCIES_NEEDED) {
-                std::cout << "type expression has Parsing_status::DEPENDENCIES_NEEDED" << std::endl;
+                LOG("type expression has Parsing_status::DEPENDENCIES_NEEDED");
                 status = type_expr->status;
                 // continue reading
             } else if (Shared<Abstx_function_call_expression> fn_call = dynamic_pointer_cast<Abstx_function_call_expression>(type_expr)) {
@@ -456,7 +456,7 @@ Parsing_status Abstx_declaration::fully_parse() {
             }
         }
 
-        // std::cout << "assigning types" << std::endl; // @debug
+        // LOG("assigning types");
 
         // list must either be of size 1 (all identifiers have the same type) or the same size as the number of identifiers
         if (type_expressions.size != 1 && type_expressions.size != identifiers.size) {
@@ -483,7 +483,7 @@ Parsing_status Abstx_declaration::fully_parse() {
         bool constant = it.compare(Token_type::SYMBOL, ":");
         it.eat_token(); // eat the ':'/'=' token
 
-        // std::cout << "reading " << (constant?"constant":"non-constant") << " values in declaration" << std::endl; // @debug
+        // LOG("reading " << (constant?"constant":"non-constant") << " values in declaration");
 
         // read list of values and check for errors
         Parsing_status rhs_status = read_value_rhs(it, this, value_expressions, constant);
@@ -492,7 +492,7 @@ Parsing_status Abstx_declaration::fully_parse() {
             return status;
         }
 
-        // std::cout << "assigning " << (constant?"constant":"non-constant") << " values" << std::endl; // @debug
+        // LOG("assigning " << (constant?"constant":"non-constant") << " values");
 
         // list must either be of size 1 (all identifiers have the same value) or the same size as the number of identifiers
         if (value_expressions.size != 1 && value_expressions.size != identifiers.size) {
@@ -539,7 +539,7 @@ Parsing_status Abstx_declaration::fully_parse() {
 
     }
 
-    // std::cout << "end of declaration statement" << std::endl; // @debug
+    // LOG("end of declaration statement");
 
     it.expect_end_of_statement();
     if (it.expect_failed()) {
@@ -880,7 +880,7 @@ Parsing_status Abstx_function_call::fully_parse() override {
         status = function_pointer->status;
         return status;
     }
-    return status;function_pointer
+    return status;
 }
 Parsing_status Abstx_function_call::finalize() override {
     if (is_codegen_ready(status)) return status;

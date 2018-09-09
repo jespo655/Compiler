@@ -58,3 +58,15 @@ private:
         }
     }
 };
+
+
+
+#ifdef DEBUG
+#define LOG(s) \
+    do { \
+        std::cout << __FILE__ << ":" << __LINE__ << ": " << s << std::endl; \
+    } while(0)
+#else
+#define LOG(s) void(0)
+#endif
+

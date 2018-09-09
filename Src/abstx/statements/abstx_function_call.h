@@ -63,7 +63,7 @@ struct Abstx_function_call : Statement
 
     std::string toS() const override { return "function call statement"; }
 
-    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
+    Parsing_status fully_parse() override; // implemented in expression_parser.cpp
 
     void generate_code(std::ostream& target) const override
     {
