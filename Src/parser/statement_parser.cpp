@@ -202,9 +202,10 @@ Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> pare
 
     if (!parent_scope->dynamic()) {
         // only allowed in dynamic context
-        log_error("Anonymous scope used in static context. That makes no sense! Did you mean \"using {...};\"?", it->context);
+        log_error("Anonymous scope used in static context. That makes no sense!", it->context);
         s->status = Parsing_status::SYNTAX_ERROR;
-        it.current_index = it.find_matching_brace();
+        it.current_index = it.find_matching_brace() + 1; // go past the } token
+        if (it.expect_failed()) s->status = Parsing_status::FATAL_ERROR;
 
     } else {
         // read scope
@@ -219,11 +220,6 @@ Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> pare
     }
     ASSERT(s != nullptr);
     return s->status;
-}
-
-Parsing_status Abstx_anonymous_scope::fully_parse() {
-    if (status != Parsing_status::PARTIALLY_PARSED && status != Parsing_status::DEPENDENCIES_NEEDED) return status;
-    // @TODO
 }
 
 
@@ -289,7 +285,7 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
 
     // @todo operator declaration - they have a different identifier syntax
 
-    LOG("reading declaration statement at " << it->context.toS());
+    // LOG("reading declaration statement at " << it->context.toS());
 
     Owned<Abstx_declaration> o = alloc(Abstx_declaration()); // will be destroyed later
     Shared<Abstx_declaration> s = o; // shared pointer that we can use and modify however we like
@@ -699,54 +695,57 @@ Parsing_status read_if_statement(Token_iterator& it, Shared<Abstx_scope> parent_
     it.assert(Token_type::KEYWORD, "if");
 
     Owned<Abstx_if> o = alloc(Abstx_if()); // will be destroyed later
-    Shared<Abstx_if> s = o; // shared pointer that we can use and modify however we like
-    s->set_owner(parent_scope);
-    s->context = it->context;
-    s->start_token_index = it.current_index;
-    s->status = Parsing_status::NOT_PARSED;
+    o->set_owner(parent_scope);
+    o->context = it->context;
+    o->start_token_index = it.current_index;
+    o->status = Parsing_status::NOT_PARSED;
 
-    // read conditional scope(s)
+    // read conditional scope(o)
     do {
         Owned<Abstx_if::Abstx_conditional_scope> cs = alloc(Abstx_if::Abstx_conditional_scope());
         cs->set_owner(parent_scope);
         cs->context = it->context;
         cs->start_token_index = it.current_index;
 
-        cs->condition = read_value_expression(it, static_pointer_cast<Abstx_node>(s)); // parens not required
+        cs->condition = read_value_expression(it, static_pointer_cast<Abstx_node>(o)); // parens not required
         if (is_error(cs->condition->status) && !is_fatal(cs->status)) cs->status = cs->condition->status;
 
         it.expect_current(Token_type::SYMBOL, "{");
         if (it.expect_failed() && !is_fatal(cs->status)) {
             cs->status = Parsing_status::SYNTAX_ERROR;
         } else {
-            cs->scope = read_scope(it, s->parent_scope()); // braces required
+            cs->scope = read_scope(it, o->parent_scope()); // braces required
             if (is_error(cs->scope->status) && !is_fatal(cs->status)) cs->status = cs->scope->status;
         }
 
-        if (is_error(cs->status) && !is_fatal(s->status)) s->status = cs->status;
-        if (is_fatal(s->status)) return s->status;
+        if (is_error(cs->status) && !is_fatal(o->status)) o->status = cs->status;
+        if (is_fatal(o->status)) break;
 
-        s->conditional_scopes.add(std::move(cs));
+        o->conditional_scopes.add(std::move(cs));
 
     } while (it.eat_conditonal(Token_type::KEYWORD, "elsif"));
 
     // read else scope if applicable
     if (it.eat_conditonal(Token_type::KEYWORD, "else")) {
-        s->else_scope = read_scope(it, s->parent_scope());
-        if (is_error(s->status) && !is_fatal(s->status)) s->status = s->else_scope->status;
+        o->else_scope = read_scope(it, o->parent_scope());
+        if (is_error(o->status) && !is_fatal(o->status)) o->status = o->else_scope->status;
     }
 
-    if (!is_error(s->status)) {
-        s->status = Parsing_status::PARTIALLY_PARSED;
+    if (!is_error(o->status)) {
+        o->status = Parsing_status::PARTIALLY_PARSED;
     }
+
+    LOG("Read if statement with status " << o->status << " at " << o->context.toS());
+
+    Parsing_status status = o->status;
     parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
     ASSERT(o == nullptr);
-    return s->status;
+    return status;
 }
 
 // temporary implementations, TODO: implement these
 Parsing_status read_for_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(it.compare(Token_type::KEYWORD, "for"));
+    it.assert(Token_type::KEYWORD, "for");
 
     Owned<Abstx_for> o = alloc(Abstx_for());
     o->set_owner(parent_scope);
@@ -758,11 +757,15 @@ Parsing_status read_for_statement(Token_iterator& it, Shared<Abstx_scope> parent
     log_error("For statement not yet implemented!", o->context);
     o->status = Parsing_status::SYNTAX_ERROR;
     it.eat_token(); // eat token for now to ensure we don't get stuck in an infinite loop
-    return o->status;
+
+    Parsing_status status = o->status;
+    parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
+    ASSERT(o == nullptr);
+    return status;
 }
 
 Parsing_status read_while_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(it.compare(Token_type::KEYWORD, "while"));
+    it.assert(Token_type::KEYWORD, "while");
 
     Owned<Abstx_while> o = alloc(Abstx_while());
     o->set_owner(parent_scope);
@@ -774,11 +777,15 @@ Parsing_status read_while_statement(Token_iterator& it, Shared<Abstx_scope> pare
     log_error("While statement not yet implemented!", o->context);
     o->status = Parsing_status::SYNTAX_ERROR;
     it.eat_token(); // eat token for now to ensure we don't get stuck in an infinite loop
-    return o->status;
+
+    Parsing_status status = o->status;
+    parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
+    ASSERT(o == nullptr);
+    return status;
 }
 
 Parsing_status read_return_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(it.compare(Token_type::KEYWORD, "return"));
+    it.assert(Token_type::KEYWORD, "return");
 
     Owned<Abstx_return> o = alloc(Abstx_return());
     o->set_owner(parent_scope);
@@ -790,11 +797,15 @@ Parsing_status read_return_statement(Token_iterator& it, Shared<Abstx_scope> par
     log_error("Return statement not yet implemented!", o->context);
     o->status = Parsing_status::SYNTAX_ERROR;
     it.eat_token(); // eat token for now to ensure we don't get stuck in an infinite loop
-    return o->status;
+
+    Parsing_status status = o->status;
+    parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
+    ASSERT(o == nullptr);
+    return status;
 }
 
 Parsing_status read_defer_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(it.compare(Token_type::KEYWORD, "defer"));
+    it.assert(Token_type::KEYWORD, "defer");
 
     Owned<Abstx_defer> o = alloc(Abstx_defer());
     o->set_owner(parent_scope);
@@ -806,23 +817,36 @@ Parsing_status read_defer_statement(Token_iterator& it, Shared<Abstx_scope> pare
     log_error("Defer statement not yet implemented!", o->context);
     o->status = Parsing_status::SYNTAX_ERROR;
     it.eat_token(); // eat token for now to ensure we don't get stuck in an infinite loop
-    return o->status;
+
+    Parsing_status status = o->status;
+    parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
+    ASSERT(o == nullptr);
+    return status;
 }
 
 Parsing_status read_using_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(it.compare(Token_type::KEYWORD, "using"));
+    it.assert(Token_type::KEYWORD, "using");
 
     Owned<Abstx_using> o = alloc(Abstx_using());
     o->set_owner(parent_scope);
     o->context = it->context;
     o->start_token_index = it.current_index;
 
-    // it.expect(Token_type::SYMBOL, "(");
+    // for now: just read to matching semicolon
+    it.current_index = it.find_matching_semicolon() + 1;
+    if (it.expect_failed()) {
+        o->status = Parsing_status::SYNTAX_ERROR;
+    }
 
-    log_error("Using statement not yet implemented!", o->context);
-    o->status = Parsing_status::SYNTAX_ERROR;
-    it.eat_token(); // eat token for now to ensure we don't get stuck in an infinite loop
-    return o->status;
+    if (!is_error(o->status)) o->status = Parsing_status::PARTIALLY_PARSED;
+
+    LOG("read using statement with status " << o->status << "; next token: " << it->token);
+
+    Parsing_status status = o->status;
+    parent_scope->using_statements.add(o);
+    parent_scope->statements.add(std::move(owned_static_cast<Statement>(std::move(o))));
+    ASSERT(o == nullptr);
+    return status;
 }
 
 Parsing_status read_c_code_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
@@ -908,17 +932,19 @@ Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx
 
 
 Parsing_status Abstx_if::fully_parse() {
+    LOG("Abstx_if::fully_parse");
+
     if (is_codegen_ready(status) || is_error(status)) return status;
-    // @TODO implement properly
     for (const auto& cs : conditional_scopes) {
         if (!is_codegen_ready(cs->fully_parse())) {
             status = cs->status;
+            LOG("error: " << status);
             return status;
         }
     }
-    if (else_scope != nullptr && !is_codegen_ready(else_scope->status)) {
-    // if (else_scope != nullptr && !is_codegen_ready(else_scope->fully_parse())) {
+    if (else_scope != nullptr && !is_codegen_ready(else_scope->fully_parse())) {
         status = else_scope->status;
+        LOG("error: " << status);
         return status;
     }
     // if (then_scope != nullptr && !is_codegen_ready(then_scope->fully_parse())) {
@@ -933,9 +959,12 @@ Parsing_status Abstx_if::fully_parse() {
 
 Parsing_status Abstx_using::fully_parse() {
     if (is_codegen_ready(status)) return status;
-    // @TODO implement
-    // we reached the end -> we are done
-    // status = Parsing_status::FULLY_RESOLVED;
+
+    auto it = parse_begin();
+    subject = read_value_expression(it, this);
+    subject->finalize();
+
+    status = subject->status;
     return status;
 }
 

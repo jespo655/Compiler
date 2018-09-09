@@ -54,7 +54,7 @@ struct Abstx_if : Statement {
         Parsing_status fully_parse() {
             if (is_codegen_ready(status) || is_error(status)) return status;
             condition->finalize();
-            // scope->fully_parse(); // @todo this should be done, right?
+            scope->fully_parse();
 
             if (is_error(condition->status) && !is_fatal(status)) status = condition->status;
             if (is_error(scope->status) && !is_fatal(status)) status = scope->status;
@@ -102,6 +102,7 @@ struct Abstx_if : Statement {
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) const override {
+        if (!is_codegen_ready(status)) LOG("status is " << status);
         ASSERT(is_codegen_ready(status));
         for (int i = 0; i < conditional_scopes.size; ++i) {
             if (i) target << "else ";

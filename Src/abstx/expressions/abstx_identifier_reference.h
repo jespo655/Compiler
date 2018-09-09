@@ -49,7 +49,7 @@ struct Abstx_identifier_reference : Variable_expression {
         if (id != nullptr) {
             id->finalize();
             status = id->status;
-            LOG("Abstx_identifier_reference.finalize(): finalized identifier " << name << " has status " << id->status);
+            // LOG("Abstx_identifier_reference.finalize(): finalized identifier " << name << " has status " << id->status);
         } else {
             LOG("Abstx_identifier_reference.finalize(): failed to get identifier " << name << " -> setting Parsing_status::DEPENDENCIES_NEEDED");
             status = Parsing_status::DEPENDENCIES_NEEDED;

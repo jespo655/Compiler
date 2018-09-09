@@ -179,6 +179,28 @@ struct Abstx_scope : Abstx_node
         target << "}" << std::endl;
     };
 
+    virtual Parsing_status fully_parse() {
+        // if global scope: everything is read and has a type
+        // if dynamic scope: everything has to be fully parsed in order
+        // in either case, everything should be able to be fully parsed immediately
+
+        LOG("fully parsing scope with " << statements.size << " statements at " << context.toS());
+
+        for (const auto& s : statements) {
+            ASSERT(s); // no statement can be nullpointer here
+            if (!is_codegen_ready(s->status) && !is_error(s->status)) {
+                s->fully_parse();
+                if (is_error(s->status) && !is_fatal(status)) status = s->status; // set error status, but continue to get more error messages
+                if (is_fatal(status)) break; // can't continue -> give up
+            }
+            LOG("fully parsed statement " << s->toS() << " with status " << s->status << " at " << s->context.toS());
+        }
+        if (!is_error(status)) status = Parsing_status::FULLY_RESOLVED;
+
+        LOG("scope resolved with status " << status << " at " << context.toS());
+        return status;
+    }
+
 };
 
 
@@ -198,6 +220,15 @@ struct Global_scope : Abstx_scope
 
     Shared<Abstx_scope> parent_scope() const override { return nullptr; }
     Shared<Global_scope> global_scope() const override { return (Global_scope*)this; }
+
+    Parsing_status fully_parse() override {
+        Abstx_scope::fully_parse();
+
+        // find entry point
+        // fully_parse the entry point's function scope
+
+        return status;
+    }
 
 private:
     static Seq<Owned<Abstx_identifier>> type_identifiers;
@@ -278,7 +309,11 @@ struct Abstx_anonymous_scope : Statement
         return scope->toS();
     }
 
-    Parsing_status fully_parse() override; // implemented in ../parser/statement_parser.cpp
+    Parsing_status fully_parse() override {
+        ASSERT(scope);
+        status = scope->fully_parse();
+        return status;
+    }
 
     void generate_code(std::ostream& target) const override {
         ASSERT(is_codegen_ready(status));

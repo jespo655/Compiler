@@ -447,18 +447,7 @@ void code_gen_test()
     // fully parse starting from that function
     // then generate code starting from that function
 
-    bool progress = false;
-    bool done = true;
-    for (const auto& s : gs->statements) {
-        ASSERT(s); // no statement can be nullpointer here
-        LOG("# statement at [" << s->context.toS() << "]");
-        if (!is_codegen_ready(s->status) && !is_error(s->status)) {
-            Parsing_status ps = s->fully_parse();
-            LOG("fully parsed statement [" << s->toS() << "]: status " << ps );
-            if (!is_codegen_ready(ps)) done = false;
-            else progress = true;
-        }
-    }
+    gs->fully_parse();
 
     LOG("exiting if errors");
     exit_if_errors();

@@ -60,7 +60,7 @@ std::regex symbol_rx(R"(^(\*|\/|\+|\%|==|<=|>=|<|>|!=|=|:|\_|\(|\)|\[|\]|\{|\}|\
 
 // booleans and keywords are subsets of identifiers.
 std::regex bool_rx(R"(^(true|false)$)");
-std::regex keyword_rx(R"(^(for|in|by|if|elsif|else|then|while|fn|return|cast|struct|defer|inline|operator)$)");
+std::regex keyword_rx(R"(^(for|in|by|if|elsif|else|then|while|fn|return|cast|struct|defer|inline|operator|using)$)");
 // Additional possible keywords: implicit_cast, const
 
 std::regex string_start_rx(R"(^\")");

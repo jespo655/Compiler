@@ -32,8 +32,7 @@ struct Abstx_using : Statement {
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
     void generate_code(std::ostream& target) const override {
-        ASSERT(subject); // can't be null
-        return subject->generate_code(target);
+        // Do nothing; using statements is handled in other ways
     }
 
 };

@@ -22,15 +22,24 @@
 
 
 
-hw :: fn($i:int, j:int) {
+hw :: fn($i:int, j:int)->c:int
+{
     #C #string here printf("hello world #%d!\n", i); here;
+    c = i;
 };
 
 a :: -2;
 
-main :: fn() {
-    a.hw(-4);
-    if true { /*hw(-1,-2);*/ }
+using "aksjdh.cb";
+
+main :: fn()
+{
+    // a.hw(-4);
+    // hw(-1,-2);
+    // {}
+    if true { {} {} {} }
+    elsif true {}
+    else {}
 };
 
 
