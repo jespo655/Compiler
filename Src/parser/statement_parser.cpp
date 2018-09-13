@@ -948,7 +948,25 @@ Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx
 
 
 
+Parsing_status Abstx_scope::fully_parse() {
+    // if global scope: everything is read and has a type
+    // if dynamic scope: everything has to be fully parsed in order
+    // in either case, everything should be able to be fully parsed immediately
 
+    if (is_error(status) || is_codegen_ready(status)) return status;
+
+    auto it = parse_begin();
+
+    ASSERT(!dynamic() || it.compare(Token_type::SYMBOL, "{"));
+    ASSERT(statements.size == 0, "scope has " << statements.size << " statements");
+
+    // read scope statements; this adds the statements properly
+    // if this is a dynamic scope, it also finalizes everything properly
+    read_scope_statements(it, this);
+
+    LOG("fully parsed scope with status " << status << " with " << statements.size << " statements at " << context.toS());
+    return status;
+}
 
 
 

@@ -71,7 +71,8 @@ struct Abstx_node
     // Return a pointer to the root parent scope in the tree
     virtual Shared<Global_scope> global_scope() const { return owner->global_scope(); }
 
-
+    // make basic assertions and get the correct token iterator; to be called in the beginning of fully_parse()
+    Token_iterator parse_begin() const;
 
 };
 

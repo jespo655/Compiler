@@ -30,6 +30,8 @@ hw :: fn($i:int, j:int)->c:int
 
 a :: -2;
 
+// } // extra } makes the compiler get stuck
+
 using "aksjdh.cb";
 
 main :: fn()

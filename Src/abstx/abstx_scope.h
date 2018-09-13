@@ -179,27 +179,7 @@ struct Abstx_scope : Abstx_node
         target << "}" << std::endl;
     };
 
-    virtual Parsing_status fully_parse() {
-        // if global scope: everything is read and has a type
-        // if dynamic scope: everything has to be fully parsed in order
-        // in either case, everything should be able to be fully parsed immediately
-
-        LOG("fully parsing scope with " << statements.size << " statements at " << context.toS());
-
-        for (const auto& s : statements) {
-            ASSERT(s); // no statement can be nullpointer here
-            if (!is_codegen_ready(s->status) && !is_error(s->status)) {
-                s->fully_parse();
-                if (is_error(s->status) && !is_fatal(status)) status = s->status; // set error status, but continue to get more error messages
-                if (is_fatal(status)) break; // can't continue -> give up
-            }
-            LOG("fully parsed statement " << s->toS() << " with status " << s->status << " at " << s->context.toS());
-        }
-        if (!is_error(status)) status = Parsing_status::FULLY_RESOLVED;
-
-        LOG("scope resolved with status " << status << " at " << context.toS());
-        return status;
-    }
+    virtual Parsing_status fully_parse(); // implemented in statement_parser.cpp
 
 };
 

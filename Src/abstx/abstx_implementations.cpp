@@ -32,7 +32,7 @@ Shared<Abstx_function_literal> Abstx_node::parent_function() const
 
 
 
-Token_iterator Statement::parse_begin() const {
+Token_iterator Abstx_node::parse_begin() const {
     ASSERT(status == Parsing_status::PARTIALLY_PARSED);
     ASSERT(start_token_index >= 0);
     auto gs = global_scope();

@@ -11,9 +11,6 @@ struct Statement : Abstx_node
     // The parsing status is updated, then returned.
     // This function should only be called when the abstx node has finished parsing, and is expected to be complete.
     virtual Parsing_status fully_parse() = 0; // implemented in statement_parser.cpp
-
-    // make basic assertions and get the correct token iterator; to be called in the beginning of fully_parse()
-    virtual Token_iterator parse_begin() const;
 };
 
 
