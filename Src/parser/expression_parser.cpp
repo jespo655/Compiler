@@ -825,10 +825,6 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
     o->context = it->context;
     o->start_token_index = it.current_index;
 
-    o->scope.set_owner(o);
-    o->scope.flags += SCOPE_DYNAMIC;
-    o->scope.status = Parsing_status::NOT_PARSED;
-
     o->function_identifier.set_owner(o);
     o->function_identifier.value_expression = static_pointer_cast<Value_expression>(o);
     o->function_identifier.name = "_cb_fn";
@@ -878,31 +874,30 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
         if (is_error(o->status)) return owned_static_cast<Value_expression>(std::move(o));
     }
 
-    // set scope context
+    // read scope
+    o->scope.set_owner(o);
+    o->scope.flags += SCOPE_DYNAMIC;
     o->scope.context = it->context;
     o->scope.start_token_index = it.current_index;
+    o->scope.status == Parsing_status::PARTIALLY_PARSED;
 
-    it.expect(Token_type::SYMBOL, "{");
+    it.expect_current(Token_type::SYMBOL, "{");
     if (it.expect_failed()) {
+        add_note("In function literal here", o->context);
         o->status = Parsing_status::SYNTAX_ERROR;
+    } else {
+
+        it.current_index = it.find_matching_brace() + 1;
+        if (it.expect_failed()) {
+            add_note("In function literal here", o->context);
+            o->scope.status = Parsing_status::FATAL_ERROR;
+            o->status = Parsing_status::FATAL_ERROR;
+        }
     }
-    if (!is_error(o->status)) o->status = Parsing_status::FULLY_RESOLVED; // @check should this be FULLY_RESOLVED?
 
     // @todo: before reading statements, ensure that the function type is ready to use
     // @todo: (recursive functions) this function must return first so the value expression can be used
-    o->finalize(); // finalize before read_scope_statements()
-
-    read_scope_statements(it, &o->scope); // @todo: this should probably not be done here (only do it when the function is called from somewhere)
-
-    if (!is_fatal(o->scope.status)) {
-        it.expect(Token_type::SYMBOL, "}");
-        if (it.expect_failed()) {
-            add_note("In function literal here", o->context);
-            o->status == Parsing_status::FATAL_ERROR;
-        }
-    } else {
-        o->status = Parsing_status::FATAL_ERROR;
-    }
+    o->finalize();
 
     return owned_static_cast<Value_expression>(std::move(o));
 }

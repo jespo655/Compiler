@@ -139,6 +139,9 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
 
 
 Parsing_status read_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope) {
+
+    bool brace_enclosed = it.eat_conditonal(Token_type::SYMBOL, "{"); // global scopes are not brace enclosed
+
     Parsing_status status = Parsing_status::NOT_PARSED;
     while (!it.compare(Token_type::SYMBOL, "}") && !is_eof(it->type)) {
         status = read_statement(it, scope);
@@ -151,9 +154,31 @@ Parsing_status read_scope_statements(Token_iterator& it, Shared<Abstx_scope> sco
             if (is_fatal(scope->status)) return scope->status; // give up
         }
     }
+
+    if (brace_enclosed) {
+        if (is_eof(it->type)) {
+            log_error("Unexpected end of file in the middle of a scope", it->context);
+            add_note("In scope that started here", scope->context);
+            scope->status = Parsing_status::FATAL_ERROR;
+        }
+
+        if (!is_fatal(scope->status)) {
+            it.expect(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
+            if (it.expect_failed()) {
+                add_note("In scope that started here", scope->context);
+                scope->status = Parsing_status::FATAL_ERROR;
+            }
+        }
+    } else if (!is_eof(it->type)) {
+        log_error("Unexpected closing brace in the middle of a scope", it->context);
+        add_note("In scope that started here", scope->context);
+        scope->status = Parsing_status::FATAL_ERROR;
+    }
+
     if (!is_error(scope->status)) {
         scope->status = Parsing_status::FULLY_RESOLVED;
     }
+
     return scope->status;
 }
 
@@ -163,7 +188,7 @@ Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_sco
     // @todo: if dynamic: fully resolve statements immediately
     // @todo: write function continue_parse_scope() that can finish parsing a scope that is not fully parsed
 
-    it.assert(Token_type::SYMBOL, "{"); // checked previously
+    it.assert_current(Token_type::SYMBOL, "{"); // checked previously
 
     // create scope
     Owned<Abstx_scope> scope = alloc(Abstx_scope(parent_scope->flags));
@@ -171,18 +196,18 @@ Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_sco
     scope->context = it->context;
     scope->start_token_index = it.current_index;
 
-    // parse and resolve all statements in the scope
-    read_scope_statements(it, scope);
-
-    if (is_eof(it->type)) {
-        log_error("Unexpected end of file in the middle of a scope", it->context);
-        add_note("In scope that started here", scope->context);
-        scope->status = Parsing_status::FATAL_ERROR;
+    if (scope->dynamic()) {
+        // parse and resolve all statements in the scope
+        read_scope_statements(it, scope);
+    } else {
+        // just find closing brace / don't read statements
+        it.current_index = it.find_matching_brace() + 1;
+        if (it.expect_failed()) {
+            scope->status = Parsing_status::FATAL_ERROR;
+        }
     }
 
-    if (!is_fatal(scope->status)) {
-        it.expect(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
-    }
+    if (!is_error(scope->status)) scope->status = Parsing_status::PARTIALLY_PARSED;
 
     return scope;
 }

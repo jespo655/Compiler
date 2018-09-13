@@ -430,17 +430,17 @@ void compile_test()
 void code_gen_test()
 {
     // first: get tokens from file
-    Seq<Token> hw_tokens = get_tokens_from_file("../Demos/minimal.cb");
-    std::cout << "../Demos/minimal.cb tokens: " << endl;
-    for (const Token& token : hw_tokens) {
-        // if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
-        // else std::cout << token.token << " ";
-        std::cout << token << ", ";
-    }
-    std::cout << endl;
+    // Seq<Token> hw_tokens = get_tokens_from_file("../Demos/minimal.cb");
+    // std::cout << "../Demos/minimal.cb tokens: " << endl;
+    // for (const Token& token : hw_tokens) {
+    //     // if (token.type == Token_type::STRING) std::cout << "\"" << token.token << "\" ";
+    //     // else std::cout << token.token << " ";
+    //     std::cout << token << ", ";
+    // }
+    // std::cout << endl;
 
-    // Shared<Global_scope> gs = parse_file("../Demos/helloworld.cb");
-    Shared<Global_scope> gs = parse_tokens(std::move(hw_tokens), "Demos/minimal.cb");
+    Shared<Global_scope> gs = parse_file("../Demos/minimal.cb");
+    // Shared<Global_scope> gs = parse_tokens(std::move(hw_tokens), "Demos/minimal.cb");
 
     // later:
     // find identifier main, it should be a function

@@ -171,7 +171,7 @@ struct Abstx_scope : Abstx_node
     }
 
     void generate_code(std::ostream& target) const override {
-        ASSERT(is_codegen_ready(status));
+        ASSERT(is_codegen_ready(status), status << " " << toS() << " at " << context.toS());
         target << "{" << std::endl;
         for (const auto& st : statements) {
             st->generate_code(target);

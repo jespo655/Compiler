@@ -81,3 +81,40 @@ Todo:
     Början: scopes
 
 
+
+
+
+
+
+
+
+
+process:
+
+1) Shared<Global_scope> gs = parse_file("../Demos/minimal.cb");
+    - läs in global scope med lista av tokens
+
+2) gs->fully_parse();
+    - read_scope
+    - massa mer saker specifika till global scopes
+    - hitta entry point
+    - read function scope / parsa varje rad för sig
+
+3) exit_if_errors();
+
+4) generate_typedefs(std::cout);
+    - och diverse mer codegen stuff
+
+
+
+
+
+
+
+
+
+
+
+
+
+
