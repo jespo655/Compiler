@@ -202,9 +202,18 @@ struct Global_scope : Abstx_scope
     Shared<Global_scope> global_scope() const override { return (Global_scope*)this; }
 
     Parsing_status fully_parse() override {
-        Abstx_scope::fully_parse();
+        if (is_error(status) || is_codegen_ready(status)) return status;
+        Abstx_scope::fully_parse(); // first pass reading of statements
+        ASSERT(status == Parsing_status::PARTIALLY_PARSED, status);
 
-        // find entry point
+        // fully resolve statements
+        for (auto& s : statements) {
+            s->fully_parse();
+            if (is_error(s->status) && !is_fatal(status)) status = s->status;
+            if (is_fatal(status)) return status; // give up
+        }
+
+        // @TODO: find entry point
         // fully_parse the entry point's function scope
 
         return status;

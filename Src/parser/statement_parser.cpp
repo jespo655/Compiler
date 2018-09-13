@@ -176,7 +176,11 @@ Parsing_status read_scope_statements(Token_iterator& it, Shared<Abstx_scope> sco
     }
 
     if (!is_error(scope->status)) {
-        scope->status = Parsing_status::FULLY_RESOLVED;
+        if (scope->dynamic()) {
+            scope->status = Parsing_status::FULLY_RESOLVED;
+        } else {
+            scope->status = Parsing_status::PARTIALLY_PARSED;
+        }
     }
 
     return scope->status;
@@ -962,7 +966,7 @@ Parsing_status Abstx_scope::fully_parse() {
 
     // read scope statements; this adds the statements properly
     // if this is a dynamic scope, it also finalizes everything properly
-    read_scope_statements(it, this);
+    read_scope_statements(it, this); // also sets status
 
     LOG("fully parsed scope with status " << status << " with " << statements.size << " statements at " << context.toS());
     return status;

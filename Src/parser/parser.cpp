@@ -30,12 +30,15 @@ Shared<Global_scope> parse_string(const std::string& string, const std::string& 
     if (global_scopes[name] != nullptr) return global_scopes[name]; // do this before get_tokens_from_string()
     Shared<Global_scope> gs = parse_tokens(get_tokens_from_string(string), name);
     gs->context = context;
+    gs->fully_parse(); // read statements
     return gs;
 }
 
 Shared<Global_scope> parse_tokens(Seq<Token>&& tokens, const std::string& name)
 {
-    return read_global_scope(std::move(tokens), name);
+    Shared<Global_scope> gs = read_global_scope(std::move(tokens), name);
+    gs->fully_parse(); // read statements
+    return gs;
 }
 
 
@@ -54,19 +57,8 @@ Shared<Global_scope> read_global_scope(Seq<Token>&& tokens, const std::string& n
     Token_iterator it = global_scope->iterator();
     global_scope->start_token_index = 0;
     global_scope->context = it->context;
-
-    while (!it->is_eof()) {
-        Parsing_status ps = read_statement(it, static_pointer_cast<Abstx_scope>(global_scope));
-        if (is_fatal(ps)) {
-            global_scope->status = Parsing_status::FATAL_ERROR;
-            break;
-        }
-    }
-
-    if (!is_error(global_scope->status)) {
-        global_scope->status = Parsing_status::PARTIALLY_PARSED;
-        global_scopes[name] = std::move(global_scope);
-    }
+    global_scope->status = Parsing_status::PARTIALLY_PARSED;
+    global_scopes[name] = std::move(global_scope);
 
     return global_scopes[name];
 }

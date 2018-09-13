@@ -447,26 +447,24 @@ void code_gen_test()
     // fully parse starting from that function
     // then generate code starting from that function
 
-    gs->fully_parse();
-
     LOG("exiting if errors");
     exit_if_errors();
 
-    // LOG("generating typedefs");
-    // generate_typedefs(std::cout);
+    LOG("generating typedefs");
+    generate_typedefs(std::cout);
 
-    // LOG("generating statement code");
-    // for (const auto& s : gs->statements) {
-    //     ASSERT(s); // no statement can be nullpointer here
-    //     // @TODO: any dependencies should be generated FIRST!
-    //     s->generate_code(std::cout); // for now, just fully parse the statements
-    // }
+    LOG("generating statement code");
+    for (const auto& s : gs->statements) {
+        ASSERT(s); // no statement can be nullpointer here
+        // @TODO: any dependencies should be generated FIRST!
+        s->generate_code(std::cout); // for now, just fully parse the statements
+    }
 
-    // LOG("generating used function code");
-    // for (const auto& fn : gs->used_functions) {
-    //     ASSERT(fn.second); // no f unction can be nullpointer here
-    //     fn.second->generate_declaration(std::cout, std::cout);
-    // }
+    LOG("generating used function code");
+    for (const auto& fn : gs->used_functions) {
+        ASSERT(fn.second); // no f unction can be nullpointer here
+        fn.second->generate_declaration(std::cout, std::cout);
+    }
 
     // compile into abstx tree
     // TODO
