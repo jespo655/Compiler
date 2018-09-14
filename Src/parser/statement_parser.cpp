@@ -138,53 +138,168 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
 
 
 
-Parsing_status read_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope) {
 
-    bool brace_enclosed = it.eat_conditonal(Token_type::SYMBOL, "{"); // global scopes are not brace enclosed
 
-    Parsing_status status = Parsing_status::NOT_PARSED;
+// read_static_scope
+// read_dynamic_scope
+
+
+// static scope
+// * always standalone in a file or a separately compiled string
+// * never brace enclosed
+// * dynamic statements not allowed
+// * statements are fully parsed when reading is done
+// * look for entry point
+Parsing_status read_static_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope)
+{
+    // @todo: maybe this process should be an iterative process that can be interrupted and restarted
+    // in that case, we should not assert (scope->statements.size == 0), and we should update the start_token_index properly after each statement is successfully read
+
+    // @todo: maybe we should fully resolve each statement as well in this function, so we don't have to do that later
+    // in that case, maybe a function renaming is proper.
+    // also, finding an entry point would also be good.
+
+    ASSERT(!scope->dynamic()); // has to be static
+    ASSERT(scope->statements.size == 0); // statements can only be read once
+
+    // read statements
     while (!it.compare(Token_type::SYMBOL, "}") && !is_eof(it->type)) {
-        status = read_statement(it, scope);
-        ASSERT(!(scope->dynamic() && status == Parsing_status::DEPENDENCIES_NEEDED)); // DEPENDENCIES_NEEDED not allowd in dynamic scopes - everything should be verifiable immedately; otherwise there should be an error
-        // add_note("read statement with status "+toS(status)+", now it is here", it->context); // @debug
-        // fatal error -> give up
-        // other error -> failed to parse dynamic scope, but we can continue anyway to get more error messages
+        Parsing_status status = read_statement(it, scope);
         if (is_error(status)) {
             scope->status = status;
             if (is_fatal(scope->status)) return scope->status; // give up
         }
     }
 
-    if (brace_enclosed) {
-        if (is_eof(it->type)) {
-            log_error("Unexpected end of file in the middle of a scope", it->context);
-            add_note("In scope that started here", scope->context);
-            scope->status = Parsing_status::FATAL_ERROR;
-        }
-
-        if (!is_fatal(scope->status)) {
-            it.expect(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
-            if (it.expect_failed()) {
-                add_note("In scope that started here", scope->context);
-                scope->status = Parsing_status::FATAL_ERROR;
-            }
-        }
-    } else if (!is_eof(it->type)) {
+    if (!is_eof(it->type)) {
+        ASSERT(it.compare(Token_type::SYMBOL, "}"));
         log_error("Unexpected closing brace in the middle of a scope", it->context);
         add_note("In scope that started here", scope->context);
         scope->status = Parsing_status::FATAL_ERROR;
     }
 
     if (!is_error(scope->status)) {
-        if (scope->dynamic()) {
-            scope->status = Parsing_status::FULLY_RESOLVED;
-        } else {
-            scope->status = Parsing_status::PARTIALLY_PARSED;
+        scope->status = Parsing_status::PARTIALLY_PARSED;
+    }
+
+    LOG("read static scope with status " << scope->status << " with " << scope->statements.size << " statements at " << scope->context.toS());
+    return scope->status;
+}
+
+
+
+// dynamic scope:
+// * always inside a function
+// * always brace enclosed
+// * statements are fully parsed one at a time
+// * statements should never have DEPENDANCY_NEEDED
+Parsing_status read_dynamic_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope)
+{
+    ASSERT(scope->dynamic()); // has to be dynamic
+
+    // during parsing, mark scope as IN_PROGRESS. If the scope ever gets used (e.g. from recursive context),
+    //   that will ensure that we don't get stuck in an infinite parse loop.
+    if (is_error(scope->status) || is_in_progress(scope->status)) return scope->status;
+    ASSERT(scope->status == Parsing_status::NOT_PARSED || scope->status == Parsing_status::PARTIALLY_PARSED);
+    scope->status = Parsing_status::PARSING_IN_PROGRESS;
+
+    ASSERT(scope->statements.size == 0); // statements can only be read once
+    it.assert(Token_type::SYMBOL, "{"); // has to be brace enclosed
+
+    size_t resolved_statements = 0;
+
+    // read statements, and fully resolve them immediately
+    while (!it.compare(Token_type::SYMBOL, "}") && !is_eof(it->type)) {
+        Parsing_status status = read_statement(it, scope);
+        if (!is_error(status)) {
+            // resolve the statements (can be more than one)
+            while (resolved_statements < scope->statements.size) {
+                auto& s = scope->statements[resolved_statements];
+                s->fully_parse(); // function call should at this point fully resolve it's function literal's function scope (including reading statements)
+
+                // if the statement couldn't be resolved, it has to be an error.
+                // here we can give up to make compilation faster, or continue to give better error messages
+                // @TODO: this can maybe be decided with compiler flags? global scope settings?
+
+                if (is_error(s->status)) {
+                    ASSERT(!is_fatal(scope->status));
+                    scope->status = s->status;
+                    if (is_fatal(s->status)) return s->status; // impossible to continue -> give up
+                }
+
+                // at this point the statement status has to be FULLY_RESOLVED, otherwise something is very wrong with the compiler
+                ASSERT(s->status == Parsing_status::FULLY_RESOLVED);
+
+                // statement parsed successfully.
+                resolved_statements++;
+            }
         }
     }
 
+    if (is_eof(it->type)) {
+        log_error("Unexpected end of file in the middle of a scope", it->context);
+        add_note("In scope that started here", scope->context);
+        scope->status = Parsing_status::FATAL_ERROR;
+    }
+
+    if (!is_fatal(scope->status)) {
+        it.expect(Token_type::SYMBOL, "}"); // we should have found this already. Now eat it so we return with it pointing to after the brace
+        if (it.expect_failed()) {
+            add_note("In scope that started here", scope->context);
+            scope->status = Parsing_status::FATAL_ERROR;
+        }
+    }
+
+    if (!is_error(scope->status)) {
+        scope->status = Parsing_status::FULLY_RESOLVED;
+    }
+
+    LOG("read dynamic scope with status " << scope->status << " with " << scope->statements.size << " statements at " << scope->context.toS());
     return scope->status;
 }
+
+
+
+Parsing_status Global_scope::fully_parse() {
+    if (is_error(status) || is_in_progress(status) || is_codegen_ready(status)) return status;
+    LOG("fully parsing scope at " << context.toS() << " with status " << status);
+
+    // read statements if we haven't done that yet. Global scopes are always static.
+    auto it = parse_begin();
+    status = read_static_scope_statements(it, this);
+
+    ASSERT(is_error(status) || status == Parsing_status::PARTIALLY_PARSED);
+
+    if (!is_error(status)) {
+        for (auto& s : statements) {
+            s->fully_parse();
+            if (is_error(s->status) && !is_fatal(status)) status = s->status;
+        }
+    }
+
+    if (!is_error(status)) status = Parsing_status::FULLY_RESOLVED;
+
+    // @TODO: find entry point
+    // fully_parse the entry point's function scope
+
+    return status;
+}
+
+
+Parsing_status Abstx_scope::fully_parse() {
+    if (is_error(status) || is_in_progress(status) || is_codegen_ready(status)) return status;
+    LOG("fully parsing scope at " << context.toS() << " with status " << status);
+
+    // read statements if we haven't done that yet. Non-global scopes are always dynamic.
+    auto it = parse_begin();
+    status = read_dynamic_scope_statements(it, this);
+
+    ASSERT(is_error(status) || status == Parsing_status::FULLY_RESOLVED);
+    return status;
+}
+
+
+
 
 // syntax:
 // { }
@@ -202,7 +317,7 @@ Owned<Abstx_scope> read_scope(Token_iterator& it, Shared<Abstx_scope> parent_sco
 
     if (scope->dynamic()) {
         // parse and resolve all statements in the scope
-        read_scope_statements(it, scope);
+        read_dynamic_scope_statements(it, scope);
     } else {
         // just find closing brace / don't read statements
         it.current_index = it.find_matching_brace() + 1;
@@ -250,6 +365,15 @@ Parsing_status read_anonymous_scope(Token_iterator& it, Shared<Abstx_scope> pare
     ASSERT(s != nullptr);
     return s->status;
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -946,30 +1070,6 @@ Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> pare
 Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
     ASSERT(false, "NYI");
     return nullptr;
-}
-
-
-
-
-
-Parsing_status Abstx_scope::fully_parse() {
-    // if global scope: everything is read and has a type
-    // if dynamic scope: everything has to be fully parsed in order
-    // in either case, everything should be able to be fully parsed immediately
-
-    if (is_error(status) || is_codegen_ready(status)) return status;
-
-    auto it = parse_begin();
-
-    ASSERT(!dynamic() || it.compare(Token_type::SYMBOL, "{"));
-    ASSERT(statements.size == 0, "scope has " << statements.size << " statements");
-
-    // read scope statements; this adds the statements properly
-    // if this is a dynamic scope, it also finalizes everything properly
-    read_scope_statements(it, this); // also sets status
-
-    LOG("fully parsed scope with status " << status << " with " << statements.size << " statements at " << context.toS());
-    return status;
 }
 
 

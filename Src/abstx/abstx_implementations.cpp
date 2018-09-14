@@ -31,9 +31,13 @@ Shared<Abstx_function_literal> Abstx_node::parent_function() const
 
 
 
-
-Token_iterator Abstx_node::parse_begin() const {
-    ASSERT(status == Parsing_status::PARTIALLY_PARSED);
+#ifdef DEBUG
+Token_iterator Abstx_node::parse_begin(const char* file, int line) const
+#else
+Token_iterator Abstx_node::parse_begin() const
+#endif
+{
+    ASSERT(status == Parsing_status::PARTIALLY_PARSED, "called from " << file << ":" << line << " with status " << status);
     ASSERT(start_token_index >= 0);
     auto gs = global_scope();
     ASSERT(gs);

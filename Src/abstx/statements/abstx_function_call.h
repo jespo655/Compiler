@@ -86,7 +86,6 @@ struct Abstx_function_call : Statement
             arg->generate_code(target);
         }
         target << ");" << std::endl;
-
     }
 };
 
@@ -117,6 +116,9 @@ struct Abstx_function_call_expression : Variable_expression {
     void finalize() override {
         // the function call should be finalized by the scope finalizer
         ASSERT(function_call != nullptr);
-        status = function_call->status;
+        if (is_error(status) || is_codegen_ready(status)) return;
+
+        status = function_call->fully_parse();
+        LOG("Abstx_function_call_expression at" << context.toS() << " has status " << status);
     }
 };

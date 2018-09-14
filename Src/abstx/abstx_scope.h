@@ -184,7 +184,7 @@ struct Abstx_scope : Abstx_node
 };
 
 
-// A global scope corresponds to one compiled file. It is always static. It has no owner.
+// A global scope corresponds to one compiled file or string. It is always static. It has no owner.
 
 struct Global_scope : Abstx_scope
 {
@@ -201,23 +201,7 @@ struct Global_scope : Abstx_scope
     Shared<Abstx_scope> parent_scope() const override { return nullptr; }
     Shared<Global_scope> global_scope() const override { return (Global_scope*)this; }
 
-    Parsing_status fully_parse() override {
-        if (is_error(status) || is_codegen_ready(status)) return status;
-        Abstx_scope::fully_parse(); // first pass reading of statements
-        ASSERT(status == Parsing_status::PARTIALLY_PARSED, status);
-
-        // fully resolve statements
-        for (auto& s : statements) {
-            s->fully_parse();
-            if (is_error(s->status) && !is_fatal(status)) status = s->status;
-            if (is_fatal(status)) return status; // give up
-        }
-
-        // @TODO: find entry point
-        // fully_parse the entry point's function scope
-
-        return status;
-    }
+    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
 private:
     static Seq<Owned<Abstx_identifier>> type_identifiers;

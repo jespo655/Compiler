@@ -72,7 +72,11 @@ struct Abstx_node
     virtual Shared<Global_scope> global_scope() const { return owner->global_scope(); }
 
     // make basic assertions and get the correct token iterator; to be called in the beginning of fully_parse()
+    #ifdef DEBUG
+    Token_iterator parse_begin(const char* file = __builtin_FILE(), int line = __builtin_LINE()) const; // is supposed to be called with no arguments
+    #else
     Token_iterator parse_begin() const;
+    #endif
 
 };
 

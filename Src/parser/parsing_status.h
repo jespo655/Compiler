@@ -6,6 +6,7 @@ enum struct Parsing_status
 {
     NOT_PARSED,             // not parsed at all.
     PARTIALLY_PARSED,       // parsed to the point that it's apparent what type of expression it is. Basic info such as token context and owner has been filled in.
+    PARSING_IN_PROGRESS,    // is currently being parsed
     FULLY_RESOLVED,         // the expression and all sub-expressions are fully parsed without errors.
 
     DEPENDENCIES_NEEDED,    // the expression cannot yet be fully parsed because it's waiting for other things to parse first
@@ -23,10 +24,11 @@ enum struct Parsing_status
 
 };
 
-static std::string toS(Parsing_status ps) {
+static const char* toS(Parsing_status ps) {
     switch(ps) {
         case Parsing_status::NOT_PARSED: return "NOT_PARSED";
         case Parsing_status::PARTIALLY_PARSED: return "PARTIALLY_PARSED";
+        case Parsing_status::PARSING_IN_PROGRESS: return "PARSING_IN_PROGRESS";
         case Parsing_status::FULLY_RESOLVED: return "FULLY_RESOLVED";
         case Parsing_status::DEPENDENCIES_NEEDED: return "DEPENDENCIES_NEEDED";
         case Parsing_status::SYNTAX_ERROR: return "SYNTAX_ERROR";
@@ -48,10 +50,15 @@ static std::ostream& operator<<(std::ostream& os, Parsing_status ps) {
 static bool is_error(Parsing_status p) {
     if (p == Parsing_status::NOT_PARSED
         || p == Parsing_status::PARTIALLY_PARSED
+        || p == Parsing_status::PARSING_IN_PROGRESS
         || p == Parsing_status::FULLY_RESOLVED
         || p == Parsing_status::DEPENDENCIES_NEEDED)
         return false;
     return true;
+}
+
+static bool is_in_progress(Parsing_status p) {
+    return p == Parsing_status::PARSING_IN_PROGRESS;
 }
 
 static bool is_codegen_ready(Parsing_status p) {

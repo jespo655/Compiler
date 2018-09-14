@@ -22,27 +22,48 @@
 
 
 
-hw :: fn($i:int, j:int)->c:int
+
+// foo :: fn() -> r:int
+// {
+//     f :: -2;
+//     f = foo();
+//     bar();
+// };
+// f := foo(); // only here to force the scope of foo to be fully resolved
+
+
+bar :: fn()
 {
-    #C #string here printf("hello world #%d!\n", i); here;
-    c = i;
+    #C #string here printf("hello world #!\n"); here;
+    // {}
+    // if true { {} {} {} }
+    // elsif true {}
+    // else {}
 };
 
-a :: -2;
+bar();
+
+// hw :: fn($i:int, j:int)->c:int
+// {
+//     #C #string here printf("hello world #%d!\n", i); here;
+//     c = i;
+// };
+
+// a := hw(-1, -2);
 
 // } // extra } makes the compiler get stuck
 
-using "aksjdh.cb";
+// using "aksjdh.cb";
 
-main :: fn()
-{
-    // a.hw(-4);
-    // hw(-1,-2);
-    // {}
-    if true { {} {} {} }
-    elsif true {}
-    else {}
-};
+// main :: fn()
+// {
+//     // a.hw(-4);
+//     // hw(-1,-2);
+//     // {}
+//     if true { {} {} {} }
+//     elsif true {}
+//     else {}
+// };
 
 
 // i : int = i2; // TODO: this should fail with cyclic dependency

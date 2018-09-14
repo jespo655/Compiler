@@ -158,8 +158,9 @@ Owned<Value_expression> read_value_expression(Token_iterator& it, Shared<Abstx_n
     }
 
 
+    // At the point where we're reading expressions; they need to be able to be fully finalized immediately. No PARTIALLY_PARSED is allowed here.
     ASSERT(expr != nullptr);
-    ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED);
+    ASSERT(is_error(expr->status) || expr->status == Parsing_status::FULLY_RESOLVED || expr->status == Parsing_status::DEPENDENCIES_NEEDED, "status is " << expr->status);
 
     // LOG("read literal " << expr->toS() << " with status " << expr->status << " at " << expr->context.toS());
 
@@ -622,7 +623,7 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
     // some cleanup: check for closing paren and update status
     it.assert(Token_type::SYMBOL, ")"); // this is already checked / now eat the token
     if (it.expect_failed()) o->status = Parsing_status::FATAL_ERROR;
-    if (!is_error(o->status) && o->status != Parsing_status::DEPENDENCIES_NEEDED) o->status = Parsing_status::FULLY_RESOLVED;
+    if (!is_error(o->status) && o->status != Parsing_status::DEPENDENCIES_NEEDED) o->status = Parsing_status::PARTIALLY_PARSED;
 
     // create a function call expression to reference the function call statement
     Owned<Abstx_function_call_expression> expr = alloc(Abstx_function_call_expression());
@@ -630,11 +631,12 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
     expr->context = o->context;
     expr->start_token_index = o->start_token_index;
     expr->function_call = o;
-    expr->status = o->status;
     expr->finalize();
 
     // add the function call statement to parent scope as a separate statement
     expr->parent_scope()->statements.add(owned_static_cast<Statement>(std::move(o)));
+
+    LOG("read Abstx_function_call_expression with status " << expr->status);
 
     // return the function call expression
     return owned_static_cast<Variable_expression>(std::move(expr));
@@ -642,8 +644,12 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
 
 Parsing_status Abstx_function_call::fully_parse() {
     // Abstx_function_call is just an imaginary construct with no token context
-    // It should be finalized during initial parsing
-    ASSERT(is_error(status) || is_codegen_ready(status));
+    // But we still need to ensure that the called function is fully parsed so the function actually can be called
+    if (is_error(status) || is_codegen_ready(status)) return status;
+    ASSERT(function != nullptr); // has to be set during intial parsing
+    function->finalize();
+    status = function->status;
+    LOG("Abstx_function_call at" << context.toS() << " has status " << status);
     return status;
 }
 
@@ -880,7 +886,7 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
     o->scope.flags += SCOPE_DYNAMIC;
     o->scope.context = it->context;
     o->scope.start_token_index = it.current_index;
-    o->scope.status == Parsing_status::PARTIALLY_PARSED;
+    o->scope.status = Parsing_status::PARTIALLY_PARSED;
 
     it.expect_current(Token_type::SYMBOL, "{");
     if (it.expect_failed()) {
@@ -896,8 +902,7 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
         }
     }
 
-    // @todo: before reading statements, ensure that the function type is ready to use
-    // @todo: (recursive functions) this function must return first so the value expression can be used
+    // before reading statements, perform argument type checking to ensure that the function type is ready to use
     o->finalize();
 
     return owned_static_cast<Value_expression>(std::move(o));
