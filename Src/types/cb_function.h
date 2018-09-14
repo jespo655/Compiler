@@ -206,9 +206,11 @@ struct CB_Function : CB_Type
     }
     void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
         if (!raw_data) os << "NULL";
-        if (!*(void**)raw_data) os << "NULL";
-        ASSERT(false, "warning: pointers are not the same outside compile time");
-        os << std::hex << *(void**)raw_data;
+        else if (!*(void**)raw_data) os << "NULL";
+        else {
+            ASSERT(false, "warning: pointers are not the same outside compile time");
+            os << std::hex << *(void**)raw_data;
+        }
     }
 };
 

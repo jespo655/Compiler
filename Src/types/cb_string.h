@@ -86,12 +86,15 @@ struct _string {
 
     // copy
     _string& operator=(const _string& str) {
-        if (capacity < str.size)
-            reallocate(str.size, false);
-        ASSERT(capacity >= str.size);
-        ASSERT(v_ptr != nullptr);
-        size = str.size;
-        memcpy(v_ptr, str.v_ptr, size+1);
+        if (this != &str) {
+            if (capacity < str.size) {
+                reallocate(str.size, false);
+            }
+            ASSERT(capacity >= str.size);
+            ASSERT(v_ptr != nullptr);
+            size = str.size;
+            memcpy(v_ptr, str.v_ptr, size+1);
+        }
         return *this;
     }
     _string(const _string& str) {
@@ -102,10 +105,12 @@ struct _string {
 
     // move
     _string& operator=(_string&& str) {
-        free(v_ptr);
-        size = str.size;
-        v_ptr = str.v_ptr;
-        str.v_ptr = nullptr;
+        if (this != &str) {
+            free(v_ptr);
+            size = str.size;
+            v_ptr = str.v_ptr;
+            str.v_ptr = nullptr;
+        }
         return *this;
     }
     _string(_string&& str) {

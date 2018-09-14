@@ -28,9 +28,8 @@ struct str {
             else v[i] = c[i];
             if (c[i] == '\0') end = true;
         }
+        return *this;
     }
-
-
 
 };
 

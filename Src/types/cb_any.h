@@ -72,15 +72,21 @@ struct Any {
     }
 
     Any& operator=(const Any& Any) {
-        v_ptr = Any.v_ptr;
-        v_type = Any.v_type;
+        if (this != &Any) {
+            v_ptr = Any.v_ptr;
+            v_type = Any.v_type;
+        }
+        return *this;
     }
     Any(const Any& Any) { *this = Any; }
 
     Any& operator=(Any&& Any) {
-        v_type = Any.v_type;
-        v_ptr = Any.v_ptr;
-        Any.v_ptr = nullptr;
+        if (this != &Any) {
+            v_type = Any.v_type;
+            v_ptr = Any.v_ptr;
+            Any.v_ptr = nullptr;
+        }
+        return *this;
     }
     Any(Any&& Any) { *this = std::move(Any); }
 

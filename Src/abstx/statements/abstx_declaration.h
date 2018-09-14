@@ -54,7 +54,9 @@ struct Abstx_declaration : Statement {
             first = true;
             for (auto& ev : value_expressions) {
                 ASSERT(ev != nullptr);
+                if (!first) oss << ", ";
                 oss << ev->toS();
+                first = false;
             }
         }
         oss << ";";

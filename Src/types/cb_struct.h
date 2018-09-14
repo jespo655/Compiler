@@ -85,7 +85,7 @@ struct CB_Struct : CB_Type
         Shared<Abstx_identifier> id; // identifiers is owned by function scope
         bool is_using = false; // allowes implicit cast to that member
         bool explicit_uninitialized = false; // not currently used (ignored by the compiler)
-        size_t byte_position;
+        size_t byte_position = 0;
 
         Struct_member() {}
         Struct_member(const Shared<Abstx_identifier>& id, bool is_using=false) : id{id}, is_using{is_using} {}
@@ -109,15 +109,22 @@ struct CB_Struct : CB_Type
     CB_Struct(const CB_Struct& sm) { *this = sm; }
     CB_Struct(CB_Struct&& sm) { *this = std::move(sm); }
     CB_Struct& operator=(const CB_Struct& sm) {
-        uid=sm.uid; members = sm.members; max_alignment=sm.max_alignment;
-        _default_value = malloc(sm.cb_sizeof());
-        memcpy(_default_value, sm._default_value, sm.cb_sizeof());
+        if (this != &sm) {
+            uid=sm.uid; members = sm.members; max_alignment=sm.max_alignment;
+            free(_default_value);
+            _default_value = malloc(sm.cb_sizeof());
+            memcpy(_default_value, sm._default_value, sm.cb_sizeof());
+        }
+        return *this;
     }
     CB_Struct& operator=(CB_Struct&& sm) {
-        uid=sm.uid;
-        members = std::move(sm.members);
-        _default_value = sm._default_value; sm._default_value = nullptr;
-        max_alignment=sm.max_alignment;
+        if (this != &sm) {
+            uid=sm.uid;
+            members = std::move(sm.members);
+            _default_value = sm._default_value; sm._default_value = nullptr;
+            max_alignment=sm.max_alignment;
+        }
+        return *this;
     }
     ~CB_Struct() { free(_default_value); }
 

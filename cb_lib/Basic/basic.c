@@ -215,8 +215,8 @@ void eq_string_string(String a, String b, cb_bool* __retval) { *__retval = strcm
 
 void alloc(cb_u64 size, void** ptr) {
     free(*ptr);
-    ptr = malloc(size);
-    memset(ptr, 0, size);
+    *ptr = malloc(size);
+    memset(*ptr, 0, size);
 }
 
 

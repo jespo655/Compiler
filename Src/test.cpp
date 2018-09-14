@@ -117,9 +117,9 @@ struct Verbose
         deleted = true;
     }
     Verbose(const Verbose& v) { cout << "V " << std::dec << i << " copy constructor from " << v.i << endl; }
-    Verbose& operator=(const Verbose& v) { cout << "V " << std::dec << i << " copy assignment from " << v.i << endl; }
+    Verbose& operator=(const Verbose& v) { cout << "V " << std::dec << i << " copy assignment from " << v.i << endl; return *this; }
     Verbose(Verbose&& v) { cout << "V " << std::dec << i << " move constructor from " << v.i << endl; }
-    Verbose& operator=(Verbose&& v) { cout << "V " << std::dec << i << " move assignment from " << v.i << endl; }
+    Verbose& operator=(Verbose&& v) { cout << "V " << std::dec << i << " move assignment from " << v.i << endl; return *this; }
 };
 
 

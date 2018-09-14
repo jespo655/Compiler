@@ -174,6 +174,7 @@ Owned<Variable_expression> read_variable_expression(Token_iterator& it, Shared<A
     if (val_expr == nullptr) return nullptr;
     Owned<Variable_expression> var_expr = owned_dynamic_cast<Variable_expression>(std::move(val_expr));
     if (var_expr == nullptr) {
+        ASSERT(val_expr != nullptr);
         log_error("Pure value expression used as a variable", val_expr->context);
     }
     return var_expr;
@@ -208,7 +209,7 @@ Owned<Value_expression> read_struct_literal(Token_iterator& it, Shared<Abstx_nod
     Seq<size_t> using_indeces;
 
     // read declaration statments until }
-    for (size_t decl_index; !it.compare(Token_type::SYMBOL, "}"); ++decl_index)
+    for (size_t decl_index = 0; !it.compare(Token_type::SYMBOL, "}"); ++decl_index)
     {
         if (it.compare(Token_type::KEYWORD, "using")) {
             it.eat_token();
