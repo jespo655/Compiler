@@ -32,11 +32,12 @@
 // f := foo(); // only here to force the scope of foo to be fully resolved
 
 
-bar :: fn()
+bar :: fn() -> r:int
 {
-    #C #string here printf("hello world #!\n"); here;
-    // {}
-    // if true { {} {} {} }
+    // #C #string here printf("hello world #!\n"); here;
+    {}
+    while 651 { }
+    // if 651 { }
     // elsif true {}
     // else {}
 };

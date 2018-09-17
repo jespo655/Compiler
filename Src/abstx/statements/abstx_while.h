@@ -41,7 +41,6 @@ struct Abstx_while : Statement {
         scope->generate_code(target);
     };
 
-
 };
 
 

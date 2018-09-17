@@ -893,7 +893,8 @@ Owned<Value_expression> read_function_literal(Token_iterator& it, Shared<Abstx_n
         add_note("In function literal here", o->context);
         o->status = Parsing_status::SYNTAX_ERROR;
     } else {
-
+        // ignore the function scope for now - this is necessary to make recursive functions work
+        // insteaed, just find the closing brace
         it.current_index = it.find_matching_brace() + 1;
         if (it.expect_failed()) {
             add_note("In function literal here", o->context);
