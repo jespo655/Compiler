@@ -3,16 +3,14 @@
 #include <iostream>
 #include <cstdlib>
 
-int err_count = 0;
-int err_max = 100;
-bool should_log = true;
-
+static int err_count = 0;
+static int err_max = 100;
+static bool should_log = true;
 
 void set_logging(bool b)
 {
     should_log = b;
 }
-
 
 void exit_if_errors()
 {
@@ -22,7 +20,6 @@ void exit_if_errors()
     }
 }
 
-
 void check_for_termination()
 {
     if (err_count >= err_max) {
@@ -30,7 +27,6 @@ void check_for_termination()
         exit(EXIT_FAILURE);
     }
 }
-
 
 void log_error(const std::string& msg, const Token_context& context)
 {

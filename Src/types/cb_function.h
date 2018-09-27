@@ -208,8 +208,8 @@ struct CB_Function : CB_Type
         if (!raw_data) os << "NULL";
         else if (!*(void**)raw_data) os << "NULL";
         else {
-            ASSERT(false, "warning: pointers are not the same outside compile time");
             os << std::hex << *(void**)raw_data;
+            ASSERT(false, "warning: pointers are not the same outside compile time");
         }
     }
 };

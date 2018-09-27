@@ -1025,7 +1025,7 @@ Owned<Value_expression> read_fn_literal(Token_iterator& it, Shared<Abstx_node> o
         }
     }
     ASSERT(it.error);
-    add_note("In function expression that started here: ", it.look_at(start_index).context);
+    add_note("In function expression that started here", it.look_at(start_index).context);
 
     // instead of returning nullpointer, call read_function_type and let it handle more specific error messages
     // it should end in fatal error

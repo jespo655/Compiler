@@ -73,6 +73,19 @@ void free_all_constant_data() { _constant_data_container.~Constant_data_containe
 
 
 
+Shared<Abstx_function_literal> Global_scope::get_entry_point(const std::string& id) {
+    auto fn_id = get_identifier(id);
+    Shared<const CB_Type> t = fn_id->get_type();
+    ASSERT(t != nullptr); // type must be known
+    Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(t);
+    if (fn_type == nullptr) {
+        log_error("No entry point defined!", context);
+        return nullptr;
+    } else if (fn_id->has_constant_value()) {
+        return (Abstx_function_literal*)fn_id->get_constant_value().v_ptr;
+    }
+}
+
 
 
 #ifdef TEST

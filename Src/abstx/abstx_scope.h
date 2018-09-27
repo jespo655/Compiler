@@ -203,6 +203,8 @@ struct Global_scope : Abstx_scope
 
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
+    Shared<Abstx_function_literal> get_entry_point(const std::string& id);
+
 private:
     static Seq<Owned<Abstx_identifier>> type_identifiers;
     static Token_context built_in_context;

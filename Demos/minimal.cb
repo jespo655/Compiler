@@ -34,15 +34,20 @@
 
 bar :: fn() -> r:int
 {
-    // #C #string here printf("hello world #!\n"); here;
     {}
     while 651 { }
     // if 651 { }
     // elsif true {}
     // else {}
+    baz();
 };
 
-bar();
+
+baz :: fn() {
+    #C #string here printf("hello world #!\n"); here;
+};
+
+// bar();
 
 // hw :: fn($i:int, j:int)->c:int
 // {

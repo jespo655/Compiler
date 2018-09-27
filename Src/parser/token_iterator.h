@@ -187,8 +187,8 @@ struct Token_iterator
                 if (log_errors) {
                     log_error("Missing \""+expected_closing_token+"\" at end of file",t.context);
                     if (!from_middle) {
-                        if (forward) add_note("In "+range_name+" that started here: ",start_token.context);
-                        else add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                        if (forward) add_note("In "+range_name+" that started here ",start_token.context);
+                        else add_note("While searching backwards from "+range_name+" that started here ",start_token.context);
                     }
                 }
                 error = true;
@@ -210,7 +210,7 @@ struct Token_iterator
                     else if (t.token == ")" || t.token == "]" || t.token == "}") {
                         if (log_errors) {
                             log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
-                            if (!from_middle) add_note("In "+range_name+" that started here: ",start_token.context);
+                            if (!from_middle) add_note("In "+range_name+" that started here ",start_token.context);
                         }
                         error = true;
                         return -1;
@@ -223,7 +223,7 @@ struct Token_iterator
                     else if (t.token == "(" || t.token == "[" || t.token == "{") {
                         if (log_errors) {
                             log_error(error_string+": expected \""+expected_closing_token+"\" before \""+t.token+"\"",t.context);
-                            if (!from_middle) add_note("While searching backwards from "+range_name+" that started here: ",start_token.context);
+                            if (!from_middle) add_note("While searching backwards from "+range_name+" that started here ",start_token.context);
                         }
                         error = true;
                         return -1;

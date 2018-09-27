@@ -450,8 +450,19 @@ void code_gen_test()
     LOG("exiting if errors");
     exit_if_errors();
 
-    LOG("generating typedefs");
-    generate_typedefs(std::cout);
+    auto ep = gs->get_entry_point("bar");
+    ep->finalize();
+
+
+    // std::map<std::string, Shared<Abstx_identifier>> identifiers
+    // for (auto& p : gs->identifiers) {
+    //     LOG(p.first << ": " << p.second->toS());
+    // }
+
+
+
+    // LOG("generating typedefs");
+    // generate_typedefs(std::cout);
 
     LOG("generating statement code");
     for (const auto& s : gs->statements) {

@@ -20,7 +20,7 @@
 #	define _ASSERT1(b) if (!(b))                                                        \
     do {                                                                                \
         std::ostringstream _assert_oss;                                                 \
-        _assert_oss << __FILE__ << ":" << __LINE__                                      \
+        _assert_oss << std::endl << __FILE__ << ":" << __LINE__                         \
             << ": Assert failed: (" << #b << ")";                                       \
         std::cerr << _assert_oss.str() << std::endl;                                    \
         exit(1);                                                                        \
@@ -31,7 +31,7 @@
 #	define _ASSERT2(b, msg) if (!(b))                                                   \
     do {                                                                                \
         std::ostringstream _assert_oss;                                                 \
-        _assert_oss << __FILE__ << ":" << __LINE__                                      \
+        _assert_oss << std::endl << __FILE__ << ":" << __LINE__                         \
             << ": Assert failed: (" << #b << ")";                                       \
         _assert_oss << ": " << msg;                                                     \
         std::cerr << _assert_oss.str() << std::endl;                                    \
