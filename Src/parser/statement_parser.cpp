@@ -77,14 +77,16 @@ Parsing_status read_statement(Token_iterator& it, Shared<Abstx_scope> parent_sco
     } else if (it.compare(Token_type::COMPILER_COMMAND, "#run")) {
         // the next token must be the start of a function call expression
         auto s = read_run_expression(it, parent_scope);
-        if (s != nullptr) {
+        if (s == nullptr) {
+            return Parsing_status::NOT_PARSED;
+        } else {
             it.expect_end_of_statement();
             if (it.expect_failed()) {
                 add_note("In #run statement that started here", s->context);
                 s->status = Parsing_status::FATAL_ERROR;
             }
+            return s->status;
         }
-        return s->status;
 
     } else {
 
@@ -1056,6 +1058,13 @@ Parsing_status Abstx_c_code::fully_parse() {
 
 Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
     Owned<Value_expression> expr = read_value_expression(it, static_pointer_cast<Abstx_node>(parent_scope));
+
+    if (expr == nullptr) {
+        // find end of statement and return NOT_PARSED
+        it.current_index = it.find_matching_semicolon() + 1;
+        return Parsing_status::NOT_PARSED;
+    }
+
     Shared<Abstx_function_call_expression> fc = dynamic_pointer_cast<Abstx_function_call_expression>(expr);
     if (expr != nullptr && fc == nullptr) {
         log_warning("Non-function call used as a statement - it might be ignored", expr->context);
@@ -1074,8 +1083,20 @@ Parsing_status read_value_statement(Token_iterator& it, Shared<Abstx_scope> pare
 
 // maybe should this also return only Parsing_status?
 Shared<Abstx_function_call> read_run_expression(Token_iterator& it, Shared<Abstx_scope> parent_scope) {
-    ASSERT(false, "NYI");
-    return nullptr;
+    it.assert(Token_type::COMPILER_COMMAND, "#run");
+    const auto& context = it->context;
+
+    Shared<Value_expression> expr = read_value_expression(it, static_pointer_cast<Abstx_node>(parent_scope));
+    Shared<Abstx_function_call_expression> fc_expr = dynamic_pointer_cast<Abstx_function_call_expression>(expr);
+
+    if (fc_expr = nullptr) {
+        log_error("Expected function call expression after #run", context);
+    }
+
+    it.expect_end_of_statement();
+    if (fc_expr && it.expect_failed()) fc_expr->status = Parsing_status::FATAL_ERROR;
+
+    return fc_expr ? fc_expr->function_call : nullptr;
 }
 
 
