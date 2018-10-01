@@ -27,6 +27,7 @@ struct Abstx_function_literal : Value_expression
     Seq<Function_arg> in_args; // in arguments metadata
     Seq<Function_arg> out_args; // out arguments metadata
     Abstx_function_scope scope; // function scope
+    bool code_generated = false;
 
     std::string toS() const override {
         // @todo: write better toS()
@@ -57,6 +58,8 @@ struct Abstx_function_literal : Value_expression
     }
 
     void generate_code(std::ostream& target) const override {
+        // generate code in the context of a value expression
+        // the actual function code will be generated later, through generate_declaration()
         global_scope()->used_functions[function_identifier.uid] = this;
         return function_identifier.generate_code(target);
     }
@@ -64,8 +67,12 @@ struct Abstx_function_literal : Value_expression
     // all declaration must be generated in a global scope
     // before this, all types must be defined
     void generate_declaration(std::ostream& target, std::ostream& header) const {
-        generate_declaration_internal(header, true);
-        generate_declaration_internal(target, false);
+        // only generate the code once; this is necessary for iterative code generation
+        if (!code_generated) {
+            generate_declaration_internal(header, true);
+            generate_declaration_internal(target, false);
+        }
+        code_generated = true;
     };
 
     void finalize() override; // implemented in expression_parser.cpp
