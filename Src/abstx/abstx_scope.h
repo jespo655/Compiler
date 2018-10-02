@@ -190,7 +190,7 @@ struct Global_scope : Abstx_scope
 {
     std::string file_name;
     const Seq<Token> tokens; // should be treated as const
-    std::map<uint64_t, Shared<const Abstx_function_literal>> used_functions; // map fn_id_uid -> abstx_fn
+    std::map<uint64_t, Shared<Abstx_function_literal>> used_functions; // map fn_id_uid -> abstx_fn
 
     Global_scope(Seq<Token>&& tokens) : tokens{std::move(tokens)} {
         add_built_in_types_as_identifiers();

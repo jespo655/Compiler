@@ -44,6 +44,8 @@ namespace dll_internal {
     extern DCCallVM* vm;
     extern const DCsize VM_SIZE;
 
+    DCCallVM* reset_vm();
+
     template<typename ret_t> ret_t _call_fn_internal(void* fn_ptr) { return dcCallPointer(vm, fn_ptr); } // assume that it's a pointer. We should get compile error if it's not
     template<> void _call_fn_internal<void>(void* fn_ptr);
     template<> bool _call_fn_internal<bool>(void* fn_ptr);
@@ -71,22 +73,13 @@ namespace dll_internal {
         return _call_fn_internal<ret_t, arg_ts...>(fn_ptr, args...);
     }
 
-    template<typename ret_t=void, typename... arg_ts>
-    ret_t _call_fn(void* fn_ptr, arg_ts... args) {
-        if (vm == nullptr) {
-            vm = dcNewCallVM(VM_SIZE);
-            dcMode(vm, DC_CALL_C_DEFAULT);
-        }
-        dcReset(vm);
-        return _call_fn_internal<ret_t, arg_ts...>(fn_ptr, args...);
-    }
-
 } // namespace dll_internal
 
 // call a function with some arguments, using dyncall as a backend
 template<typename ret_t=void, typename... arg_ts>
 ret_t call_fn(void* fn_ptr, arg_ts... args) {
-    dll_internal::_call_fn(fn_ptr, args...);
+    dll_internal::reset_vm();
+    return dll_internal::_call_fn_internal<ret_t, arg_ts...>(fn_ptr, args...);
 }
 
 

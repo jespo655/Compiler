@@ -1,30 +1,34 @@
 
 
-#ifdef __CPLUSPLUS
-extern "C" {
-#endif
+// #ifdef __CPLUSPLUS
+// extern "C" {
+// #endif
 
 #include "stdint.h"
 #include "stdbool.h"
 #include "stdio.h"
+#include "stdio.h"
+#include "stdio.h"
+#include "stdio.h"
 
 
 
-typedef void(*cb_fn)();
+// typedef void(*cb_fn)();
 
-void _cb_fn_4436() { printf("foo\n"); }
+// void _cb_fn_4436() { printf("foo\n"); }
 
 // cb_fn foo = _cb_fn_4436;
 
 
-void fn_test() {
+// void fn_test() {
 
-    void _cb_fn_4437() { printf("foo\n"); }
+//     void _cb_fn_4437() { printf("foo\n"); }
 
-    cb_fn foo = _cb_fn_4436;
-    foo();
+//     cb_fn foo = _cb_fn_4436;
+//     foo();
 
-}
+
+// }
 
 
 // typedef struct {
@@ -74,17 +78,17 @@ void fn_test() {
 //     printf("sizeof(empty): %d\n", sizeof(empty));
 // }
 
-void for_test()
-{
-    int a[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+// void for_test()
+// {
+//     int a[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
-    int _it;
-    for (size_t _it_123 = 0; _it = a[_it_123], _it_123 < 10; ++_it_123)
-    {
-        // int _it = a[_it_123];
-        printf("#%u = %d\n", _it_123, _it);
-    }
-}
+//     int _it;
+//     for (size_t _it_123 = 0; _it = a[_it_123], _it_123 < 10; ++_it_123)
+//     {
+//         // int _it = a[_it_123];
+//         printf("#%u = %d\n", _it_123, _it);
+//     }
+// }
 
 // typedef uint32_t _cb_type;
 // typedef struct { _cb_type type; void* v_ptr; } _cb_any;
@@ -111,7 +115,7 @@ void for_test()
 // }
 
 int main() {
-    fn_test();
+    // fn_test();
 
     // _cb_type_21 f = foo;
     // _cb_u8 u8;
@@ -123,9 +127,9 @@ int main() {
     // for_test();
 }
 
-#ifdef __CPLUSPLUS
-}
-#endif
+// #ifdef __CPLUSPLUS
+// }
+// #endif
 
 
 

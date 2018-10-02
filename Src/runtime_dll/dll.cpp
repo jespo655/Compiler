@@ -98,6 +98,15 @@ namespace dll_internal {
     DCCallVM* vm;
     const DCsize VM_SIZE = 4096;
 
+    DCCallVM* reset_vm() {
+        if (vm == nullptr) {
+            vm = dcNewCallVM(VM_SIZE);
+            dcMode(vm, DC_CALL_C_DEFAULT);
+        }
+        dcReset(vm);
+        return vm;
+    }
+
     // template<typename ret_t> ret_t _call_fn_internal(void* fn_ptr) {  return dcCallPointer(vm, fn_ptr); } // assume that it's a pointer. We should get compile error if it's not
     template<> void _call_fn_internal<void>(void* fn_ptr) { dcCallVoid(vm, fn_ptr); }
     template<> bool _call_fn_internal<bool>(void* fn_ptr) { return dcCallBool(vm, fn_ptr); }
