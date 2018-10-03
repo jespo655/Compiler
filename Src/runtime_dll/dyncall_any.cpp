@@ -32,9 +32,11 @@ void call_fn_any(void* fn_ptr, Seq<Any> args) {
                 ASSERT(sizeof(CB_u32::c_typedef) == sizeof(long));
                 dcArgLong(vm, *(long*)arg.v_ptr); // 32 bit int
 
-            } else if (uid == CB_i64::type->uid || uid == CB_u64::type->uid) {
+            } else if (uid == CB_i64::type->uid || uid == CB_Int::type->uid || uid == CB_u64::type->uid || uid == CB_Uint::type->uid) {
                 ASSERT(sizeof(CB_i64::c_typedef) == sizeof(long long));
+                ASSERT(sizeof(CB_Int::c_typedef) == sizeof(long long));
                 ASSERT(sizeof(CB_u64::c_typedef) == sizeof(long long));
+                ASSERT(sizeof(CB_Uint::c_typedef) == sizeof(long long));
                 dcArgLongLong(vm, *(long long*)arg.v_ptr); // 64 bit int
 
             } else if (uid == CB_f32::type->uid) {

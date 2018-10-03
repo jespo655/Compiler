@@ -87,6 +87,26 @@ struct Abstx_function_call : Statement
         }
         target << ");" << std::endl;
     }
+
+    // returns true if success
+    bool get_args_as_any(Seq<Shared<const Any>>& args) {
+        args.clear();
+        for (auto& expr : in_args) {
+            if (!expr->has_constant_value()) {
+                LOG("in arg expr at " << expr->context.toS() << " is not constant!");
+                return false;
+            }
+            args.add(&expr->get_constant_value());
+        }
+        for (auto& expr : out_args) {
+            if (!expr->has_constant_value()) {
+                LOG("out arg expr at " << expr->context.toS() << " is not constant!");
+                return false;
+            }
+            args.add(&expr->get_constant_value());
+        }
+        return true;
+    }
 };
 
 
