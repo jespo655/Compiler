@@ -1,7 +1,7 @@
 
 #include "basic.cb" // contains print and basic int operators
 
-fn :: generate_primes() -> int[] {
+generate_primes :: fn() -> int[] {
     primes : int[] = [2, 3, 5]; // dynamic sequence of primes initialized with a few primes
     for (i in 7..1000 by 2) { // range for loop, from 7 to 1000 inclusive, stepping by 2
         prime := true; // bool to indicate if i is prime
@@ -18,7 +18,7 @@ fn :: generate_primes() -> int[] {
     return primes;
 };
 
-fn :: main() {
+main :: fn() {
     primes := generate_primes();
     for (p in primes) {
         print(p, " is prime!");
