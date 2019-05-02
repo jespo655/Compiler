@@ -19,5 +19,6 @@ struct Function
 
 // writes the code to the entry point
 // c_sources will contain a list of c source files that needs to be included in the gcc call
-void generate_code(std::ostream& target, Function const* entry_point, const std::set<std::string>& c_sources);
+// @TODO: implement later
+// void generate_code(std::ostream& target, Function const* entry_point, const std::set<std::string>& c_sources);
 

@@ -263,44 +263,6 @@ Parsing_status read_dynamic_scope_statements(Token_iterator& it, Shared<Abstx_sc
 
 
 
-Parsing_status Global_scope::fully_parse() {
-    if (is_error(status) || is_in_progress(status) || is_codegen_ready(status)) return status;
-    LOG("fully parsing scope at " << context.toS() << " with status " << status);
-
-    // read statements if we haven't done that yet. Global scopes are always static.
-    auto it = parse_begin();
-    status = read_static_scope_statements(it, this);
-
-    ASSERT(is_error(status) || status == Parsing_status::PARTIALLY_PARSED);
-
-    if (!is_error(status)) {
-        for (auto& s : statements) {
-            s->fully_parse();
-            if (is_error(s->status) && !is_fatal(status)) status = s->status;
-        }
-    }
-
-    if (!is_error(status)) status = Parsing_status::FULLY_RESOLVED;
-
-    // @TODO: find entry point
-    // fully_parse the entry point's function scope
-
-    return status;
-}
-
-
-Parsing_status Abstx_scope::fully_parse() {
-    if (is_error(status) || is_in_progress(status) || is_codegen_ready(status)) return status;
-    LOG("fully parsing scope at " << context.toS() << " with status " << status);
-
-    // read statements if we haven't done that yet. Non-global scopes are always dynamic.
-    auto it = parse_begin();
-    status = read_dynamic_scope_statements(it, this);
-
-    ASSERT(is_error(status) || status == Parsing_status::FULLY_RESOLVED);
-    return status;
-}
-
 
 
 

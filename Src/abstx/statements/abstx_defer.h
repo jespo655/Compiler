@@ -8,23 +8,20 @@ Consecutive defer statements in the same order are performed in reverse order at
 Think of it like a "defer stack"
 */
 
+namespace Cube {
+
 struct Abstx_defer : Statement {
 
     Owned<Statement> statement;
 
-    std::string toS() const override {
-        ASSERT(statement != nullptr);
-        return "defer " + statement->toS();
-    }
+    std::string toS() const override;
 
-    Parsing_status fully_parse() override; // implemented in statement_parser.cpp
+    Parsing_status fully_parse() override;
 
-    void generate_code(std::ostream& target) const override {
-        ASSERT(is_codegen_ready(status));
-        statement->generate_code(target);
-    }
+    void generate_code(std::ostream& target) const override;
 };
 
+}
 
 /*
 

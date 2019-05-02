@@ -1,13 +1,10 @@
 #pragma once
 
-#include "../utilities/assert.h"
-#include "../utilities/unique_id.h"
 #include "../utilities/pointers.h"
 
 #include <map>
 #include <string>
 #include <ostream>
-using std::ostream;
 
 /*
 Cube is a statically typed language.
@@ -27,8 +24,6 @@ Each type has a static flag primitive, which determines if an instance of the cl
 Data received from compile-time executed CB-code is received as void pointers. That data might then
     be used as a literal in the next compile step. Therefore, each type needs to know how to parse
     raw data and write it as a literal.
-
-
 
 
 
@@ -79,6 +74,7 @@ Then that same data has to be able to be outputted as a C style literal.
 
 */
 
+namespace Cube {
 
 struct Any; // used for default values
 
@@ -103,11 +99,7 @@ struct CB_Type
     virtual ~CB_Type() {}
     void register_type(const std::string& name, size_t size, void const* default_value);
 
-    virtual std::string toS() const {
-        const std::string& name = typenames[uid];
-        if (name == "") return "type_"+std::to_string(uid);
-        return name;
-    }
+    virtual std::string toS() const;
 
     // is_primitive(): should return true if we'd rather copy the value itself than a pointer to it (+do pointer dereferences!)
     virtual bool is_primitive() const { return true; }
@@ -124,38 +116,21 @@ struct CB_Type
     bool operator==(const CB_Type& o) const { return uid == o.uid; }
     bool operator!=(const CB_Type& o) const { return !(*this==o); }
 
-    static int get_unique_type_id() {
-        static int id=0; // -1 is uninitialized
-        ASSERT(id >= 0); // if id is negative then the int has looped around. More than INT_MAX unique types should never be needed.
-        return id++;
-    }
+    static int get_unique_type_id();
 
     // code generation functions
-    virtual void generate_type(ostream& os) const {
-        os << "_cb_type";
-        if (uid != type->uid) os << "_" << uid;
-    }
-    virtual void generate_typedef(ostream& os) const {
-        os << "typedef uint32_t ";
-        generate_type(os);
-        os << ";" << std::endl;
-    }
+    virtual void generate_type(std::ostream& os) const;
+    virtual void generate_typedef(std::ostream& os) const;
     // literal & destructor has an additional argument depth, to safeguard against infinite loops
-    virtual void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const { ASSERT(raw_data); os << *(c_typedef*)raw_data << "UL"; }
-    virtual void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const { };
+    virtual void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const;
+    virtual void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const;
     // constructor:
     //   type name = literal(default_value); // default
     //   type name; // explicit uninitialized
 
+    // If a circular reference loops more than MAX_ALLOWED_DEPTH number of times, you should call post_circular_reference_error()
     static const uint32_t MAX_ALLOWED_DEPTH = 1000;
-    void post_circular_reference_error() const {
-        // @todo: this should be a compile error, not an false assert
-        std::ostringstream oss;
-        oss << "Circular reference detected in type ";
-        generate_type(oss);
-        oss << " (" << toS() << ")";
-        ASSERT(false, oss.str());
-    }
+    void post_circular_reference_error() const;
 
 };
 
@@ -178,3 +153,5 @@ Shared<const T> add_complex_type(Owned<T>&& type) {
 
 // function to generate typedef for all built-in types
 void generate_typedefs(std::ostream& os);
+
+}

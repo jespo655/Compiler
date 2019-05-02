@@ -10,12 +10,9 @@ and when the Any is destroyed, the actual object will also be destroyed properly
 In c++, this is done through templated callbacks, so the struct is a bit bigger than it should be in Cube.
 */
 
-struct static_any;
-static std::string toS_void_callback(const static_any& any);
-static void destroy_void_callback(static_any& any);
-static void assign_void_callback(static_any& obj, const static_any& any);
+namespace Cube {
 
-struct static_any {
+struct Static_any {
     static CB_Type type; // type any
     static const bool primitive = false;
     CB_Type v_type; // the type of v
@@ -23,8 +20,8 @@ struct static_any {
 
     std::string toS() const { return toS_callback(*this); }
 
-    static_any() { /*std::cout << "cstr ";*/ set_default_callbacks(); }
-    ~static_any() {
+    Static_any() { /*std::cout << "cstr ";*/ set_default_callbacks(); }
+    ~Static_any() {
         destructor_callback(*this);
         /*std::cout << "dstr ";*/ set_default_callbacks();
     }
@@ -54,16 +51,13 @@ struct static_any {
         return t == v_type && v_ptr != nullptr;
     }
 
-    static_any& operator=(const static_any& any) {
-        // std::cout << "any copy op = any of type " << any.v_type.toS() << std::endl;
-        any.assign_callback(*this, any);
-    }
-    static_any(const static_any& any) { /*std::cout << "copy any cstr ";*/ set_default_callbacks(); *this = any; }
+    Static_any& operator=(const Static_any& any);
+    Static_any(const Static_any& any) { /*std::cout << "copy any cstr ";*/ set_default_callbacks(); *this = any; }
 
     template<typename T, typename Type=CB_Type*, Type=&T::type>
-    static_any& operator=(const T& t) {
+    Static_any& operator=(const T& t) {
         // std::cout << "any copy op = " << T::type.toS() << std::endl;
-        ASSERT(T::type != static_any::type);
+        ASSERT(T::type != Static_any::type);
         ASSERT(T::type == t.type);
         if (T::type == v_type && v_ptr != nullptr) {
             *(T*)v_ptr = T(t);
@@ -74,25 +68,16 @@ struct static_any {
     }
 
     template<typename T, typename Type=CB_Type*, Type=&T::type>
-    static_any(const T& t) { /*std::cout << "copy " << t.type.toS() << " cstr ";*/ set_default_callbacks(); *this = t; }
+    Static_any(const T& t) { /*std::cout << "copy " << t.type.toS() << " cstr ";*/ set_default_callbacks(); *this = t; }
 
-    // static_any& operator=(static_any&& any) = delete;
-    static_any& operator=(static_any&& any) {
-        // std::cout << "any move op = any of type " << any.v_type.toS() << std::endl;
-        v_type = any.v_type;
-        v_ptr = any.v_ptr;
-        destructor_callback = any.destructor_callback;
-        toS_callback = any.toS_callback;
-        assign_callback = any.assign_callback;
-        any.v_ptr = nullptr;
-        /*std::cout << "move cstr (on old any) ";*/ any.set_default_callbacks();
-    }
-    static_any(static_any&& any) { /*std::cout << "move cstr ";*/ set_default_callbacks(); *this = std::move(any); }
+    // Static_any& operator=(Static_any&& any) = delete;
+    Static_any& operator=(Static_any&& any);
+    Static_any(Static_any&& any) { /*std::cout << "move cstr ";*/ set_default_callbacks(); *this = std::move(any); }
 
     template<typename T, typename Type=CB_Type*, Type=&T::type>
-    static_any& operator=(T&& t) {
+    Static_any& operator=(T&& t) {
         // std::cout << "any move op = " << T::type.toS() << std::endl;
-        ASSERT(T::type != static_any::type);
+        ASSERT(T::type != Static_any::type);
         ASSERT(T::type == t.type);
         if (T::type == v_type && v_ptr != nullptr) {
             *(T*)v_ptr = std::move(t);
@@ -102,11 +87,11 @@ struct static_any {
         }
     }
     template<typename T, typename Type=CB_Type const*, Type=&T::type>
-    static_any(T&& t) { /*std::cout << "move " << T::type.toS() << " cstr ";*/ set_default_callbacks(); *this = std::move(t); }
+    Static_any(T&& t) { /*std::cout << "move " << T::type.toS() << " cstr ";*/ set_default_callbacks(); *this = std::move(t); }
 
     template<typename T, typename Type=CB_Type const*, Type=&T::type>
     void allocate(bool init=true) {
-        this->~static_any();
+        this->~Static_any();
         v_type = T::type;
         v_ptr = malloc(sizeof(T));
         ASSERT(v_ptr != nullptr); // FIXME: better handling of bad alloc
@@ -115,32 +100,23 @@ struct static_any {
     }
 
 private:
-    void (*destructor_callback)(static_any&); // only compile time
-    std::string (*toS_callback)(const static_any&); // only compile time
-    void (*assign_callback)(static_any&, const static_any&); // only compile time
+    void (*destructor_callback)(Static_any&); // only compile time
+    std::string (*toS_callback)(const Static_any&); // only compile time
+    void (*assign_callback)(Static_any&, const Static_any&); // only compile time
 
     template<typename T> void set_callbacks();
-    void set_default_callbacks() {
-        // std::cout << "setting default callbacks" << std::endl;
-        destructor_callback = destroy_void_callback;
-        toS_callback = toS_void_callback;
-        assign_callback = assign_void_callback;
-    }
+    void set_default_callbacks();
 };
 
 
-static std::string toS_void_callback(const static_any& any) { ASSERT(any.v_ptr == nullptr); return "any(void)"; }
-static void destroy_void_callback(static_any& any) { ASSERT(any.v_ptr == nullptr); }
-static void assign_void_callback(static_any& obj, const static_any& any) { ASSERT(any.v_ptr == nullptr); obj.~static_any(); }
-
 template<typename T>
-std::string toS_any_callback(const static_any& any) {
+std::string toS_any_callback(const Static_any& any) {
     ASSERT(T::type == any.v_type);
     ASSERT(any.v_ptr != nullptr);
     return ((T*)any.v_ptr)->toS();
 }
 template<typename T>
-void destroy_any_callback(static_any& any)
+void destroy_any_callback(Static_any& any)
 {
     ASSERT(T::type == any.v_type);
     ASSERT(any.v_ptr != nullptr, "Trying to delete null of type "+T::type.toS());
@@ -149,7 +125,7 @@ void destroy_any_callback(static_any& any)
     any.v_ptr = nullptr;
 }
 template<typename T>
-void assign_any_callback(static_any& obj, const static_any& any)
+void assign_any_callback(Static_any& obj, const Static_any& any)
 {
     ASSERT(T::type == any.v_type);
     // std::cout << "assign any callback, current value=" << obj.toS() << ", new value=" << any.toS() << std::endl;
@@ -157,7 +133,7 @@ void assign_any_callback(static_any& obj, const static_any& any)
 }
 
 template<typename T>
-void static_any::set_callbacks() {
+void Static_any::set_callbacks() {
     // std::cout << "setting callbacks for type " << T::type.toS() << std::endl;
     destructor_callback = destroy_any_callback<T>;
     toS_callback = toS_any_callback<T>;
@@ -165,11 +141,4 @@ void static_any::set_callbacks() {
     // assign_callback = assign_any_callback<T, std::is_copy_constructible<T>::value>::f;
 }
 
-
-
-
-
-
-
-
-
+}

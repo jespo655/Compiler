@@ -14,15 +14,17 @@ Syntax:
 a : Range = 0..2;
 */
 
+namespace Cube {
+
 struct CB_Iterable {
     // generate_for(): called to output c-style for loop (including "for" and parens)
     // after this, a scope (including braces) will be printed
     // for now, only accept positive integer steps
-    virtual void generate_for(ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const = 0;
+    virtual void generate_for(std::ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const = 0;
 
     // generate_for_after_scope(): called after the for scope is printed (directly after the closing })
     // this function is optional to implement
-    virtual void generate_for_after_scope(ostream& os, bool protected_scope = true) const {}
+    virtual void generate_for_after_scope(std::ostream& os, bool protected_scope = true) const {}
 };
 
 struct CB_Range : CB_Type, CB_Iterable {
@@ -37,37 +39,11 @@ struct CB_Range : CB_Type, CB_Iterable {
 
     virtual size_t alignment() const override { return CB_i64::type->alignment(); }
 
-    void generate_type(ostream& os) const override { os << "_cb_i_range"; }
-
-    void generate_typedef(ostream& os) const override {
-        os << "typedef struct { ";
-        CB_i64::type->generate_type(os);
-        os << " r_start; ";
-        CB_i64::type->generate_type(os);
-        os << " r_end; } ";
-        generate_type(os);
-        os << ";" << std::endl;
-    }
-    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
-        ASSERT(raw_data);
-        os << "(";
-        generate_type(os);
-        os << "){";
-        int64_t const* raw_it = (int64_t const*)raw_data;
-        CB_i64::type->generate_literal(os, raw_it, depth+1);
-        os << ", ";
-        CB_i64::type->generate_literal(os, raw_it+1, depth+1);
-        os << "}";
-    }
-    void generate_for(ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override {
-        os << "for (";
-        CB_i64::type->generate_type(os);
-        os << " " << it_name << " = " << id << (reverse?".r_end":".r_start") << "; ";
-        os << it_name << (reverse?" >= ":" <= ") << id << (reverse?".r_start":".r_end") << ";";
-        os << it_name << (reverse?" -= ":" += ") << step << ")";
-    }
+    void generate_type(std::ostream& os) const override { os << "_cb_i_range"; }
+    void generate_typedef(std::ostream& os) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
+    void generate_for(std::ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override;
 };
-
 
 struct CB_Float_range : CB_Type, CB_Iterable {
     static const Shared<const CB_Type> type;
@@ -81,35 +57,11 @@ struct CB_Float_range : CB_Type, CB_Iterable {
 
     virtual size_t alignment() const override { return CB_f64::type->alignment(); }
 
-    void generate_type(ostream& os) const override { os << "_cb_f_range"; }
+    void generate_type(std::ostream& os) const override { os << "_cb_f_range"; }
 
-    void generate_typedef(ostream& os) const override {
-        os << "typedef struct { ";
-        CB_f64::type->generate_type(os);
-        os << " r_start; ";
-        CB_f64::type->generate_type(os);
-        os << " r_end; } ";
-        generate_type(os);
-        os << ";" << std::endl;
-    }
-    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
-        ASSERT(raw_data);
-        os << "(";
-        generate_type(os);
-        os << "){";
-        double const* raw_it = (double const*)raw_data;
-        CB_f64::type->generate_literal(os, raw_it, depth+1);
-        os << ", ";
-        CB_f64::type->generate_literal(os, raw_it+1, depth+1);
-        os << "}";
-    }
-    void generate_for(ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override {
-        os << "for (";
-        CB_f64::type->generate_type(os);
-        os << " " << it_name << " = " << id << (reverse?".r_end":".r_start") << "; ";
-        os << it_name << (reverse?" >= ":" <= ") << id << (reverse?".r_start":".r_end") << ";";
-        os << it_name << (reverse?" -= ":" += ") << step << ")";
-    }
+    void generate_typedef(std::ostream& os) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
+    void generate_for(std::ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override;
 };
 
 
@@ -170,3 +122,5 @@ struct float_range {
 
 static float_range::iterator begin(const float_range& r) { return float_range::iterator(r, r.r_start); }
 static float_range::iterator end(const float_range& r) { return float_range::iterator(r, r.r_end + 1); }
+
+}

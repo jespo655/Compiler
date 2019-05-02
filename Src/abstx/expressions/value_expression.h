@@ -1,9 +1,11 @@
 #pragma once
 
-#include "../abstx.h"
+#include "../abstx_node.h"
 #include "../../utilities/sequence.h"
 #include "../../types/cb_type.h"
 #include "../../types/cb_any.h"
+
+namespace Cube {
 
 // An evaluated value is anything that evaluates to a value that can be read.
 struct Value_expression : Abstx_node
@@ -23,4 +25,4 @@ struct Value_expression : Abstx_node
     virtual void finalize() = 0;
 };
 
-
+}

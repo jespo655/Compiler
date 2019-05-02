@@ -2,6 +2,8 @@
 
 #include "cb_type.h"
 
+namespace Cube {
+
 #define GENERATE_PRIMITIVE(cpp_type, tos, c_type, literal_suffix) \
 struct cpp_type : CB_Type { \
     static const Shared<const CB_Type> type; \
@@ -11,13 +13,13 @@ struct cpp_type : CB_Type { \
     cpp_type(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {} \
     std::string toS() const override { return tos; } \
     bool is_primitive() const override { return true; } \
-    void generate_type(ostream& os) const override { os << "_cb_" << tos; } \
-    void generate_typedef(ostream& os) const override { \
+    void generate_type(std::ostream& os) const override { os << "_cb_" << tos; } \
+    void generate_typedef(std::ostream& os) const override { \
         os << "typedef " << #c_type << " "; \
         generate_type(os); \
         os << ";" << std::endl; \
     } \
-    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override { \
+    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override { \
         ASSERT(raw_data); \
         os << *(c_type*)raw_data << literal_suffix;\
     } \
@@ -43,4 +45,4 @@ GENERATE_PRIMITIVE(CB_Float, "float", double, "");
 
 GENERATE_PRIMITIVE(CB_Flag, "flag", uint8_t, "");
 
-
+}

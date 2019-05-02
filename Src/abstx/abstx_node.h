@@ -7,12 +7,15 @@
 #include "../parser/parsing_status.h"
 #include "../parser/token_iterator.h"
 
-#include "abstx_scope.h"
-#include "abstx_function_literal.h"
-
 #include <string>
 #include <ostream>
 #include <iostream> // for debug purposes
+
+namespace Cube {
+
+struct Abstx_function_literal;
+struct Abstx_scope;
+struct Global_scope;
 
 /*
     An Abstx_node is a node in the abstract syntax tree.
@@ -86,71 +89,4 @@ void* alloc_constant_data(size_t bytes);
 void free_constant_data(void* p);
 void free_all_constant_data();
 
-
-
-/*
-
-
-Statement:
-    If
-    For
-    While
-    Return
-    Assignment
-    Declaration
-    Using
-    Scope declaration (Anonymous or Named, maybe with keyword modifiers such as Async)
-    Pure value_expression (operators or function call with side effects)
-    Defer
-Modifiers: Generic
-
-Value_expression:
-    Variable_expression
-    Literal (bool, int, string, float, Seq, map)
-    Function call
-
-Variable_expression:
-    Identifier
-    Getter
-
-
-
-
-deprecated:
-    // Cast (?)            // equivalent with function call
-    // Prefix operator     // equivalent with function call
-    // Infix operator      // equivalent with function call
-    // Array indexing      // equivalent with function call that returns a sharing pointer
-
-
-
-
-
-// TODO: scope syntax
-
-// Anonymous scope:
-{...}
-
-// Named scope:
-Name {...}
-Name :: {...}; // maybe?
-
-
-// Keywords:
-Async {...}
-Async Name {...}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*/
+}

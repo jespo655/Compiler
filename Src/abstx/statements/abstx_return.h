@@ -11,6 +11,8 @@ return 1, b=2;      // named and non-named return values can be mixed. However, 
 b=2; return 1;      // the return count only has to include all non-named return values.
 */
 
+namespace Cube {
+
 struct Abstx_return : Statement {
 
     // Return parameters should not be included in this statement.
@@ -29,6 +31,7 @@ struct Abstx_return : Statement {
     };
 };
 
+}
 
 /*
 

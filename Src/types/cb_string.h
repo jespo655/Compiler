@@ -16,6 +16,8 @@ Syntax:
 a : String = "text";
 */
 
+namespace Cube {
+
 struct CB_String : CB_Type {
     static const Shared<const CB_Type> type;
     static constexpr char _default_str[] = "";
@@ -28,29 +30,10 @@ struct CB_String : CB_Type {
 
     bool is_primitive() const override { return true; }
 
-    void generate_type(ostream& os) const override { os << "_cb_string"; }
-
-    void generate_typedef(ostream& os) const override {
-        // for now, just use regular null-terminated char*
-        os << "typedef char* ";
-        generate_type(os);
-        os << ";" << std::endl;
-    }
-    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
-        ASSERT(raw_data);
-        char const* raw_str = *(c_typedef const*)raw_data;
-        if (!raw_str) os << "NULL";
-        os << "\"" << raw_str << "\"";
-    }
+    void generate_type(std::ostream& os) const override;
+    void generate_typedef(std::ostream& os) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
 };
-
-
-
-
-
-
-
-
 
 
 
@@ -141,3 +124,4 @@ struct _string {
     }
 };
 
+}

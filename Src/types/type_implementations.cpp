@@ -22,25 +22,6 @@ constexpr void* CB_Any::_default_value;
 static const CB_Any static_cb_any("any", sizeof(CB_Any::_default_value), &CB_Any::_default_value);
 const Shared<const CB_Type> CB_Any::type = &static_cb_any;
 
-const Any& CB_Type::default_value() const
-{
-    const Any& a = default_values[uid];
-    if (*a.v_type != *this) {
-        std::cerr << std::endl << "error: default value type doesn't match: dv.v_type.uid = "
-            << a.v_type->uid << "; *this.uid = " << this->uid << std::endl;
-    }
-    ASSERT(*a.v_type == *this, "Type '"+toS()+"' has no default value!");
-    return a;
-}
-
-void CB_Type::register_type(const std::string& name, size_t size, void const* default_value)
-{
-    uid = get_unique_type_id();
-    ASSERT(typenames[uid] == ""); // can't register double value (this should never happen if uid works correctly)
-    typenames[uid] = name;
-    cb_sizes[uid] = size;
-    default_values[uid] = std::move(Any(this, default_value));
-}
 
 
 // Below: static type instances for types that never change
@@ -121,52 +102,6 @@ static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
 // #include "../abstx/statements/scope.h"
 // CB_Type Abstx_scope::type = CB_Type("scope", 0, Abstx_scope());
 
-
-
-CB_Type::c_typedef parse_type_id(const Any& any) {
-    ASSERT(*any.v_type == *CB_Type::type);
-    ASSERT(any.v_ptr);
-    return *(CB_Type::c_typedef*)any.v_ptr;
-}
-
-Shared<const CB_Type> parse_type(const Any& any) {
-    return get_built_in_type(parse_type_id(any));
-}
-
-std::string parse_string(const Any& any) {
-    ASSERT(*any.v_type == *CB_String::type);
-    ASSERT(any.v_ptr);
-    ASSERT(*(char**)any.v_ptr);
-    return std::string(*(char**)any.v_ptr);
-}
-
-int64_t parse_int(const Any& any) {
-    ASSERT(any.v_ptr);
-    if (*any.v_type == *CB_i64::type) return *(int64_t*)any.v_ptr;
-    if (*any.v_type == *CB_i32::type) return *(int32_t*)any.v_ptr;
-    if (*any.v_type == *CB_i16::type) return *(int16_t*)any.v_ptr;
-    if (*any.v_type == *CB_i8::type) return *(int8_t*)any.v_ptr;
-    ASSERT(*any.v_type == *CB_Int::type);
-    return *(int64_t*)any.v_ptr;
-}
-
-uint64_t parse_uint(const Any& any) {
-    ASSERT(any.v_ptr);
-    if (*any.v_type == *CB_u64::type) return *(uint64_t*)any.v_ptr;
-    if (*any.v_type == *CB_u32::type) return *(uint32_t*)any.v_ptr;
-    if (*any.v_type == *CB_u16::type) return *(uint16_t*)any.v_ptr;
-    if (*any.v_type == *CB_u8::type) return *(uint8_t*)any.v_ptr;
-    ASSERT(*any.v_type == *CB_Uint::type);
-    return *(uint64_t*)any.v_ptr;
-}
-
-uint64_t parse_float(const Any& any) {
-    ASSERT(any.v_ptr);
-    if (*any.v_type == *CB_f64::type) return *(double*)any.v_ptr;
-    if (*any.v_type == *CB_f32::type) return *(float*)any.v_ptr;
-    ASSERT(*any.v_type == *CB_Float::type);
-    return *(double*)any.v_ptr;
-}
 
 
 

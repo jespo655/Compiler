@@ -56,7 +56,7 @@ Step 2: Statement::fully_parse(), read_value_expression, read_variable_expressio
 
 
 
-
+namespace Cube {
 
 
 // parser.cpp
@@ -110,6 +110,9 @@ Owned<Value_expression> read_function_type(Token_iterator& it, Shared<Abstx_node
 Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_node> owner, Owned<Variable_expression>&& fn_id, const Seq<Shared<Variable_expression>>& lhs = {}, Owned<Value_expression>&& first_arg = nullptr); // suffix "()"
 Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_node> owner, Owned<Value_expression>&& id); // suffix '.'
 // Owned<Value_expression> read_indexing(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Value_expression>&& id); // suffix "[]" // @todo
+
+}
+
 
 /*
 

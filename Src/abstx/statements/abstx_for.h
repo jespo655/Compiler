@@ -1,10 +1,7 @@
 #pragma once
 
 #include "abstx_statement.h"
-#include "../abstx_scope.h"
-#include "../expressions/value_expression.h"
-#include "../../utilities/unique_id.h"
-#include "../../types/cb_range.h" // CB_Iterable
+#include "../expressions/abstx_identifier.h"
 
 /*
 for (n in range) {}
@@ -12,6 +9,11 @@ for (n in range, step=s) {}
 for (n in range, index=s) {}
 for (n in range, reverse) {}
 */
+
+namespace Cube {
+
+struct CB_Iterable;
+struct Abstx_scope;
 
 struct Abstx_for : Statement {
 
@@ -24,51 +26,17 @@ struct Abstx_for : Statement {
     Owned<Abstx_scope> scope;
     Shared<Abstx_identifier> it; // owned by the scope
 
-    std::string toS() const override { return "for(){}"; }
+    std::string toS() const override;
 
-    void debug_print(Debug_os& os, bool recursive=true) const override
-    {
-        // FIXME: better for::toS()
-
-        os << "For(";
-        if (recursive) {
-            ASSERT(range != nullptr);
-            os << range->toS();
-        }
-        os << ") ";
-        if (recursive) {
-            ASSERT(scope != nullptr);
-            scope->debug_print(os, recursive);
-        }
-        else os << std::endl;
-    }
+    void debug_print(Debug_os& os, bool recursive=true) const override;
 
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
-    void generate_code(std::ostream& target) const override {
-        ASSERT(is_codegen_ready(status));
-
-        if (anonymous_range) {
-            // declare range
-            target << "{ ";
-            range->generate_code(target);
-            target << " = ";
-            range->value.generate_literal(target);
-            target << "; ";
-        }
-
-        iterable_type->generate_for(target, range->name, it->name, step, reverse, anonymous_range);
-        scope->generate_code(target);
-        iterable_type->generate_for_after_scope(target);
-
-        if (anonymous_range) {
-            // close brace from before
-            target << "}" << std::endl;
-        }
-    }
+    void generate_code(std::ostream& target) const override;
 
 };
 
+}
 
 /*
 

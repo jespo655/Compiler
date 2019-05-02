@@ -6,7 +6,6 @@
 Raw C code is necessary in order to call C-native functions.
 
 
-
 syntax:
     #C string_literal
 example:
@@ -24,6 +23,8 @@ generates:
     printf("hello world!");
 */
 
+namespace Cube {
+
 struct Abstx_c_code : Statement {
 
     std::string c_code = "";
@@ -40,3 +41,5 @@ struct Abstx_c_code : Statement {
     };
 
 };
+
+}

@@ -16,6 +16,8 @@ Usages:
     container for inputdata from cb functions
 */
 
+namespace Cube {
+
 struct CB_Any : CB_Type {
     static const Shared<const CB_Type> type; // type any
     static constexpr void* _default_value = nullptr;
@@ -26,35 +28,14 @@ struct CB_Any : CB_Type {
 
     bool is_primitive() const override { return false; }
 
-    void generate_type(ostream& os) const override { os << "_cb_any"; }
-
     // code generation functions
-    void generate_typedef(ostream& os) const override {
-        os << "typedef struct { ";
-        CB_Type::type->generate_type(os);
-        os << " type; void* v_ptr; } ";
-        generate_type(os);
-        os << ";" << std::endl;
-    }
-    void generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
-        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); os << "void"; return; }
-        ASSERT(raw_data);
-        os << "(";
-        generate_type(os);
-        os << "){";
-        CB_Type::type->generate_literal(os, raw_data, depth+1);
-        uint8_t const* raw_it = (uint8_t const*)raw_data;
-        raw_it += CB_Type::type->cb_sizeof();
-        os << ", " << std::hex << (void**)raw_it << "}";
-    }
-    void generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
-        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
-    }
+    void generate_type(std::ostream& os) const override;
+    void generate_typedef(std::ostream& os) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
+    void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
 };
 
-
 // Below: utilities version of any that can be used in c++
-
 struct Any {
     Shared<const CB_Type> v_type; // the type of v
     void const* v_ptr = nullptr; // the value, owned by someone else (do not delete it!)
@@ -94,11 +75,10 @@ struct Any {
         return t == *v_type && v_ptr != nullptr;
     }
 
-    void generate_literal(ostream& os) const {
+    void generate_literal(std::ostream& os) const {
         v_type->generate_literal(os, v_ptr);
     }
 };
-
 
 // functions to parse Any data to c++ native types in a typesafe way
 uint32_t parse_type_id(const Any& any);
@@ -108,4 +88,4 @@ int64_t parse_int(const Any& any);
 uint64_t parse_uint(const Any& any);
 uint64_t parse_float(const Any& any);
 
-
+}

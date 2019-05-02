@@ -7,3 +7,96 @@ Mål: snabba upp kompilationstider, förenkla dependency chains.
 * Alla headers ska vara self-contained, i.e. kunna kompilaras helt ensamma (utan några cpp filer) utan errors
 
 Inga gamla kodfiler får finnas i src/mappen
+
+Använd struct forward declarations hellre än att includa en extra fil i header
+
+
+
+
+använd namespace Cube för alla cube-specifika saker
+
+
+
+
+
+
+
+Strukturkommentarer ska inte finnas i kodfiler.
+De flyttas hit!
+
+
+
+
+
+# abstx_node.h
+/*
+
+Statement:
+    If
+    For
+    While
+    Return
+    Assignment
+    Declaration
+    Using
+    Scope declaration (Anonymous or Named, maybe with keyword modifiers such as Async)
+    Pure value_expression (operators or function call with side effects)
+    Defer
+Modifiers: Generic
+
+Value_expression:
+    Variable_expression
+    Literal (bool, int, string, float, Seq, map)
+    Function call
+
+Variable_expression:
+    Identifier
+    Getter
+
+
+
+
+deprecated:
+    // Cast (?)            // equivalent with function call
+    // Prefix operator     // equivalent with function call
+    // Infix operator      // equivalent with function call
+    // Array indexing      // equivalent with function call that returns a sharing pointer
+
+
+
+
+
+// TODO: scope syntax
+
+// Anonymous scope:
+{...}
+
+// Named scope:
+Name {...}
+Name :: {...}; // maybe?
+
+
+// Keywords:
+Async {...}
+Async Name {...}
+
+*/
+
+
+
+
+# abstx_statement.h
+/*
+Statement:
+    If
+    For
+    While
+    Return
+    Assignment
+    Declaration
+    Using
+    Anonymous scope
+    Pure value_expression / function call (operators or function call with side effects, just a single identifier is not ok)
+    Defer
+Modifiers: Generic
+*/

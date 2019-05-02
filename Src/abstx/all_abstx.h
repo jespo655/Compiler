@@ -1,4 +1,4 @@
-#include "abstx.h"
+#include "abstx_node.h"
 #include "abstx_scope.h"
 #include "statements/abstx_assignment.h"
 #include "statements/abstx_c_code.h"

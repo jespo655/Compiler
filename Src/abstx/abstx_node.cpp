@@ -1,4 +1,6 @@
 #include "abstx.h"
+#include "abstx_function_literal.h"
+#include "abstx_scope.h"
 
 
 

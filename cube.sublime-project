@@ -23,7 +23,7 @@
         },
         {
           "name": "Check headers",
-          "cmd": ["py", "$project_path/Build_tools/header_checker.py", "-b", "../BUILD"],
+          "cmd": ["py", "$project_path/Build_tools/header_checker.py", "-b", "../BUILD", "-e", "1"],
           "shell": "true",
           "working_dir": "${project_path}/Src",
           "file_regex": "^[\\w ]*([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",

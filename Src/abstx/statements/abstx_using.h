@@ -22,27 +22,25 @@ using a:=ST();  // the members of a is pulled in, but are also accessable throug
 TODO: decide exact syntax and usage, before implementing the class
 
 */
+namespace Cube {
 
 struct Abstx_using : Statement {
 
     Owned<Value_expression> subject;
 
     std::string toS() const override { return "using statement"; }
-
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
-
     void generate_code(std::ostream& target) const override {
         // Do nothing; using statements is handled in other ways
     }
 
 };
 
+}
 
 /*
 
-
 // Generates c-code:
-
 
 */
 
