@@ -1,9 +1,6 @@
 @echo off
 
 :: static include paths makes the code nicer, but is not worth it because it makes the program compile 50-100% slower
-:: set INCLUDE_PATHS=-Iutilities -Itypes
-set SRC_FILES=*.cpp types/*.cpp runtime_dll/*.cpp abstx/*.cpp utilities/*.cpp parser/*.cpp lexer/*.cpp
-:: parser/*.cpp code_gen/*.cpp
 set LIBS32=runtime_dll/dyncall/lib32/libdyncall_s.lib
 set LIBS64=runtime_dll/dyncall/lib64/libdyncall_s.lib
 set OUTPUT_NAME=cube.exe
@@ -13,12 +10,12 @@ if "%PROCESSOR_ARCHITECTURE%"=="AMD64" goto 64BIT
 
 :32BIT
 echo Compiling cube_32...
-py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS32% -o cube
+py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS32% -o %OUTPUT_NAME%
 goto END
 
 :64BIT
 echo Compiling cube_64...
-py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS64% -o cube
+py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS64% -o %OUTPUT_NAME%
 
 :END
 

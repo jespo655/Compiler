@@ -27,6 +27,7 @@ build_folder = "BUILD"
 src_folder = "."
 compiler = "g++"
 flag = "-std=gnu++14"
+max_errors = 0
 clean_check = False
 verbose_output = False
 quiet_output = False
@@ -58,7 +59,8 @@ def check_file(header, timestamps, temp_file_path, temp_output_path):
     # compile
     if (not quiet_output): print("Checking {}...".format(header))
     sys.stdout.flush()
-    error = subprocess.call([compiler, flag, "-I", src_folder, "-Wall", temp_file_path, "-o", temp_output_path])
+    error = subprocess.call([compiler, "-{}".format(flag), "-I", src_folder, temp_file_path, "-o", temp_output_path])
+
     if (error):
         timestamps[header] = None
         return ERROR
@@ -97,6 +99,7 @@ def check_files():
             files_checked += 1
         elif (result == SKIPPED):
             files_skipped += 1
+        if (max_errors > 0 and files_error >= max_errors): break
 
     write_data(timestamps_path, timestamps)
 
@@ -104,7 +107,7 @@ def check_files():
     if os.path.exists(temp_output_path): os.remove(temp_output_path)
 
     end = time.time()
-    print("Checked {} files and skipped {} files in {:.1f} seconds. Found errors in {}/{} files.".format(files_checked, files_checked, end - start, files_error, files_skipped+files_checked))
+    print("Checked {} files and skipped {} files in {:.1f} seconds. Found errors in {}/{} files.".format(files_checked, files_skipped, end - start, files_error, files_skipped+files_checked))
 
 
 
@@ -127,7 +130,7 @@ def read_data(filename, default=None):
 
 def main(argv):
 
-    global build_folder, src_folder, compiler, flag, clean_check, verbose_output, quiet_output
+    global build_folder, src_folder, compiler, flag, clean_check, verbose_output, quiet_output, max_errors
 
     helpstring = """
 Checks header files for compilation errors.
@@ -140,13 +143,14 @@ Usage: py {} [--help] [--version] [options]
     -s, --src <folder>      set source folder (default: {})
     -k, --compiler          set compiler (default: {})
     -f, --flag              set compilation flag (default: {})
+    -e, --maxerr <#>        set the maximum number of files with errors that are accepted before the script terminates
     -c, --clean             make a clean check, ignoring previous results
     -v, --verbose           make additional output
     -q, --quiet             make minimal output (overrides --verbose)""".format(__file__, build_folder, src_folder, compiler, flag)
 
 
     try:
-        opts, args = getopt.getopt(argv, "hb:s:k:f:cvq", ["help", "version", "build=", "src=", "compiler=", "flag=", "clean", "verbose", "quiet"])
+        opts, args = getopt.getopt(argv, "hb:s:k:f:ce:vq", ["help", "version", "build=", "src=", "maxerr", "compiler=", "flag=", "clean", "verbose", "quiet"])
     except getopt.GetoptError:
         print("{}".format(helpstring))
         sys.exit(2)
@@ -171,6 +175,9 @@ Usage: py {} [--help] [--version] [options]
 
         elif opt in ["-f", "--flag"]:
             flag = arg
+
+        elif opt in ["-e", "--maxerr"]:
+            max_errors = int(arg)
 
         elif opt in ["-c", "--clean"]:
             clean_check = True

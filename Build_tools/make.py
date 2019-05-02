@@ -32,6 +32,7 @@ cpp_compiler = "g++"
 cpp_flag = "std=gnu++14"
 c_compiler = "gcc"
 c_flag = ""
+max_errors = 0
 clean_build = False
 verbose_output = False
 quiet_output = False
@@ -109,17 +110,19 @@ def build():
         if c_compiler != no_compiler: c_files.extend([[root, fi] for fi in files if fi.endswith(".c")])
         if cpp_compiler != no_compiler: cpp_files.extend([[root, fi] for fi in files if fi.endswith(".cpp")])
 
-    errors = False
+    errors = 0
     changed = False
     for root_file in c_files:
         res = compile_file(root_file[0], root_file[1], timestamps, cpp=False)
-        if (res == ERROR): errors = True
+        if (res == ERROR): errors += 1
         if (res != SKIPPED): changed = True
+        if (max_errors > 0 and errors >= max_errors): break
 
     for root_file in cpp_files:
         res = compile_file(root_file[0], root_file[1], timestamps, cpp=True)
-        if (res == ERROR): errors = True
+        if (res == ERROR): errors += 1
         if (res != SKIPPED): changed = True
+        if (max_errors > 0 and errors >= max_errors): break
 
     write_data(timestamps_path, timestamps)
 
@@ -160,7 +163,7 @@ def read_data(filename, default=None):
 
 def main(argv):
 
-    global build_folder, src_folder, cpp_compiler, cpp_flag, c_compiler, c_flag, clean_build, verbose_output, quiet_output
+    global build_folder, src_folder, cpp_compiler, cpp_flag, c_compiler, c_flag, clean_build, verbose_output, quiet_output, max_errors
 
     helpstring = """
 Builds all C and C++ files using incremental compilation.
@@ -175,13 +178,14 @@ Usage: py {} [--help] [--version] [options]
     -f, --cpp_flag          set C++ compilation flag (default: {})
     -l, --c_compiler        set C compiler (default: {}) set to "none" to disable compilation of .c files.
     -g, --c_flag            set C compilation flag (default: {})
+    -e, --maxerr <#>        set the maximum number of files with errors that are accepted before the script terminates
     -L, --library <path>    include external library in compilation
     -c, --clean             make a clean build, ignoring previous results
     -v, --verbose           make additional output
     -q, --quiet             make minimal output (overrides --verbose)""".format(__file__, build_folder, src_folder, outputname, cpp_compiler, cpp_flag, c_compiler, c_flag)
 
     try:
-        opts, args = getopt.getopt(argv, "hb:s:k:f:l:g:L:o:cvq", ["help", "version", "build=", "src=", "output", "cpp_compiler=", "cpp_flag=", "c_compiler=", "c_flag=", "library=", "clean", "verbose", "quiet"])
+        opts, args = getopt.getopt(argv, "hb:s:k:f:l:g:L:o:e:cvq", ["help", "version", "build=", "src=", "maxerr", "output", "cpp_compiler=", "cpp_flag=", "c_compiler=", "c_flag=", "library=", "clean", "verbose", "quiet"])
     except getopt.GetoptError:
         print("{}".format(helpstring))
         sys.exit(2)
@@ -212,6 +216,9 @@ Usage: py {} [--help] [--version] [options]
 
         elif opt in ["-g", "--c_flag"]:
             c_flag = arg
+
+        elif opt in ["-e", "--maxerr"]:
+            max_errors = int(arg)
 
         elif opt in ["-L", "--library"]:
             libraries.append(arg)

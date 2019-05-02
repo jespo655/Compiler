@@ -20,12 +20,19 @@
           "shell": "true",
           "working_dir": "${project_path}/Src",
           "file_regex": "^[\\w ]*([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
+        },
+        {
+          "name": "Check headers",
+          "cmd": ["py", "$project_path/Build_tools/header_checker.py", "-b", "../BUILD"],
+          "shell": "true",
+          "working_dir": "${project_path}/Src",
+          "file_regex": "^[\\w ]*([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
         }
       ],
     },
     {
       "name": "Test Module",
-      "cmd": ["g++", "-std=c++14", "-DTEST", "$file_name", "-o$file_base_name.exe", "&&", "${file_base_name}.exe"],
+      "cmd": ["g++", "-std=c++14", "-DTEST", "$file_name", "-o${file_base_name}.exe", "&&", "${file_base_name}.exe"],
       // "-I${project_path}\\Src\\utilities",
       "shell": "true",
       "working_dir": "$file_path",
@@ -34,7 +41,7 @@
     },
     {
       "name": "Optimized C->ASM",
-      "cmd": ["gcc", "-O3", "-S", "-fverbose-asm" ,"$file_name", "-o$file_base_name.asm", "&&", "${file_base_name}.asm" ],
+      "cmd": ["gcc", "-O3", "-S", "-fverbose-asm" ,"$file_name", "-o${file_base_name}.asm", "&&", "${file_base_name}.asm" ],
       "shell": "true",
       "working_dir": "$file_path",
       "file_regex": "^[\\w ]*([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
