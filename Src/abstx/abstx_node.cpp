@@ -1,8 +1,14 @@
-#include "all_abstx.h"
+#include "abstx.h"
 
 
-Seq<Owned<Abstx_identifier>> Global_scope::type_identifiers;
-Token_context Global_scope::built_in_context;
+
+
+virtual void Abstx_node::debug_print(Debug_os& os, bool recursive=true) const
+{
+    os << toS() << std::endl;
+}
+
+
 
 
 // Go up in the Abstx tree until a parent scope is found.
@@ -29,6 +35,13 @@ Shared<Abstx_function_literal> Abstx_node::parent_function() const
     return nullptr;
 }
 
+virtual Shared<Global_scope> Abstx_node::global_scope() const
+{
+    return owner->global_scope();
+}
+
+
+
 
 
 #ifdef DEBUG
@@ -43,6 +56,15 @@ Token_iterator Abstx_node::parse_begin() const
     ASSERT(gs);
     return gs->iterator(start_token_index);
 };
+
+
+
+
+
+
+
+
+// @TODO: move this to a separate file?
 
 // data structure to keep allocated void pointers until the program exits
 struct Constant_data_container
@@ -71,44 +93,3 @@ void* alloc_constant_data(size_t bytes) { _constant_data_container.add_constant_
 void free_constant_data(void* p) { _constant_data_container.free_constant_data(p); }
 void free_all_constant_data() { _constant_data_container.~Constant_data_container(); }
 
-
-
-Shared<Abstx_function_literal> Global_scope::get_entry_point(const std::string& id) {
-    auto fn_id = get_identifier(id);
-    Shared<const CB_Type> t = fn_id->get_type();
-    ASSERT(t != nullptr); // type must be known
-    Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(t);
-    if (fn_type == nullptr) {
-        log_error("No entry point defined!", context);
-        return nullptr;
-    } else if (fn_id->has_constant_value()) {
-        return (Abstx_function_literal*)fn_id->get_constant_value().v_ptr;
-    }
-}
-
-
-
-#ifdef TEST
-
-// not very useful test location since almost all things we would want to test here requires other cpp files (e.g. types)
-
-#include "../types/all_cb_types.h"
-#include <iostream>
-
-int main()
-{
-    { Abstx_assignment abstx; }
-    { Abstx_declaration abstx; }
-    { Abstx_defer abstx; }
-    // { Abstx_for abstx; }
-    { Abstx_function_literal abstx; }
-    { Abstx_function_call abstx; }
-    // { Abstx_if abstx; } // undefined reference to bool
-    { Abstx_return abstx; }
-    // { Abstx_scope abstx; } // log_error undefined
-    // { Statement abstx; } // abstract class
-    { Abstx_using abstx; }
-    // { Abstx_while abstx; } // undefined reference to bool
-}
-
-#endif

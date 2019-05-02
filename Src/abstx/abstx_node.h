@@ -7,13 +7,12 @@
 #include "../parser/parsing_status.h"
 #include "../parser/token_iterator.h"
 
+#include "abstx_scope.h"
+#include "abstx_function_literal.h"
+
 #include <string>
 #include <ostream>
 #include <iostream> // for debug purposes
-
-struct Abstx_scope;
-struct Global_scope;
-struct Abstx_function_literal;
 
 /*
     An Abstx_node is a node in the abstract syntax tree.
@@ -35,7 +34,7 @@ struct Abstx_node
     // If recursive=true, then also call debug_print() on all child nodes.
     // For child nodes, use os.indent() and os.unindent() for clarity.
     // As default debug_print() prints toS().
-    virtual void debug_print(Debug_os& os, bool recursive=true) const { os << toS() << std::endl; }
+    virtual void debug_print(Debug_os& os, bool recursive=true) const;
 
     // toS(): concatenate the most basic data about the node in a single
     // line of text. This line should preferrably be self contained and fit
@@ -69,7 +68,7 @@ struct Abstx_node
     virtual Shared<Abstx_function_literal> parent_function() const;
 
     // Return a pointer to the root parent scope in the tree
-    virtual Shared<Global_scope> global_scope() const { return owner->global_scope(); }
+    virtual Shared<Global_scope> global_scope() const;
 
     // make basic assertions and get the correct token iterator; to be called in the beginning of fully_parse()
     #ifdef DEBUG
