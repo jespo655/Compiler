@@ -27,7 +27,14 @@
           "shell": "true",
           "working_dir": "${project_path}/Src",
           "file_regex": "^[\\w ]*([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
-        }
+        },
+        {
+          "name": "Check single header",
+          "cmd": ["py", "$project_path/Build_tools/header_checker.py", "-b", "../BUILD", "--header", "$file_name"],
+          "shell": "true",
+          "working_dir": "$file_path",
+          "file_regex": "^[\\w ]*([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
+        },
       ],
     },
     {

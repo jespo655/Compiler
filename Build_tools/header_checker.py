@@ -28,6 +28,7 @@ src_folder = "."
 compiler = "g++"
 flag = "-std=gnu++14"
 max_errors = 0
+single_header = None
 clean_check = False
 verbose_output = False
 quiet_output = False
@@ -84,8 +85,11 @@ def check_files():
         os.makedirs(build_folder)
 
     h_files = []
-    for root, dirs, files in os.walk(src_folder):
-        h_files.extend([os.path.join(root, fi) for fi in files if fi.endswith(".h")])
+    if (single_header):
+        h_files.append(os.path.join(src_folder, single_header))
+    else:
+        for root, dirs, files in os.walk(src_folder):
+            h_files.extend([os.path.join(root, fi) for fi in files if fi.endswith(".h")])
 
     files_checked = 0
     files_skipped = 0
@@ -130,7 +134,7 @@ def read_data(filename, default=None):
 
 def main(argv):
 
-    global build_folder, src_folder, compiler, flag, clean_check, verbose_output, quiet_output, max_errors
+    global build_folder, src_folder, compiler, flag, clean_check, verbose_output, quiet_output, max_errors, single_header
 
     helpstring = """
 Checks header files for compilation errors.
@@ -141,6 +145,7 @@ Usage: py {} [--help] [--version] [options]
 
     -b, --build <folder>    set build folder (default: {})
     -s, --src <folder>      set source folder (default: {})
+    -h, --header <filename> set to only check one file (default: not set)
     -k, --compiler          set compiler (default: {})
     -f, --flag              set compilation flag (default: {})
     -e, --maxerr <#>        set the maximum number of files with errors that are accepted before the script terminates
@@ -148,9 +153,8 @@ Usage: py {} [--help] [--version] [options]
     -v, --verbose           make additional output
     -q, --quiet             make minimal output (overrides --verbose)""".format(__file__, build_folder, src_folder, compiler, flag)
 
-
     try:
-        opts, args = getopt.getopt(argv, "hb:s:k:f:ce:vq", ["help", "version", "build=", "src=", "maxerr", "compiler=", "flag=", "clean", "verbose", "quiet"])
+        opts, args = getopt.getopt(argv, "hb:s:k:h:f:ce:vq", ["help", "version", "build=", "src=", "header=", "maxerr", "compiler=", "flag=", "clean", "verbose", "quiet"])
     except getopt.GetoptError:
         print("{}".format(helpstring))
         sys.exit(2)
@@ -175,6 +179,9 @@ Usage: py {} [--help] [--version] [options]
 
         elif opt in ["-f", "--flag"]:
             flag = arg
+
+        elif opt in ["-h", "--header"]:
+            single_header = arg
 
         elif opt in ["-e", "--maxerr"]:
             max_errors = int(arg)
