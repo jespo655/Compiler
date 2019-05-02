@@ -1,12 +1,12 @@
 /*
 
  Package: dyncall
- Library: dyncallback
- File: dyncallback/dyncall_args_arm32_thumb.h
- Description: Callback's Arguments VM - Header for ARM32 (THUMB mode)
+ Library: dyncall
+ File: dyncall/dyncall_callf.h
+ Description: formatted call interface to dyncall
  License:
 
-   Copyright (c) 2007-2015 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>, 
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -24,10 +24,33 @@
 */
 
 
-#ifndef DYNCALLBACK_ARGS_ARM32_THUMB_H
-#define DYNCALLBACK_ARGS_ARM32_THUMB_H
 
-#include "dyncall_args_arm32_arm.h"	/* Uses same code as ARM mode. */
+/*
 
-#endif /* DYNCALLBACK_ARGS_ARM32_THUMB_H */
+  dyncall formatted calls C API
+
+  REVISION
+  2007/12/11 initial
+  
+*/
+
+
+#ifndef DYNCALL_CALLF_H
+#define DYNCALL_CALLF_H
+
+/* dyncall formatted calls */
+
+#include "dyncall.h"
+#include "dyncall_signature.h"
+#include "dyncall_value.h"
+
+#include <stdarg.h>
+
+void dcArgF (DCCallVM* vm, const DCsigchar* signature, ...);
+void dcVArgF(DCCallVM* vm, const DCsigchar* signature, va_list args);
+
+void dcCallF (DCCallVM* vm, DCValue* result, DCpointer funcptr, const DCsigchar* signature, ...);
+void dcVCallF(DCCallVM* vm, DCValue* result, DCpointer funcptr, const DCsigchar* signature, va_list args);
+
+#endif /* DYNCALL_CALLF_H */
 

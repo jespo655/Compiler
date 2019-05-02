@@ -1,12 +1,12 @@
 /*
 
  Package: dyncall
- Library: dyncallback
- File: dyncallback/dyncall_callback_arm32_thumb.h
- Description: Callback - Header for ARM32 (THUMB mode)
+ Library: dyncall
+ File: dyncall/dyncall_config.h
+ Description: Macro configuration file for non-standard C types
  License:
 
-   Copyright (c) 2007-2015 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>, 
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -25,10 +25,23 @@
 
 
 
-#ifndef DYNCALL_CALLBACK_ARM32_THUMB_H_
-#define DYNCALL_CALLBACK_ARM32_THUMB_H_
+/*
 
-#include "dyncall_callback_arm32_arm.h" /* Uses same code as ARM mode. */
+  dyncall type configuration
 
-#endif /* DYNCALL_CALLBACK_ARM32_THUMB_H_ */
+  REVISION
+  2007/12/11 initial
+
+*/
+
+#ifndef DYNCALL_CONFIG_H
+#define DYNCALL_CONFIG_H
+
+#include "dyncall_macros.h"
+
+#define DC_BOOL         int
+#define DC_LONG_LONG    long long
+#define DC_POINTER      void*
+
+#endif /* DYNCALL_CONFIG_H */
 

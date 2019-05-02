@@ -2,11 +2,11 @@
 
  Package: dyncall
  Library: dyncallback
- File: dyncallback/dyncall_args_ppc32.h
- Description: Callback's Arguments VM - Header for ppc32
+ File: dyncallback/dyncall_callback.h
+ Description: Callback - Interface
  License:
 
-   Copyright (c) 2007-2015 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -23,21 +23,29 @@
 
 */
 
-#ifndef DYNCALLBACK_ARGS_PPC32_H
-#define DYNCALLBACK_ARGS_PPC32_H
+#ifndef DYNCALL_CALLBACK_H
+#define DYNCALL_CALLBACK_H
 
 #include "dyncall_args.h"
+#include "dyncall_signature.h"
+#include "dyncall_value.h"
 
-/* Common Args iterator for Apple and System V ABI. */
+typedef struct DCCallback DCCallback;
 
-struct DCArgs
-{
-  int            ireg_data[8];		/* offset: 0   size: 4*8 = 32  */
-  double         freg_data[13];		/* offset: 32  size: 8*13= 104 */	
-  unsigned char* stackptr;		/* offset: 136 size:       4   */
-  int            ireg_count;            /* offset: 140 size:       4   */
-  int            freg_count;            /* offset: 144 size:       4   */
-};                                      /*       total size:       148 */
+// return value is the type encoded as a signature char (character of the set [vBcCsSiIjJlLfd]).
+typedef char (DCCallbackHandler)(DCCallback* pcb, DCArgs* args, DCValue* result, void* userdata);
 
-#endif /* DYNCALLBACK_ARGS_PPC32_H */
+#ifdef __cplusplus
+extern "C" {
+#endif 
 
+DCCallback* dcbNewCallback(const char* signature, DCCallbackHandler* funcptr, void* userdata);
+void        dcbInitCallback(DCCallback* pcb, const char* signature, DCCallbackHandler* handler, void* userdata);
+void        dcbFreeCallback(DCCallback* pcb);
+void*       dcbGetUserData (DCCallback* pcb);
+
+#ifdef __cplusplus
+}
+#endif 
+
+#endif /* DYNCALL_CALLBACK_H */

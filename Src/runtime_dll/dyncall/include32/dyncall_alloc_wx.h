@@ -2,11 +2,11 @@
 
  Package: dyncall
  Library: dyncallback
- File: dyncallback/dyncall_thunk_arm32_arm.h
- Description: Thunk - Header for ARM32 (ARM mode)
+ File: dyncallback/dyncall_alloc_wx.h
+ Description: Allocate write/executable memory - Interface
  License:
 
-   Copyright (c) 2007-2015 Daniel Adler <dadler@uni-goettingen.de>,
+   Copyright (c) 2007-2018 Daniel Adler <dadler@uni-goettingen.de>,
                            Tassilo Philipp <tphilipp@potion-studios.com>
 
    Permission to use, copy, modify, and distribute this software for any
@@ -24,18 +24,25 @@
 */
 
 
-#ifndef DYNCALL_THUNK_ARM32_ARM_H
-#define DYNCALL_THUNK_ARM32_ARM_H
+#ifndef DYNCALL_ALLOC_WX_HPP
+#define DYNCALL_ALLOC_WX_HPP
+
+#include "dyncall_types.h"
+
+typedef int DCerror;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+DCerror dcAllocWX   (DCsize size, void** p);
+DCerror dcInitExecWX(void* p, DCsize size);
+void    dcFreeWX    (void* p, DCsize size);
+
+#ifdef __cplusplus
+}
+#endif
 
 
-struct DCThunk_
-{
-  unsigned int code[2];
-  void       (*entry)();
-};
-
-#define DCTHUNK_ARM32_ARM_SIZE 12
-
-
-#endif /* DYNCALL_THUNK_ARM32_ARM_H */
+#endif /* DYNCALL_ALLOC_WX_HPP */
 
