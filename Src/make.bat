@@ -13,12 +13,12 @@ if "%PROCESSOR_ARCHITECTURE%"=="AMD64" goto 64BIT
 
 :32BIT
 echo Compiling cube_32...
-g++ -std=gnu++14 %INCLUDE_PATHS% %SRC_FILES% %LIBS32% -o %OUTPUT_NAME%
+py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS32% -o cube
 goto END
 
 :64BIT
 echo Compiling cube_64...
-g++ -std=gnu++14 %INCLUDE_PATHS% %SRC_FILES% %LIBS64% -o %OUTPUT_NAME%
+py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS64% -o cube
 
 :END
 
@@ -26,5 +26,5 @@ g++ -std=gnu++14 %INCLUDE_PATHS% %SRC_FILES% %LIBS64% -o %OUTPUT_NAME%
 :: /Y supresses prompting to confirm you want to overwrite an existing destination file (seems to not do anything)
 :: /Q : Suppresses the display of xcopy messages.
 :: /R : Copies read-only files.
-if exist C:\PATH\ xcopy /B /Q /Y "cube.exe" "C:/PATH/cube.exe"
-if exist D:\PATH\ xcopy /B /Q /Y "cube.exe" "D:/PATH/cube.exe"
+if exist C:\PATH\ xcopy /B /Q /Y "BUILD/cube.exe" "C:/PATH/cube.exe"
+if exist D:\PATH\ xcopy /B /Q /Y "BUILD/cube.exe" "D:/PATH/cube.exe"

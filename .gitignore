@@ -1,5 +1,6 @@
 *.exe
 OLD/
+BUILD/
 *.old*
 *.lnk
 *.sublime-workspace

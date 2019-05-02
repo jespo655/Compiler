@@ -1,0 +1,9 @@
+
+
+Mål: snabba upp kompilationstider, förenkla dependency chains.
+
+* Använd build scripts med incremental build
+* Flytta ut kod från header files
+* Alla headers ska vara self-contained, i.e. kunna kompilaras helt ensamma (utan några cpp filer) utan errors
+
+Inga gamla kodfiler får finnas i src/mappen
