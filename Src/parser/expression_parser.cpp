@@ -19,9 +19,6 @@
 #include "../types/all_cb_types.h"
 // #include "../compile_time/compile_time.h"
 
-
-namespace Cube {
-
 // --------------------------------------------------------------------------------------------------------------------
 //
 //          Expression examination
@@ -1319,4 +1316,3 @@ infix
 
 
 
-}

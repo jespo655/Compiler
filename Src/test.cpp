@@ -20,8 +20,6 @@
 #include <cstdlib>
 #include <memory>
 using namespace std;
-using namespace Cube;
-
 void flag_test()
 {
 

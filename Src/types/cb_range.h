@@ -14,8 +14,6 @@ Syntax:
 a : Range = 0..2;
 */
 
-namespace Cube {
-
 struct CB_Iterable {
     // generate_for(): called to output c-style for loop (including "for" and parens)
     // after this, a scope (including braces) will be printed
@@ -123,4 +121,3 @@ struct float_range {
 static float_range::iterator begin(const float_range& r) { return float_range::iterator(r, r.r_start); }
 static float_range::iterator end(const float_range& r) { return float_range::iterator(r, r.r_end + 1); }
 
-}

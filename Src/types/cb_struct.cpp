@@ -2,8 +2,6 @@
 
 #include <iomanip>
 
-using namespace Cube;
-
 
 std::string CB_Struct::Struct_member::toS() const {
     std::ostringstream oss;

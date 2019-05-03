@@ -6,8 +6,6 @@
 
 #include <sstream>
 
-namespace Cube {
-
 struct Abstx_struct_literal : Value_expression {
     Owned<Abstx_scope> struct_scope;
     Shared<const CB_Type> struct_type; // has to have a value; owned by built_in_types list
@@ -22,5 +20,3 @@ struct Abstx_struct_literal : Value_expression {
     void generate_code(std::ostream& target) const override;
     void finalize() override;
 };
-
-}

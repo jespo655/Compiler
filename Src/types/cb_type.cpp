@@ -3,9 +3,6 @@
 #include "../utilities/assert.h"
 #include "../utilities/unique_id.h"
 
-namespace Cube {
-
-
 std::string CB_Type::toS() const {
     const std::string& name = typenames[uid];
     if (name == "") return "type_"+std::to_string(uid);
@@ -67,8 +64,4 @@ const Any& CB_Type::default_value() const
     }
     ASSERT(*a.v_type == *this, "Type '"+toS()+"' has no default value!");
     return a;
-}
-
-
-
 }

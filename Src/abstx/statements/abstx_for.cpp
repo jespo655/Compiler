@@ -4,8 +4,6 @@
 #include "../../utilities/unique_id.h"
 #include "../../types/cb_range.h" // CB_Iterable
 
-using namespace Cube;
-
 std::string Abstx_for::toS() const { return "for(){}"; }
 
 void Abstx_for::debug_print(Debug_os& os, bool recursive) const

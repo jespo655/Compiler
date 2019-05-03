@@ -2,8 +2,6 @@
 
 #include "../abstx_node.h"
 
-namespace Cube {
-
 // A statement is a line of code.
 // This is also the smallest unit of compilation.
 struct Statement : Abstx_node
@@ -21,5 +19,3 @@ struct Unknown_statement : Statement
 {
     std::string toS() const override { return "Unknown statement"; }
 };
-
-}

@@ -3,8 +3,6 @@
 #include "variable_expression.h"
 #include "../../types/cb_struct.h"
 
-namespace Cube {
-
 struct Abstx_struct_getter : Variable_expression {
 
     Owned<Variable_expression> struct_expr;
@@ -24,5 +22,3 @@ struct Abstx_struct_getter : Variable_expression {
 private:
     bool get_member();
 };
-
-}

@@ -1,8 +1,5 @@
 #include "abstx_struct_getter.h"
 
-namespace Cube {
-
-
 std::string Abstx_struct_getter::toS() const {
     ASSERT(member_id.length() > 0);
     std::ostringstream oss;
@@ -59,7 +56,4 @@ bool Abstx_struct_getter::get_member() {
         member = struct_type->get_member(member_id);
     }
     return member != nullptr;
-}
-
-
 }

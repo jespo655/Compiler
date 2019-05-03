@@ -2,8 +2,6 @@
 
 #include "value_expression.h"
 
-namespace Cube {
-
 // An evaluated variable is anything that can be assigned a value.
 struct Variable_expression : Value_expression
 {
@@ -53,5 +51,3 @@ struct Variable_expression_reference : Variable_expression {
         status = expr->status;
     }
 };
-
-}

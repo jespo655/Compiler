@@ -3,8 +3,6 @@
 
 namespace dll {
 
-using namespace Cube;
-
 void call_fn_any(void* fn_ptr, Seq<Any> args) {
     auto vm = dll_internal::reset_vm();
     for (const auto& arg : args)

@@ -23,8 +23,6 @@ generates:
     printf("hello world!");
 */
 
-namespace Cube {
-
 struct Abstx_c_code : Statement {
 
     std::string c_code = "";
@@ -41,5 +39,3 @@ struct Abstx_c_code : Statement {
     };
 
 };
-
-}

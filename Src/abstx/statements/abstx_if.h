@@ -15,8 +15,6 @@ else {}
 then {}
 */
 
-namespace Cube {
-
 struct Abstx_if : Statement {
 
     struct Abstx_conditional_scope : Abstx_node {
@@ -45,8 +43,6 @@ struct Abstx_if : Statement {
     void generate_code(std::ostream& target) const override;
 
 };
-
-}
 
 /*
 

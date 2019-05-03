@@ -2,8 +2,6 @@
 #include "../expressions/abstx_identifier.h"
 #include "../expressions/value_expression.h"
 
-namespace Cube {
-
 std::string Abstx_declaration::toS() const {
     ASSERT(identifiers.size > 0);
 
@@ -70,5 +68,3 @@ void Abstx_declaration::generate_code(std::ostream& target) const {
         }
     }
 };
-
-}

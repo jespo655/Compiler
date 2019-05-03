@@ -11,8 +11,6 @@
 #include <ostream>
 #include <iostream> // for debug purposes
 
-namespace Cube {
-
 struct Abstx_function_literal;
 struct Abstx_scope;
 struct Global_scope;
@@ -88,5 +86,3 @@ void add_constant_data(void* p);
 void* alloc_constant_data(size_t bytes);
 void free_constant_data(void* p);
 void free_all_constant_data();
-
-}

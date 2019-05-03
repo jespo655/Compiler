@@ -7,8 +7,6 @@
 #include "../types/cb_string.h"
 #include "../parser/parser.h"
 
-using namespace Cube;
-
 Seq<Owned<Abstx_identifier>> Global_scope::type_identifiers;
 Token_context Global_scope::built_in_context;
 

@@ -1,8 +1,6 @@
 #include "abstx_sequence_literal.h"
 #include "../../types/cb_seq.h"
 
-namespace Cube {
-
 std::string Abstx_sequence_literal::toS() const {
     return value.toS();
 }
@@ -50,6 +48,4 @@ void Abstx_sequence_literal::generate_code(std::ostream& target) const
 
     }
     // value.generate_literal(target);
-}
-
 }

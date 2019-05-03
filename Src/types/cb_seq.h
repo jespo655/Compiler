@@ -15,8 +15,6 @@ a : T[] = [size=N: t1, t2, t3]; // T inferred from the type of the members
 a : T[] = [t1, t2, t3]; // T and N inferred
 */
 
-namespace Cube {
-
 struct CB_Indexable {
     virtual void generate_index_start(std::ostream& os, const std::string& id) const = 0;
     virtual void generate_index_end(std::ostream& os) const = 0;
@@ -78,5 +76,3 @@ struct CB_Fixed_seq : CB_Type, CB_Iterable, CB_Indexable
     void generate_index_start(std::ostream& os, const std::string& id) const override;
     void generate_index_end(std::ostream& os) const override;
 };
-
-}

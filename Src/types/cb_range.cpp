@@ -1,7 +1,5 @@
 #include "cb_range.h"
 
-namespace Cube {
-
 void CB_Range::generate_typedef(std::ostream& os) const {
     os << "typedef struct { ";
     CB_i64::type->generate_type(os);
@@ -58,6 +56,4 @@ void CB_Float_range::generate_for(std::ostream& os, const std::string& id, const
     os << " " << it_name << " = " << id << (reverse?".r_end":".r_start") << "; ";
     os << it_name << (reverse?" >= ":" <= ") << id << (reverse?".r_start":".r_end") << ";";
     os << it_name << (reverse?" -= ":" += ") << step << ")";
-}
-
 }

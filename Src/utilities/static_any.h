@@ -10,8 +10,6 @@ and when the Any is destroyed, the actual object will also be destroyed properly
 In c++, this is done through templated callbacks, so the struct is a bit bigger than it should be in Cube.
 */
 
-namespace Cube {
-
 struct Static_any {
     static CB_Type type; // type any
     static const bool primitive = false;
@@ -139,6 +137,4 @@ void Static_any::set_callbacks() {
     toS_callback = toS_any_callback<T>;
     assign_callback = assign_any_callback<T>;
     // assign_callback = assign_any_callback<T, std::is_copy_constructible<T>::value>::f;
-}
-
 }

@@ -22,7 +22,6 @@
 //
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace Cube {
 
 // Perform partial parsing of a statement, adding the parsed statements to the parent scope in the process
 // If the scope is dynamic, all statements has to be fully parsed and finalized immediately
@@ -1319,7 +1318,3 @@ Parsing_status Abstx_while::finalize() override {
 }
 */
 
-
-
-
-}

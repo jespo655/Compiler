@@ -1,8 +1,6 @@
 #include "abstx_while.h"
 #include "../../types/cb_primitives.h"
 
-using namespace Cube;
-
 void Abstx_while::debug_print(Debug_os& os, bool recursive) const
 {
     os << "while(";

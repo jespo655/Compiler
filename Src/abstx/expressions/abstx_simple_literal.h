@@ -5,8 +5,6 @@
 
 #include <sstream>
 
-namespace Cube {
-
 struct Abstx_simple_literal : Value_expression {
     Any value; // has to have a value
 
@@ -19,5 +17,3 @@ struct Abstx_simple_literal : Value_expression {
     void generate_code(std::ostream& target) const override;
     void finalize() override;
 };
-
-}

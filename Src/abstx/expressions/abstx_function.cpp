@@ -1,7 +1,5 @@
 #include "abstx_function.h"
 
-using namespace Cube;
-
 std::string Abstx_function_literal::toS() const {
     // @todo: write better toS()
     return "function";

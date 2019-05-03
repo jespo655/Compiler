@@ -142,7 +142,6 @@ för funktion: titta om samma funktion redan är definierad som en typ i CB_Type
 
  */
 
-namespace Cube {
 
 struct CB_Function : CB_Type
 {
@@ -159,10 +158,6 @@ struct CB_Function : CB_Type
     void generate_typedef(std::ostream& os) const override;
     void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
 };
-
-}
-
-
 
 
 

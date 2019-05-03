@@ -16,8 +16,6 @@ That is, they have to be defined in a .cpp-file.
 // #include "../abstx/statements/abstx_scope.h"
 // #include "sequence.h"
 
-namespace Cube {
-
 std::map<CB_Type::c_typedef, std::string> CB_Type::typenames{};
 std::map<CB_Type::c_typedef, Any> CB_Type::default_values{};
 std::map<CB_Type::c_typedef, size_t> CB_Type::cb_sizes{};
@@ -303,5 +301,3 @@ int main()
 }
 
 #endif
-
-}

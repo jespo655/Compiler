@@ -5,8 +5,6 @@
 #include "../../types/cb_type.h"
 #include "../../types/cb_any.h"
 
-namespace Cube {
-
 // An evaluated value is anything that evaluates to a value that can be read.
 struct Value_expression : Abstx_node
 {
@@ -24,5 +22,3 @@ struct Value_expression : Abstx_node
     // this might require to finalized owned members or even shared dependencies
     virtual void finalize() = 0;
 };
-
-}

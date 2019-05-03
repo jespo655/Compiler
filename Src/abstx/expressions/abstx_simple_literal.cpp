@@ -1,7 +1,5 @@
 #include "abstx_simple_literal.h"
 
-namespace Cube {
-
 std::string Abstx_simple_literal::toS() const {
     std::ostringstream oss;
     oss << "(" << value.v_type->toS() << ")" << value.toS();
@@ -33,6 +31,4 @@ void Abstx_simple_literal::finalize() {
     ASSERT(value.v_type != nullptr, "type must be set during creation");
     ASSERT(value.v_ptr != nullptr, "constant value must be set during creation");
     status = Parsing_status::FULLY_RESOLVED;
-}
-
 }

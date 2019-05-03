@@ -21,8 +21,6 @@ Name := {...}; // Named scope
 Name := Async {...}; // Named scope with keywords
 */
 
-namespace Cube {
-
 struct Abstx_function_call;
 struct Abstx_using;
 struct CB_Type;
@@ -161,5 +159,3 @@ struct Abstx_anonymous_scope : Statement
         scope->generate_code(target);
     };
 };
-
-}

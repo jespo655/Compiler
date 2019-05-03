@@ -8,8 +8,6 @@
 while (b) {}
 */
 
-namespace Cube {
-
 struct Abstx_while : Statement {
 
     Owned<Value_expression> condition;
@@ -22,8 +20,6 @@ struct Abstx_while : Statement {
     void generate_code(std::ostream& target) const override;
 
 };
-
-}
 
 /*
 

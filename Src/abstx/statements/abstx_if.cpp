@@ -1,8 +1,6 @@
 #include "abstx_if.h"
 #include "../../types/cb_primitives.h"
 
-using namespace Cube;
-
 std::string Abstx_if::Abstx_conditional_scope::toS() const { return "if(){}"; }
 
 void Abstx_if::Abstx_conditional_scope::debug_print(Debug_os& os, bool recursive) const

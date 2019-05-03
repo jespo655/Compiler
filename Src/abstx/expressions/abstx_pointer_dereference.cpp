@@ -2,8 +2,6 @@
 #include "abstx_identifier.h"
 #include "../../types/cb_pointer.h"
 
-using namespace Cube;
-
 std::string Abstx_pointer_dereference::toS() const {
     ASSERT(pointer_id->name.length() > 0);
     std::ostringstream oss;

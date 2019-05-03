@@ -16,8 +16,6 @@ Usages:
     container for inputdata from cb functions
 */
 
-namespace Cube {
-
 struct CB_Any : CB_Type {
     static const Shared<const CB_Type> type; // type any
     static constexpr void* _default_value = nullptr;
@@ -87,5 +85,3 @@ std::string parse_string(const Any& any);
 int64_t parse_int(const Any& any);
 uint64_t parse_uint(const Any& any);
 uint64_t parse_float(const Any& any);
-
-}

@@ -1,9 +1,6 @@
 #include "abstx_struct_literal.h"
 // #include "../../types/cb_struct.h" // @todo check if this is necessary
 
-namespace Cube {
-
-
 std::string Abstx_struct_literal::toS() const {
     ASSERT(struct_type);
     return struct_type->toS();
@@ -34,7 +31,4 @@ void Abstx_struct_literal::finalize() {
     if (is_error(status) || is_codegen_ready(status)) return;
     ASSERT(struct_type);
     status = Parsing_status::FULLY_RESOLVED;
-}
-
-
 }

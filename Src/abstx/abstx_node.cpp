@@ -2,8 +2,6 @@
 #include "expressions/abstx_function.h"
 #include "abstx_scope.h"
 
-using namespace Cube;
-
 
 void Abstx_node::debug_print(Debug_os& os, bool recursive) const
 {

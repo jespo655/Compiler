@@ -1,7 +1,5 @@
 #include "cb_string.h"
 
-using namespace Cube;
-
 void CB_String::generate_type(std::ostream& os) const { os << "_cb_string"; }
 
 void CB_String::generate_typedef(std::ostream& os) const {

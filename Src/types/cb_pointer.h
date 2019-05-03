@@ -4,8 +4,6 @@
 
 #include <iomanip>
 
-namespace Cube {
-
 struct CB_Pointer : CB_Type
 {
     static constexpr void* _default_value = nullptr;
@@ -25,5 +23,3 @@ struct CB_Pointer : CB_Type
     void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
     void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
 };
-
-}

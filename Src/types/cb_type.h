@@ -74,8 +74,6 @@ Then that same data has to be able to be outputted as a C style literal.
 
 */
 
-namespace Cube {
-
 struct Any; // used for default values
 
 struct CB_Type
@@ -153,5 +151,3 @@ Shared<const T> add_complex_type(Owned<T>&& type) {
 
 // function to generate typedef for all built-in types
 void generate_typedefs(std::ostream& os);
-
-}

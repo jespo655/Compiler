@@ -11,8 +11,6 @@ a := b;         // infers type from the variable b. The value of b overwrites th
 a, b := foo();  // The lhs and rhs count will not match if a function in rhs returns more than one value.
 */
 
-namespace Cube {
-
 struct Abstx_identifier;
 struct Value_expression;
 
@@ -29,8 +27,6 @@ struct Abstx_declaration : Statement {
     void generate_code(std::ostream& target) const override;
 
 };
-
-}
 
 /*
 

@@ -3,11 +3,6 @@
 #include "cb_pointer.h"
 #include "cb_any.h"
 
-namespace Cube {
-
-
-
-
 
 Shared<const CB_Type> CB_Seq::get_seq_type(Shared<const CB_Type> member_type) {
     Owned<CB_Seq> o = alloc(CB_Seq());
@@ -246,4 +241,3 @@ void CB_Fixed_seq::generate_index_end(std::ostream& os) const {
 }
 
 
-}

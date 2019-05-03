@@ -56,8 +56,6 @@ Step 2: Statement::fully_parse(), read_value_expression, read_variable_expressio
 
 
 
-namespace Cube {
-
 
 // parser.cpp
 // Global scopes are allocated and stored internally - trying to parse a file that has already been parsed will just return a pointer to the old global scope
@@ -114,7 +112,6 @@ Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_node> owner
 Parsing_status read_static_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope);
 Parsing_status read_dynamic_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope);
 
-}
 
 
 /*

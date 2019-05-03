@@ -3,8 +3,6 @@
 #include <iostream>
 #include "../utilities/assert.h"
 
-namespace Cube {
-
 enum struct Parsing_status
 {
     NOT_PARSED,             // not parsed at all.
@@ -33,5 +31,3 @@ bool is_error(Parsing_status p);
 bool is_in_progress(Parsing_status p);
 bool is_codegen_ready(Parsing_status p);
 bool is_fatal(Parsing_status p);
-
-}

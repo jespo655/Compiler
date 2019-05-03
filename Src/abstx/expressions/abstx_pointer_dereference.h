@@ -2,8 +2,6 @@
 
 #include "variable_expression.h"
 
-namespace Cube {
-
 struct Abstx_identifier;
 
 struct Abstx_pointer_dereference : Variable_expression {
@@ -31,5 +29,3 @@ struct Abstx_address_of : Value_expression {
     void generate_code(std::ostream& target) const override;
 
 };
-
-}

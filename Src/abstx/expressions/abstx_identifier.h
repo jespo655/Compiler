@@ -5,8 +5,6 @@
 
 #include <sstream>
 
-namespace Cube {
-
 struct Abstx_identifier : Variable_expression {
     std::string name = "";
     Any value; // might not have an actual value, but must have a type. Constant declared identifiers must have a value
@@ -37,5 +35,3 @@ struct Abstx_identifier : Variable_expression {
     void finalize() override;
 
 };
-
-}

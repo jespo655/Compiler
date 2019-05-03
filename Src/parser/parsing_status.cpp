@@ -1,10 +1,6 @@
 #include "parsing_status.h"
 #include "../utilities/assert.h"
 
-namespace Cube {
-
-
-
 const char* toS(Parsing_status ps) {
     switch(ps) {
         case Parsing_status::NOT_PARSED: return "NOT_PARSED";
@@ -48,9 +44,4 @@ bool is_codegen_ready(Parsing_status p) {
 
 bool is_fatal(Parsing_status p) {
     return p == Parsing_status::FATAL_ERROR;
-}
-
-
-
-
 }

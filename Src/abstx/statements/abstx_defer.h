@@ -8,8 +8,6 @@ Consecutive defer statements in the same order are performed in reverse order at
 Think of it like a "defer stack"
 */
 
-namespace Cube {
-
 struct Abstx_defer : Statement {
 
     Owned<Statement> statement;
@@ -20,8 +18,6 @@ struct Abstx_defer : Statement {
 
     void generate_code(std::ostream& target) const override;
 };
-
-}
 
 /*
 

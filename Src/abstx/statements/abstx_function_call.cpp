@@ -1,7 +1,5 @@
 #include "abstx_function_call.h"
 
-using namespace Cube;
-
 void Abstx_function_call::generate_code(std::ostream& target) const
 {
     ASSERT(is_codegen_ready(status));

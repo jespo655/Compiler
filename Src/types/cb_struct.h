@@ -77,8 +77,6 @@ foo(*((uint8_t*)(sa+0)), *((uint8_t*)(sa+1)), *((uint16_t*)(sa+2)));
 
 */
 
-namespace Cube {
-
 struct CB_Struct : CB_Type
 {
     struct Struct_member {
@@ -128,5 +126,3 @@ private:
         *v += (alignment - *v % alignment) % alignment;
     }
 };
-
-}

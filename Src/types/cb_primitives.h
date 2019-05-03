@@ -2,8 +2,6 @@
 
 #include "cb_type.h"
 
-namespace Cube {
-
 #define GENERATE_PRIMITIVE(cpp_type, tos, c_type, literal_suffix) \
 struct cpp_type : CB_Type { \
     static const Shared<const CB_Type> type; \
@@ -44,5 +42,3 @@ GENERATE_PRIMITIVE(CB_f64, "f64", double, "");
 GENERATE_PRIMITIVE(CB_Float, "float", double, "");
 
 GENERATE_PRIMITIVE(CB_Flag, "flag", uint8_t, "");
-
-}

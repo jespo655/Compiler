@@ -54,8 +54,6 @@ Syntax:
 
 */
 
-namespace Cube {
-
 struct Abstx_function_call : Statement
 {
     Shared<Abstx_function_literal> function = nullptr; // inferred through function_pointer in fully_parse
@@ -86,5 +84,3 @@ struct Abstx_function_call_expression : Variable_expression {
     void finalize() override;
 
 };
-
-}

@@ -3,8 +3,6 @@
 #include "value_expression.h"
 #include "../../types/cb_type.h"
 
-namespace Cube {
-
 struct Abstx_sequence_literal : Value_expression {
 
     Seq<Owned<Value_expression>> value;
@@ -19,5 +17,3 @@ struct Abstx_sequence_literal : Value_expression {
 
     void generate_code(std::ostream& target) const override;
 };
-
-}

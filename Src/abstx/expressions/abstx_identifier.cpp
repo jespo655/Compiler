@@ -2,8 +2,6 @@
 #include "../statements/abstx_statement.h"
 #include "../../utilities/unique_id.h"
 
-using namespace Cube;
-
 std::string Abstx_identifier::toS() const {
     ASSERT(name.length() > 0);
     std::ostringstream oss;

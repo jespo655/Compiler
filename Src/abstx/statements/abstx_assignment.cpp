@@ -2,9 +2,6 @@
 #include "../expressions/variable_expression.h"
 #include "../expressions/value_expression.h"
 
-namespace Cube {
-
-
 std::string Abstx_assignment::toS() const {
     ASSERT(lhs.size > 0);
     ASSERT(rhs.size > 0);
@@ -41,5 +38,3 @@ void Abstx_assignment::generate_code(std::ostream& target) const {
         target << ";" << std::endl;
     }
 };
-
-}

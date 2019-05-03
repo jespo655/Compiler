@@ -1,7 +1,5 @@
 #include "abstx_defer.h"
 
-namespace Cube {
-
 
 std::string Abstx_defer::toS() const {
     ASSERT(statement != nullptr);
@@ -11,6 +9,4 @@ std::string Abstx_defer::toS() const {
 void Abstx_defer::generate_code(std::ostream& target) const {
     ASSERT(is_codegen_ready(status));
     statement->generate_code(target);
-}
-
 }

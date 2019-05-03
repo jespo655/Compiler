@@ -16,8 +16,6 @@ Syntax:
 a : String = "text";
 */
 
-namespace Cube {
-
 struct CB_String : CB_Type {
     static const Shared<const CB_Type> type;
     static constexpr char _default_str[] = "";
@@ -123,5 +121,3 @@ struct _string {
         v_ptr = new_ptr;
     }
 };
-
-}

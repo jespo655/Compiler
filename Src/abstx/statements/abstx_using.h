@@ -22,7 +22,6 @@ using a:=ST();  // the members of a is pulled in, but are also accessable throug
 TODO: decide exact syntax and usage, before implementing the class
 
 */
-namespace Cube {
 
 struct Abstx_using : Statement {
 
@@ -35,8 +34,6 @@ struct Abstx_using : Statement {
     }
 
 };
-
-}
 
 /*
 

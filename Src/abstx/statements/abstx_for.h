@@ -10,8 +10,6 @@ for (n in range, index=s) {}
 for (n in range, reverse) {}
 */
 
-namespace Cube {
-
 struct CB_Iterable;
 struct Abstx_scope;
 
@@ -35,8 +33,6 @@ struct Abstx_for : Statement {
     void generate_code(std::ostream& target) const override;
 
 };
-
-}
 
 /*
 

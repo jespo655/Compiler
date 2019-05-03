@@ -10,6 +10,6 @@ Extension for dll.h for use with Seq<Any>
 
 namespace dll {
 
-    void call_fn_any(void* fn_ptr, Seq<Cube::Any> args);
+    void call_fn_any(void* fn_ptr, Seq<Any> args);
 
 }

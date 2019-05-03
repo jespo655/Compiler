@@ -11,7 +11,6 @@ foo : fn(int, int)->(int, int) = fn(a: int, b: int)->(c: int, d: int) { return a
 sum : fn(int, int)->int = fn(a: int, b: int)->int { return a+b; }; // only one return value -> don't need the paren
 bar : fn() = fn() {}; // no return value -> don't need the arrow
 */
-namespace Cube {
 
 struct Abstx_function_literal : Value_expression
 {
@@ -50,8 +49,6 @@ struct Abstx_function_literal : Value_expression
 private:
     void generate_declaration_internal(std::ostream& target, bool header) const;
 };
-
-}
 
 
 

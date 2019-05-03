@@ -1,7 +1,5 @@
 #include "cb_function.h"
 
-using namespace Cube;
-
 std::string CB_Function::toS() const {
     std::ostringstream oss;
 

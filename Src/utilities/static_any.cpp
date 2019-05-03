@@ -1,9 +1,5 @@
 #include "static_any.h"
 
-
-namespace Cube {
-
-
 static std::string toS_void_callback(const Static_any& any)
 {
     ASSERT(any.v_ptr == nullptr);
@@ -20,8 +16,6 @@ static void assign_void_callback(Static_any& obj, const Static_any& any)
     ASSERT(any.v_ptr == nullptr);
     obj.~Static_any();
 }
-
-
 
 Static_any& Static_any::operator=(const Static_any& any) {
     // std::cout << "any copy op = any of type " << any.v_type.toS() << std::endl;
@@ -44,6 +38,4 @@ void Static_any::set_default_callbacks() {
     destructor_callback = destroy_void_callback;
     toS_callback = toS_void_callback;
     assign_callback = assign_void_callback;
-}
-
 }

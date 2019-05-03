@@ -1,7 +1,5 @@
 #include "cb_pointer.h"
 
-namespace Cube {
-
 std::string CB_Pointer::toS() const {
     if (v_type == nullptr) return "_cb_unresolved_pointer";
     std::ostringstream oss;
@@ -43,6 +41,4 @@ void CB_Pointer::generate_destructor(std::ostream& os, const std::string& id, ui
         v_type->generate_destructor(os, "*"+id, depth+1);
         os << "free " << id << ";" << std::endl;
     }
-}
-
 }

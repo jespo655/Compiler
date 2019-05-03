@@ -2,8 +2,6 @@
 #include "abstx_identifier.h"
 #include "../abstx_scope.h"
 
-using namespace Cube;
-
 void Abstx_identifier_reference::finalize() {
     if (is_error(status) || is_codegen_ready(status)) return;
     if (id == nullptr) {

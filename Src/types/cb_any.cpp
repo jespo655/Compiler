@@ -2,8 +2,6 @@
 #include "cb_string.h"
 #include "cb_primitives.h"
 
-namespace Cube {
-
 void CB_Any::generate_type(std::ostream& os) const
 {
     os << "_cb_any";
@@ -75,6 +73,4 @@ uint64_t parse_float(const Any& any) {
     if (*any.v_type == *CB_f32::type) return *(float*)any.v_ptr;
     ASSERT(*any.v_type == *CB_Float::type);
     return *(double*)any.v_ptr;
-}
-
 }

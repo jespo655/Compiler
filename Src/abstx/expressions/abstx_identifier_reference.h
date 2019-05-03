@@ -8,7 +8,6 @@ The reference is owned by the statement it is in.
 This class is mostly here so the same identifier can be used and "owned" by several places, while the original identifier
   is only declared once (and is owned by that declaration statement).
 */
-namespace Cube {
 
 struct Abstx_identifier;
 
@@ -25,5 +24,3 @@ struct Abstx_identifier_reference : Variable_expression {
     void generate_code(std::ostream& target) const override;
     void finalize() override;
 };
-
-}
