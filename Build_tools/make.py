@@ -164,7 +164,7 @@ def read_data(filename, default=None):
 
 def main(argv):
 
-    global build_folder, src_folder, cpp_compiler, cpp_flag, c_compiler, c_flag, clean_build, verbose_output, quiet_output, max_errors
+    global build_folder, src_folder, cpp_compiler, cpp_flag, c_compiler, c_flag, clean_build, verbose_output, quiet_output, max_errors, outputname
 
     helpstring = """
 Builds all C and C++ files using incremental compilation.
@@ -217,6 +217,9 @@ Usage: py {} [--help] [--version] [options]
 
         elif opt in ["-g", "--c_flag"]:
             c_flag = arg
+
+        elif opt in ["-o", "--output"]:
+            outputname = arg
 
         elif opt in ["-e", "--maxerr"]:
             max_errors = int(arg)

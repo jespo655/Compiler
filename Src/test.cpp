@@ -513,6 +513,148 @@ void code_gen_test()
 
 
 
+
+
+
+
+
+void test_type(Shared<const CB_Type> type)
+{
+    std::cout << type->toS() << ": ";
+    type->generate_type(std::cout);
+    std::cout << ", uid: " << type->uid << ", size: " << type->cb_sizeof()
+        << ", defval: ";
+    type->generate_literal(std::cout, type->default_value().v_ptr);
+    std::cout << std::endl;
+}
+
+Seq<Owned<Abstx_identifier>> identifiers;
+
+Shared<Abstx_identifier> make_member(const std::string& name, Shared<const CB_Type> type)
+{
+    Owned<Abstx_identifier> o = alloc(Abstx_identifier());
+    o->name = name;
+    o->value.v_type = type;
+    Shared<Abstx_identifier> s = o;
+    identifiers.add(std::move(o));
+    return s;
+}
+
+int types_test()
+{
+    test_type(CB_Type::type);
+    test_type(CB_i8::type);
+    test_type(CB_i16::type);
+    test_type(CB_i32::type);
+    test_type(CB_i64::type);
+    test_type(CB_Int::type);
+    test_type(CB_u8::type);
+    test_type(CB_u16::type);
+    test_type(CB_u32::type);
+    test_type(CB_u64::type);
+    test_type(CB_Uint::type);
+    test_type(CB_f32::type);
+    test_type(CB_f64::type);
+    test_type(CB_Float::type);
+    test_type(CB_Bool::type);
+    test_type(CB_Flag::type);
+    test_type(CB_Range::type);
+    test_type(CB_Float_range::type);
+    test_type(CB_String::type);
+
+    { CB_String type; test_type(&type); }
+    { CB_u8 type; test_type(&type); }
+    { CB_Range type; test_type(&type); }
+    { CB_Flag type; test_type(&type); }
+    { CB_Flag type; test_type(&type); }
+
+    // These fails assert (function literals cannot be generated)
+    // { CB_Function type; type.finalize(); test_type(&type); }
+    // { CB_Function type; type.finalize(); test_type(&type); }
+    // { CB_Function type; type.in_types.add(CB_Bool::type); type.finalize(); test_type(&type); }
+    // { CB_Function type; type.out_types.add(CB_Bool::type); type.finalize(); test_type(&type); }
+
+    { CB_Struct type; type.add_member(make_member("i", CB_Int::type)); type.finalize(); test_type(&type); }
+    { CB_Struct type; type.add_member(make_member("i", CB_Int::type)); type.finalize(); test_type(&type); }
+    { CB_Struct type; type.add_member(make_member("i", CB_Int::type)); type.finalize(); test_type(&type); }
+    { CB_Struct type; type.add_member(make_member("s", CB_String::type)); type.finalize(); test_type(&type); }
+
+    {
+        CB_Struct type; type.add_member(make_member("s", CB_String::type)); type.finalize();
+        CB_Struct type2 = type;
+        test_type(&type);
+        test_type(&type2);
+        CB_Struct type3 = std::move(type);
+        test_type(&type3);
+        // test_type(&type);
+    }
+
+    {
+        CB_Struct type;
+        type.add_member(make_member("a", CB_i8::type));
+        type.add_member(make_member("b", CB_i16::type));
+        type.add_member(make_member("c", CB_i16::type));
+        type.add_member(make_member("d", CB_i16::type));
+        type.finalize();
+        test_type(&type);
+    }
+
+    { CB_Pointer type; type.v_type = CB_Int::type; type.finalize(); test_type(&type); }
+    { CB_Pointer type; type.v_type = CB_String::type; type.finalize(); test_type(&type); }
+    { CB_Pointer type; type.v_type = CB_Range::type; type.finalize(); test_type(&type); }
+    {
+        CB_Pointer type; type.v_type = CB_Range::type; type.finalize(); test_type(&type);
+        CB_Pointer pt1; pt1.v_type = &type; pt1.owning=true; pt1.finalize(); test_type(&pt1);
+        CB_Pointer pt2; pt2.v_type = &pt1;  pt2.owning=false; pt2.finalize(); test_type(&pt2);
+        CB_Pointer pt3; pt3.v_type = &pt2;  pt3.owning=true; pt3.finalize(); test_type(&pt3);
+        CB_Pointer pt4; pt4.v_type = &pt3;  pt4.owning=true; pt4.finalize(); test_type(&pt4);
+        CB_Pointer pt5; pt5.v_type = &pt4;  pt5.owning=true; pt5.finalize(); test_type(&pt5);
+        pt5.generate_destructor(std::cout, "ptr");
+    }
+
+    {
+        CB_Struct type;
+        CB_Pointer pt1; pt1.finalize(); // forward declaration / finalize as unresolved_pointer
+        // CB_Pointer pt1; pt1.v_type = CB_Int::type; pt1.owning=false; pt1.finalize();
+        CB_Pointer pt2; pt2.v_type = &pt1; pt2.owning=true; pt2.finalize();
+        type.add_member(make_member("sp", &pt1));
+        type.add_member(make_member("op", &pt2));
+        type.finalize();
+        pt1.v_type = &type; pt1.owning=false; pt1.finalize(); // final finalize now when type is finalized
+        test_type(&type);
+        test_type(&pt1);
+        type.generate_destructor(std::cout, "s");
+    }
+
+    {
+        CB_Struct s1, s2, s3;
+        CB_Pointer pt1; pt1.finalize(); // forward declaration / finalize as unresolved_pointer
+        s1.add_member(make_member("s3op", &pt1)); s1.finalize();
+        s2.add_member(make_member("s1", &s1)); s2.finalize();
+        s3.add_member(make_member("s2", &s2)); s3.finalize();
+        pt1.v_type = &s3; pt1.owning=true; pt1.finalize(); // final finalize now when type is finalized
+        // s1.generate_literal(std::cout, s1._default_value); std::cout << std::endl;
+        // s2.generate_destructor(std::cout, "s"); std::cout << std::endl; // this should give cyclic reference error
+    }
+
+    // @TODO: (CB_Set)
+
+    { CB_Seq s; s.v_type = CB_Int::type; s.finalize(); test_type(&s); }
+    { CB_Fixed_seq s; s.v_type = CB_Int::type; s.size = 5; s.finalize(); test_type(&s); }
+    { CB_Fixed_seq s; s.v_type = CB_Int::type; s.size = 5; s.finalize(); test_type(&s); }
+    { CB_Fixed_seq s; s.v_type = CB_Int::type; s.size = 6; s.finalize(); test_type(&s); }
+    { CB_Fixed_seq s; s.v_type = CB_i64::type; s.size = 5; s.finalize(); test_type(&s); }
+
+}
+
+
+
+
+
+
+
+
+
 void abstx_test()
 {
     // std::cout << "creating function type" << std::endl;
