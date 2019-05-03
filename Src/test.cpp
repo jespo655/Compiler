@@ -20,8 +20,7 @@
 #include <cstdlib>
 #include <memory>
 using namespace std;
-
-
+using namespace Cube;
 
 void flag_test()
 {
@@ -237,6 +236,32 @@ void seq_test()
 
 
 
+
+
+#ifdef NOT_DEFINED
+
+// not very useful test location since almost all things we would want to test here requires other cpp files (e.g. types)
+
+#include "../types/all_cb_types.h"
+#include <iostream>
+
+int main()
+{
+    { Abstx_assignment abstx; }
+    { Abstx_declaration abstx; }
+    { Abstx_defer abstx; }
+    // { Abstx_for abstx; }
+    { Abstx_function_literal abstx; }
+    { Abstx_function_call abstx; }
+    // { Abstx_if abstx; } // undefined reference to bool
+    { Abstx_return abstx; }
+    // { Abstx_scope abstx; } // log_error undefined
+    // { Statement abstx; } // abstract class
+    { Abstx_using abstx; }
+    // { Abstx_while abstx; } // undefined reference to bool
+}
+
+#endif
 
 
 

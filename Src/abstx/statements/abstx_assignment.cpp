@@ -5,7 +5,7 @@
 namespace Cube {
 
 
-std::string Abstx_assignment::toS() const override {
+std::string Abstx_assignment::toS() const {
     ASSERT(lhs.size > 0);
     ASSERT(rhs.size > 0);
 
@@ -30,7 +30,7 @@ std::string Abstx_assignment::toS() const override {
 }
 
 
-void Abstx_assignment::generate_code(std::ostream& target) const override {
+void Abstx_assignment::generate_code(std::ostream& target) const {
     ASSERT(is_codegen_ready(status));
     ASSERT(lhs.size == rhs.size);
     for (int i = 0; i < lhs.size; ++i) {

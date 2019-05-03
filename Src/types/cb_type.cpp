@@ -1,33 +1,34 @@
 #include "cb_type.h"
+#include "cb_any.h"
 #include "../utilities/assert.h"
 #include "../utilities/unique_id.h"
 
 namespace Cube {
 
 
-virtual std::string CB_Type::toS() const {
+std::string CB_Type::toS() const {
     const std::string& name = typenames[uid];
     if (name == "") return "type_"+std::to_string(uid);
     return name;
 }
 
 // code generation functions
-virtual void CB_Type::generate_type(std::ostream& os) const {
+void CB_Type::generate_type(std::ostream& os) const {
     os << "_cb_type";
     if (uid != type->uid) os << "_" << uid;
 }
-virtual void CB_Type::generate_typedef(std::ostream& os) const {
+void CB_Type::generate_typedef(std::ostream& os) const {
     os << "typedef uint32_t ";
     generate_type(os);
     os << ";" << std::endl;
 }
 
-virtual void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const
+void CB_Type::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const
 {
     ASSERT(raw_data); os << *(c_typedef*)raw_data << "UL";
 }
 
-virtual void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const
+void CB_Type::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const
 {
 
 };
@@ -41,18 +42,7 @@ void CB_Type::post_circular_reference_error() const {
     ASSERT(false, oss.str());
 }
 
-
-void CB_Type::post_circular_reference_error() const {
-    // @todo: this should be a compile error, not an false assert
-    std::ostringstream oss;
-    oss << "Circular reference detected in type ";
-    generate_type(oss);
-    oss << " (" << toS() << ")";
-    ASSERT(false, oss.str());
-}
-
-
-static int get_unique_type_id() {
+int CB_Type::get_unique_type_id() {
     static int id=0; // -1 is uninitialized
     ASSERT(id >= 0); // if id is negative then the int has looped around. More than INT_MAX unique types should never be needed.
     return id++;

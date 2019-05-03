@@ -9,7 +9,7 @@
 #include <string>
 
 
-
+using namespace Cube;
 
 std::map<std::string, Owned<Global_scope>> global_scopes;
 

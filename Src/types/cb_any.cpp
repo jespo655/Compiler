@@ -1,20 +1,22 @@
 #include "cb_any.h"
+#include "cb_string.h"
+#include "cb_primitives.h"
 
 namespace Cube {
 
-void CB_Any::generate_type(std::ostream& os) const override
+void CB_Any::generate_type(std::ostream& os) const
 {
     os << "_cb_any";
 }
 
-void CB_Any::generate_typedef(std::ostream& os) const override {
+void CB_Any::generate_typedef(std::ostream& os) const {
     os << "typedef struct { ";
     CB_Type::type->generate_type(os);
     os << " type; void* v_ptr; } ";
     generate_type(os);
     os << ";" << std::endl;
 }
-void CB_Any::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+void CB_Any::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
     if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); os << "void"; return; }
     ASSERT(raw_data);
     os << "(";
@@ -25,7 +27,7 @@ void CB_Any::generate_literal(std::ostream& os, void const* raw_data, uint32_t d
     raw_it += CB_Type::type->cb_sizeof();
     os << ", " << std::hex << (void**)raw_it << "}";
 }
-void CB_Any::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override {
+void CB_Any::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const {
     if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
 }
 

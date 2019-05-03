@@ -111,6 +111,9 @@ Owned<Variable_expression> read_function_call(Token_iterator& it, Shared<Abstx_n
 Owned<Value_expression> read_getter(Token_iterator& it, Shared<Abstx_node> owner, Owned<Value_expression>&& id); // suffix '.'
 // Owned<Value_expression> read_indexing(Token_iterator& it, Shared<Abstx_scope> parent_scope, Owned<Value_expression>&& id); // suffix "[]" // @todo
 
+Parsing_status read_static_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope);
+Parsing_status read_dynamic_scope_statements(Token_iterator& it, Shared<Abstx_scope> scope);
+
 }
 
 

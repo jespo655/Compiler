@@ -3,11 +3,11 @@
 
 namespace Cube {
 
-std::string Abstx_sequence_literal::toS() const override {
+std::string Abstx_sequence_literal::toS() const {
     return value.toS();
 }
 
-virtual Shared<const CB_Type> Abstx_sequence_literal::get_type() override {
+Shared<const CB_Type> Abstx_sequence_literal::get_type() {
     if (constant_value.v_type != nullptr) return constant_value.v_type;
     if (member_type == nullptr) {
         if (value.size == 0) return nullptr; // empty sequence literal is not allowed and should be checked for earlier
@@ -18,7 +18,7 @@ virtual Shared<const CB_Type> Abstx_sequence_literal::get_type() override {
     return constant_value.v_type;
 }
 
-bool Abstx_sequence_literal::has_constant_value() const override {
+bool Abstx_sequence_literal::has_constant_value() const {
     if (constant_value.v_ptr != nullptr) return true;
     if (is_error(status)) return false;
     ASSERT(member_type != nullptr);
@@ -29,7 +29,7 @@ bool Abstx_sequence_literal::has_constant_value() const override {
     return true;
 }
 
-const Any& Abstx_sequence_literal::get_constant_value() override {
+const Any& Abstx_sequence_literal::get_constant_value() {
     if (constant_value.v_ptr != nullptr || !has_constant_value()) return constant_value;
     constant_value.v_ptr = alloc_constant_data(value.size * member_type->cb_sizeof());
     uint8_t* raw_it = (uint8_t*)constant_value.v_ptr;
@@ -41,7 +41,7 @@ const Any& Abstx_sequence_literal::get_constant_value() override {
     return constant_value;
 }
 
-void Abstx_sequence_literal::generate_code(std::ostream& target) const override
+void Abstx_sequence_literal::generate_code(std::ostream& target) const
 {
     ASSERT(is_codegen_ready(status));
     if (has_constant_value()) {

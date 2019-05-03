@@ -3,27 +3,27 @@
 namespace Cube {
 
 
-std::string Abstx_struct_getter::toS() const override {
+std::string Abstx_struct_getter::toS() const {
     ASSERT(member_id.length() > 0);
     std::ostringstream oss;
     oss << struct_expr.toS() << "." << member_id;
     return oss.str();
 }
 
-Shared<const CB_Type> Abstx_struct_getter::get_type() override {
+Shared<const CB_Type> Abstx_struct_getter::get_type() {
     if (value.v_type != nullptr) return value.v_type;
     if (!get_member()) return nullptr;
     value.v_type = member->id->get_constant_type();
     return value.v_type;
 }
 
-bool Abstx_struct_getter::has_constant_value() const override {
+bool Abstx_struct_getter::has_constant_value() const {
     if (value.v_ptr != nullptr) return true;
     if (member == nullptr) return false; // should be set during finalize
     return struct_expr != nullptr && struct_expr->has_constant_value();
 }
 
-const Any& Abstx_struct_getter::get_constant_value() override {
+const Any& Abstx_struct_getter::get_constant_value() {
     if (value.v_type == nullptr) get_type();
     if (value.v_ptr != nullptr) return value;
     ASSERT(member != nullptr); // should be set by get_type() above
@@ -33,7 +33,7 @@ const Any& Abstx_struct_getter::get_constant_value() override {
     return value;
 }
 
-void Abstx_struct_getter::generate_code(std::ostream& target) const override
+void Abstx_struct_getter::generate_code(std::ostream& target) const
 {
     ASSERT(is_codegen_ready(status));
     struct_expr->generate_code(target);
@@ -41,7 +41,7 @@ void Abstx_struct_getter::generate_code(std::ostream& target) const override
     member->id->generate_code(target);
 }
 
-void Abstx_struct_getter::finalize() override {
+void Abstx_struct_getter::finalize() {
     if (is_error(status) || is_codegen_ready(status)) return;
     if (get_type()) {
         status = Parsing_status::FULLY_RESOLVED;

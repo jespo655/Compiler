@@ -136,6 +136,7 @@ def build():
         if (not output.endswith(".exe")): output = "{}.exe".format(output)
         command = ["g++", "{}\\*.o".format(build_folder), "-o", output]
         command.extend(libraries)
+        sys.stdout.flush()
         error = subprocess.call(command)
 
         end = time.time()

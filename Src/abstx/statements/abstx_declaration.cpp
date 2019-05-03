@@ -4,7 +4,7 @@
 
 namespace Cube {
 
-std::string Abstx_declaration::toS() const override {
+std::string Abstx_declaration::toS() const {
     ASSERT(identifiers.size > 0);
 
     std::ostringstream oss;
@@ -46,7 +46,7 @@ std::string Abstx_declaration::toS() const override {
     return oss.str();
 }
 
-void Abstx_declaration::generate_code(std::ostream& target) const override {
+void Abstx_declaration::generate_code(std::ostream& target) const {
     ASSERT(is_codegen_ready(status), "something went wrong in declaration "+toS());
     if (value_expressions.empty()) {
         // explicit uninitialized

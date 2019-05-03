@@ -1,11 +1,11 @@
-#include "abstx.h"
-#include "abstx_function_literal.h"
+#include "abstx_node.h"
+#include "expressions/abstx_function.h"
 #include "abstx_scope.h"
 
+using namespace Cube;
 
 
-
-virtual void Abstx_node::debug_print(Debug_os& os, bool recursive=true) const
+void Abstx_node::debug_print(Debug_os& os, bool recursive) const
 {
     os << toS() << std::endl;
 }
@@ -37,7 +37,7 @@ Shared<Abstx_function_literal> Abstx_node::parent_function() const
     return nullptr;
 }
 
-virtual Shared<Global_scope> Abstx_node::global_scope() const
+Shared<Global_scope> Abstx_node::global_scope() const
 {
     return owner->global_scope();
 }

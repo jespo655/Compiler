@@ -1,11 +1,11 @@
 #include "abstx_if.h"
 #include "../../types/cb_primitives.h"
 
-namespace Cube {
+using namespace Cube;
 
-std::string Abstx_if::Abstx_conditional_scope::toS() const override { return "if(){}"; }
+std::string Abstx_if::Abstx_conditional_scope::toS() const { return "if(){}"; }
 
-void Abstx_if::Abstx_conditional_scope::debug_print(Debug_os& os, bool recursive=true) const override
+void Abstx_if::Abstx_conditional_scope::debug_print(Debug_os& os, bool recursive) const
 {
     os << "if(";
     if (recursive) {
@@ -20,7 +20,7 @@ void Abstx_if::Abstx_conditional_scope::debug_print(Debug_os& os, bool recursive
     else os << std::endl;
 }
 
-void Abstx_if::Abstx_conditional_scope::generate_code(std::ostream& target) const override {
+void Abstx_if::Abstx_conditional_scope::generate_code(std::ostream& target) const {
     ASSERT(is_codegen_ready(status));
     target << "if (";
     condition->generate_code(target);
@@ -41,7 +41,7 @@ Parsing_status Abstx_if::Abstx_conditional_scope::fully_parse() {
 
 
 
-std::string Abstx_if::toS() const override
+std::string Abstx_if::toS() const
 {
     std::ostringstream oss;
     bool first = true;
@@ -56,7 +56,7 @@ std::string Abstx_if::toS() const override
     return oss.str();
 }
 
-void Abstx_if::debug_print(Debug_os& os, bool recursive=true) const override
+void Abstx_if::debug_print(Debug_os& os, bool recursive) const
 {
     for (auto& cs : conditional_scopes) {
         ASSERT(cs != nullptr);
@@ -72,7 +72,7 @@ void Abstx_if::debug_print(Debug_os& os, bool recursive=true) const override
     // }
 }
 
-void Abstx_if::generate_code(std::ostream& target) const override {
+void Abstx_if::generate_code(std::ostream& target) const {
     if (!is_codegen_ready(status)) LOG("status is " << status);
     ASSERT(is_codegen_ready(status));
     for (int i = 0; i < conditional_scopes.size; ++i) {
@@ -86,4 +86,3 @@ void Abstx_if::generate_code(std::ostream& target) const override {
     // @todo: add support for then-scopes (needs support for adding a statement to a scope) see syntax below
 }
 
-}

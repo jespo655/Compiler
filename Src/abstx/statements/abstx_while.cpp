@@ -1,9 +1,9 @@
 #include "abstx_while.h"
 #include "../../types/cb_primitives.h"
 
-namespace Cube {
+using namespace Cube;
 
-void Abstx_while::debug_print(Debug_os& os, bool recursive=true) const override
+void Abstx_while::debug_print(Debug_os& os, bool recursive) const
 {
     os << "while(";
     if (recursive) {
@@ -18,7 +18,7 @@ void Abstx_while::debug_print(Debug_os& os, bool recursive=true) const override
     else os << std::endl;
 }
 
-void Abstx_while::generate_code(std::ostream& target) const override {
+void Abstx_while::generate_code(std::ostream& target) const {
     ASSERT(is_codegen_ready(status));
     target << "while (";
     condition->generate_code(target);
@@ -26,4 +26,3 @@ void Abstx_while::generate_code(std::ostream& target) const override {
     scope->generate_code(target);
 }
 
-}

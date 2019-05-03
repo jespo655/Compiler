@@ -1,7 +1,8 @@
 #include "abstx_function.h"
 
+using namespace Cube;
 
-std::string Abstx_function_literal::toS() const override {
+std::string Abstx_function_literal::toS() const {
     // @todo: write better toS()
     return "function";
 }
@@ -15,7 +16,7 @@ void Abstx_function_literal::add_arg(bool in, Shared<Abstx_identifier> id) {
 }
 
 
-Shared<const CB_Type> Abstx_function_literal::get_type() override
+Shared<const CB_Type> Abstx_function_literal::get_type()
 {
     return function_identifier.get_type();
 }
@@ -25,7 +26,7 @@ bool Abstx_function_literal::has_constant_value() const {
     return true;
 }
 
-const Any& Abstx_function_literal::get_constant_value() override {
+const Any& Abstx_function_literal::get_constant_value() {
     ASSERT(function_identifier.value.v_type); // should be set earlier
     if (function_identifier.value.v_ptr == nullptr) function_identifier.value.v_ptr = this;
     return function_identifier.get_constant_value();
@@ -34,7 +35,7 @@ const Any& Abstx_function_literal::get_constant_value() override {
 
 
 
-void Abstx_function_literal::generate_code(std::ostream& target) const override {
+void Abstx_function_literal::generate_code(std::ostream& target) const {
     // generate code in the context of a value expression
     // the actual function code will be generated later, through generate_declaration()
     global_scope()->used_functions[function_identifier.uid] = (Abstx_function_literal*)this;

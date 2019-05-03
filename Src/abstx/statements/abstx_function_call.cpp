@@ -1,8 +1,8 @@
 #include "abstx_function_call.h"
 
-namespace Cube {
+using namespace Cube;
 
-void Abstx_function_call::generate_code(std::ostream& target) const override
+void Abstx_function_call::generate_code(std::ostream& target) const
 {
     ASSERT(is_codegen_ready(status));
     function_pointer->generate_code(target);
@@ -49,29 +49,29 @@ bool Abstx_function_call::get_args_as_any(Seq<Shared<const Any>>& args) {
 
 
 
-std::string Abstx_function_call_expression::toS() const override { return "function call expression"; }
+std::string Abstx_function_call_expression::toS() const { return "function call expression"; }
 
 
-Shared<const CB_Type> Abstx_function_call_expression::get_type() override {
+Shared<const CB_Type> Abstx_function_call_expression::get_type() {
     ASSERT(false, "Abstx_function_call_expression::get_type() not allowed since functions can have several types - check funcion_call->out_args instead");
 }
 
-void Abstx_function_call_expression::generate_code(std::ostream& target) const override {
+void Abstx_function_call_expression::generate_code(std::ostream& target) const {
     ASSERT(function_call);
     function_call->generate_code(target);
 }
 
-bool Abstx_function_call_expression::has_constant_value() const override {
+bool Abstx_function_call_expression::has_constant_value() const {
     // @todo: function call has constant value if all arguments are consants, and if the function scope is self contained (no bi effects)
     return false;
 }
 
-const Any& Abstx_function_call_expression::get_constant_value() override {
+const Any& Abstx_function_call_expression::get_constant_value() {
     static const Any no_value;
     return no_value;
 }
 
-void Abstx_function_call_expression::finalize() override {
+void Abstx_function_call_expression::finalize() {
     // the function call should be finalized by the scope finalizer
     ASSERT(function_call != nullptr);
     if (is_error(status) || is_codegen_ready(status)) return;
@@ -80,4 +80,3 @@ void Abstx_function_call_expression::finalize() override {
     LOG("Abstx_function_call_expression at" << context.toS() << " has status " << status);
 }
 
-}

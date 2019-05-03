@@ -2,7 +2,7 @@
 
 #include <iomanip>
 
-namespace Cube {
+using namespace Cube;
 
 
 std::string CB_Struct::Struct_member::toS() const {
@@ -39,7 +39,7 @@ CB_Struct::~CB_Struct() { free(_default_value); }
 
 
 
-std::string CB_Struct::toS() const override {
+std::string CB_Struct::toS() const {
     std::ostringstream oss;
     oss << "struct { ";
     for (int i = 0; i < members.size; ++i) {
@@ -50,12 +50,12 @@ std::string CB_Struct::toS() const override {
     return oss.str();
 }
 
-void CB_Struct::add_member(const Shared<Abstx_identifier>& id, bool is_using=false) {
+void CB_Struct::add_member(const Shared<Abstx_identifier>& id, bool is_using) {
     ASSERT(id != nullptr);
     members.add(Struct_member(id, is_using));
 }
 
-Shared<const Struct_member> CB_Struct::get_member(const std::string& id) const {
+Shared<const CB_Struct::Struct_member> CB_Struct::get_member(const std::string& id) const {
     for (auto& member : members) {
         if (member.id->name == id) return &member;
     }
@@ -65,7 +65,7 @@ Shared<const Struct_member> CB_Struct::get_member(const std::string& id) const {
 
 
 
-void CB_Struct::finalize() override {
+void CB_Struct::finalize() {
     std::cout << "finalizing struct type" << std::endl;
     size_t total_size = 0;
     if (members.empty()) {
@@ -103,7 +103,7 @@ void CB_Struct::finalize() override {
 
 
 // code generation functions
-void CB_Struct::generate_typedef(ostream& os) const override {
+void CB_Struct::generate_typedef(std::ostream& os) const {
     ASSERT(_default_value); // assert finalized
     os << "typedef struct{";
     if (ONELINE_STRUCT_DEFINITIONS && members.size>0) os << " ";
@@ -120,7 +120,7 @@ void CB_Struct::generate_typedef(ostream& os) const override {
     os << ";" << std::endl;
 }
 
-void CB_Struct::generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+void CB_Struct::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
     ASSERT(_default_value, "struct must be finalized before it can be used"); // assert finalized
     ASSERT(raw_data != nullptr);
     if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); os << "void"; return; }
@@ -134,11 +134,9 @@ void CB_Struct::generate_literal(ostream& os, void const* raw_data, uint32_t dep
     os << "}";
 }
 
-void CB_Struct::generate_destructor(ostream& os, const std::string& id, uint32_t depth = 0) const override {
+void CB_Struct::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const {
     if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
     for (const auto& member : members) {
         member.id->value.v_type->generate_destructor(os, id + "." + member.id->name, depth+1);
     }
-}
-
 }

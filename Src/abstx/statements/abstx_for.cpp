@@ -4,9 +4,11 @@
 #include "../../utilities/unique_id.h"
 #include "../../types/cb_range.h" // CB_Iterable
 
-std::string Abstx_for::toS() const override { return "for(){}"; }
+using namespace Cube;
 
-void Abstx_for::debug_print(Debug_os& os, bool recursive=true) const override
+std::string Abstx_for::toS() const { return "for(){}"; }
+
+void Abstx_for::debug_print(Debug_os& os, bool recursive) const
 {
     // FIXME: better for::toS()
 
@@ -23,7 +25,7 @@ void Abstx_for::debug_print(Debug_os& os, bool recursive=true) const override
     else os << std::endl;
 }
 
-void Abstx_for::generate_code(std::ostream& target) const override {
+void Abstx_for::generate_code(std::ostream& target) const {
     ASSERT(is_codegen_ready(status));
 
     if (anonymous_range) {

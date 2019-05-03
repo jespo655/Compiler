@@ -22,7 +22,7 @@
 //
 // --------------------------------------------------------------------------------------------------------------------
 
-
+namespace Cube {
 
 // Perform partial parsing of a statement, adding the parsed statements to the parent scope in the process
 // If the scope is dynamic, all statements has to be fully parsed and finalized immediately
@@ -434,7 +434,7 @@ Parsing_status read_declaration_statement(Token_iterator& it, Shared<Abstx_scope
 
         id->name = t.token;
         // check if there is another id with the same name in the current local scope (not allowed)
-        auto old_id = parent_scope->get_identifier(id->name, false);
+        auto old_id = parent_scope->get_identifier(id->name, id->context, false);
         if (old_id != nullptr) {
             log_error("Redeclaration of identifier "+id->name, id->context);
             add_note("Previously declared here", old_id->context);
@@ -1322,3 +1322,4 @@ Parsing_status Abstx_while::finalize() override {
 
 
 
+}

@@ -3,12 +3,12 @@
 namespace Cube {
 
 
-std::string Abstx_defer::toS() const override {
+std::string Abstx_defer::toS() const {
     ASSERT(statement != nullptr);
     return "defer " + statement->toS();
 }
 
-void Abstx_defer::generate_code(std::ostream& target) const override {
+void Abstx_defer::generate_code(std::ostream& target) const {
     ASSERT(is_codegen_ready(status));
     statement->generate_code(target);
 }

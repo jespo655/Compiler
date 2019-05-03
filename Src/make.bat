@@ -10,12 +10,12 @@ if "%PROCESSOR_ARCHITECTURE%"=="AMD64" goto 64BIT
 
 :32BIT
 echo Compiling cube_32...
-py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS32% -o %OUTPUT_NAME%
+py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS32% -o %OUTPUT_NAME% -e 1
 goto END
 
 :64BIT
 echo Compiling cube_64...
-py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS64% -o %OUTPUT_NAME%
+py ../Build_tools/make.py -b ../BUILD -f std=gnu++14 --c_compiler none -L %LIBS64% -o %OUTPUT_NAME% -e 1
 
 :END
 

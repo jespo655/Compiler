@@ -1,14 +1,33 @@
 
 #include "abstx_scope.h"
 #include "statements/abstx_function_call.h"
-// #include "statements/abstx_using.h"
+#include "statements/abstx_using.h"
 // #include "expressions/abstx_identifier.h"
 // #include "../utilities/flag.h"
-// #include "../types/cb_string.h"
+#include "../types/cb_string.h"
+#include "../parser/parser.h"
+
+using namespace Cube;
+
+Seq<Owned<Abstx_identifier>> Global_scope::type_identifiers;
+Token_context Global_scope::built_in_context;
+
+Shared<Abstx_function_literal> Global_scope::get_entry_point(const std::string& id) {
+    auto fn_id = get_identifier(id, context);
+    Shared<const CB_Type> t = fn_id->get_type();
+    ASSERT(t != nullptr); // type must be known
+    Shared<const CB_Function> fn_type = dynamic_pointer_cast<const CB_Function>(t);
+    if (fn_type == nullptr) {
+        log_error("No entry point defined!", context);
+        return nullptr;
+    } else if (fn_id->has_constant_value()) {
+        return (Abstx_function_literal*)fn_id->get_constant_value().v_ptr;
+    }
+}
 
 
 
-void Abstx_scope::debug_print(Debug_os& os, bool recursive=true) const override
+void Abstx_scope::debug_print(Debug_os& os, bool recursive) const
 {
     os << "{ // " << toS() << std::endl;
     os.indent();
@@ -20,9 +39,9 @@ void Abstx_scope::debug_print(Debug_os& os, bool recursive=true) const override
     os << "}" << std::endl;
 }
 
-std::string Abstx_scope::toS() const override { return dynamic()? "scope(d)" : "scope(s)"; }
+std::string Abstx_scope::toS() const { return dynamic()? "scope(d)" : "scope(s)"; }
 
-virtual Shared<Abstx_identifier> Abstx_scope::get_identifier(const std::string& id, const Token_context& context, bool recursive=true)
+Shared<Abstx_identifier> Abstx_scope::get_identifier(const std::string& id, const Token_context& context, bool recursive)
 {
     auto p = identifiers[id];
     if (p != nullptr) return p; // local things goes first
@@ -31,13 +50,13 @@ virtual Shared<Abstx_identifier> Abstx_scope::get_identifier(const std::string& 
         // check parent scope
         auto parent = parent_scope();
         if (parent != nullptr) {
-            p = parent->get_identifier(id, recursive);
+            p = parent->get_identifier(id, context, recursive);
         }
 
         // check imported scopes
         if (using_statements.size > 0) resolve_imports();
         for (auto scope : imported_scopes) {
-            auto p2 = scope->get_identifier(id, false);
+            auto p2 = scope->get_identifier(id, context, false);
             if (p == nullptr) p = p2;
             else if (p2 != nullptr) {
                 log_error("multiple definition of identifier " + id, context);
@@ -51,10 +70,10 @@ virtual Shared<Abstx_identifier> Abstx_scope::get_identifier(const std::string& 
     return p;
 }
 
-virtual Shared<const CB_Type> Abstx_scope::get_type(const std::string& id, const Token_context& context, bool recursive=true)
+Shared<const CB_Type> Abstx_scope::get_type(const std::string& id, const Token_context& context, bool recursive)
 {
     // first: find the type identifier
-    Shared<Abstx_identifier> type_id = get_identifier(id, recursive);
+    Shared<Abstx_identifier> type_id = get_identifier(id, context, recursive);
     if (type_id) {
         // the identifier was found -> it must have type CB_Type, and its value must be known at compile time
         if (*type_id->get_type() != *CB_Type::type) {
@@ -132,7 +151,7 @@ void Abstx_scope::resolve_imports()
     ASSERT(using_statements.size == 0);
 }
 
-void Abstx_scope::generate_code(std::ostream& target) const override {
+void Abstx_scope::generate_code(std::ostream& target) const {
     ASSERT(is_codegen_ready(status), status << " " << toS() << " at " << context.toS());
     target << "{" << std::endl;
     for (const auto& st : statements) {
@@ -210,11 +229,11 @@ void Global_scope::add_built_in_types_as_identifiers()
 
 
 
-Shared<Abstx_identifier> Abstx_function_scope::get_identifier(const std::string& id, const Token_context& context, bool recursive=true) override
+Shared<Abstx_identifier> Abstx_function_scope::get_identifier(const std::string& id, const Token_context& context, bool recursive)
 {
     Shared<Abstx_identifier> p_local = identifiers[id];
     Shared<Abstx_identifier> p_fn = fn_identifiers[id];
-    ASSERT(p_local == nullptr || p_fn == nullptr, "local name overrides not allowed"); // this should give compile error earlier @TODO: check if this should be a logged error instead
+    ASSERT(p_local == nullptr || p_fn == nullptr, "local names not allowed"); // this should give compile error earlier @TODO: check if this should be a logged error instead
     if (p_fn != nullptr) return p_fn;
     if (p_local != nullptr) return p_local;
     return Abstx_scope::get_identifier(id, context, recursive);

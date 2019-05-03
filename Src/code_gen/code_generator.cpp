@@ -2,6 +2,10 @@
 #include <algorithm>
 #include <iostream>
 
+// @TODO: make this work with proper Function
+
+#ifdef TEST
+
 
 void recursive_code_generation(std::ostream& target, Function* abstx_node) {
     for (auto& dependency : abstx_node->dependencies) {
@@ -53,7 +57,6 @@ void generate_code(std::ostream& target, Function const* entry_point, const std:
 
 
 
-#ifdef TEST
 
 int main()
 {

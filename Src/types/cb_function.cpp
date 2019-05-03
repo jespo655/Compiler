@@ -1,8 +1,8 @@
 #include "cb_function.h"
 
+using namespace Cube;
 
-
-std::string0 CB_Function::toS() const override {
+std::string CB_Function::toS() const {
     std::ostringstream oss;
 
     oss << "fn(";
@@ -24,7 +24,7 @@ std::string0 CB_Function::toS() const override {
 }
 
 
-void CB_Function::finalize() override {
+void CB_Function::finalize() {
     std::string tos = toS();
     for (const auto& tn_pair : typenames) {
         if (tn_pair.second == tos) {
@@ -37,7 +37,7 @@ void CB_Function::finalize() override {
     register_type(tos, sizeof(_default_value), &_default_value);
 }
 
-void CB_Function::generate_typedef(ostream& os) const override {
+void CB_Function::generate_typedef(std::ostream& os) const {
     os << "typedef void(*";
     generate_type(os);
     os << ")(";
@@ -55,7 +55,7 @@ void CB_Function::generate_typedef(ostream& os) const override {
     os << ");" << std::endl;
 }
 
-void CB_Function::generate_literal(ostream& os, void const* raw_data, uint32_t depth = 0) const override {
+void CB_Function::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
     if (!raw_data) os << "NULL";
     else if (!*(void**)raw_data) os << "NULL";
     else {

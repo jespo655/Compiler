@@ -2,9 +2,9 @@
 #include "../statements/abstx_statement.h"
 #include "../../utilities/unique_id.h"
 
-namespace Cube {
+using namespace Cube;
 
-std::string Abstx_identifier::toS() const override {
+std::string Abstx_identifier::toS() const {
     ASSERT(name.length() > 0);
     std::ostringstream oss;
     oss << name << ":";
@@ -14,7 +14,7 @@ std::string Abstx_identifier::toS() const override {
     return oss.str();
 }
 
-Shared<const CB_Type> Abstx_identifier::get_type() override {
+Shared<const CB_Type> Abstx_identifier::get_type() {
     if (value.v_type == nullptr && value_expression != nullptr) value.v_type == value_expression->get_type();
     return value.v_type;
 }
@@ -23,17 +23,17 @@ Shared<const CB_Type> Abstx_identifier::get_constant_type() const {
     return value.v_type;
 }
 
-bool Abstx_identifier::has_constant_value() const override {
+bool Abstx_identifier::has_constant_value() const {
     return value.v_ptr != nullptr || (value_expression != nullptr && value_expression->has_constant_value());
 }
 
-const Any& Abstx_identifier::get_constant_value() override {
+const Any& Abstx_identifier::get_constant_value() {
     if (value.v_ptr != nullptr) return value;
     if (value_expression != nullptr && value_expression->has_constant_value()) value.v_ptr = value_expression->get_constant_value().v_ptr;
     return value;
 }
 
-void Abstx_identifier::generate_code(std::ostream& target) const override
+void Abstx_identifier::generate_code(std::ostream& target) const
 {
     // this should ouput the identifier used as a variable, since it's a subclass of Variable_expression
     ASSERT(name != "");
@@ -42,7 +42,7 @@ void Abstx_identifier::generate_code(std::ostream& target) const override
     if (uid) target << "_" << uid; // uid suffix to avoid name C name clashes
 }
 
-void Abstx_identifier::finalize() override {
+void Abstx_identifier::finalize() {
     if (is_codegen_ready(status)) return;
     ASSERT(name != ""); // must be set during creation
     if (value.v_type == nullptr) {
@@ -62,6 +62,4 @@ void Abstx_identifier::finalize() override {
     } else {
         status = Parsing_status::FULLY_RESOLVED;
     }
-}
-
 }
