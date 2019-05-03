@@ -13,7 +13,14 @@ Använd struct forward declarations hellre än att includa en extra fil i header
 
 
 
-använd namespace Cube för alla cube-specifika saker
+
+Alla saker ska vara testade med tests i tests-mappen
+
+
+
+
+
+
 
 
 

@@ -69,6 +69,16 @@ struct Seq {
     }
     Seq(Seq&& seq) { *this = std::move(seq); }
 
+    // initializer list
+    Seq& operator=(std::initializer_list<T> list) {
+        resize(list.size(), false);
+        size_t i = 0;
+        for (const T& element : list) {
+            new (&v_ptr[i++]) T(element);
+        }
+        return *this;
+    }
+    Seq(std::initializer_list<T> list) { *this = list; }
 
     T& operator[](uint32_t index) {
         if (index >= size) set(index, T());

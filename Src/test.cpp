@@ -14,41 +14,13 @@
 #include "utilities/unique_id.h"
 #include "parser/parser.h"
 #include "lexer/lexer.h"
+#include "tests/unit_tests.h"
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
 #include <memory>
 using namespace std;
-void flag_test()
-{
-
-    flag f0 = 0;
-    flag f1 = 1;
-    flag f2 = 2;
-    flag f3 = 3;
-    flag f4 = 4;
-    flag f5 = 5;
-    flag f10 = 10;
-    flag f16 = 16;
-    flag f64 = 64;
-
-    uint8_t flags1 = f0+f2;
-    uint16_t flags2 = (uint64_t)f16;
-
-    cout << flags1 << endl;
-    cout << flags2 << endl;
-    // cout << (1<<(0U-1)) << endl;
-    // cout << uint64_t(1ULL<<63) << endl;
-    // cout << uint64_t(1ULL<<64) << endl;
-    // cout << uint64_t(1ULL<<65) << endl;
-}
-
-
-
-
-
-
 
 
 
@@ -722,8 +694,9 @@ int main()
 
     // compile_test();
     // sequence_test();
-    code_gen_test();
+    // code_gen_test();
 
+    test_types();
     std::cout << "all test done!" << std::endl;
 }
 

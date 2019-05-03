@@ -17,7 +17,6 @@
         {
           "name": "32 bit",
           "cmd": ["py", "$project_path/Build_tools/make.py", "-b", "../BUILD", "-e", "1", "--c_compiler", "none", "-o", "cube", "-L", "runtime_dll/dyncall/lib32/libdyncall_s.lib"],
-          // "cmd": ["$project_path/src/make.bat"],
           "shell": "true",
           "working_dir": "${project_path}/Src",
           "file_regex": "^[\\w ]*?([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
@@ -31,7 +30,8 @@
         },
         {
           "name": "Run",
-          "cmd": ["${project_path}/BUILD/cube.exe"],
+          "cmd": ["py", "$project_path/Build_tools/make.py", "-b", "../BUILD", "-e", "1", "--c_compiler", "none", "-o", "cube", "-L", "runtime_dll/dyncall/lib64/libdyncall_s.lib",
+            "&&", "${project_path}/BUILD/cube.exe"],
           "shell": "true",
           "working_dir": "${project_path}/Src",
           "file_regex": "^[\\w ]*?([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
