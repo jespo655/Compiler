@@ -21,7 +21,7 @@ struct Global_scope;
     It knows its own start token index (so it can create a new iterator and index through the tokens later)
         and token context (so it can give correct error messages).
 */
-struct Abstx_node
+struct Abstx_node : public Serializable
 {
     // should be set immediately on creation:
     Shared<Abstx_node> owner = nullptr; // points to the parent node in the abstx tree
@@ -30,18 +30,6 @@ struct Abstx_node
 
     // should be set a bit later:
     Parsing_status status = Parsing_status::NOT_PARSED;
-
-    // debug_print(): print all data about the node, on one or several lines.
-    // If recursive=true, then also call debug_print() on all child nodes.
-    // For child nodes, use os.indent() and os.unindent() for clarity.
-    // As default debug_print() prints toS().
-    virtual void debug_print(Debug_os& os, bool recursive=true) const;
-
-    // toS(): concatenate the most basic data about the node in a single
-    // line of text. This line should preferrably be self contained and fit
-    // well into other text.
-    // This method should always be implemented in all non-abstract classes.
-    virtual std::string toS() const = 0;
 
     // generate_code(): generate valid c code and output it to to target.
     // This is done recursively to ensure that all dependencies are outputted first.

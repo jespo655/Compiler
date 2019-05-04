@@ -4,6 +4,7 @@
 
 #include <string>
 #include <sstream>
+#include <ostream>
 #include <type_traits>
 
 using std::nullptr_t;
@@ -150,6 +151,14 @@ Owned<T> alloc(T&& t) {
     return ptr;
 }
 
+template<typename T, typename... Args>
+Owned<T> alloc(Args... args) {
+    Owned<T> ptr;
+    ptr.v = (T*)malloc(sizeof(T));
+    new (ptr.v) T(args...);
+    return ptr;
+}
+
 template<typename T> struct deep_copy<T,true> { // copy constructible
     Owned<T> operator()(const Owned<T>& ptr) {
         if (ptr == nullptr) return nullptr;
@@ -227,6 +236,9 @@ template<typename T> bool operator!=(const Shared<T>& lhs, const nullptr_t rhs) 
 template<typename T> bool operator!=(const nullptr_t lhs, const Shared<T>& rhs) { return !(lhs == rhs); }
 template<typename T> bool operator!=(const Owned<T>& lhs, const nullptr_t rhs) { return !(lhs == rhs); }
 template<typename T> bool operator!=(const nullptr_t lhs, const Owned<T>& rhs) { return !(lhs == rhs); }
+
+template<typename T> std::ostream& operator<<(std::ostream& os, const Shared<T>& p) { return os << p.toS(); }
+template<typename T> std::ostream& operator<<(std::ostream& os, const Owned<T>& p) { return os << p.toS(); }
 
 template<typename T, typename T2>
 Shared<T> dynamic_pointer_cast(const Owned<T2>& ptr) {

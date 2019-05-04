@@ -3,14 +3,6 @@
 #include "abstx_scope.h"
 
 
-void Abstx_node::debug_print(Debug_os& os, bool recursive) const
-{
-    os << toS() << std::endl;
-}
-
-
-
-
 // Go up in the Abstx tree until a parent scope is found.
 // If no scope is found, return nullptr
 Shared<Abstx_scope> Abstx_node::parent_scope() const

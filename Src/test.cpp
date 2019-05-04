@@ -696,8 +696,9 @@ int main()
     // sequence_test();
     // code_gen_test();
 
-    test_types();
-    std::cout << "all test done!" << std::endl;
+    // test_types();
+    run_default_test_suites();
+    // std::cout << "all test done!" << std::endl;
 }
 
 
