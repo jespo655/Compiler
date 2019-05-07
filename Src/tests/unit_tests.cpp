@@ -271,6 +271,35 @@ static Test_result pointers_test()
 static Test_result sequence_test()
 {
     Aware::reset();
+    Seq<Aware> seq;
+    TEST_EQ(Aware::created, 0);
+    seq.resize(4);
+    TEST_EQ(Aware::created, 4);
+    seq.resize(10);
+    TEST_EQ(Aware::created, 14);
+    TEST_EQ(Aware::alive, 10);
+    TEST_EQ(Aware::moved, 4);
+    TEST_EQ(seq[0].moved_to, 1);
+    TEST_EQ(seq[3].moved_to, 1);
+    TEST_EQ(seq[4].moved_to, 0);
+    TEST_EQ(seq[9].moved_to, 0);
+    for (const auto& a : seq) { TEST_EQ(a.copied_to, 0); }
+    TEST_EQ(Aware::created, 14);
+    TEST_EQ(Aware::alive, 10);
+    TEST_EQ(Aware::moved, 4);
+    TEST_EQ(seq.size, 10);
+    seq.remove_last();
+    TEST_EQ(seq.size, 9);
+    seq.add(Aware()); // Note that this creates one extra object that gets immediately moved from
+    TEST_EQ(seq.size, 10);
+    TEST_EQ(Aware::created, 16);
+    TEST_EQ(Aware::alive, 10);
+    TEST_EQ(Aware::moved, 5);
+    TEST_EQ(Aware::copied, 0);
+    seq.clear();
+    TEST_EQ(Aware::alive, 0);
+
+    // @TODO: Fixed_seq test
     return PASSED;
 }
 

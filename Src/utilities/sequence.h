@@ -160,15 +160,30 @@ struct Seq {
         }
     }
 
-    void resize(uint32_t new_size, bool init=true, T default_value=T()) {
+    void resize(uint32_t new_size, bool init=true) {
         if (new_size > size) {
             if (new_size > capacity) {
                 reallocate(new_size);
             }
             if (init) {
                 for (uint32_t i = size; i < new_size; ++i) {
-                    new (&v_ptr[i]) T(default_value); // fill with default values
+                    new (&v_ptr[i]) T(); // fill with default values
                 }
+            }
+        } else {
+            // properly delete everything outside the new size
+            for (uint32_t i = new_size; i < size; ++i) v_ptr[i].~T();
+        }
+        size = new_size;
+    }
+
+    void resize_with_value(uint32_t new_size, const T& default_value) {
+        if (new_size > size) {
+            if (new_size > capacity) {
+                reallocate(new_size);
+            }
+            for (uint32_t i = size; i < new_size; ++i) {
+                new (&v_ptr[i]) T(default_value); // fill with default values
             }
         } else {
             // properly delete everything outside the new size
