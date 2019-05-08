@@ -34,19 +34,16 @@ public:
 
     Static_any() {
         set_callbacks<void>();
-        printf("constructor end\n");
     }
     ~Static_any() {
-        printf("destructor start\n");
         if (callbacks) {
-            // destroy_callback(*this);
+            destroy_callback(*this);
             delete callbacks;
             callbacks = nullptr;
         } else {
             if (v_ptr) free(v_ptr);
             v_ptr = nullptr;
         }
-        printf("destructor end\n");
     }
 
     template<typename T>
@@ -129,6 +126,11 @@ public:
         set_callbacks<T>();
     }
 
+    void deallocate() {
+        this->~Static_any();
+        set_callbacks<void>();
+    }
+
     template<typename T> bool operator==(const T& o) const { return has_value<T>() && value<T>() == o; }
     bool operator==(const Static_any& o) const { return callbacks->compare(*this, o); }
     template<typename T> bool operator!=(const T& o) const { return !(*this == o); }
@@ -157,8 +159,8 @@ private:
         }
     };
 
-    Any_callbacks* callbacks;
-    void (*destroy_callback)(Static_any& any); // can't call virtual functions in destructor so we need this special case
+    Any_callbacks* callbacks = nullptr;
+    void (*destroy_callback)(Static_any& any) = nullptr; // can't call virtual functions in destructor so we need this special case
 
     template<typename T> void set_callbacks();
 
@@ -171,6 +173,7 @@ private:
 template<typename T>
 struct Static_any::T_callbacks<T, true> : T_callbacks<T, false> {
     std::string toS(const Static_any& any) override {
+        ASSERT(any.v_ptr);
         return ((Serializable*)any.v_ptr)->toS();
     }
 };
@@ -202,8 +205,8 @@ void destroy_any(Static_any& any) {
     }
 }
 
-static void destroy_void(Static_any& any) {
-    printf("destroy void\n");
+template<>
+void destroy_any<void>(Static_any& any) {
     ASSERT(any.v_ptr == nullptr);
 }
 
@@ -211,6 +214,7 @@ template<typename T> void Static_any::set_callbacks() {
     if (!has_type<T>()) {
         if (callbacks != nullptr) delete callbacks;
         callbacks = new T_callbacks<T, std::is_base_of<Serializable, T>::value>;
-        destroy_callback = destroy_void;
+        destroy_callback = destroy_any<T>;
+        type = type_id<T>;
     }
 };

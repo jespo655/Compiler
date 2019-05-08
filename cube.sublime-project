@@ -76,6 +76,14 @@
       "variants": [],
     },
     {
+      "name": "Cube",
+      "cmd": ["$project_path/BUILD/cube.exe", "$file_name"],
+      "shell": "true",
+      "working_dir": "$file_path",
+      "file_regex": "^[\\w ]*?([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
+      "variants": [],
+    },
+    {
       "name": "Optimized C->ASM",
       "cmd": ["gcc", "-O3", "-S", "-fverbose-asm" ,"$file_name", "-o${file_base_name}.asm", "&&", "${file_base_name}.asm" ],
       "shell": "true",
