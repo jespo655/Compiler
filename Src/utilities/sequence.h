@@ -276,31 +276,39 @@ struct Fixed_seq {
         return oss.str();
     }
 
-    Fixed_seq(bool init=true) {
-        if (init) {
-            for (uint32_t i = 0; i < size; ++i) {
-                new (&v[i]) T();
-            }
-        }
+    Fixed_seq() {
+        // values are automatically initiated in c++
     }
     ~Fixed_seq() {
-        for (uint32_t i = 0; i < size; ++i) v[i].~T();
+        // values are automatically deinitiated in c++
     }
 
     T& operator[](uint32_t index) {
         ASSERT(index < c_size);
         return v[index];
     }
-    T operator[](uint32_t index) const { return get(index); }
 
-    T get(uint32_t index) const {
-        if (index >= c_size) return T();
+    const T& operator[](uint32_t index) const {
+        ASSERT(index < c_size);
         return v[index];
     }
 
-    void set(uint32_t index, T t) {
+    const T& get(uint32_t index) const {
+        ASSERT(index < c_size);
+        return v[index];
+    }
+
+    void set(uint32_t index, const T& t) {
         if (index < c_size) {
             v[index] = t;
+        } else {
+            // outside the array -> ignore
+        }
+    }
+
+    void set(uint32_t index, T&& t) {
+        if (index < c_size) {
+            v[index] = std::move(t);
         } else {
             // outside the array -> ignore
         }
@@ -317,17 +325,32 @@ struct Fixed_seq {
 
     struct iterator {
         uint32_t index = 0;
-        const Fixed_seq& Seq;
-        iterator(const Fixed_seq& Seq, uint32_t i=0) : Seq{Seq}, index{i} {}
-        const T& operator*() const { ASSERT(index < Seq.size); return Seq.v_ptr[index]; }
+        Fixed_seq& _seq;
+        iterator(Fixed_seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
+        T& operator*() const { ASSERT(index < _seq.size); return _seq.v_ptr[index]; }
         iterator& operator++() { ++index; return *this; }
         bool operator==(const iterator& o) const { return index == o.index; }
         bool operator!=(const iterator& o) const { return !(*this == o); }
         bool operator<(const iterator& o) const { return index < o.index; }
     };
 
-    iterator begin() const { return iterator(*this); }
-    iterator end() const { return iterator(*this, size); }
+    struct const_iterator {
+        uint32_t index = 0;
+        const Fixed_seq& _seq;
+        const_iterator(const Fixed_seq& _seq, uint32_t i=0) : _seq{_seq}, index{i} {}
+        const T& operator*() const { ASSERT(index < _seq.size); return _seq.v_ptr[index]; }
+        const_iterator& operator++() { ++index; return *this; }
+        bool operator==(const const_iterator& o) const { return index == o.index; }
+        bool operator!=(const const_iterator& o) const { return !(*this == o); }
+        bool operator<(const const_iterator& o) const { return index < o.index; }
+    };
+
+    iterator begin() { return iterator(*this); }
+    iterator end() { return iterator(*this, size); }
+
+    const_iterator begin() const { return const_iterator(*this); }
+    const_iterator end() const { return const_iterator(*this, size); }
+
 };
 
 

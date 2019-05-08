@@ -14,12 +14,13 @@ Använd struct forward declarations hellre än att includa en extra fil i header
 
 
 
-Alla saker ska vara testade med tests i tests-mappen
+* Alla saker ska vara testade med tests i tests-mappen
 
 
 
 
 
+* Rework av Static_any - ska fungera även med c++-typer
 
 
 

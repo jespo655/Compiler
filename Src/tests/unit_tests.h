@@ -43,17 +43,16 @@ enum Test_result
 // function signature of function tests
 typedef Test_result (*test_fn)(void);
 
-// run tests in a test suite
-Test_result run_suite(const Seq<test_fn>& suite, const std::string& suite_name="");
-
+// run tests in a test suite and return the result
+// if print_result is true, also print a test summary to std::cout
+Test_result run_suite(const Seq<test_fn>& suite, const std::string& suite_name="", bool print_result=true);
 
 // Pre-defined suites
 Test_result test_utilities();
 Test_result test_types();
 
-// set if the pre-defined test suites should be verbose or not
-void set_verbose_default_tests(bool verbose);
-
 // run all pre-defined suites defined above
 Test_result run_default_test_suites();
+Test_result run_default_test_suites_verbose(); // force verbose output
+Test_result run_default_test_suites_quiet(); // force quiet output
 

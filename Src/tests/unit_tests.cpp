@@ -43,7 +43,7 @@ struct Aware : public Serializable
 
     int i = get_unique_id();
     int deleted = 0; // incremented on destructor. Can only be done once.
-    int copied_from = 0; // incremented on copy assignment from this
+    // int copied_from = 0; // incremented on copy assignment from this. Illegal with const reference argument
     int moved_from = 0; // incremented on move assignment from this
     int copied_to = 0; // incremented on copy assignment to this
     int moved_to = 0; // incremented on move assignment to this
@@ -51,8 +51,8 @@ struct Aware : public Serializable
     Aware() { created++; alive++; }
     template<typename... Args>Aware(Args... args) { created++; alive++; }
     ~Aware() { ASSERT(!deleted); deleted++; if (!moved_from) alive--; }
-    Aware(Aware& o) { created++; alive++; *this = o; }
-    Aware& operator=(Aware& o) { ASSERT(!deleted); ASSERT(!o.deleted); ASSERT(!o.moved_from); copied++; copied_to++; o.copied_from++; return *this; }
+    Aware(const Aware& o) { created++; alive++; *this = o; }
+    Aware& operator=(const Aware& o) { ASSERT(!deleted); ASSERT(!o.deleted); ASSERT(!o.moved_from); copied++; copied_to++; return *this; }
     Aware(Aware&& o) { created++; alive++; *this = std::move(o); }
     Aware& operator=(Aware&& o) { ASSERT(!deleted); ASSERT(!o.deleted); ASSERT(!o.moved_from); moved++; moved_to++; o.moved_from++; alive--; return *this; }
 
@@ -90,7 +90,6 @@ static Test_result aware_test()
     TEST_EQ(v.deleted, 0);
     TEST_EQ(v.moved_from, 0);
     TEST_EQ(v.moved_to, 0);
-    TEST_EQ(v.copied_from, 0);
     TEST_EQ(v.copied_to, 0);
 
     Aware v2 = Aware(std::move(v));
@@ -101,13 +100,11 @@ static Test_result aware_test()
     TEST_EQ(v.deleted, 0);
     TEST_EQ(v.moved_from, 1);
     TEST_EQ(v.moved_to, 0);
-    TEST_EQ(v.copied_from, 0);
     TEST_EQ(v.copied_to, 0);
 
     TEST_EQ(v2.deleted, 0);
     TEST_EQ(v2.moved_from, 0);
     TEST_EQ(v2.moved_to, 1);
-    TEST_EQ(v2.copied_from, 0);
     TEST_EQ(v2.copied_to, 0);
 
     Aware v3 = Aware(v2);
@@ -117,19 +114,16 @@ static Test_result aware_test()
     TEST_EQ(v2.deleted, 0);
     TEST_EQ(v2.moved_from, 0);
     TEST_EQ(v2.moved_to, 1);
-    TEST_EQ(v2.copied_from, 2);
     TEST_EQ(v2.copied_to, 0);
 
     TEST_EQ(v3.deleted, 0);
     TEST_EQ(v3.moved_from, 0);
     TEST_EQ(v3.moved_to, 1);
-    TEST_EQ(v3.copied_from, 0);
     TEST_EQ(v3.copied_to, 2);
 
     TEST_EQ(v4.deleted, 0);
     TEST_EQ(v4.moved_from, 1);
     TEST_EQ(v4.moved_to, 0);
-    TEST_EQ(v4.copied_from, 1);
     TEST_EQ(v4.copied_to, 1);
 
     TEST(v.i != v2.i);
@@ -268,6 +262,11 @@ static Test_result pointers_test()
 }
 
 // sequence
+
+template<typename T> void grab_value(T t) {}
+template<typename T> void grab_reference(const T& t) {}
+template<typename T> void grab_move(T&& t) {}
+
 static Test_result sequence_test()
 {
     Aware::reset();
@@ -299,13 +298,61 @@ static Test_result sequence_test()
     seq.clear();
     TEST_EQ(Aware::alive, 0);
 
-    // @TODO: Fixed_seq test
+    Aware::reset();
+    TEST_EQ(Aware::created, 0);
+    Fixed_seq<Aware, 4> fseq;
+    TEST_EQ(Aware::created, 4);
+    const Aware& a = fseq[2];
+    fseq[3] = fseq[2];
+    TEST_EQ(Aware::created, 4);
+    TEST_EQ(Aware::copied, 1);
+    grab_reference(fseq);
+    TEST_EQ(Aware::created, 4);
+    grab_value(fseq);
+    TEST_EQ(Aware::created, 8);
+    TEST_EQ(Aware::alive, 4);
+    grab_move(std::move(fseq));
+    TEST_EQ(Aware::created, 8);
+    TEST_EQ(Aware::alive, 4);
+    Fixed_seq<Aware, 4> fseq2;
+    TEST_EQ(Aware::created, 12);
+
     return PASSED;
 }
 
 // any
 static Test_result any_test()
 {
+    Aware::reset();
+    Static_any any;
+    TEST_EQ(any.has_type<void>(), true);
+    TEST_EQ(any.has_value<void>(), false);
+    TEST_EQ(any.has_type<Aware>(), false);
+    any.allocate<Aware>(true);
+    std::cout << any << std::endl;
+    // TEST_EQ(any.has_type<Aware>(), true);
+    // TEST_EQ(any.has_value<Aware>(), true);
+    // TEST_EQ(Aware::created, 1);
+    // TEST_EQ(Aware::alive, 1);
+    // Aware a;
+    // TEST_EQ(Aware::created, 2);
+    // TEST_EQ(Aware::alive, 2);
+    // any = a;
+    // TEST_EQ(Aware::created, 2);
+    // TEST_EQ(Aware::alive, 2);
+    // TEST_EQ(Aware::copied, 1);
+    // TEST_EQ(Aware::moved, 0);
+    // any = std::move(a);
+    // TEST_EQ(Aware::created, 2);
+    // TEST_EQ(Aware::alive, 1);
+    // TEST_EQ(Aware::copied, 1);
+    // TEST_EQ(Aware::moved, 1);
+    // int i = 3;
+    // any = i;
+    // TEST_EQ(Aware::alive, 0);
+    // TEST_EQ(any.has_value<int>(), true);
+    // TEST_EQ(any, 3);
+    std::cout << "end" << std::endl;
     return PASSED;
 }
 
@@ -321,7 +368,7 @@ static Test_result uid_test()
 
 
 
-Test_result run_suite(const Seq<test_fn>& suite, const std::string& suite_name)
+Test_result run_suite(const Seq<test_fn>& suite, const std::string& suite_name, bool print_result)
 {
     uint32_t passed = 0;
     uint32_t failed = 0;
@@ -334,9 +381,11 @@ Test_result run_suite(const Seq<test_fn>& suite, const std::string& suite_name)
         }
     }
 
-    std::cout << "Test suite ";
-    if (suite_name != "") std::cout << "\"" << suite_name << "\" ";
-    std::cout << "complete: " << passed << "/" << suite.size << " tests passed" << std::endl;
+    if (print_result) {
+        std::cout << "Test suite ";
+        if (suite_name != "") std::cout << "\"" << suite_name << "\" ";
+        std::cout << "complete: " << passed << "/" << suite.size << " tests passed" << std::endl;
+    }
     return (failed==0) ? PASSED : FAILED;
 }
 
@@ -369,7 +418,7 @@ Test_result test_utilities()
 Test_result test_types()
 {
     Seq<test_fn> suite = {
-        test_test,
+        // test_test,
         // @TODO: extend with all cb types
     };
 
@@ -383,5 +432,17 @@ Test_result run_default_test_suites()
         test_types,
     };
 
-    return run_suite(suite, "default suites");
+    return run_suite(suite, "default suites", false);
+}
+
+Test_result run_default_test_suites_verbose()
+{
+    verbose = true;
+    return run_default_test_suites();
+}
+
+Test_result run_default_test_suites_quiet()
+{
+    verbose = false;
+    return run_default_test_suites();
 }
