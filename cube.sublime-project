@@ -52,9 +52,9 @@
         },
         {
           "name": "Check single header",
-          "cmd": ["py", "$project_path/Build_tools/header_checker.py", "-b", "../BUILD", "--header", "$file_name"],
+          "cmd": ["py", "$project_path/Build_tools/header_checker.py", "-b", "../BUILD", "--header", "$file"],
           "shell": "true",
-          "working_dir": "$file_path",
+          "working_dir": "${project_path}/Src",
           "file_regex": "^[\\w ]*?([CD:.\\\\/]*[a-z]?:?[\\w.\\\\/]+)[(:]([0-9]+)[,:]?([0-9]+)?[)]?:(.*)$",
         },
         {

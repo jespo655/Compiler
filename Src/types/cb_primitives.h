@@ -19,9 +19,13 @@ struct cpp_type : CB_Type { \
     } \
     void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override { \
         ASSERT(raw_data); \
-        os << *(c_type*)raw_data << literal_suffix;\
+        os << +*(c_type*)raw_data << literal_suffix; \
     } \
 }
+
+// uint8_t is treated as char normally, but we need it to be outputted as a numerical value.
+// The best way to do that is to cast the value to int.
+inline std::ostream& operator<<(std::ostream& os, uint8_t v) { os << static_cast<int>(v); }
 
 GENERATE_PRIMITIVE(CB_Bool, "bool", bool, "");
 
@@ -42,3 +46,4 @@ GENERATE_PRIMITIVE(CB_f64, "f64", double, "");
 GENERATE_PRIMITIVE(CB_Float, "float", double, "");
 
 GENERATE_PRIMITIVE(CB_Flag, "flag", uint8_t, "");
+

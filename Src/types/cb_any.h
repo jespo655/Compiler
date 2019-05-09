@@ -34,7 +34,7 @@ struct CB_Any : CB_Type {
 };
 
 // Below: utilities version of any that can be used in c++
-struct Any {
+struct Any : Serializable {
     Shared<const CB_Type> v_type; // the type of v
     void const* v_ptr = nullptr; // the value, owned by someone else (do not delete it!)
 
@@ -43,12 +43,19 @@ struct Any {
 
     std::string toS() const {
         if (v_ptr) {
+            ASSERT(v_type);
             std::ostringstream oss;
             v_type->generate_literal(oss, v_ptr);
             return oss.str();
         }
         else return "---";
     }
+
+    template<typename T>
+    bool operator==(const T& o) const { return v_ptr && *(T*)v_ptr == o; }
+    bool operator==(const Any& o) const { return v_type && *v_type == *o.v_type && memcmp(v_ptr, o.v_ptr, v_type->cb_sizeof()); }
+    template<typename T>
+    bool operator!=(const T& o) const { return !(*this == o); }
 
     Any& operator=(const Any& Any) {
         if (this != &Any) {

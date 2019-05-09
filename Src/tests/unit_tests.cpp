@@ -1,26 +1,10 @@
 #include "unit_tests.h"
-#include "../utilities/assert.h"
-#include "../utilities/debug.h"
-#include "../utilities/error_handler.h"
-#include "../utilities/flag.h"
-#include "../utilities/pointers.h"
-#include "../utilities/sequence.h"
-#include "../utilities/static_any.h"
-#include "../utilities/unique_id.h"
-#include "../parser/token.h"
+#include "aware.h"
 
-#include <iostream>
 #include <sstream>
-#include <ctime>
-
 
 // verbose flag to control all the tests in this file
 static bool verbose = true;
-
-void set_verbose_default_tests(bool v)
-{
-    verbose = v;
-}
 
 // Test the test functions themselves - this should always be run in the beginning of a suite
 static Test_result test_test()
@@ -32,53 +16,6 @@ static Test_result test_test()
     TEST_NOEXCEPT();
     return PASSED;
 }
-
-
-
-// Class that's aware to copy/move constructions/assignments and deletions
-struct Aware : public Serializable
-{
-    static int created; // incremented on any constructor
-    static int alive; // incremented on any constructor; decremented on destructor or move from
-    static int moved; // incremented on any move assignment or constructor
-    static int copied; // incremented on any copy assignment or constructor
-
-    int i = get_unique_id();
-    int deleted = 0; // incremented on destructor. Can only be done once.
-    // int copied_from = 0; // incremented on copy assignment from this. Illegal with const reference argument
-    int moved_from = 0; // incremented on move assignment from this
-    int copied_to = 0; // incremented on copy assignment to this
-    int moved_to = 0; // incremented on move assignment to this
-
-    Aware() { created++; alive++; }
-    template<typename... Args>Aware(Args... args) { created++; alive++; }
-    ~Aware() { ASSERT(!deleted); deleted++; if (!moved_from) alive--; }
-    Aware(const Aware& o) { created++; alive++; *this = o; }
-    Aware& operator=(const Aware& o) { ASSERT(!deleted); ASSERT(!o.deleted); ASSERT(!o.moved_from); copied++; copied_to++; return *this; }
-    Aware(Aware&& o) { created++; alive++; *this = std::move(o); }
-    Aware& operator=(Aware&& o) { ASSERT(!deleted); ASSERT(!o.deleted); ASSERT(!o.moved_from); moved++; moved_to++; o.moved_from++; alive--; return *this; }
-
-    bool operator==(const Aware& o) const { return i == o.i; }
-    bool operator!=(const Aware& o) const { return !(*this == o); }
-    bool operator<(const Aware& o) const { return i < o.i; }
-    bool operator>(const Aware& o) const { return o < *this; }
-    bool operator>=(const Aware& o) const { return !(*this < o); }
-    bool operator<=(const Aware& o) const { return !(o < *this); }
-
-    std::string toS() const { return "Aware(" + std::to_string(i) + ")"; }
-
-    static void reset() {
-        Aware::created = 0;
-        Aware::alive = 0;
-        Aware::moved = 0;
-        Aware::copied = 0;
-    }
-};
-
-int Aware::created = 0;
-int Aware::alive = 0;
-int Aware::copied = 0;
-int Aware::moved = 0;
 
 static Test_result aware_test()
 {
@@ -147,323 +84,43 @@ static Test_result aware_test()
     return PASSED;
 }
 
-
-
-
-
-
-
-
-
-// utilities tests
-
-// assert
-static Test_result assert_test()
-{
-    // we can't check for failing tests since that would exit the program
-    ASSERT(true);
-    ASSERT(true, "message");
-    int complex=57, expression=2;
-    ASSERT(complex*expression > complex+expression);
-    return PASSED;
-}
-
-// debug
-static Test_result debug_test()
-{
-    std::stringstream ss;
-    Debug_os os(ss);
-    os.indent();
-    os.indent();
-    os.unindent(2);
-    os << "a" << std::endl;
-    os.set_indent_level(1);
-    os.unindent(2);
-    os << "a" << std::endl;
-    os.set_indent_level(1);
-    os << "a" << std::endl;
-    os.indent();
-    os << "a" << std::endl;
-    os.unindent();
-    os << "a" << std::endl;
-    TEST_EQ(ss.str(), "a\na\n    a\n        a\n    a\n");
-    return PASSED;
-}
-
-// error handler
-static Test_result error_handler_test()
-{
-    Token_context c{};
-    c.line = __LINE__;
-    c.position = 4;
-    c.file = __FILE__;
-    set_logging(false);
-    log_error("", c);
-    log_warning("", c);
-    add_note("", c);
-    add_note("");
-    exit_if_errors(); // shouldn't exit since logging is off
-    set_logging(true); // back to default
-    return PASSED;
-}
-
-// flag
-static Test_result flag_test()
-{
-    flag f0 = 0;
-    flag f1 = 1;
-    flag f2 = 2;
-    flag f3 = 3;
-    flag f4 = 4;
-    flag f5 = 5;
-    flag f8 = 8;
-    flag f10 = 10;
-    flag f16 = 16;
-    flag f63 = 63;
-    flag f64 = 64;
-    flag f65 = 65;
-
-    TEST_EQ((uint8_t)f0, 0);
-    TEST_EQ((uint32_t)f0+f2, 0x02);
-    TEST_EQ(f1+f2, 0x03);
-    TEST_EQ(f1+f8, 0x81);
-    TEST_EQ(f8+f1, 0x81);
-    TEST_EQ((uint64_t)f63, 0x4000000000000000);
-    TEST_EQ((uint64_t)f64, 0x8000000000000000);
-    return PASSED;
-}
-
-// pointers
-static Owned<Aware> create_aware() { return alloc<Aware>(1,2,3); }
-static void grab_aware(Owned<Aware> p) {}
-static void share_aware(Shared<Aware> p) {}
-
-static Test_result pointers_test()
-{
-    Aware::reset();
-    TEST_EQ(Aware::created, 0);
-    Owned<Aware> o = create_aware();
-    TEST_EQ(Aware::created, 1);
-    TEST_EQ(Aware::alive, 1);
-    TEST_NOT_NULL(o);
-    share_aware(o);
-    TEST_EQ(Aware::created, 1);
-    TEST_EQ(Aware::alive, 1);
-    TEST_NOT_NULL(o);
-    Shared<Aware> s = o;
-    Shared<Aware> s2 = o;
-    TEST_NOT_NULL(s);
-    TEST(s == o && s == s2);
-    Owned<Aware> o2 = std::move(o);
-    TEST_EQ(o, nullptr);
-    grab_aware(std::move(o2));
-    TEST_EQ(o2, nullptr);
-    TEST_EQ(Aware::created, 1);
-    TEST_EQ(Aware::alive, 0);
-    return PASSED;
-}
-
-// sequence
-
-template<typename T> void grab_value(T t) {}
-template<typename T> void grab_reference(const T& t) {}
-template<typename T> void grab_move(T&& t) {}
-
-static Test_result sequence_test()
-{
-    Aware::reset();
-    Seq<Aware> seq;
-    TEST_EQ(Aware::created, 0);
-    seq.resize(4);
-    TEST_EQ(Aware::created, 4);
-    seq.resize(10);
-    TEST_EQ(Aware::created, 14);
-    TEST_EQ(Aware::alive, 10);
-    TEST_EQ(Aware::moved, 4);
-    TEST_EQ(seq[0].moved_to, 1);
-    TEST_EQ(seq[3].moved_to, 1);
-    TEST_EQ(seq[4].moved_to, 0);
-    TEST_EQ(seq[9].moved_to, 0);
-    for (const auto& a : seq) { TEST_EQ(a.copied_to, 0); }
-    TEST_EQ(Aware::created, 14);
-    TEST_EQ(Aware::alive, 10);
-    TEST_EQ(Aware::moved, 4);
-    TEST_EQ(seq.size, 10);
-    seq.remove_last();
-    TEST_EQ(seq.size, 9);
-    seq.add(Aware()); // Note that this creates one extra object that gets immediately moved from
-    TEST_EQ(seq.size, 10);
-    TEST_EQ(Aware::created, 16);
-    TEST_EQ(Aware::alive, 10);
-    TEST_EQ(Aware::moved, 5);
-    TEST_EQ(Aware::copied, 0);
-    seq.clear();
-    TEST_EQ(Aware::alive, 0);
-
-    Aware::reset();
-    TEST_EQ(Aware::created, 0);
-    Fixed_seq<Aware, 4> fseq;
-    TEST_EQ(Aware::created, 4);
-    const Aware& a = fseq[2];
-    fseq[3] = fseq[2];
-    TEST_EQ(Aware::created, 4);
-    TEST_EQ(Aware::copied, 1);
-    grab_reference(fseq);
-    TEST_EQ(Aware::created, 4);
-    grab_value(fseq);
-    TEST_EQ(Aware::created, 8);
-    TEST_EQ(Aware::alive, 4);
-    grab_move(std::move(fseq));
-    TEST_EQ(Aware::created, 8);
-    TEST_EQ(Aware::alive, 4);
-    Fixed_seq<Aware, 4> fseq2;
-    TEST_EQ(Aware::created, 12);
-
-    return PASSED;
-}
-
-// any
-static Test_result any_test()
-{
-    Aware::reset();
-    Static_any any;
-    TEST_EQ(any.has_type<void>(), true);
-    TEST_EQ(any.has_value<void>(), false);
-    TEST_EQ(any.has_type<Aware>(), false);
-    any.allocate<Aware>(true);
-    TEST(any.toS() == any.value<Aware>().toS());
-    any.value<Aware>().i = 0;
-    TEST_EQ(any.toS(), "Aware(0)");
-    TEST_EQ(any.has_type<void>(), false);
-    TEST_EQ(any.has_type<Aware>(), true);
-    TEST_EQ(any.has_value<Aware>(), true);
-    TEST_EQ(Aware::created, 1);
-    TEST_EQ(Aware::alive, 1);
-    Aware a;
-    TEST_EQ(Aware::created, 2);
-    TEST_EQ(Aware::alive, 2);
-    any = a;
-    TEST_EQ(Aware::created, 2);
-    TEST_EQ(Aware::alive, 2);
-    TEST_EQ(Aware::copied, 1);
-    TEST_EQ(Aware::moved, 0);
-    any = std::move(a);
-    TEST_EQ(Aware::created, 2);
-    TEST_EQ(Aware::alive, 1);
-    TEST_EQ(Aware::copied, 1);
-    TEST_EQ(Aware::moved, 1);
-    int i = 3;
-    any = i;
-    TEST_EQ(Aware::alive, 0);
-    TEST_EQ(any.has_value<int>(), true);
-    TEST_EQ(any, 3);
-    any.deallocate();
-    TEST_EQ(any.has_type<void>(), true);
-    return PASSED;
-}
-
-// unique ids
-static Test_result uid_test()
-{
-    // Do as many tests as possible during a certain time
-    std::clock_t start = std::clock();
-    const int max_uids = 10000;
-    const int max_ms = 1000;
-    uint64_t uids[max_uids];
-
-    for (int i = 0; i < max_uids; ++i) {
-        uids[i] = get_unique_id();
-    }
-
-    int loops = 0;
-    uint64_t elapsed_ms = 0;
-    while (elapsed_ms < max_ms) {
-        for (int i = 0; i < max_uids; ++i) {
-            for (int j = 0; j < max_uids; ++j) {
-                TEST(i == j || uids[i] != uids[j]);
-            }
-            uids[i] = get_unique_id();
-        }
-        ++loops;
-        elapsed_ms = (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000);
-    }
-
-    TEST(loops >= 2);
-    // std::cout << "Uid test finished " << loops << " loops in " << elapsed_ms << " ms" << std::endl;
-    return PASSED;
-}
-
-
-
-
-
-
-
 Test_result run_suite(const Seq<test_fn>& suite, const std::string& suite_name, bool print_result)
 {
     uint32_t passed = 0;
     uint32_t failed = 0;
+    uint32_t ignored = 0;
 
     for (const test_fn& fn : suite) {
-        if (fn() == PASSED) {
+        auto result = fn();
+        if (result == PASSED) {
             passed++;
-        } else {
+        } else if (result == FAILED) {
             failed++;
+        } else {
+            ignored++;
         }
     }
 
     if (print_result) {
         std::cout << "Test suite ";
         if (suite_name != "") std::cout << "\"" << suite_name << "\" ";
-        std::cout << "complete: " << passed << "/" << suite.size << " tests passed" << std::endl;
+        std::cout << "complete: " << passed << "/" << (passed + failed) << " tests passed";
+        if (ignored > 0) std::cout << " (" << ignored << " ignored)";
+        std::cout << std::endl;
     }
     return (failed==0) ? PASSED : FAILED;
-}
-
-
-
-
-
-
-
-
-
-
-Test_result test_utilities()
-{
-    Seq<test_fn> suite = {
-        test_test,
-        aware_test,
-        assert_test,
-        debug_test,
-        error_handler_test,
-        pointers_test,
-        sequence_test,
-        any_test,
-        uid_test,
-    };
-
-    return run_suite(suite, "utilities");
-}
-
-Test_result test_types()
-{
-    Seq<test_fn> suite = {
-        // test_test,
-        // @TODO: extend with all cb types
-    };
-
-    return run_suite(suite, "types");
 }
 
 Test_result run_default_test_suites()
 {
     Seq<test_fn> suite = {
-        test_utilities,
-        test_types,
+        test_test,
+        aware_test,
+        (verbose ? test_utilities_verbose : test_utilities_quiet),
+        (verbose ? test_types_verbose : test_types_quiet),
     };
 
-    return run_suite(suite, "default suites", false);
+    return run_suite(suite, "default suites", true);
 }
 
 Test_result run_default_test_suites_verbose()

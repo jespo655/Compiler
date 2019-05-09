@@ -13,8 +13,6 @@ That is, they have to be defined in a .cpp-file.
 #include "cb_struct.h"
 #include "cb_seq.h"
 #include "cb_primitives.h"
-// #include "../abstx/statements/abstx_scope.h"
-// #include "sequence.h"
 
 std::map<CB_Type::c_typedef, std::string> CB_Type::typenames{};
 std::map<CB_Type::c_typedef, Any> CB_Type::default_values{};

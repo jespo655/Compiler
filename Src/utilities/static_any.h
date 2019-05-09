@@ -205,7 +205,7 @@ void destroy_any(Static_any& any) {
     }
 }
 
-template<>
+template<> inline
 void destroy_any<void>(Static_any& any) {
     ASSERT(any.v_ptr == nullptr);
 }

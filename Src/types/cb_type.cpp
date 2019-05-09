@@ -58,6 +58,8 @@ void CB_Type::register_type(const std::string& name, size_t size, void const* de
 const Any& CB_Type::default_value() const
 {
     const Any& a = default_values[uid];
+    ASSERT(a.v_type);
+    ASSERT(a.v_ptr);
     if (*a.v_type != *this) {
         std::cerr << std::endl << "error: default value type doesn't match: dv.v_type.uid = "
             << a.v_type->uid << "; *this.uid = " << this->uid << std::endl;

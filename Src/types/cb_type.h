@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utilities/pointers.h"
+#include "../utilities/debug.h"
 
 #include <map>
 #include <string>
@@ -76,7 +77,7 @@ Then that same data has to be able to be outputted as a C style literal.
 
 struct Any; // used for default values
 
-struct CB_Type
+struct CB_Type : Serializable
 {
     static const Shared<const CB_Type> type; // self reference / CB_Type
     typedef uint32_t c_typedef;
@@ -97,7 +98,7 @@ struct CB_Type
     virtual ~CB_Type() {}
     void register_type(const std::string& name, size_t size, void const* default_value);
 
-    virtual std::string toS() const;
+    virtual std::string toS() const override;
 
     // is_primitive(): should return true if we'd rather copy the value itself than a pointer to it (+do pointer dereferences!)
     virtual bool is_primitive() const { return true; }

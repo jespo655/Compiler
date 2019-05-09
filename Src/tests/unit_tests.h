@@ -7,8 +7,9 @@
 // the result of a test
 enum Test_result
 {
-    PASSED = 0,
-    FAILED = 1,
+    PASSED = 0, // The test passed
+    FAILED = 1, // The test failed
+    IGNORE = 2, // The test should not be counted for some reason (for example if the test is not fully implemented yet)
 };
 
 // test macros to use in user-implemented tests
@@ -47,12 +48,16 @@ typedef Test_result (*test_fn)(void);
 // if print_result is true, also print a test summary to std::cout
 Test_result run_suite(const Seq<test_fn>& suite, const std::string& suite_name="", bool print_result=true);
 
-// Pre-defined suites
-Test_result test_utilities();
-Test_result test_types();
-
-// run all pre-defined suites defined above
+// run all pre-defined suites defined below
 Test_result run_default_test_suites();
 Test_result run_default_test_suites_verbose(); // force verbose output
 Test_result run_default_test_suites_quiet(); // force quiet output
 
+// Pre-defined suites
+Test_result test_utilities();
+Test_result test_utilities_verbose();
+Test_result test_utilities_quiet();
+
+Test_result test_types();
+Test_result test_types_verbose();
+Test_result test_types_quiet();
