@@ -11,6 +11,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <ctime>
+
 
 // verbose flag to control all the tests in this file
 static bool verbose = true;
@@ -363,6 +365,31 @@ static Test_result any_test()
 // unique ids
 static Test_result uid_test()
 {
+    // Do as many tests as possible during a certain time
+    std::clock_t start = std::clock();
+    const int max_uids = 10000;
+    const int max_ms = 1000;
+    uint64_t uids[max_uids];
+
+    for (int i = 0; i < max_uids; ++i) {
+        uids[i] = get_unique_id();
+    }
+
+    int loops = 0;
+    uint64_t elapsed_ms = 0;
+    while (elapsed_ms < max_ms) {
+        for (int i = 0; i < max_uids; ++i) {
+            for (int j = 0; j < max_uids; ++j) {
+                TEST(i == j || uids[i] != uids[j]);
+            }
+            uids[i] = get_unique_id();
+        }
+        ++loops;
+        elapsed_ms = (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000);
+    }
+
+    TEST(loops >= 2);
+    // std::cout << "Uid test finished " << loops << " loops in " << elapsed_ms << " ms" << std::endl;
     return PASSED;
 }
 
