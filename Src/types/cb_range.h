@@ -28,6 +28,7 @@ struct CB_Iterable {
 struct CB_Range : CB_Type, CB_Iterable {
     static const Shared<const CB_Type> type;
     static constexpr int64_t _default_value[2] = {0, 0};
+    typedef int64_t c_typedef[2];
 
     CB_Range() { uid = type->uid; }
     CB_Range(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
@@ -46,6 +47,7 @@ struct CB_Range : CB_Type, CB_Iterable {
 struct CB_Float_range : CB_Type, CB_Iterable {
     static const Shared<const CB_Type> type;
     static constexpr double _default_value[2] = {0, 0};
+    typedef double c_typedef[2];
 
     CB_Float_range() { uid = type->uid; }
     CB_Float_range(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
@@ -56,7 +58,6 @@ struct CB_Float_range : CB_Type, CB_Iterable {
     virtual size_t alignment() const override { return CB_f64::type->alignment(); }
 
     void generate_type(std::ostream& os) const override { os << "_cb_f_range"; }
-
     void generate_typedef(std::ostream& os) const override;
     void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
     void generate_for(std::ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override;

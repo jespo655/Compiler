@@ -61,7 +61,7 @@ const Shared<const CB_Type> CB_Range::type = &static_cb_range;
 
 constexpr double CB_Float_range::_default_value[2];
 static const CB_Float_range static_cb_float_range("range", sizeof(CB_Float_range::_default_value), &CB_Float_range::_default_value);
-const Shared<const CB_Type> CB_Float_range::type = &static_cb_range;
+const Shared<const CB_Type> CB_Float_range::type = &static_cb_float_range;
 
 constexpr char CB_String::_default_str[];
 constexpr char const* CB_String::_default_value;

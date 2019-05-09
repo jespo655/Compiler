@@ -11,9 +11,7 @@ void CB_Range::generate_typedef(std::ostream& os) const {
 }
 void CB_Range::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
     ASSERT(raw_data);
-    os << "(";
-    generate_type(os);
-    os << "){";
+    os << "{";
     int64_t const* raw_it = (int64_t const*)raw_data;
     CB_i64::type->generate_literal(os, raw_it, depth+1);
     os << ", ";
@@ -24,7 +22,7 @@ void CB_Range::generate_for(std::ostream& os, const std::string& id, const std::
     os << "for (";
     CB_i64::type->generate_type(os);
     os << " " << it_name << " = " << id << (reverse?".r_end":".r_start") << "; ";
-    os << it_name << (reverse?" >= ":" <= ") << id << (reverse?".r_start":".r_end") << ";";
+    os << it_name << (reverse?" >= ":" <= ") << id << (reverse?".r_start":".r_end") << "; ";
     os << it_name << (reverse?" -= ":" += ") << step << ")";
 }
 
@@ -41,9 +39,7 @@ void CB_Float_range::generate_typedef(std::ostream& os) const {
 }
 void CB_Float_range::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
     ASSERT(raw_data);
-    os << "(";
-    generate_type(os);
-    os << "){";
+    os << "{";
     double const* raw_it = (double const*)raw_data;
     CB_f64::type->generate_literal(os, raw_it, depth+1);
     os << ", ";
@@ -54,6 +50,6 @@ void CB_Float_range::generate_for(std::ostream& os, const std::string& id, const
     os << "for (";
     CB_f64::type->generate_type(os);
     os << " " << it_name << " = " << id << (reverse?".r_end":".r_start") << "; ";
-    os << it_name << (reverse?" >= ":" <= ") << id << (reverse?".r_start":".r_end") << ";";
+    os << it_name << (reverse?" >= ":" <= ") << id << (reverse?".r_start":".r_end") << "; ";
     os << it_name << (reverse?" -= ":" += ") << step << ")";
 }

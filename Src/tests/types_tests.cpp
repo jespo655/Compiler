@@ -34,6 +34,8 @@ static bool verbose = true;
     TEST_EQ(ss.str(), literal); \
 } while(0)
 
+#define P99_PROTECT(...) __VA_ARGS__
+
 
 static Test_result any_test()
 {
@@ -132,12 +134,41 @@ static Test_result primitives_test()
         TEST(t.default_value() != true);
     }
 
+    CB_Int i1;
+    CB_Int i2;
+    CB_Uint u1;
+    CB_Uint u2;
+    TEST(i1.uid == i2.uid);
+    TEST(u1.uid == u2.uid);
+    TEST(i1.uid != u1.uid);
+
     return PASSED;
 }
 
 static Test_result range_test()
 {
-    return IGNORE;
+    test_default_value(CB_Range, 16, "{0LL, 0LL}");
+    test_default_value(CB_Float_range, 16, "{0, 0}");
+    test_literal(CB_Range, P99_PROTECT({-5, 2}), "{-5LL, 2LL}");
+    test_literal(CB_Float_range, P99_PROTECT({-5.2, 2.5}), "{-5.2, 2.5}");
+    CB_Range r1;
+    CB_Range r2;
+    CB_Float_range f1;
+    CB_Float_range f2;
+    TEST(r1.uid == r2.uid);
+    TEST(f1.uid == f2.uid);
+    TEST(r1.uid != f1.uid);
+    std::stringstream ss;
+    r1.generate_for(ss, "r", "i");
+    TEST_EQ(ss.str(), "for (_cb_i64 i = r.r_start; i <= r.r_end; i += 1)");
+    ss.str(std::string());
+    ss.clear();
+    f1.generate_for(ss, "r", "i");
+    TEST_EQ(ss.str(), "for (_cb_f64 i = r.r_start; i <= r.r_end; i += 1)");
+    ss.str(std::string());
+    ss.clear();
+    TEST(!r1.is_primitive());
+    return PASSED;
 }
 
 static Test_result seq_test()
