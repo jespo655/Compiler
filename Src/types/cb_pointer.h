@@ -6,11 +6,12 @@
 
 struct CB_Pointer : CB_Type
 {
+    typedef void* c_typedef;
     static constexpr void* _default_value = nullptr;
     Shared<const CB_Type> v_type = nullptr;
     bool owning = false;
 
-    CB_Pointer(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }
+    CB_Pointer(Shared<const CB_Type> v_type=nullptr, bool owning=false) : v_type{v_type}, owning{owning} { finalize(); }
     CB_Pointer(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
 
     std::string toS() const override;

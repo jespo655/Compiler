@@ -71,7 +71,7 @@ const Shared<const CB_Type> CB_String::type = &static_cb_string;
 constexpr void* CB_Pointer::_default_value;
 // an explicit unresolved_pointer is needed just so that unresolved pointers can be used and thrown away without storing
 // otherwise, the next time an unresolved pointer is used, the reference will be a dangling pointer (which is bad)
-static const CB_Pointer _unresolved_pointer = CB_Pointer(true);
+static const CB_Pointer _unresolved_pointer = CB_Pointer();
 // type is registered with CB_Pointer::finalize()
 
 constexpr void(*CB_Function::_default_value)();

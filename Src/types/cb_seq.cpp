@@ -57,7 +57,7 @@ void CB_Seq::generate_literal(std::ostream& os, void const* raw_data, uint32_t d
     CB_u32::type->generate_literal(os, raw_it, depth+1);
     raw_it += CB_u32::type->cb_sizeof();
     os << ", ";
-    CB_Pointer(true).generate_literal(os, raw_it, depth+1);
+    CB_Pointer().generate_literal(os, raw_it, depth+1);
     os << "}";
 }
 void CB_Seq::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const {

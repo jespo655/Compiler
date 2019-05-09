@@ -22,7 +22,6 @@ void CB_Pointer::finalize() {
     register_type(tos, sizeof(_default_value), &_default_value);
 }
 
-
 void CB_Pointer::generate_typedef(std::ostream& os) const {
     os << "typedef ";
     v_type->generate_type(os);
@@ -30,11 +29,13 @@ void CB_Pointer::generate_typedef(std::ostream& os) const {
     generate_type(os);
     os << ";" << std::endl;
 }
+
 void CB_Pointer::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
     ASSERT(raw_data);
     if (!*(void**)raw_data) os << "NULL";
-    os << std::hex << *(void**)raw_data;
+    else os << std::hex << *(void**)raw_data;
 }
+
 void CB_Pointer::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const {
     if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
     if (owning) {
