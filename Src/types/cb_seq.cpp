@@ -22,15 +22,21 @@ std::string CB_Seq::toS() const {
 
 void CB_Seq::finalize() {
     std::string tos = toS();
+    std::cout << "seq with v_type " << v_type << " has tos " << tos << std::endl;
+
     for (const auto& tn_pair : typenames) {
         if (tn_pair.second == tos) {
             // found existing sequence type with the same signature -> grab its id
+            std::cout << "found existing sequence type with the same signature -> grab its id" << std::endl;
             uid = tn_pair.first;
             return;
         }
     }
     // no matching signature found -> register new type
     register_type(tos, sizeof(_default_value), &_default_value);
+    std::cout << "finalized seq with v_type " << v_type << " as ";
+    generate_type(std::cout);
+    std::cout << std::endl;
 }
 
 void CB_Seq::generate_typedef(std::ostream& os) const {

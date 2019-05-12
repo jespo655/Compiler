@@ -55,20 +55,21 @@ PRIMITIVE_STATICS(CB_Float, "float");
 
 PRIMITIVE_STATICS(CB_Flag, "flag");
 
-constexpr int64_t CB_Range::_default_value[2];
+constexpr CB_Range::c_typedef CB_Range::_default_value;
 static const CB_Range static_cb_range("range", sizeof(CB_Range::_default_value), &CB_Range::_default_value);
 const Shared<const CB_Type> CB_Range::type = &static_cb_range;
 
-constexpr double CB_Float_range::_default_value[2];
+constexpr CB_Float_range::c_typedef CB_Float_range::_default_value;
 static const CB_Float_range static_cb_float_range("range", sizeof(CB_Float_range::_default_value), &CB_Float_range::_default_value);
 const Shared<const CB_Type> CB_Float_range::type = &static_cb_float_range;
 
-constexpr char CB_String::_default_str[];
+// constexpr char CB_String::_default_str[];
 constexpr char const* CB_String::_default_value;
+// CB_String::c_typedef CB_String::_default_value;
 static const CB_String static_cb_string("string", sizeof(&CB_String::_default_value), &CB_String::_default_value);
 const Shared<const CB_Type> CB_String::type = &static_cb_string;
 
-constexpr void* CB_Pointer::_default_value;
+constexpr CB_Pointer::c_typedef CB_Pointer::_default_value;
 // an explicit unresolved_pointer is needed just so that unresolved pointers can be used and thrown away without storing
 // otherwise, the next time an unresolved pointer is used, the reference will be a dangling pointer (which is bad)
 static const CB_Pointer _unresolved_pointer = CB_Pointer();
@@ -80,15 +81,15 @@ constexpr void(*CB_Function::_default_value)();
 // default value is different for each instance
 // type is registered with CB_Struct::finalize()
 
-constexpr CB_Seq::c_representation CB_Seq::_default_value;
+constexpr CB_Seq::c_typedef CB_Seq::_default_value;
 // an explicit unresolved_sequence is needed just so that unresolved sequences can be used and thrown away without storing
 // otherwise, the next time an unresolved sequence is used, the reference will be a dangling pointer (which is bad)
-static const CB_Seq _unresolved_sequence = CB_Seq(true);
+static const CB_Seq _unresolved_sequence = CB_Seq();
 // type is registered with CB_Seq::finalize()
 
 // an explicit unresolved_sequence is needed just so that unresolved sequences can be used and thrown away without storing
 // otherwise, the next time an unresolved sequence is used, the reference will be a dangling pointer (which is bad)
-static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq(true);
+static const CB_Fixed_seq _unresolved_fixed_sequence = CB_Fixed_seq();
 // type is registered with CB_Fixed_seq::finalize()
 
 

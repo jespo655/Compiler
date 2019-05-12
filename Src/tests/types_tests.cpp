@@ -147,10 +147,10 @@ static Test_result primitives_test()
 
 static Test_result range_test()
 {
-    test_default_value(CB_Range, 16, "{0LL, 0LL}");
-    test_default_value(CB_Float_range, 16, "{0, 0}");
-    test_literal(CB_Range, P99_PROTECT({-5, 2}), "{-5LL, 2LL}");
-    test_literal(CB_Float_range, P99_PROTECT({-5.2, 2.5}), "{-5.2, 2.5}");
+    test_default_value(CB_Range, 16, "(_cb_i_range){0LL, 0LL}");
+    test_default_value(CB_Float_range, 16, "(_cb_f_range){0, 0}");
+    test_literal(CB_Range, P99_PROTECT({-5, 2}), "(_cb_i_range){-5LL, 2LL}");
+    test_literal(CB_Float_range, P99_PROTECT({-5.2, 2.5}), "(_cb_f_range){-5.2, 2.5}");
     CB_Range r1;
     CB_Range r2;
     CB_Float_range f1;
@@ -165,6 +165,7 @@ static Test_result range_test()
     ss.clear();
     f1.generate_for(ss, "r", "i");
     TEST_EQ(ss.str(), "for (_cb_f64 i = r.r_start; i <= r.r_end; i += 1)");
+    // TODO: compile and run a range snippet
     ss.str(std::string());
     ss.clear();
     TEST(!r1.is_primitive());
@@ -173,7 +174,48 @@ static Test_result range_test()
 
 static Test_result seq_test()
 {
-    return IGNORE;
+    CB_Seq s1;
+    CB_Seq s2;
+    CB_Fixed_seq f1;
+    CB_Fixed_seq f2;
+    // std::string _cb_unresolved_seq_name = toS()
+    // std::string _cb_unresolved_fixed_seq_name =
+    test_default_value(CB_Seq, 16, "(_cb_type_21){0UL, 0UL, NULL}");
+    // test_default_value(CB_Fixed_seq, 8, "NULL"); // @TODO: check this
+    test_literal(CB_Seq, P99_PROTECT({5, 2, (void*)0x123}), "(_cb_type_21){5UL, 2UL, 0x123}");
+    // test_literal(CB_Fixed_seq, P99_PROTECT((void*)0x123), "0x123"); // @TODO: check this
+    TEST(s1.uid == s2.uid);
+    TEST(f1.uid == f2.uid);
+    // TEST(s1.uid != f1.uid); // @TODO: check this
+    TEST(!s1.is_primitive());
+    TEST(!f1.is_primitive());
+    std::stringstream ss{};
+    ss << s1.toS() << "; " << f1.toS();;
+    TEST_EQ(ss.str(), "_cb_unresolved_seq; _cb_unresolved_fixed_seq");
+    ss.str(std::string());
+    ss.clear();
+
+    s1.v_type = CB_Int::type;
+    s1.finalize();
+    TEST(s1.uid != s2.uid);
+    TEST(!s1.is_primitive());
+    s2.v_type = CB_Int::type;
+    s2.finalize();
+    TEST(s1.uid == s2.uid);
+
+    s1.generate_for(ss, "r", "i");
+    TEST_EQ(ss.str(), "for (_cb_i64 i = r.r_start; i <= r.r_end; i += 1)");
+    TEST(false);
+    ss.str(std::string());
+    ss.clear();
+    // f1.generate_for(ss, "r", "i");
+    // TEST_EQ(ss.str(), "for (_cb_f64 i = r.r_start; i <= r.r_end; i += 1)");
+    // // TODO: compile and run a range snippet
+    // ss.str(std::string());
+    // ss.clear();
+
+
+    return PASSED;
 }
 
 static Test_result string_test()
@@ -200,6 +242,7 @@ Test_result test_types()
         pointer_test,
         primitives_test,
         range_test,
+        seq_test,
         string_test,
         struct_test,
         type_test,

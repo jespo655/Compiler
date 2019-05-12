@@ -22,11 +22,11 @@ struct CB_Indexable {
 
 struct CB_Seq : CB_Type, CB_Iterable, CB_Indexable
 {
-    struct c_representation { uint32_t size; uint32_t capacity; void* v_ptr; }; // void* is actually T*
-    static constexpr c_representation _default_value = (c_representation){0, 0, nullptr};
+    typedef struct { uint32_t size; uint32_t capacity; void* v_ptr; } c_typedef; // void* is actually T*
+    static constexpr c_typedef _default_value = (c_typedef){0, 0, nullptr};
     Shared<const CB_Type> v_type = nullptr;
 
-    CB_Seq(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }
+    CB_Seq(Shared<const CB_Type> v_type=nullptr) : v_type{v_type} { finalize(); }
     CB_Seq(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
 
     static Shared<const CB_Type> get_seq_type(Shared<const CB_Type> member_type);
@@ -50,11 +50,12 @@ struct CB_Seq : CB_Type, CB_Iterable, CB_Indexable
 
 struct CB_Fixed_seq : CB_Type, CB_Iterable, CB_Indexable
 {
+    typedef void* c_typedef; // actually T*
     Shared<const CB_Type> v_type = nullptr;
-    void* _default_value = nullptr;
+    c_typedef _default_value = nullptr;
     uint32_t size = 0;
 
-    CB_Fixed_seq(bool explicit_unresolved=false) { uid = type->uid; if (explicit_unresolved) finalize(); }
+    CB_Fixed_seq(Shared<const CB_Type> v_type=nullptr) : v_type{v_type} { finalize(); }
     CB_Fixed_seq(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
     ~CB_Fixed_seq() { free(_default_value); }
 

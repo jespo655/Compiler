@@ -18,8 +18,8 @@ a : String = "text";
 
 struct CB_String : CB_Type {
     static const Shared<const CB_Type> type;
-    static constexpr char _default_str[] = "";
-    static constexpr char const* _default_value = _default_str;
+    // static constexpr char _default_str[] = ""; // @TODO: check if this is necessary to avoid sigfaults and other bad things
+    static constexpr char const* _default_value = "";
     typedef char* c_typedef;
 
     CB_String() { uid = type->uid; }
