@@ -38,8 +38,7 @@ struct Any : Serializable {
     Shared<const CB_Type> v_type; // the type of v
     void const* v_ptr = nullptr; // the value, owned by someone else (do not delete it!)
 
-    Any() {} // default value
-    Any(Shared<const CB_Type> type, void const* ptr) : v_type{type}, v_ptr{ptr} {} // default value
+    Any(Shared<const CB_Type> type=nullptr, void const* ptr=nullptr) : v_type{type}, v_ptr{ptr} {} // default value
 
     std::string toS() const {
         if (v_ptr) {

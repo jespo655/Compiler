@@ -487,7 +487,7 @@ void code_gen_test()
 
 
 
-
+/*
 
 
 void test_type(Shared<const CB_Type> type)
@@ -620,7 +620,7 @@ int types_test()
 }
 
 
-
+*/
 
 
 

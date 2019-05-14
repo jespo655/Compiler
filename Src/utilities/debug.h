@@ -84,8 +84,8 @@ std::string toS(void (*fn)(std::ostream& os, Args... args), Args... args) {
     return ss.str();
 }
 
-template<typename T, typename... Args>
-std::string toS(const T& t, void (T::*fn)(std::ostream& os, Args... args) const, Args... args) {
+template<typename T, typename Super, typename... Args>
+std::string toS(const T& t, void (Super::*fn)(std::ostream& os, Args... args) const, Args... args) {
     std::stringstream ss{};
     (t.*fn)(ss, args...);
     return ss.str();
@@ -99,8 +99,8 @@ std::string toS(void (*fn)(Debug_os& os, Args... args), Args... args) {
     return ss.str();
 }
 
-template<typename T, typename... Args>
-std::string toS(const T& t, void (T::*fn)(Debug_os& os, Args... args) const, Args... args) {
+template<typename T, typename Super, typename... Args>
+std::string toS(const T& t, void (Super::*fn)(Debug_os& os, Args... args) const, Args... args) {
     std::stringstream ss{};
     Debug_os dos{ss};
     (t.*fn)(dos, args...);

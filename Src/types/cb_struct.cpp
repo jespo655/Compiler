@@ -5,9 +5,11 @@
 
 std::string CB_Struct::Struct_member::toS() const {
     std::ostringstream oss;
+    ASSERT(id);
+    ASSERT(id->value.v_type);
     oss << (is_using?"using ":"")
         << id->name << ":"
-        << type->toS() << "="
+        << id->value.v_type->toS() << "="
         << (explicit_uninitialized?"---":id->value.toS());
     return oss.str();
 }
@@ -50,6 +52,7 @@ std::string CB_Struct::toS() const {
 
 void CB_Struct::add_member(const Shared<Abstx_identifier>& id, bool is_using) {
     ASSERT(id != nullptr);
+    ASSERT(get_member(id->name) == nullptr, "Can't have two struct members with the same name! ("+id->name+") (This should give compile error earlier)");
     members.add(Struct_member(id, is_using));
 }
 
@@ -64,7 +67,8 @@ Shared<const CB_Struct::Struct_member> CB_Struct::get_member(const std::string& 
 
 
 void CB_Struct::finalize() {
-    std::cout << "finalizing struct type" << std::endl;
+    ASSERT(_default_value == nullptr, "This pointer could be used in Any all over the place - deallocating it is very risky. Finalizing should only be done once!");
+    // std::cout << "finalizing struct type" << std::endl;
     size_t total_size = 0;
     if (members.empty()) {
         total_size = 1;
@@ -93,7 +97,7 @@ void CB_Struct::finalize() {
             memcpy((uint8_t*)_default_value+member.byte_position, member.id->value.v_ptr, member.id->value.v_type->cb_sizeof());
         }
     }
-    std::cout << "finishging assertions and register_type()" << std::endl;
+    // std::cout << "finishing assertions and register_type()" << std::endl;
     ASSERT(total_size > 0);
     ASSERT(_default_value != nullptr);
     register_type(toS(), total_size, _default_value);

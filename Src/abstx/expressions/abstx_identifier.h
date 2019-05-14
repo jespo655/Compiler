@@ -14,6 +14,8 @@ struct Abstx_identifier : Variable_expression {
     // This can be non-standard CB values, for example be a function or scope expression
     Shared<Value_expression> value_expression = nullptr;
 
+    Abstx_identifier(const std::string& name="", Shared<const CB_Type> type=nullptr, void const* value=nullptr) : name{name}, value{type, value} {}
+
     std::string toS() const override;
 
     // get the type of this identifier

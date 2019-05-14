@@ -77,18 +77,20 @@ foo(*((uint8_t*)(sa+0)), *((uint8_t*)(sa+1)), *((uint16_t*)(sa+2)));
 
 */
 
+// This represents just the type of a struct, not the literal as defined in the code.
 struct CB_Struct : CB_Type
 {
-    struct Struct_member {
-        Shared<Abstx_identifier> id; // identifiers is owned by function scope
+    struct Struct_member : public Serializable {
+        Shared<Abstx_identifier> id; // identifier with possible default value. Owned by declaration statement in the struct literal.
         bool is_using = false; // allowes implicit cast to that member
         bool explicit_uninitialized = false; // not currently used (ignored by the compiler)
         size_t byte_position = 0;
 
         Struct_member() {}
         Struct_member(const Shared<Abstx_identifier>& id, bool is_using=false) : id{id}, is_using{is_using} {}
+        ~Struct_member() {}
 
-        std::string toS() const;
+        std::string toS() const override;
     };
 
     Seq<Struct_member> members;
@@ -102,6 +104,10 @@ struct CB_Struct : CB_Type
     CB_Struct& operator=(const CB_Struct& sm);
     CB_Struct& operator=(CB_Struct&& sm);
     ~CB_Struct();
+
+    // Convenience constructors - assumes that no members are using
+    CB_Struct(const Seq<Shared<Abstx_identifier>>& members) { for (const auto& member : members) { add_member(member); } finalize(); }
+    CB_Struct(const Seq<Owned<Abstx_identifier>>& members) { for (const auto& member : members) { add_member(Shared<Abstx_identifier>(member)); } finalize(); }
 
     std::string toS() const override;
 
