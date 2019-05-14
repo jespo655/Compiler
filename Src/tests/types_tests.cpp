@@ -17,22 +17,31 @@
 
 static bool verbose = true;
 
-#define test_default_value(Type, size, default_literal) do { \
-    Type t; \
+#define test_complex_default_value(t, size, default_literal) do { \
     TEST_EQ(t.cb_sizeof(), size); \
-    TEST_EQ(t.default_value(), 0); \
+    if (t.is_primitive()) TEST_EQ(t.default_value(), 0); \
     std::stringstream ss{}; \
     t.generate_literal(ss, t.default_value().v_ptr); \
     TEST_EQ(ss.str(), default_literal); \
 } while(0)
 
-#define test_literal(Type, value, literal) do { \
-    Type t; \
-    Type::c_typedef v = value; \
+#define test_complex_literal(t, v, literal) do { \
     std::stringstream ss{}; \
     t.generate_literal(ss, &v); \
     TEST_EQ(ss.str(), literal); \
 } while(0)
+
+#define test_default_value(Type, size, default_literal) do { \
+    Type t; \
+    test_complex_default_value(t, size, default_literal); \
+} while(0)
+
+#define test_literal(Type, value, literal) do { \
+    Type t; \
+    Type::c_typedef v = value; \
+    test_complex_literal(t, v, literal); \
+} while(0)
+
 
 #define P99_PROTECT(...) __VA_ARGS__
 
@@ -178,20 +187,19 @@ static Test_result seq_test()
     CB_Seq s2;
     CB_Fixed_seq f1;
     CB_Fixed_seq f2;
-    // std::string _cb_unresolved_seq_name = toS()
-    // std::string _cb_unresolved_fixed_seq_name =
-    test_default_value(CB_Seq, 16, "(_cb_type_21){0UL, 0UL, NULL}");
-    // test_default_value(CB_Fixed_seq, 8, "NULL"); // @TODO: check this
-    test_literal(CB_Seq, P99_PROTECT({5, 2, (void*)0x123}), "(_cb_type_21){5UL, 2UL, 0x123}");
-    // test_literal(CB_Fixed_seq, P99_PROTECT((void*)0x123), "0x123"); // @TODO: check this
+    test_default_value(CB_Seq, 16, "(_cb_unresolved_seq){0UL, 0UL, NULL}");
+    test_default_value(CB_Fixed_seq, 0, "(_cb_unresolved_fseq){}"); // no size -> no default value. This should ASSERT false.
+    test_literal(CB_Seq, P99_PROTECT({5, 2, (void*)0x123}), "(_cb_unresolved_seq){5UL, 2UL, 0x123}");
+    test_literal(CB_Fixed_seq, {}, "(_cb_unresolved_fseq){}");
+
     TEST(s1.uid == s2.uid);
     TEST(f1.uid == f2.uid);
-    // TEST(s1.uid != f1.uid); // @TODO: check this
+    TEST(s1.uid != f1.uid);
     TEST(!s1.is_primitive());
     TEST(!f1.is_primitive());
     std::stringstream ss{};
     ss << s1.toS() << "; " << f1.toS();;
-    TEST_EQ(ss.str(), "_cb_unresolved_seq; _cb_unresolved_fixed_seq");
+    TEST_EQ(ss.str(), "_cb_unresolved_seq; _cb_unresolved_fseq");
     ss.str(std::string());
     ss.clear();
 
@@ -203,18 +211,40 @@ static Test_result seq_test()
     s2.finalize();
     TEST(s1.uid == s2.uid);
 
-    s1.generate_for(ss, "r", "i");
-    TEST_EQ(ss.str(), "for (_cb_i64 i = r.r_start; i <= r.r_end; i += 1)");
-    TEST(false);
+    TEST_EQ(sizeof(CB_Fixed_seq::c_typedef_template<int, 0>), 0);
+
+    f1.v_type = CB_u8::type;
+    f1.size = 2;
+    f1.finalize();
+    TEST(f1.uid != f2.uid);
+    f2.v_type = CB_u8::type;
+    f2.size = 2;
+    f2.finalize();
+    TEST(f1.uid == f2.uid);
+    f2.size = 3;
+    f2.finalize();
+    TEST(f1.uid != f2.uid);
+
+    CB_Fixed_seq::c_typedef_template<CB_u8::c_typedef, 3> v = {1, 2, 3};
+    TEST_EQ(sizeof(v), 3 * sizeof(CB_u8::c_typedef));
+    TEST_EQ(v.a[0], 1);
+    TEST_EQ(v.a[1], 2);
+    TEST_EQ(v.a[2], 3);
+    test_complex_literal(f2, v, "(_cb_fseq_3_of_cb_u8){1, 2, 3}");
+
+    s1.generate_for(ss, "seq", "i");
+    TEST_EQ(ss.str(), "_cb_int i; for (size_t _it_20036 = 0; i = seq.v_ptr[_it_20036], _it_20036 < seq.size; _it_20036 += 1)");
     ss.str(std::string());
     ss.clear();
-    // f1.generate_for(ss, "r", "i");
-    // TEST_EQ(ss.str(), "for (_cb_f64 i = r.r_start; i <= r.r_end; i += 1)");
-    // // TODO: compile and run a range snippet
-    // ss.str(std::string());
-    // ss.clear();
 
+    f1.generate_for(ss, "fseq", "i");
+    TEST_EQ(ss.str(), "_cb_u8 i; for (size_t _it_20037 = 0; i = fseq.a[_it_20037], _it_20037 < 2; _it_20037 += 1)");
+    ss.str(std::string());
+    ss.clear();
 
+    TEST_EQ(toS(f1, CB_Fixed_seq::generate_typedef), "typedef struct { _cb_u8 a[2UL]; } _cb_fseq_2_of_cb_u8;\n");
+
+    // TODO: compile and run a range snippet
     return PASSED;
 }
 

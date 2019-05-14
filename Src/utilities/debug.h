@@ -87,7 +87,7 @@ std::string toS(void (*fn)(std::ostream& os, Args... args), Args... args) {
 template<typename T, typename... Args>
 std::string toS(const T& t, void (T::*fn)(std::ostream& os, Args... args) const, Args... args) {
     std::stringstream ss{};
-    t.fn(ss, args...);
+    (t.*fn)(ss, args...);
     return ss.str();
 }
 
@@ -103,7 +103,7 @@ template<typename T, typename... Args>
 std::string toS(const T& t, void (T::*fn)(Debug_os& os, Args... args) const, Args... args) {
     std::stringstream ss{};
     Debug_os dos{ss};
-    t.fn(dos, args...);
+    (t.*fn)(dos, args...);
     return ss.str();
 }
 

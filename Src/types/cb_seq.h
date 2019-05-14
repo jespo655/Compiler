@@ -37,6 +37,7 @@ struct CB_Seq : CB_Type, CB_Iterable, CB_Indexable
 
     void finalize() override;
 
+    void generate_type(std::ostream& os) const override;
     void generate_typedef(std::ostream& os) const override;
     void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
     void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
@@ -50,14 +51,18 @@ struct CB_Seq : CB_Type, CB_Iterable, CB_Indexable
 
 struct CB_Fixed_seq : CB_Type, CB_Iterable, CB_Indexable
 {
-    typedef void* c_typedef; // actually T*
+    template<typename T, size_t size>
+    struct c_typedef_template { T a[size]; };
+
+    typedef c_typedef_template<int, 0> c_typedef; // type of unresolved / empty fixed sequence
+
     Shared<const CB_Type> v_type = nullptr;
-    c_typedef _default_value = nullptr;
+    void* _default_value_ptr = nullptr; // points to a separate c_typedef_template instance, different depending on type and size
     uint32_t size = 0;
 
-    CB_Fixed_seq(Shared<const CB_Type> v_type=nullptr) : v_type{v_type} { finalize(); }
+    CB_Fixed_seq(Shared<const CB_Type> v_type=nullptr, uint32_t size=0) : v_type{v_type}, size{size} { finalize(); }
     CB_Fixed_seq(const std::string& name, size_t size, void const* default_value) : CB_Type(name, size, default_value) {}
-    ~CB_Fixed_seq() { free(_default_value); }
+    ~CB_Fixed_seq() { free(_default_value_ptr); }
 
     static Shared<const CB_Type> get_seq_type(Shared<const CB_Type> member_type, uint32_t size);
 
@@ -67,6 +72,7 @@ struct CB_Fixed_seq : CB_Type, CB_Iterable, CB_Indexable
 
     void finalize() override;
 
+    void generate_type(std::ostream& os) const override;
     void generate_typedef(std::ostream& os) const override;
     void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
     void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
