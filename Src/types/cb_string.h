@@ -30,7 +30,7 @@ struct CB_String : CB_Type {
 
     void generate_type(std::ostream& os) const override;
     void generate_typedef(std::ostream& os) const override;
-    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth = 0) const override;
 };
 
 

@@ -16,11 +16,11 @@ void Abstx_while::debug_print(Debug_os& os, bool recursive) const
     else os << std::endl;
 }
 
-void Abstx_while::generate_code(std::ostream& target) const {
+void Abstx_while::generate_code(std::ostream& target, const Token_context& context) const {
     ASSERT(is_codegen_ready(status));
     target << "while (";
-    condition->generate_code(target);
+    condition->generate_code(target, context);
     target << ") ";
-    scope->generate_code(target);
+    scope->generate_code(target, context);
 }
 

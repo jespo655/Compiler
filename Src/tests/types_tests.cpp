@@ -21,13 +21,13 @@ static bool verbose = true;
     TEST_EQ(t.cb_sizeof(), size); \
     /*if (t.is_primitive()) TEST_EQ(t.default_value(), 0);*/ \
     std::stringstream ss{}; \
-    t.generate_literal(ss, t.default_value().v_ptr); \
+    t.generate_literal(ss, t.default_value().v_ptr, CPP_CONTEXT); \
     TEST_EQ(ss.str(), default_literal); \
 } while(0)
 
 #define test_complex_literal(t, v, literal) do { \
     std::stringstream ss{}; \
-    t.generate_literal(ss, &v); \
+    t.generate_literal(ss, &v, CPP_CONTEXT); \
     TEST_EQ(ss.str(), literal); \
 } while(0)
 
@@ -135,8 +135,8 @@ static Test_result primitives_test()
         CB_Bool::c_typedef F = false;
         CB_Bool::c_typedef T = true;
         std::stringstream ss;
-        t.generate_literal(ss, &F);
-        t.generate_literal(ss, &T);
+        t.generate_literal(ss, &F, CPP_CONTEXT);
+        t.generate_literal(ss, &T, CPP_CONTEXT);
         TEST_EQ(ss.str(), "01");
         TEST_EQ(t.cb_sizeof(), 1);
         TEST_EQ(t.default_value(), false);
@@ -282,21 +282,26 @@ typedef struct{ _cb_type_29 s1; _cb_type_30 s2; } _cb_type_31;
 
 static Test_result struct_test()
 {
+    std::string tstr1, tstr2, tstr3;
+
     CB_Struct s1 = CB_Struct({make_member("i1", CB_Int::type), make_member("i2", CB_Float::type)});
     TEST_NOT_NULL(s1.get_member("i1"));
-    TEST_EQ(s1.get_member("asd"), nullptr);
+    TEST_EQ(s1.get_member("asd"), (void*)nullptr);
 
     CB_Struct s2 = CB_Struct({make_member("i1", CB_Int::type), make_member("i2", CB_Float::type)});
     TEST_EQ(s1.toS(), s2.toS());
     TEST(s1.uid != s2.uid);
 
     CB_Struct s3 = CB_Struct({make_member("s1", &s1), make_member("s2", &s2)});
-    TEST_EQ(toS(s3, CB_Struct::generate_typedef), "typedef struct{ _cb_type_29 s1; _cb_type_30 s2; } _cb_type_31;\n");
+    tstr1 = toS(s1, CB_Struct::generate_type);
+    tstr2 = toS(s2, CB_Struct::generate_type);
+    tstr3 = toS(s3, CB_Struct::generate_type);
+    TEST_EQ(toS(s3, CB_Struct::generate_typedef), "typedef struct { "+tstr1+" s1; "+tstr2+" s2; } "+tstr3+";\n");
     TEST_EQ(s3.cb_sizeof(), s1.cb_sizeof() + s2.cb_sizeof());
 
-    test_complex_default_value(s1, 16, "(_cb_type_29){0LL, 0}");
-    test_complex_default_value(s2, 16, "(_cb_type_30){0LL, 0}");
-    test_complex_default_value(s3, 32, "(_cb_type_31){(_cb_type_29){0LL, 0}, (_cb_type_30){0LL, 0}}");
+    test_complex_default_value(s1, 16, "("+tstr1+"){0LL, 0}");
+    test_complex_default_value(s2, 16, "("+tstr2+"){0LL, 0}");
+    test_complex_default_value(s3, 32, "("+tstr3+"){("+tstr1+"){0LL, 0}, ("+tstr2+"){0LL, 0}}");
 
     _cb_type_31 t = (_cb_type_31){(_cb_type_29){0LL, 0}, (_cb_type_30){0LL, 0}};
     t = (_cb_type_31){(_cb_type_29){0LL, 0}, (_cb_type_30){0LL, 0}};
@@ -326,27 +331,110 @@ static Test_result struct_test()
     s8.add_member(make_member("sp", &pt1));
     s8.add_member(make_member("op", &pt2));
     s8.finalize();
-    std::string type_str = toS(s8, CB_Struct::generate_type);
-    TEST_EQ(s8.toS(), "struct { sp:"+type_str+"*=NULL; op:"+type_str+"*!=NULL; }");
+    tstr1 = toS(s8, CB_Struct::generate_type);
+    TEST_EQ(s8.toS(), "struct { sp:"+tstr1+"*=NULL; op:"+tstr1+"*!=NULL; }");
     TEST_EQ(s8.cb_sizeof(), 2*pt2.cb_sizeof());
 
-    CB_Struct s9; // forward declaration; this sets uid
+    CB_Struct s8b; // forward declaration; this sets uid
+    CB_Pointer pt1b(&s8b); // NOTE: This somehow finalizes to pointer to uninitialized struct and doesn't update
+    CB_Pointer pt2b(&s8b, true);
+    s8b.add_member(make_member("sp", &pt1b));
+    s8b.add_member(make_member("op", &pt2b));
+    s8b.finalize();
+    tstr1 = toS(s8b, CB_Struct::generate_type);
+    TEST_EQ(s8b.toS(), "struct { sp:"+tstr1+"*=NULL; op:"+tstr1+"*!=NULL; }");
+    TEST_EQ(s8b.cb_sizeof(), 2*pt2b.cb_sizeof());
+
+    // sharing pointer-to-self with destructor
+    CB_Struct s9;
     CB_Pointer pt3(&s9);
     s9.add_member(make_member("sp", &pt3));
     s9.finalize();
+    tstr1 = toS(s9, CB_Struct::generate_type);
+    TEST_EQ(s9.toS(), "struct { sp:"+tstr1+"*=NULL; }");
+
     std::stringstream ss;
-    s9.generate_destructor(ss, "s"); // should not give error
+    s9.generate_destructor(ss, "s", CPP_CONTEXT); // should not give error
     TEST_EQ(ss.str(), "");
 
-    #if 0
+    #if 1
+    // owning pointer-to-self with destructor
     CB_Struct s10; // forward declaration; this sets uid
     CB_Pointer pt4(&s10, true);
     s10.add_member(make_member("sp", &pt4));
     s10.finalize();
     ss.str(std::string()); ss.clear();
-    s10.generate_destructor(ss, "s"); // should give circular reference error
-    TEST_EQ(ss.str(), "");
+    set_logging(false);
+    reset_errors();
+    TEST_EQ(get_error_count(), 0);
+    s10.generate_destructor(ss, "s", CPP_CONTEXT); // should give circular reference error
+    TEST_EQ(get_error_count(), 1);
+    reset_errors();
+    set_logging(true);
     #endif
+
+    void* p = malloc(0);
+    TEST_NOT_NULL(p);
+    free(p);
+
+    size_t size;
+    size_t alignment;
+    size = 0; alignment = 1; TEST_EQ((alignment - size % alignment) % alignment, 0);
+    size = 1; alignment = 1; TEST_EQ((alignment - size % alignment) % alignment, 0);
+    size = 2; alignment = 1; TEST_EQ((alignment - size % alignment) % alignment, 0);
+    size = 0; alignment = 2; TEST_EQ((alignment - size % alignment) % alignment, 0);
+    size = 1; alignment = 2; TEST_EQ((alignment - size % alignment) % alignment, 1);
+    size = 2; alignment = 2; TEST_EQ((alignment - size % alignment) % alignment, 0);
+    size = 0; alignment = 4; TEST_EQ((alignment - size % alignment) % alignment, 0);
+    size = 1; alignment = 4; TEST_EQ((alignment - size % alignment) % alignment, 3);
+    size = 2; alignment = 4; TEST_EQ((alignment - size % alignment) % alignment, 2);
+    size = 3; alignment = 4; TEST_EQ((alignment - size % alignment) % alignment, 1);
+    size = 4; alignment = 4; TEST_EQ((alignment - size % alignment) % alignment, 0);
+
+    // empty structs
+    CB_Struct s11(0);
+    tstr1 = toS(s11, CB_Struct::generate_type);
+    test_complex_default_value(s11, 0, "("+tstr1+"){}");
+    CB_Struct s12({make_member("s", &s11)});
+    tstr2 = toS(s12, CB_Struct::generate_type);
+    test_complex_default_value(s12, 0, "("+tstr2+"){("+tstr1+"){}}");
+
+    // cyclic reference struct (shouldn't be allowed, but should generate good errors)
+    #if 0
+    CB_Struct s13;
+    TEST_EQ(s13.cb_sizeof(), 0);
+    TEST_EQ(s13.toS(), "struct { }");
+    s13.add_member(make_member("s", &s13));
+
+    Shared<const CB_Struct::Struct_member> member = s13.get_member("s");
+    TEST(member && member->id && member->id->value.v_type);
+    TEST_EQ(Shared<const CB_Type>(&s13), member->id->value.v_type);
+    std::cout << "&s13 = " << Shared<const CB_Type>(&s13) << ", member type = " << member->id->value.v_type << std::endl;
+
+    s13.finalize();
+    std::cout << "&s13 = " << Shared<const CB_Type>(&s13) << ", member type = " << member->id->value.v_type << std::endl;
+
+    TEST_EQ(s13.cb_sizeof(), 0);
+    member = s13.get_member("s");
+    TEST(member && member->id && member->id->value.v_type);
+    TEST_EQ(Shared<const CB_Type>(&s13), member->id->value.v_type);
+    TEST_EQ(member->id->value.v_type, Shared<const CB_Type>(&s13));
+    // TEST_EQ(s13.toS(), "struct { s:_cb_type_21; }"); // wrong
+    // TEST_EQ(toS(s13, CB_Struct::generate_typedef), "typedef struct { _cb_type_42 s; } _cb_type_42;\n");
+
+    ss.str(std::string()); ss.clear();
+    set_logging(false);
+    reset_errors();
+    TEST_EQ(get_error_count(), 0);
+    s11.generate_destructor(ss, "s", CPP_CONTEXT); // should give circular reference error
+    // TEST_EQ(get_error_count(), 1);
+    reset_errors();
+    set_logging(true);
+    #endif
+
+    CB_Struct s14(0);
+    TEST_EQ(s14.cb_sizeof(), 0);
+    TEST_EQ(s14.toS(), "struct { }");
 
     return PASSED;
 }

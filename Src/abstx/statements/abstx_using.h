@@ -29,7 +29,7 @@ struct Abstx_using : Statement {
 
     std::string toS() const override { return "using statement"; }
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
-    void generate_code(std::ostream& target) const override {
+    void generate_code(std::ostream& target, const Token_context& context) const override {
         // Do nothing; using statements is handled in other ways
     }
 

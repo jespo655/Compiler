@@ -39,8 +39,8 @@ struct CB_Seq : CB_Type, CB_Iterable, CB_Indexable
 
     void generate_type(std::ostream& os) const override;
     void generate_typedef(std::ostream& os) const override;
-    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
-    void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth = 0) const override;
+    void generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth = 0) const override;
 
     void generate_for(std::ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override;
     void generate_for_after_scope(std::ostream& os, bool protected_scope = true) const override;
@@ -74,8 +74,8 @@ struct CB_Fixed_seq : CB_Type, CB_Iterable, CB_Indexable
 
     void generate_type(std::ostream& os) const override;
     void generate_typedef(std::ostream& os) const override;
-    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
-    void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth = 0) const override;
+    void generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth = 0) const override;
 
     void generate_for(std::ostream& os, const std::string& id, const std::string& it_name = "it", uint64_t step = 1, bool reverse = false, bool protected_scope = true) const override;
     void generate_for_after_scope(std::ostream& os, bool protected_scope = true) const override;

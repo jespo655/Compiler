@@ -30,16 +30,16 @@ void CB_Pointer::generate_typedef(std::ostream& os) const {
     os << ";" << std::endl;
 }
 
-void CB_Pointer::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
+void CB_Pointer::generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth) const {
     ASSERT(raw_data);
     if (!*(void**)raw_data) os << "NULL";
     else os << std::hex << *(void**)raw_data;
 }
 
-void CB_Pointer::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const {
-    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
+void CB_Pointer::generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth) const {
     if (owning) {
-        v_type->generate_destructor(os, "*"+id, depth+1);
+        if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(context); return; }
+        v_type->generate_destructor(os, "*"+id, context, depth+1);
         os << "free " << id << ";" << std::endl;
     }
 }

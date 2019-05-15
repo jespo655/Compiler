@@ -40,9 +40,9 @@ struct Variable_expression_reference : Variable_expression {
         return expr->get_constant_value();
     }
 
-    void generate_code(std::ostream& target) const override {
+    void generate_code(std::ostream& target, const Token_context& context) const override {
         ASSERT(expr);
-        return expr->generate_code(target);
+        return expr->generate_code(target, context);
     }
 
     void finalize() override {

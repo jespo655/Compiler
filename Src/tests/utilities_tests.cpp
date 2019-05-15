@@ -53,16 +53,15 @@ static Test_result debug_test()
 // error handler
 static Test_result error_handler_test()
 {
-    Token_context c{};
-    c.line = __LINE__;
-    c.position = 4;
-    c.file = __FILE__;
+    Token_context c = CPP_CONTEXT;
     set_logging(false);
     log_error("", c);
     log_warning("", c);
     add_note("", c);
     add_note("");
-    exit_if_errors(); // shouldn't exit since logging is off
+    TEST_EQ(get_error_count(), 1);
+    reset_errors();
+    exit_if_errors(); // shouldn't exit since we just reset them
     set_logging(true); // back to default
     return PASSED;
 }
@@ -115,9 +114,9 @@ static Test_result pointers_test()
     TEST_NOT_NULL(s);
     TEST(s == o && s == s2);
     Owned<Aware> o2 = std::move(o);
-    TEST_EQ(o, nullptr);
+    TEST_EQ(o, (void*)nullptr);
     grab_aware(std::move(o2));
-    TEST_EQ(o2, nullptr);
+    TEST_EQ(o2, (void*)nullptr);
     TEST_EQ(Aware::created, 1);
     TEST_EQ(Aware::alive, 0);
     return PASSED;

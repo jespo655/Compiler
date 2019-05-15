@@ -2,6 +2,7 @@
 #include "cb_primitives.h"
 #include "cb_pointer.h"
 #include "cb_any.h"
+#include "../parser/token.h"
 
 
 Shared<const CB_Type> CB_Seq::get_seq_type(Shared<const CB_Type> member_type) {
@@ -54,30 +55,30 @@ void CB_Seq::generate_typedef(std::ostream& os) const {
     os << ";" << std::endl;
 }
 
-void CB_Seq::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
+void CB_Seq::generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth) const {
     ASSERT(raw_data);
     uint8_t const* raw_it = (uint8_t const*)raw_data;
     os << "(";
     generate_type(os);
     os << "){";
-    CB_u32::type->generate_literal(os, raw_it, depth+1);
+    CB_u32::type->generate_literal(os, raw_it, context, depth+1);
     raw_it += CB_u32::type->cb_sizeof();
     os << ", ";
-    CB_u32::type->generate_literal(os, raw_it, depth+1);
+    CB_u32::type->generate_literal(os, raw_it, context, depth+1);
     raw_it += CB_u32::type->cb_sizeof();
     os << ", ";
-    CB_Pointer().generate_literal(os, raw_it, depth+1);
+    CB_Pointer().generate_literal(os, raw_it, context, depth+1);
     os << "}";
 }
 
-void CB_Seq::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const {
-    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
-    CB_u32::type->generate_destructor(os, id+".size");
-    CB_u32::type->generate_destructor(os, id+".capacity");
+void CB_Seq::generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth) const {
+    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(context); return; }
+    CB_u32::type->generate_destructor(os, id+".size", context);
+    CB_u32::type->generate_destructor(os, id+".capacity", context);
     os << "if (" << id << ".v_ptr) for(";
     CB_u32::type->generate_type(os);
     os << " _it=0; _it<" << id << ".capacity; ++i) { ";
-    v_type->generate_destructor(os, id+".v_ptr[_it]", depth+1);
+    v_type->generate_destructor(os, id+".v_ptr[_it]", context, depth+1);
     os << " }" << std::endl;
     os << "free " << id << ".v_ptr;" << std::endl;
 }
@@ -146,7 +147,7 @@ std::string CB_Fixed_seq::toS() const {
     v_type->generate_type(oss);
     // oss << v_type->toS(); // this doesn't work for sequences of structs that contains sequences of itself
     oss << "[";
-    CB_u32::type->generate_literal(oss, &size);
+    CB_u32::type->generate_literal(oss, &size, INVALID_CONTEXT);
     oss << "]";
     return oss.str();
 }
@@ -194,13 +195,13 @@ void CB_Fixed_seq::generate_typedef(std::ostream& os) const {
     os << "typedef struct { ";
     v_type->generate_type(os);
     os << " a[";
-    CB_u32::type->generate_literal(os, &size);
+    CB_u32::type->generate_literal(os, &size, INVALID_CONTEXT);
     os << "]; } ";
     generate_type(os);
     os << ";" << std::endl;
 }
 
-void CB_Fixed_seq::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
+void CB_Fixed_seq::generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth) const {
     ASSERT(raw_data != nullptr);
     uint8_t const* raw_it = (uint8_t const*)raw_data;
     os << "(";
@@ -208,20 +209,20 @@ void CB_Fixed_seq::generate_literal(std::ostream& os, void const* raw_data, uint
     os << "){";
     for (size_t i = 0; i < size; ++i) {
         if (i) os << ", ";
-        v_type->generate_literal(os, raw_it);
+        v_type->generate_literal(os, raw_it, context, depth+1);
         raw_it += v_type->cb_sizeof();
     }
     os << "}";
 }
 
-void CB_Fixed_seq::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const {
-    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
+void CB_Fixed_seq::generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth) const {
+    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(context); return; }
     os << "for(";
     CB_u32::type->generate_type(os);
     os << " _it=0; _it<";
-    CB_u32::type->generate_literal(os, &size);
+    CB_u32::type->generate_literal(os, &size, context, depth+1);
     os << "; ++i) { ";
-    v_type->generate_destructor(os, id+".a[_it]", depth+1);
+    v_type->generate_destructor(os, id+".a[_it]", context, depth+1);
     os << " }" << std::endl;
 }
 

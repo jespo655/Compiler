@@ -18,12 +18,12 @@ void Abstx_if::Abstx_conditional_scope::debug_print(Debug_os& os, bool recursive
     else os << std::endl;
 }
 
-void Abstx_if::Abstx_conditional_scope::generate_code(std::ostream& target) const {
+void Abstx_if::Abstx_conditional_scope::generate_code(std::ostream& target, const Token_context& context) const {
     ASSERT(is_codegen_ready(status));
     target << "if (";
-    condition->generate_code(target);
+    condition->generate_code(target, context);
     target << ") ";
-    scope->generate_code(target);
+    scope->generate_code(target, context);
 }
 
 Parsing_status Abstx_if::Abstx_conditional_scope::fully_parse() {
@@ -70,16 +70,16 @@ void Abstx_if::debug_print(Debug_os& os, bool recursive) const
     // }
 }
 
-void Abstx_if::generate_code(std::ostream& target) const {
+void Abstx_if::generate_code(std::ostream& target, const Token_context& context) const {
     if (!is_codegen_ready(status)) LOG("status is " << status);
     ASSERT(is_codegen_ready(status));
     for (int i = 0; i < conditional_scopes.size; ++i) {
         if (i) target << "else ";
-        conditional_scopes[i]->generate_code(target);
+        conditional_scopes[i]->generate_code(target, context);
     }
     if (else_scope != nullptr) {
         target << "else ";
-        else_scope->generate_code(target);
+        else_scope->generate_code(target, context);
     }
     // @todo: add support for then-scopes (needs support for adding a statement to a scope) see syntax below
 }

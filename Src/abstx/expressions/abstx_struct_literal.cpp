@@ -21,7 +21,7 @@ const Any& Abstx_struct_literal::get_constant_value() {
     return const_value;
 }
 
-void Abstx_struct_literal::generate_code(std::ostream& target) const
+void Abstx_struct_literal::generate_code(std::ostream& target, const Token_context& context) const
 {
     ASSERT(is_codegen_ready(status));
     struct_type->generate_type(target);

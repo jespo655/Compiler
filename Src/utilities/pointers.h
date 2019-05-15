@@ -223,6 +223,10 @@ template<typename T> bool operator==(const Shared<T>& lhs, const nullptr_t rhs) 
 template<typename T> bool operator==(const nullptr_t lhs, const Shared<T>& rhs) { return lhs == rhs.v; }
 template<typename T> bool operator==(const Owned<T>& lhs, const nullptr_t rhs) { return lhs.v == rhs; }
 template<typename T> bool operator==(const nullptr_t lhs, const Owned<T>& rhs) { return lhs == rhs.v; }
+template<typename T> bool operator==(const Shared<T>& lhs, const void* rhs) { return lhs.v == rhs; }
+template<typename T> bool operator==(const void* lhs, const Shared<T>& rhs) { return lhs == rhs.v; }
+template<typename T> bool operator==(const Owned<T>& lhs, const void* rhs) { return lhs.v == rhs; }
+template<typename T> bool operator==(const void* lhs, const Owned<T>& rhs) { return lhs == rhs.v; }
 
 template<typename T> bool operator!=(const Shared<T>& lhs, const Shared<T>& rhs) { return !(lhs == rhs); }
 template<typename T> bool operator!=(const Owned<T>& lhs, const Owned<T>& rhs) { return !(lhs == rhs); }
@@ -236,6 +240,10 @@ template<typename T> bool operator!=(const Shared<T>& lhs, const nullptr_t rhs) 
 template<typename T> bool operator!=(const nullptr_t lhs, const Shared<T>& rhs) { return !(lhs == rhs); }
 template<typename T> bool operator!=(const Owned<T>& lhs, const nullptr_t rhs) { return !(lhs == rhs); }
 template<typename T> bool operator!=(const nullptr_t lhs, const Owned<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Shared<T>& lhs, const void* rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const void* lhs, const Shared<T>& rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const Owned<T>& lhs, const void* rhs) { return !(lhs == rhs); }
+template<typename T> bool operator!=(const void* lhs, const Owned<T>& rhs) { return !(lhs == rhs); }
 
 template<typename T> std::ostream& operator<<(std::ostream& os, const Shared<T>& p) { return os << p.toS(); }
 template<typename T> std::ostream& operator<<(std::ostream& os, const Owned<T>& p) { return os << p.toS(); }

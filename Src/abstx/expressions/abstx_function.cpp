@@ -33,11 +33,11 @@ const Any& Abstx_function_literal::get_constant_value() {
 
 
 
-void Abstx_function_literal::generate_code(std::ostream& target) const {
+void Abstx_function_literal::generate_code(std::ostream& target, const Token_context& context) const {
     // generate code in the context of a value expression
     // the actual function code will be generated later, through generate_declaration()
     global_scope()->used_functions[function_identifier.uid] = (Abstx_function_literal*)this;
-    return function_identifier.generate_code(target);
+    return function_identifier.generate_code(target, context);
 }
 
 // all declaration must be generated in a global scope
@@ -59,7 +59,7 @@ void Abstx_function_literal::generate_declaration_internal(std::ostream& target,
 
     // function declaration syntax
     target << "void "; // all cb functions returns void
-    function_identifier.generate_code(target);
+    function_identifier.generate_code(target, context);
     target << "(";
     for (int i = 0; i < in_args.size; ++i) {
         const auto& arg = in_args[i];
@@ -69,7 +69,7 @@ void Abstx_function_literal::generate_declaration_internal(std::ostream& target,
         if (!arg.identifier->get_type()->is_primitive()) {
             target << "const* "; // pass primitives by value; non-primitives by const pointer
         }
-        arg.identifier->generate_code(target);
+        arg.identifier->generate_code(target, context);
     }
     if (in_args.size > 0 && out_args.size > 0) target << ", ";
     for (int i = 0; i < out_args.size; ++i) {
@@ -77,13 +77,13 @@ void Abstx_function_literal::generate_declaration_internal(std::ostream& target,
         if (i) target << ", ";
         arg.identifier->get_type()->generate_type(target);
         target << "* "; // always pass non-cost pointer to the original value
-        arg.identifier->generate_code(target);
+        arg.identifier->generate_code(target, context);
     }
     target << ")";
     if (header) target << ";" << std::endl;
     else {
         target << " ";
-        scope.generate_code(target);
+        scope.generate_code(target, context);
     }
 
     // Generated code:

@@ -31,7 +31,7 @@ struct Abstx_identifier : Variable_expression {
     const Any& get_constant_value() override;
 
     // generate c code
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
 
     // finalize this expression, trying to set type and value of this identifier
     void finalize() override;

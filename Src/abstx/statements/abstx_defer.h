@@ -16,7 +16,7 @@ struct Abstx_defer : Statement {
 
     Parsing_status fully_parse() override;
 
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
 };
 
 /*

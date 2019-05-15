@@ -20,7 +20,7 @@ enum Test_result
 }} while(0)
 
 #define TEST_EQ(cond, value) do { if ((cond) != (value)) { \
-    if (verbose) std::cout << __FILE__ << ":" << __LINE__ << ": " << "Test failed: " << #cond << " is " << cond << ", but should be " << #value << std::endl; \
+    if (verbose) std::cout << __FILE__ << ":" << __LINE__ << ": " << "Test failed: " << #cond << " is " << cond << ", but should be " << value << std::endl; \
     return FAILED; \
 }} while(0)
 

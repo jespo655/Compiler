@@ -33,7 +33,7 @@ struct Abstx_node : public Serializable
 
     // generate_code(): generate valid c code and output it to to target.
     // This is done recursively to ensure that all dependencies are outputted first.
-    virtual void generate_code(std::ostream& target) const = 0;
+    virtual void generate_code(std::ostream& target, const Token_context& context) const = 0;
 
     // Set owner in a type safe way
     template<typename T> void set_owner(const T& p)

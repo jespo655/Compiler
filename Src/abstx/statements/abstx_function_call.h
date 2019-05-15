@@ -65,7 +65,7 @@ struct Abstx_function_call : Statement
 
     Parsing_status fully_parse() override; // implemented in expression_parser.cpp
 
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
 
     // returns true if success
     bool get_args_as_any(Seq<Shared<const Any>>& args);
@@ -80,7 +80,7 @@ struct Abstx_function_call_expression : Variable_expression {
     bool has_constant_value() const override;
     const Any& get_constant_value() override;
 
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
     void finalize() override;
 
 };

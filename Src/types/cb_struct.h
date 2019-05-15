@@ -93,12 +93,14 @@ struct CB_Struct : CB_Type
         std::string toS() const override;
     };
 
+    static void* const _default_empty_value;
+
     Seq<Struct_member> members;
     void* _default_value = nullptr;
     size_t max_alignment = 0;
 
     // Constructors has to be speficied, otherwise the default move constructor is used when we want to copy
-    CB_Struct() {}
+    CB_Struct() { uid = get_unique_type_id(); } // we can't finalize here because finalize can only be done once. Just set uid so it can be referenced later
     CB_Struct(const CB_Struct& sm) { *this = sm; }
     CB_Struct(CB_Struct&& sm) { *this = std::move(sm); }
     CB_Struct& operator=(const CB_Struct& sm);
@@ -108,6 +110,7 @@ struct CB_Struct : CB_Type
     // Convenience constructors - assumes that no members are using
     CB_Struct(const Seq<Shared<Abstx_identifier>>& members) { for (const auto& member : members) { add_member(member); } finalize(); }
     CB_Struct(const Seq<Owned<Abstx_identifier>>& members) { for (const auto& member : members) { add_member(Shared<Abstx_identifier>(member)); } finalize(); }
+    CB_Struct(int) { finalize(); } // explicit empty
 
     std::string toS() const override;
 
@@ -124,11 +127,12 @@ struct CB_Struct : CB_Type
 
     // code generation functions
     void generate_typedef(std::ostream& os) const override;
-    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
-    void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth = 0) const override;
+    void generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth = 0) const override;
 
 private:
     static void align(size_t* v, size_t alignment) {
+        if (alignment == 0) alignment = 1;
         *v += (alignment - *v % alignment) % alignment;
     }
 };

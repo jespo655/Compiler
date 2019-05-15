@@ -40,9 +40,9 @@ const Any& Abstx_identifier_reference::get_constant_value() {
     return id->get_constant_value();
 }
 
-void Abstx_identifier_reference::generate_code(std::ostream& target) const {
+void Abstx_identifier_reference::generate_code(std::ostream& target, const Token_context& context) const {
     ASSERT(id);
-    return id->generate_code(target);
+    return id->generate_code(target, context);
 }
 
 

@@ -31,7 +31,7 @@ const Any& Abstx_identifier::get_constant_value() {
     return value;
 }
 
-void Abstx_identifier::generate_code(std::ostream& target) const
+void Abstx_identifier::generate_code(std::ostream& target, const Token_context& context) const
 {
     // this should ouput the identifier used as a variable, since it's a subclass of Variable_expression
     ASSERT(name != "");

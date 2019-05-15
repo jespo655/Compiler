@@ -27,14 +27,14 @@ std::string Abstx_assignment::toS() const {
 }
 
 
-void Abstx_assignment::generate_code(std::ostream& target) const {
+void Abstx_assignment::generate_code(std::ostream& target, const Token_context& context) const {
     ASSERT(is_codegen_ready(status));
     ASSERT(lhs.size == rhs.size);
     for (int i = 0; i < lhs.size; ++i) {
-        lhs[i]->generate_code(target); // this should be a valid c style lvalue
+        lhs[i]->generate_code(target, context); // this should be a valid c style lvalue
         target << " = ";
-        if (rhs.size == 1) rhs[0]->generate_code(target);
-        else rhs[i]->generate_code(target);
+        if (rhs.size == 1) rhs[0]->generate_code(target, context);
+        else rhs[i]->generate_code(target, context);
         target << ";" << std::endl;
     }
 };

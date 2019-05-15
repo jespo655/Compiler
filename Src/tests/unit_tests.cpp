@@ -14,6 +14,7 @@ static Test_result test_test()
     TEST_NOT_NULL((void*)0x432104);
     TEST_EXCEPT(throw 2);
     TEST_NOEXCEPT();
+    TEST_EXCEPT(ASSERT_OR_THROW(false));
     return PASSED;
 }
 

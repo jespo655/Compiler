@@ -463,7 +463,8 @@ void code_gen_test()
     for (const auto& s : gs->statements) {
         ASSERT(s); // no statement can be nullpointer here
         // @TODO: any dependencies should be generated FIRST!
-        s->generate_code(std::cout); // for now, just fully parse the statements
+        s->generate_code(std::cout, s->context); // for now, just fully parse the statements
+
     }
 
     LOG("generating used function code");

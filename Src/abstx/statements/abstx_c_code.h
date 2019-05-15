@@ -33,7 +33,7 @@ struct Abstx_c_code : Statement {
 
     Parsing_status fully_parse() override; // implemented in statement_parser.cpp
 
-    void generate_code(std::ostream& target) const override {
+    void generate_code(std::ostream& target, const Token_context& context) const override {
         ASSERT(is_codegen_ready(status));
         target << c_code << std::endl;
     };

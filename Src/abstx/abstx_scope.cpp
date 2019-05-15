@@ -149,11 +149,11 @@ void Abstx_scope::resolve_imports()
     ASSERT(using_statements.size == 0);
 }
 
-void Abstx_scope::generate_code(std::ostream& target) const {
+void Abstx_scope::generate_code(std::ostream& target, const Token_context& context) const {
     ASSERT(is_codegen_ready(status), status << " " << toS() << " at " << context.toS());
     target << "{" << std::endl;
     for (const auto& st : statements) {
-        st->generate_code(target);
+        st->generate_code(target, context);
     }
     target << "}" << std::endl;
 };

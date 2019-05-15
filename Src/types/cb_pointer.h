@@ -21,6 +21,6 @@ struct CB_Pointer : CB_Type
     void finalize() override;
 
     void generate_typedef(std::ostream& os) const override;
-    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
-    void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth = 0) const override;
+    void generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth = 0) const override;
 };

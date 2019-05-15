@@ -1,6 +1,7 @@
 #include "cb_any.h"
 #include "cb_string.h"
 #include "cb_primitives.h"
+#include "../parser/token.h"
 
 void CB_Any::generate_type(std::ostream& os) const
 {
@@ -14,20 +15,48 @@ void CB_Any::generate_typedef(std::ostream& os) const {
     generate_type(os);
     os << ";" << std::endl;
 }
-void CB_Any::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
-    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); os << "void"; return; }
+void CB_Any::generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth) const {
+    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(context); os << "void"; return; }
     ASSERT(raw_data);
     os << "(";
     generate_type(os);
     os << "){";
-    CB_Type::type->generate_literal(os, raw_data, depth+1);
+    CB_Type::type->generate_literal(os, raw_data, context, depth+1);
     uint8_t const* raw_it = (uint8_t const*)raw_data;
     raw_it += CB_Type::type->cb_sizeof();
     os << ", " << std::hex << (void**)raw_it << "}";
 }
-void CB_Any::generate_destructor(std::ostream& os, const std::string& id, uint32_t depth) const {
-    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(); return; }
+void CB_Any::generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth) const {
+    if (depth > MAX_ALLOWED_DEPTH) { post_circular_reference_error(context); return; }
 }
+
+std::string Any::toS() const  {
+    if (v_ptr) {
+        ASSERT(v_type);
+        std::ostringstream oss;
+        v_type->generate_literal(oss, v_ptr, INVALID_CONTEXT);
+        return oss.str();
+    }
+    else return "---";
+}
+
+Any& Any::operator=(const Any& Any) {
+    if (this != &Any) {
+        v_ptr = Any.v_ptr;
+        v_type = Any.v_type;
+    }
+    return *this;
+}
+
+Any& Any::operator=(Any&& Any) {
+    if (this != &Any) {
+        v_type = Any.v_type;
+        v_ptr = Any.v_ptr;
+        Any.v_ptr = nullptr;
+    }
+    return *this;
+}
+
 
 
 CB_Type::c_typedef parse_type_id(const Any& any) {

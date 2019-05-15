@@ -12,7 +12,7 @@ struct Abstx_pointer_dereference : Variable_expression {
 
     virtual Shared<const CB_Type> get_type() override;
 
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
 
 };
 
@@ -26,6 +26,6 @@ struct Abstx_address_of : Value_expression {
 
     virtual Shared<const CB_Type> get_type() override;
 
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
 
 };

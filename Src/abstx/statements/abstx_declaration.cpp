@@ -44,7 +44,7 @@ std::string Abstx_declaration::toS() const {
     return oss.str();
 }
 
-void Abstx_declaration::generate_code(std::ostream& target) const {
+void Abstx_declaration::generate_code(std::ostream& target, const Token_context& context) const {
     ASSERT(is_codegen_ready(status), "something went wrong in declaration "+toS());
     if (value_expressions.empty()) {
         // explicit uninitialized
@@ -52,7 +52,7 @@ void Abstx_declaration::generate_code(std::ostream& target) const {
             ASSERT(identifiers[i]); // can't be nullpointer
             identifiers[i]->get_type()->generate_type(target);
             target << " ";
-            identifiers[i]->generate_code(target); // this should be a variable name
+            identifiers[i]->generate_code(target, context); // this should be a variable name
             target << ";" << std::endl;
         }
     } else {
@@ -61,9 +61,9 @@ void Abstx_declaration::generate_code(std::ostream& target) const {
             ASSERT(identifiers[i]); // can't be nullpointer
             identifiers[i]->get_type()->generate_type(target);
             target << " ";
-            identifiers[i]->generate_code(target); // this should be a valid c style lvalue
+            identifiers[i]->generate_code(target, context); // this should be a valid c style lvalue
             target << " = ";
-            value_expressions[(value_expressions.size==1?0:i)]->generate_code(target); // this should be a valid c style lvalue
+            value_expressions[(value_expressions.size==1?0:i)]->generate_code(target, context); // this should be a valid c style lvalue
             target << ";" << std::endl;
         }
     }

@@ -39,13 +39,14 @@ const Any& Abstx_sequence_literal::get_constant_value() {
     return constant_value;
 }
 
-void Abstx_sequence_literal::generate_code(std::ostream& target) const
+void Abstx_sequence_literal::generate_code(std::ostream& target, const Token_context& context) const
 {
     ASSERT(is_codegen_ready(status));
     if (has_constant_value()) {
-        constant_value.generate_literal(target);
+        constant_value.generate_literal(target, context);
     } else {
 
     }
     // value.generate_literal(target);
+    // @TODO: check
 }

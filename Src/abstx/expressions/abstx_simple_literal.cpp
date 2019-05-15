@@ -20,10 +20,10 @@ const Any& Abstx_simple_literal::get_constant_value() {
     return value;
 }
 
-void Abstx_simple_literal::generate_code(std::ostream& target) const
+void Abstx_simple_literal::generate_code(std::ostream& target, const Token_context& context) const
 {
     ASSERT(is_codegen_ready(status));
-    value.generate_literal(target);
+    value.generate_literal(target, context);
 }
 
 void Abstx_simple_literal::finalize() {

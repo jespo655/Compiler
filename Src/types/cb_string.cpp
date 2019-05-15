@@ -8,7 +8,7 @@ void CB_String::generate_typedef(std::ostream& os) const {
     generate_type(os);
     os << ";" << std::endl;
 }
-void CB_String::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
+void CB_String::generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth) const {
     ASSERT(raw_data);
     char const* raw_str = *(c_typedef const*)raw_data;
     if (!raw_str) os << "NULL";

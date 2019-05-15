@@ -16,7 +16,7 @@ struct Abstx_struct_getter : Variable_expression {
     bool has_constant_value() const override;
     const Any& get_constant_value() override;
 
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
     void finalize() override;
 
 private:

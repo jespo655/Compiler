@@ -30,12 +30,12 @@ const Any& Abstx_struct_getter::get_constant_value() {
     return value;
 }
 
-void Abstx_struct_getter::generate_code(std::ostream& target) const
+void Abstx_struct_getter::generate_code(std::ostream& target, const Token_context& context) const
 {
     ASSERT(is_codegen_ready(status));
-    struct_expr->generate_code(target);
+    struct_expr->generate_code(target, context);
     target << ".";
-    member->id->generate_code(target);
+    member->id->generate_code(target, context);
 }
 
 void Abstx_struct_getter::finalize() {

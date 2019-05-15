@@ -11,7 +11,9 @@ struct Token_context
 {
     int line = 0;
     int position = 0;
-    std::string file{};
+    std::string file = "";
+
+    Token_context(std::string file="", int line=0, int position=0) : file{file}, line{line}, position{position} {}
 
     bool operator==(const Token_context& tc) const { return line==tc.line && position==tc.position && file==tc.file; }
     bool operator!=(const Token_context& tc) const { return !(*this==tc); }
@@ -45,8 +47,8 @@ struct Token_context
 
 };
 
-
-
+#define CPP_CONTEXT Token_context(__FILE__, __LINE__)
+#define INVALID_CONTEXT Token_context("", -1, -1)
 
 
 

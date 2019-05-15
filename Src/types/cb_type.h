@@ -76,6 +76,7 @@ Then that same data has to be able to be outputted as a C style literal.
 */
 
 struct Any; // used for default values
+struct Token_context; // used for error messages in code generation
 
 struct CB_Type : Serializable
 {
@@ -121,15 +122,15 @@ struct CB_Type : Serializable
     virtual void generate_type(std::ostream& os) const;
     virtual void generate_typedef(std::ostream& os) const;
     // literal & destructor has an additional argument depth, to safeguard against infinite loops
-    virtual void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const;
-    virtual void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const;
+    virtual void generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth = 0) const;
+    virtual void generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth = 0) const;
     // constructor:
     //   type name = literal(default_value); // default
     //   type name; // explicit uninitialized
 
-    // If a circular reference loops more than MAX_ALLOWED_DEPTH number of times, you should call post_circular_reference_error()
+    // If a circular reference loops more than MAX_ALLOWED_DEPTH number of times, you should call post_circular_reference_error(context)
     static const uint32_t MAX_ALLOWED_DEPTH = 1000;
-    void post_circular_reference_error() const;
+    void post_circular_reference_error(const Token_context& context) const;
 
 };
 

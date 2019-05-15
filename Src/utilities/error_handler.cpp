@@ -20,6 +20,16 @@ void exit_if_errors()
     }
 }
 
+int get_error_count()
+{
+    return err_count;
+}
+
+void reset_errors()
+{
+    err_count = 0;
+}
+
 void check_for_termination()
 {
     if (err_count >= err_max) {
@@ -30,31 +40,30 @@ void check_for_termination()
 
 void log_error(const std::string& msg, const Token_context& context)
 {
-    if (!should_log) return;
-    std::cerr << std::endl << context.toS() << ": Error: " << msg << std::endl;
+    ASSERT(context != INVALID_CONTEXT);
     err_count++;
+    if (should_log) std::cerr << std::endl << context.toS() << ": Error: " << msg << std::endl;
 }
 
 
 void log_warning(const std::string& msg, const Token_context& context)
 {
-    if (!should_log) return;
-    std::cerr << std::endl << context.toS() << ": Warning: " << msg << std::endl;
+    ASSERT(context != INVALID_CONTEXT);
+    if (should_log) std::cerr << std::endl << context.toS() << ": Warning: " << msg << std::endl;
 }
 
 
 void add_note(const std::string& msg, const Token_context& context)
 {
-    if (!should_log) return;
-    std::cerr << context.toS() << ": Note: " << msg << std::endl; // better sublime integration
-    // std::cerr << "    Note: " << msg << ": " << context.toS() << std::endl; // nicer looking in cmd window
+    ASSERT(context != INVALID_CONTEXT);
+    if (should_log) std::cerr << context.toS() << ": Note: " << msg << std::endl; // better sublime integration
+    // if (should_log) std::cerr << "    Note: " << msg << ": " << context.toS() << std::endl; // nicer looking in cmd window
 }
 
 
 void add_note(const std::string& msg)
 {
-    if (!should_log) return;
-    std::cerr << "    Note: " << msg << std::endl;
+    if (should_log) std::cerr << "    Note: " << msg << std::endl;
 }
 
 

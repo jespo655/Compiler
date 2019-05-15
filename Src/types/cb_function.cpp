@@ -53,7 +53,7 @@ void CB_Function::generate_typedef(std::ostream& os) const {
     os << ");" << std::endl;
 }
 
-void CB_Function::generate_literal(std::ostream& os, void const* raw_data, uint32_t depth) const {
+void CB_Function::generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth) const {
     if (!raw_data) os << "NULL";
     else if (!*(void**)raw_data) os << "NULL";
     else {

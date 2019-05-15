@@ -1,9 +1,9 @@
 #include "abstx_function_call.h"
 
-void Abstx_function_call::generate_code(std::ostream& target) const
+void Abstx_function_call::generate_code(std::ostream& target, const Token_context& context) const
 {
     ASSERT(is_codegen_ready(status));
-    function_pointer->generate_code(target);
+    function_pointer->generate_code(target, context);
     target << "(";
     for (int i = 0; i < in_args.size; ++i) {
         const auto& arg = in_args[i];
@@ -11,14 +11,14 @@ void Abstx_function_call::generate_code(std::ostream& target) const
         if (!arg->get_type()->is_primitive()) {
             target << "&"; // pass primitives by value; non-primitives by const pointer
         }
-        arg->generate_code(target);
+        arg->generate_code(target, context);
     }
     if (in_args.size > 0 && out_args.size > 0) target << ", ";
     for (int i = 0; i < out_args.size; ++i) {
         const auto& arg = out_args[i];
         if (i) target << ", ";
         target << "&"; // always pass non-cost pointer to the original value
-        arg->generate_code(target);
+        arg->generate_code(target, context);
     }
     target << ");" << std::endl;
 }
@@ -54,9 +54,9 @@ Shared<const CB_Type> Abstx_function_call_expression::get_type() {
     ASSERT(false, "Abstx_function_call_expression::get_type() not allowed since functions can have several types - check funcion_call->out_args instead");
 }
 
-void Abstx_function_call_expression::generate_code(std::ostream& target) const {
+void Abstx_function_call_expression::generate_code(std::ostream& target, const Token_context& context) const {
     ASSERT(function_call);
-    function_call->generate_code(target);
+    function_call->generate_code(target, context);
 }
 
 bool Abstx_function_call_expression::has_constant_value() const {

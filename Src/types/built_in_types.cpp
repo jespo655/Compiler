@@ -78,7 +78,8 @@ static const CB_Pointer _unresolved_pointer = CB_Pointer();
 constexpr void(*CB_Function::_default_value)();
 // type is registered with CB_Function::finalize()
 
-// default value is different for each instance
+// default value is different for each instance, except for empty structs which share default value
+void* const CB_Struct::_default_empty_value = malloc(0);
 // type is registered with CB_Struct::finalize()
 
 constexpr CB_Seq::c_typedef CB_Seq::_default_value;

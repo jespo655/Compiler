@@ -17,6 +17,6 @@ struct Abstx_struct_literal : Value_expression {
     bool has_constant_value() const;
     const Any& get_constant_value() override;
 
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
     void finalize() override;
 };

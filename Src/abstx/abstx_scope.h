@@ -70,7 +70,7 @@ struct Abstx_scope : Abstx_node
 
     // generate c code from the scope, outputting it to the target.
     // asserts that the statement is already fully resolved.
-    void generate_code(std::ostream& target) const override;
+    void generate_code(std::ostream& target, const Token_context& context) const override;
 
     // fully parse the scope, reading all the statements in it.
     // note that the scope can be fully resolved even if the statements within are not.
@@ -154,8 +154,8 @@ struct Abstx_anonymous_scope : Statement
         return status;
     }
 
-    void generate_code(std::ostream& target) const override {
+    void generate_code(std::ostream& target, const Token_context& context) const override {
         ASSERT(is_codegen_ready(status));
-        scope->generate_code(target);
+        scope->generate_code(target, context);
     };
 };

@@ -23,20 +23,20 @@ void Abstx_for::debug_print(Debug_os& os, bool recursive) const
     else os << std::endl;
 }
 
-void Abstx_for::generate_code(std::ostream& target) const {
+void Abstx_for::generate_code(std::ostream& target, const Token_context& context) const {
     ASSERT(is_codegen_ready(status));
 
     if (anonymous_range) {
         // declare range
         target << "{ ";
-        range->generate_code(target);
+        range->generate_code(target, context);
         target << " = ";
-        range->value.generate_literal(target);
+        range->value.generate_literal(target, context);
         target << "; ";
     }
 
     iterable_type->generate_for(target, range->name, it->name, step, reverse, anonymous_range);
-    scope->generate_code(target);
+    scope->generate_code(target, context);
     iterable_type->generate_for_after_scope(target);
 
     if (anonymous_range) {

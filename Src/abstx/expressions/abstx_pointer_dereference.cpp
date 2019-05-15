@@ -17,11 +17,11 @@ Shared<const CB_Type> Abstx_pointer_dereference::get_type() {
     return type->v_type;
 }
 
-void Abstx_pointer_dereference::generate_code(std::ostream& target) const
+void Abstx_pointer_dereference::generate_code(std::ostream& target, const Token_context& context) const
 {
     ASSERT(is_codegen_ready(status));
     target << "*";
-    pointer_id->generate_code(target);
+    pointer_id->generate_code(target, context);
 }
 
 
@@ -45,10 +45,10 @@ Shared<const CB_Type> Abstx_address_of::get_type() {
     return pointer_type;
 }
 
-void Abstx_address_of::generate_code(std::ostream& target) const
+void Abstx_address_of::generate_code(std::ostream& target, const Token_context& context) const
 {
     ASSERT(is_codegen_ready(status));
     target << "&";
-    pointer_id->generate_code(target);
+    pointer_id->generate_code(target, context);
 }
 

@@ -29,8 +29,8 @@ struct CB_Any : CB_Type {
     // code generation functions
     void generate_type(std::ostream& os) const override;
     void generate_typedef(std::ostream& os) const override;
-    void generate_literal(std::ostream& os, void const* raw_data, uint32_t depth = 0) const override;
-    void generate_destructor(std::ostream& os, const std::string& id, uint32_t depth = 0) const override;
+    void generate_literal(std::ostream& os, void const* raw_data, const Token_context& context, uint32_t depth = 0) const override;
+    void generate_destructor(std::ostream& os, const std::string& id, const Token_context& context, uint32_t depth = 0) const override;
 };
 
 // Below: utilities version of any that can be used in c++
@@ -40,15 +40,7 @@ struct Any : Serializable {
 
     Any(Shared<const CB_Type> type=nullptr, void const* ptr=nullptr) : v_type{type}, v_ptr{ptr} {} // default value
 
-    std::string toS() const {
-        if (v_ptr) {
-            ASSERT(v_type);
-            std::ostringstream oss;
-            v_type->generate_literal(oss, v_ptr);
-            return oss.str();
-        }
-        else return "---";
-    }
+    std::string toS() const;
 
     template<typename T>
     bool operator==(const T& o) const { return v_ptr && *(T*)v_ptr == o; }
@@ -56,31 +48,18 @@ struct Any : Serializable {
     template<typename T>
     bool operator!=(const T& o) const { return !(*this == o); }
 
-    Any& operator=(const Any& Any) {
-        if (this != &Any) {
-            v_ptr = Any.v_ptr;
-            v_type = Any.v_type;
-        }
-        return *this;
-    }
+    Any& operator=(const Any& Any);
     Any(const Any& Any) { *this = Any; }
 
-    Any& operator=(Any&& Any) {
-        if (this != &Any) {
-            v_type = Any.v_type;
-            v_ptr = Any.v_ptr;
-            Any.v_ptr = nullptr;
-        }
-        return *this;
-    }
+    Any& operator=(Any&& Any);
     Any(Any&& Any) { *this = std::move(Any); }
 
     bool has_value(const CB_Type& t) const {
         return t == *v_type && v_ptr != nullptr;
     }
 
-    void generate_literal(std::ostream& os) const {
-        v_type->generate_literal(os, v_ptr);
+    void generate_literal(std::ostream& os, const Token_context& context) const {
+        v_type->generate_literal(os, v_ptr, context);
     }
 };
 
