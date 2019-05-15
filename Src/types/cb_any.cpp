@@ -57,7 +57,9 @@ Any& Any::operator=(Any&& Any) {
     return *this;
 }
 
-
+bool Any::operator==(const Any& o) const {
+    return v_type && *v_type == *o.v_type && memcmp(v_ptr, o.v_ptr, v_type->cb_sizeof());
+}
 
 CB_Type::c_typedef parse_type_id(const Any& any) {
     ASSERT(*any.v_type == *CB_Type::type);

@@ -19,15 +19,14 @@ static bool verbose = true;
 
 #define test_complex_default_value(t, size, default_literal) do { \
     TEST_EQ(t.cb_sizeof(), size); \
-    /*if (t.is_primitive()) TEST_EQ(t.default_value(), 0);*/ \
-    std::stringstream ss{}; \
-    t.generate_literal(ss, t.default_value().v_ptr, CPP_CONTEXT); \
-    TEST_EQ(ss.str(), default_literal); \
+    if (t == *CB_String::type) TEST_EQ(t.default_value(), CB_String::_default_value); \
+    else if (t.is_primitive()) TEST_EQ(t.default_value(), 0); \
+    test_complex_literal(t, t.default_value().v_ptr, default_literal); \
 } while(0)
 
 #define test_complex_literal(t, v, literal) do { \
     std::stringstream ss{}; \
-    t.generate_literal(ss, &v, CPP_CONTEXT); \
+    t.generate_literal(ss, v, CPP_CONTEXT); \
     TEST_EQ(ss.str(), literal); \
 } while(0)
 
@@ -39,20 +38,26 @@ static bool verbose = true;
 #define test_literal(Type, value, literal) do { \
     Type t; \
     Type::c_typedef v = value; \
-    test_complex_literal(t, v, literal); \
+    test_complex_literal(t, &v, literal); \
 } while(0)
-
 
 #define P99_PROTECT(...) __VA_ARGS__
 
 
 static Test_result any_test()
 {
-    return IGNORE;
+    Any any = CB_Type::type->default_value();
+    TEST_NOT_NULL(any.v_ptr);
+    TEST_NOT_NULL(any.v_type);
+    TEST_EQ(any.v_type, CB_Type::type);
+    test_complex_literal((*CB_Type::type), any.v_ptr, "0UL");
+    // @TODO: write tests for CB_Any
+    return PASSED;
 }
 
 static Test_result function_test()
 {
+    // @TODO: implement
     return IGNORE;
 }
 
@@ -230,7 +235,7 @@ static Test_result seq_test()
     TEST_EQ(v.a[0], 1);
     TEST_EQ(v.a[1], 2);
     TEST_EQ(v.a[2], 3);
-    test_complex_literal(f2, v, "(_cb_fseq_3_of_cb_u8){1, 2, 3}");
+    test_complex_literal(f2, &v, "(_cb_fseq_3_of_cb_u8){1, 2, 3}");
 
     s1.generate_for(ss, "seq", "i");
     TEST_EQ(ss.str(), "_cb_int i; for (size_t _it_20036 = 0; i = seq.v_ptr[_it_20036], _it_20036 < seq.size; _it_20036 += 1)");
@@ -262,14 +267,12 @@ static Test_result string_test()
 }
 
 
-
+// Struct members are owned by the literals in which they are defined - the type just holds references to these values
+// So imitate that here by holding members in a separate seq
 Shared<Abstx_identifier> make_member(const std::string& name, Shared<const CB_Type> type, void const* default_value=nullptr)
 {
     static Seq<Owned<Abstx_identifier>> struct_members;
-    Owned<Abstx_identifier> o = alloc(Abstx_identifier());
-    o->name = name;
-    o->value.v_type = type;
-    o->value.v_ptr = default_value;
+    Owned<Abstx_identifier> o = alloc<Abstx_identifier>(name, type, default_value);
     o->status = Parsing_status::FULLY_RESOLVED;
     Shared<Abstx_identifier> s = o;
     struct_members.add(std::move(o));
@@ -400,6 +403,7 @@ static Test_result struct_test()
     test_complex_default_value(s12, 0, "("+tstr2+"){("+tstr1+"){}}");
 
     // cyclic reference struct (shouldn't be allowed, but should generate good errors)
+    // @TODO: make this give good errors (perhaps errors during parsing is enough - then we never should come this far)
     #if 0
     CB_Struct s13;
     TEST_EQ(s13.cb_sizeof(), 0);
@@ -441,7 +445,14 @@ static Test_result struct_test()
 
 static Test_result type_test()
 {
-    return IGNORE;
+    TEST_NOT_NULL(CB_Type::type);
+    TEST_EQ(CB_Type::type->toS(), "type");
+    TEST_EQ(toS(*CB_Type::type, CB_Type::generate_type), "_cb_type");
+    TEST_EQ(toS(*CB_Type::type, CB_Type::generate_typedef), "typedef uint32_t _cb_type;\n");
+    TEST_EQ(CB_Type::type->cb_sizeof(), sizeof(uint32_t));
+    TEST(CB_Type::type->is_primitive());
+    test_default_value(CB_Type, 4, "0UL");
+    return PASSED;
 }
 
 

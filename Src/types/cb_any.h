@@ -44,7 +44,7 @@ struct Any : Serializable {
 
     template<typename T>
     bool operator==(const T& o) const { return v_ptr && *(T*)v_ptr == o; }
-    bool operator==(const Any& o) const { return v_type && *v_type == *o.v_type && memcmp(v_ptr, o.v_ptr, v_type->cb_sizeof()); }
+    bool operator==(const Any& o) const;
     template<typename T>
     bool operator!=(const T& o) const { return !(*this == o); }
 
@@ -59,6 +59,7 @@ struct Any : Serializable {
     }
 
     void generate_literal(std::ostream& os, const Token_context& context) const {
+        ASSERT(v_type);
         v_type->generate_literal(os, v_ptr, context);
     }
 };
