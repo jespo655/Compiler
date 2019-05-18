@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../utilities/sequence.h"
+#include "../utilities/debug.h"
 
 #include <iostream>
 
@@ -29,11 +30,16 @@ enum Test_result
     return FAILED; \
 }} while(0)
 
+#ifdef DEBUG
+// ASSERT only throw if debug is enabled and nothing else should throw. If debug is not enabled, this should pass no matter what.
 #define TEST_EXCEPT(statement) do { \
     try { statement; } catch(...) { break; } \
     if (verbose) std::cout << __FILE__ << ":" << __LINE__ << ": " << "Test failed: " << #statement << "; didn't throw exception" << std::endl; \
     return FAILED; \
 } while(0)
+#else
+#define TEST_EXCEPT(statement) void(0)
+#endif
 
 #define TEST_NOEXCEPT(statement) do { \
     try { statement; } catch(...) { \

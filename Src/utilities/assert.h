@@ -18,7 +18,7 @@
     _assert_oss << std::endl << __FILE__ << ":" << __LINE__                         \
         << ": Assert failed: (" << #b << ")";                                       \
     std::cerr << _assert_oss.str() << std::endl;                                    \
-    exit(1);                                                                        \
+    throw -1;                                                                       \
 }} while(0)
 
 #define _ASSERT2(b, msg) do { if (!(b)) {                                           \
@@ -27,14 +27,17 @@
         << ": Assert failed: (" << #b << ")";                                       \
     _assert_oss << ": " << msg;                                                     \
     std::cerr << _assert_oss.str() << std::endl;                                    \
-    exit(1);                                                                        \
+    throw -1;                                                                       \
 }} while(0)
 
-#define ASSERT_OR_THROW(b) do { if (!(b)) { throw -1; } } while (0)
+#define QUIET_ASSERT(b) do { if (!(b)) throw -1; } while(0)
 
 #else
 #define ASSERT(...) void(0)
+#define QUIET_ASSERT(...) void(0)
 #endif
+
+#define ENSURE_CLEAN_EXIT(statement) do { try { statement; } catch (...) { exit(1); } } while(0)
 
 #endif
 

@@ -698,7 +698,7 @@ int main()
     // code_gen_test();
 
     // test_types();
-    run_default_test_suites();
+    ENSURE_CLEAN_EXIT(run_default_test_suites());
     // std::cout << "all test done!" << std::endl;
 }
 
